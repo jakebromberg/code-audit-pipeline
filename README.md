@@ -104,6 +104,10 @@ The contract doc has the minimum schema. The TypeScript extractor (~280 lines, u
 
 Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 source files, 595 type declarations indexed, 10 exact-dupe clusters and 15 near-dupe clusters found). The full origin story — what the audit found, why agent fan-out was the wrong reach, what to build next — is in [`docs/case-study.md`](docs/case-study.md).
 
+## Future directions
+
+A ranked map of where this project could grow — temporal indexing, broader extractor kinds, queryable substrate, an evolved agent layer, and what to keep out — is in [`docs/future-directions.md`](docs/future-directions.md).
+
 ## License
 
 [Anti-Capitalist Software License v1.4](https://anticapitalist.software/). See [LICENSE](LICENSE) for the full text. Use is permitted for individuals, non-profits, educational institutions, and worker-owned cooperatives; not permitted for capitalist organizations, law enforcement, or military.
