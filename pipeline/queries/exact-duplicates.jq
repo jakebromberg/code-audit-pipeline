@@ -5,7 +5,11 @@
 # Output: one cluster per group, ordered by cluster size (largest first).
 # An asterisk (*) marks declarations touched during the audit window.
 
-[ .[] | select(.shape_sig != null and .shape_sig != "") ]
+# V2 substrate: filter `generated: true` to suppress OpenAPI-codegen-internal duplication noise
+# (codegen output declares every type both in its own file and again in a consolidated `.d.ts`,
+# producing 50+ "duplicate" clusters that an agent already understands as codegen, not drift).
+# Cross-package-shadows still surfaces main↔shared/generated collisions, which is the real signal.
+[ .[] | select(.shape_sig != null and .shape_sig != "" and (.generated // false) != true) ]
 | group_by(.shape_sig)
 | map(select(length > 1))
 | map({

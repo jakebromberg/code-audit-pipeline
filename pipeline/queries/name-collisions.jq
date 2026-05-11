@@ -6,7 +6,9 @@
 # shadowing), and same name with semantically different shapes (the
 # "antipattern of name overloading").
 
-group_by(.name)
+# V2 substrate: filter generated codegen entries (see exact-duplicates.jq for rationale).
+[ .[] | select((.generated // false) != true) ]
+| group_by(.name)
 | map(select(length > 1))
 | map(select((map(.file) | unique | length) > 1))
 | map({
