@@ -37,12 +37,18 @@ C5's intra-pair range is 0.87–1.00; the one 0.87 trial-pair involves the C5 tr
 
 **Substrate-widening + enumerate-prompting drives intra-condition Jaccard to 1.00 for dj-site** (C3), and to 0.93 for Backend-Service (C5). V1's ~0.40 Jaccard is a sampling artifact of the "quality over quantity" prompt that vanishes when the prompt is "score every enumerated cluster". The deterministic-extraction principle's reproducibility claim is rescued — but the rescue happens at the prompt-and-format layer, not in the substrate itself.
 
-**However, this convergence happens *within* a condition, not *across* conditions.** C3 (widened pipeline-aware) and C4 (cold) overlap on only **12 of 145 clusters** — a Jaccard of 0.08. Pipeline-aware and cold agents do **complementary** work:
+**However, this convergence happens *within* a condition, not *across* conditions.** C3 (widened pipeline-aware) and C4 (cold) overlap on only **12 of 145 clusters by strict cluster_id match** — a Jaccard of 0.08. A post-hoc audit decomposes this gap into three layers:
 
-- **C3-only** (42 cluster_ids): 5 same-shape duplicate clusters; 5 within-package name collisions; subset-pair relationships (27 of them) that cold doesn't have a systematic detector for; inline-object near-duplicates like `BetterAuthSession.user` vs `User` (only visible because V2's synthetic-entry feature surfaces inline shapes).
-- **C4-only** (91 cluster_ids): contract drift surfaced by reading `@wxyc/shared` field-by-field — `OnAirDJResponse` vs canonical `OnAirDJ` (id `string` vs `number`), `Genre`/`Format` shadowing const-enums, `FlowsheetV2PaginatedResponseJSON` vs shared `PaginatedResponse<T>`; function-body duplication (`betterAuthSessionToAuthenticationData` sync/async pair); file-pair duplicates (`StoreProvider.tsx` in both `app/` and `src/`).
+| Layer | What it is | Cost (Jaccard points) | Fixable in V3? |
+|---|---|---|---|
+| **Strict → semantic** | Same finding, different category prefix (e.g., `name-collisions:WXYCRole` in C3 vs `cross-package-shadows:WXYCRole` in C4; `exact-duplicates:DJBinQuery+DJRequestParams` vs `subset-pairs:DJBinQuery__DJRequestParams`; near-dup pairs in reversed order). 6 findings. | 0.08 → 0.15 | Yes — emit canonical cluster_ids from the substrate, not the agent. |
+| **Semantic → query-relaxation** | Cold finds things the V2 queries are structurally unable to surface — not new substrate, just less-restrictive filters. ~30 findings. | 0.15 → ~0.50 | Yes — relax filters: `cross-package-shadows` filters shared to `interface|type-alias-object`, missing unions like `FlowsheetEntry` and `type-alias-other` const-enums like `Genre`/`Format`; `near-duplicates` filters to `package == "main"` only, never comparing main↔shared by shape (missing `OnAirDJResponse` vs `OnAirDJ` id-type drift); `subset-pairs` requires both sides have `fields`, missing intersection types (`FlowsheetSongEntry = FlowsheetSongBase & DateTimeEntry`); 1-field types filtered as noise but legitimate when both sides are wire DTOs. |
+| **Query-relaxation → new substrate** | Genuine substrate gaps that need new extractor work. ~10 findings. | ~0.50 → 0.70 | Yes, but heavier lift — function-body duplication (`betterAuthSessionToAuthenticationData` sync/async pair), file-content hashing (byte-identical `StoreProvider.tsx` in `app/` and `src/`), function-name collisions (the `isFlowsheet*Entry` type-guard family shadowing `@wxyc/shared/dtos/extensions.ts`). Requires separate extractors. |
 
-Some of the "only" entries are not true non-overlap but cluster_id naming inconsistencies — e.g., C3 categorizes `WXYCRole` as `name-collisions:WXYCRole` while C4 categorizes it as `cross-package-shadows:WXYCRole`. The same underlying finding is reported with two different keys, so the join misses it.
+**The 0.70 prediction wasn't wrong about agent behavior — it was wrong about how many substrate gaps V2's 5 additions actually closed.** V2 closed the `.tsx` / `--shared` / inline-object axes; it didn't touch the query-filter restrictiveness or the function/file dimensions. The "cold agents do complementary work" framing should be downgraded to: cold agents find what query restrictions and missing extractors hide from the pipeline. Substrate-widening is still the lever; V2 just stopped widening too soon.
+
+- **C3-only** (30 semantic findings the strict-Jaccard analysis attributed to C3): 4 same-shape duplicate clusters (`ExperienceLayoutProps+ExperienceProviderProps`, etc.); inline-object near-duplicates like `BetterAuthSession.user+User` (only visible because of V2's synthetic-entry feature); subset-pair relationships (20+ of them) that cold doesn't have a systematic detector for. Many of these are legitimate pipeline wins.
+- **C4-only** (75 semantic findings): see the table above. Most are query-relaxation candidates, not "things cold sees that pipelines can't."
 
 ## What 1.00 within-condition Jaccard means and doesn't mean
 
@@ -140,7 +146,7 @@ Within a single trial, severity is noisier than across conditions (the trial-1/2
 
 ## What V2 surprised on
 
-1. **Cross-condition Jaccard between pipeline-aware and cold collapses to 0.08, not 0.70 as predicted.** Pipeline-aware and cold agents do largely **complementary** work. Cold finds contract drift the pipeline misses; pipeline finds structural duplications/subsets cold misses. This is the most important V2 finding for the principle's evolution.
+1. **Cross-condition Jaccard between pipeline-aware and cold collapses to 0.08, not 0.70 as predicted.** Post-hoc audit decomposes this: 0.08 → 0.15 from cluster_id naming inconsistency; 0.15 → ~0.50 from V2 query-filter restrictiveness (missing kind variants in `cross-package-shadows`, `package == "main"` restriction on `near-duplicates`, intersection types excluded from `subset-pairs`); ~0.50 → 0.70 from genuinely missing substrate kinds (function-body duplication, file-content hashing). The methodology's 0.70 prediction was wrong about how far V2's 5 substrate additions actually closed the cold-vs-pipeline gap, not wrong about agent behavior. Substrate-widening remains the lever.
 2. **Cold agents stay at ~0.31 intra-Jaccard** even with enumerate prompting. The substrate's role isn't just sampling-cap removal — it provides a stable enumeration to anchor on. Without the catalog, "enumerate every X" still leaves agents free to choose what X is.
 3. **Within-trial severity is noisier than expected** (DJBinQuery+DJRequestParams oscillated low/medium/high within C2's 5 trials), but modal-across-trials severity is stable. This validates the methodology's "drop severity to a separate post-hoc pass in V3" suggestion.
 4. **Cluster_id canonicalization is a real source of cross-condition divergence.** Some of the C3↔C4 0.08 number is naming-inconsistency artifact, not substantive disagreement. E.g., `WXYCRole` flagged as `name-collisions:WXYCRole` in C3 and `cross-package-shadows:WXYCRole` in C4. Future cluster_ids should be substrate-emitted, not agent-emitted.
@@ -154,11 +160,23 @@ Workaround for V3: instrument the agent runtime to emit a small per-trial teleme
 
 ## Implications for V3
 
-1. **Move cluster_id canonicalization to the substrate.** The cluster query outputs should emit canonical cluster_ids that the agent then references by ID, not re-derives. Removes a real source of cross-condition divergence and makes joining agent outputs trivial.
-2. **Add a contract-drift detector to the pipeline.** Currently `cross-package-shadows` is name-based; `near-duplicates` is shape-based but only within `package == "main"`. A new query that compares `main`'s same-named types to `shared`'s by shape would catch what cold agents are finding (e.g., `OnAirDJResponse.id: string` vs `OnAirDJ.id: number`).
-3. **Combine pipeline + cold rather than treat them as alternatives.** The 0.08 Jaccard between C3 and C4 is the headline V2 finding: each condition has unique coverage. A V3 condition that gives the agent the pipeline catalog AND tells it "also enumerate anything you find that the catalog missed" would cover both surfaces.
-4. **Move severity to a post-hoc pass.** V2's intra-condition severity noise (and the methodology's stated proposal) point the same direction. Have the agent describe the cluster; have a separate scorer apply the rubric.
-5. **Programmatic output is a feature, not a bug.** Two C5 trials chose to write helper scripts. V3 could explicitly invite this in the prompt: "write your output via a small helper script if convenient — the deliverable is the resulting JSON." This may further reduce variance from the manual-emission path.
+Closing the cold-vs-pipeline gap is the highest-leverage path; substrate changes break down by tier:
+
+**Tier 1 — Cluster_id canonicalization (cheap; closes 0.08 → 0.15).** Substrate emits a single canonical cluster_id per finding. Agent references by ID rather than coining its own. Removes the `name-collisions:X` vs `cross-package-shadows:X` ambiguity.
+
+**Tier 2 — Query-filter relaxation (cheap; closes 0.15 → ~0.50).** Five specific changes:
+- `cross-package-shadows`: drop the `kind in (interface, type-alias-object)` restriction on the shared side. A `type-alias-union` like shared `FlowsheetEntry` or a `type-alias-other` like shared `Genre`/`Format` is still a canonical shape that local declarations can shadow.
+- `near-duplicates`: add a "cross-package mode" that compares main's named types against shared's same-name (or shape-similar) entries. Catches `OnAirDJResponse` vs canonical `OnAirDJ` id-type drift.
+- `subset-pairs`: handle `type-alias-intersection` by resolving `A & B` to `fields(A) ∪ fields(B)` so intersection types participate as field-bearing.
+- `subset-pairs`: lower the minimum-field threshold to 1 when both sides are kind-tagged as wire DTOs (currently 2-field-minimum suppresses `dj_id`-only pairs like `DJBinQuery ⊂ BinMutationQuery`).
+- Generic: emit a per-cluster `kind_signature` that the agent prompt can map to a category-prefix, removing the inferred-categorization variance.
+
+**Tier 3 — New substrate kinds (heavier; closes ~0.50 → 0.70).** Function-body duplication (Levenshtein/AST-hash over function bodies, surfaced as `function-duplicates.txt`); file-content hashing for byte-identical or near-identical sibling files; function-name collisions (already in the catalog if function declarations were indexed — currently the TypeScript extractor only walks `interface`/`type`/`z.object`/`pgTable`).
+
+**Tier 4 — Other improvements not gap-related:**
+- Move severity to a post-hoc pass (V2 confirmed intra-trial noise; methodology already suggested this).
+- Programmatic output as a feature: 2 of 5 C5 trials wrote helper scripts; V3 could explicitly invite this — "write your output via a small helper script if convenient — the deliverable is the resulting JSON."
+- Combined pipeline + cold condition: even after Tiers 1–3, a C6 condition where agents are given the catalog *and* told "enumerate anything else you find" provides a safety net for substrate gaps we didn't anticipate.
 
 ## What V2 did not address (carried forward)
 
