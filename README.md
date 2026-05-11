@@ -106,4 +106,4 @@ Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 sou
 
 ## License
 
-MIT
+[Anti-Capitalist Software License v1.4](https://anticapitalist.software/). See [LICENSE](LICENSE) for the full text. Use is permitted for individuals, non-profits, educational institutions, and worker-owned cooperatives; not permitted for capitalist organizations, law enforcement, or military.
