@@ -102,7 +102,7 @@ The contract doc has the minimum schema. The TypeScript extractor (~280 lines, u
 
 ## Provenance
 
-Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 source files, 578 type declarations indexed, 10 exact-dupe clusters and 15 near-dupe clusters found). See [`docs/philosophy.md`](docs/philosophy.md) for the design choices.
+Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 source files, 595 type declarations indexed, 10 exact-dupe clusters and 15 near-dupe clusters found). The full origin story — what the audit found, why agent fan-out was the wrong reach, what to build next — is in [`docs/case-study.md`](docs/case-study.md).
 
 ## License
 
