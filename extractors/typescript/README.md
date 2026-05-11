@@ -1,0 +1,66 @@
+# TypeScript extractor
+
+Walks a TypeScript repo and emits a JSON catalog of every type / interface / Zod schema / Drizzle table declared.
+
+## Install
+
+```bash
+npm install
+```
+
+Pulls in `typescript` only. The script uses the TypeScript compiler API directly — no `ts-morph`, no `ast-grep`.
+
+## Run
+
+```bash
+node type-catalog.mjs --root /path/to/repo
+```
+
+Common invocations:
+
+```bash
+# Audit one repo, scan everything, write to stdout
+node type-catalog.mjs --root /path/to/repo > catalog.json
+
+# Compare against a sibling "canonical types" package
+node type-catalog.mjs \
+  --root /path/to/main-repo \
+  --shared /path/to/shared-types-repo \
+  --output catalog.json
+
+# Only mark a subset of files as "touched in this audit window"
+node type-catalog.mjs \
+  --root /path/to/repo \
+  --touched ./candidates.json \
+  --output catalog.json
+```
+
+Stats land on stderr; the catalog JSON lands on stdout (or `--output`).
+
+## What it picks up
+
+| Source construct | `kind` value |
+|---|---|
+| `interface X { … }` | `interface` |
+| `type X = { … }` | `type-alias-object` |
+| `type X = A \| B \| C` | `type-alias-union` |
+| `type X = A & B` | `type-alias-intersection` |
+| `type X = InferSelectModel<typeof T>` / `InferInsertModel` | `type-alias-infer-model` |
+| other type aliases | `type-alias-other` |
+| `const X = z.object({ … })` | `zod-object` |
+| `const X = pgTable("…", { … })` or `someSchema.table("…", { … })` | `drizzle-table` |
+
+For each, the script extracts a sorted `name:type` field list and computes `shape_sig` for clustering. See [`../../docs/pipeline-contract.md`](../../docs/pipeline-contract.md) for the full record schema.
+
+## What it doesn't (yet)
+
+- Generic-instantiation resolution. `Pick<User, 'id'>` is recorded as a `type-alias-other` with its `type_text`, not expanded into its field set.
+- Computed property keys. Only literal property names are captured.
+- Imports tracking. Doesn't tell you whether `Foo` here is the same `Foo` imported elsewhere — only declared types are catalogued.
+- JSDoc / TSDoc. Comments are ignored.
+
+These are all fine for type-duplication auditing, but if you want a richer surface — e.g., to feed a "missed imports" detector — wire in a real `ts.Program` with type-checker calls.
+
+## Performance
+
+Pure AST walk, no type checking. ~5000 lines/sec on typical hardware. The WXYC audit (~300 source files across two packages) finishes in under 2 seconds.
