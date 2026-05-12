@@ -25,11 +25,12 @@
 11. [Conditions to compare](#conditions)
 12. [What this experiment can't measure](#cant-measure)
 13. [Risks specific to this experiment](#risks)
-14. [Implementation roadmap](#roadmap)
-15. [Minimum viable round](#mvp)
-16. [Decisions outstanding before kickoff](#decisions-outstanding)
-17. [What this changes about how to talk about V6](#v6-postscript)
-18. [Worked-example scoring walkthrough](#worked-example)
+14. [Pre-mortem: failure modes, diagnostics, recovery](#pre-mortem)
+15. [Implementation roadmap](#roadmap)
+16. [Minimum viable round](#mvp)
+17. [Decisions outstanding before kickoff](#decisions-outstanding)
+18. [What this changes about how to talk about V6](#v6-postscript)
+19. [Worked-example scoring walkthrough](#worked-example)
 
 Companion docs (split for navigability; full details live in the dedicated docs, with cross-references from the methodology body where relevant):
 
@@ -115,7 +116,7 @@ These three together — multi-valued correctness, specificity, grounding — tu
 
 ## 5. Plant design: refactor categories
 
-Eight categories, four canonical plants each, plus one [restraint twin](#restraint) per category (a plant whose field-level shape matches its canonical counterpart but whose surrounding context — file location, naming convention, codegen markers, API-vs-impl boundary — marks it as an intentional duplication the agent should NOT act on). Total 8 × (4 canonical + 1 restraint) = 40 plants. A streamlined version with five categories is in [§15](#mvp).
+Eight categories, four canonical plants each, plus one [restraint twin](#restraint) per category (a plant whose field-level shape matches its canonical counterpart but whose surrounding context — file location, naming convention, codegen markers, API-vs-impl boundary — marks it as an intentional duplication the agent should NOT act on). Total 8 × (4 canonical + 1 restraint) = 40 plants. A streamlined version with five categories is in [§16](#mvp).
 
 Plants follow the [V3 de-abstraction methodology](dj-site-divergence-experiment-v3-plant-manifest.md#what-de-abstraction-means-here): take an existing well-abstracted construct, create a duplicate / subset / parallel variant whose existence would not be justified if the missing abstraction had been recognized. The plant is the placement of the missing-abstraction signal, not the invention of one. Plant source types are drawn from the isolated-source set verified absent from baseline cluster outputs ([V6 isolated-source procedure](wxyc-ios-64-experiment-plant-manifest.md#isolated-source-set)).
 
@@ -507,7 +508,7 @@ Aggregate metrics:
 
 The **novel-but-defensible answer** case lives in the last bucket. Panel scores it on a 0.0–1.0 scale per the same criteria as auto-scored answers (category-correctness × specifics × grounding); the score gets recorded with a `panel_reviewed: true` flag. Without this escape, the rubric punishes agent creativity by auto-failing reasonable answers the manifest didn't anticipate. Panel time is budgeted in the [roadmap](#roadmap).
 
-[§18](#worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
+[§19](#worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
 
 <a id="restraint"></a>
 
@@ -556,7 +557,7 @@ Captured at execution (during/after the trial):
 - `model_parameters`: `temperature`, `top_p`, `top_k`, `max_tokens`, `system_prompt` (if set), and any other API knobs that affect output. Default is `temperature: 0.0` to minimize trial-to-trial variance, but a higher value is a defensible deliberate choice for surfacing answer diversity — record what was used.
 - `api_pricing_snapshot`: a timestamped pricing table for each model used (the basis of [Phase D's cost math](#roadmap)). Pricing changes over time; the snapshot lets the originally-budgeted figures be retrospectively interpreted.
 - `trial_date_range`: ISO 8601 start and end timestamps for trial execution. Includes any calendar drift that's relevant — e.g., model deprecations announced during the trial window, or substrate enrichments landing mid-trial (which would invalidate the run).
-- `panel_composition`: the human reviewer roster for [§18 panel-routed recommendations](#worked-example) and the 10–20% citation-grounding audit sample called out in [§8](#scoring-rubric). Count, role, blind-review protocol (was the panel blind to which condition produced the recommendation?), and the [Fleiss κ](#cant-measure) target met.
+- `panel_composition`: the human reviewer roster for [§19 panel-routed recommendations](#worked-example) and the 10–20% citation-grounding audit sample called out in [§8](#scoring-rubric). Count, role, blind-review protocol (was the panel blind to which condition produced the recommendation?), and the [Fleiss κ](#cant-measure) target met.
 - `rubric_modifications`: pointer to `rubric-modifications.md` per §10 item 3 if any post-hoc adjustments occurred during scoring. Each entry: what changed, why, and impact on prior scores.
 
 The `reproducibility.yaml` commits as part of the experiment's results doc, mirroring how [V5 results](dj-site-divergence-experiment-v5-results.md) and [V6 results](wxyc-ios-64-experiment-results.md) document their setup. A future replay is then: check out the recorded `repo_sha`, `substrate_sha`, `submodule_shas.*`, and `plant_tree_sha`; re-run the substrate extractor; verify `catalog_hashes` and `query_output_hashes` match; replay the prompt (hash-pinned) through the recorded `model_versions` with the recorded `model_parameters`; auto-score with the rubric (hash-pinned). Discrepancies between replay and original results are one of: substrate non-determinism (which V5/V6 ruled out for the substrate; V7 should re-verify on Swift after the new enrichments land), LLM non-determinism (the dominant axis — see [§13](#risks)), or rubric drift (caught by `rubric_modifications` if disciplined, undetectable if not).
@@ -617,9 +618,47 @@ Honest scope limits:
 
 7. **Prompt-interpretation variance (V4 batching).** V4's C3 trials showed a real prompt-following split: 2 of 5 trials emitted batched grouped findings (3 rows) instead of one-per-cluster (13 rows), without the comment cues that had previously held emission consistent ([V4 results, "C3 cross-package-shadows recall"](dj-site-divergence-experiment-v4-results.md#2-c3-cross-package-shadows-recall-100--60-the-score-every-row-batching-variance)). V7's per-cluster recommendation prompt is structurally exposed to the same variance — if two trials emit a single grouped recommendation for what should be N row-per-recommendations, the per-cluster rubric scores incoherently. The dependency on issue #5 (substrate-emitted cluster_ids, [§6 prerequisite](#substrate-enrichments)) is the substrate-side fix; sharp "one recommendation per row" prompt language is the agent-side fix. Both should be in place before trials; if neither lands, expected batching variance is roughly 30–40% of conditions on cross-package categories.
 
+<a id="pre-mortem"></a>
+
+## 14. Pre-mortem: failure modes, diagnostics, recovery
+
+§13 enumerates risks; this section converts the top five into operational form. For each, the failure signature (what you'd see in the results that says "this failed"), the diagnostic (additional measurement to confirm the diagnosis), and the recovery (rerun, partial credit, scope down, report cleanly). Listed by which-failure-would-be-most-painful first.
+
+**14.1 Substrate didn't help.** S0 cold-agent recall ≈ S2 V7-substrate recall.
+
+- *Signature:* the per-plant recall delta between S0 and S2 sits within ±5 percentage points across all categories. The [(recall, 1 − FPR) headline 2-D point](#restraint) is essentially the same for both conditions.
+- *Diagnostic:* compute the per-category breakdown of (S2 − S0). If most categories are within ±5pp and one or two are wide, the substrate helps narrowly. If all are flat, the substrate is genuinely not buying recommendation quality. Compare against V4's "C3 + C4 union ≈ C3 alone" finding ([V4 results, "C3 + C4 combined recall"](dj-site-divergence-experiment-v4-results.md#c3--c4-combined-recall-the-v3-complementary-work-claim-retested)) which showed the same effect at the substrate-fidelity layer.
+- *Recovery:* report it cleanly. Identify which categories *did* benefit (likely PAT, default-impl, subclass-lift — categories needing structural relationships the substrate exposes that cold agents have to discover). For categories where S0 ≈ S2, document the equivalence and don't claim a substrate win there. The result is real information — capable models doing more cold work than expected is a finding, not a failure of the experiment.
+
+**14.2 Restraint twins fail to bite.** False-positive rate on the 8 restraint plants is far higher than recall-loss permits.
+
+- *Signature:* FPR > 25% across restraints (more than 2 of 8 false positives), OR FPR varies widely across model tiers in a multi-tier sub-experiment.
+- *Diagnostic:* per-restraint breakdown crossed with the [context-flag](#enrichment-context-flags) attribution: did the agent's rationale cite `is_test`/`is_codegen`/etc. and recommend action anyway (informed false positive — model weighting failure), or did the rationale not cite the flag at all (context-blind false positive — prompt-level failure)? Two qualitatively different problems with different fixes. [§13 risk 2](#risks) frames the design challenge; this is what its failure looks like.
+- *Recovery:* if context-blind, tighten the prompt to require explicit context-flag inspection before any action recommendation (one line addition to [agent-prompt](refactor-recommendation-experiment-agent-prompt.md) decision rules). If informed false positive, that's a model-capability finding — report it and round 2 calibrates restraint difficulty downward or adds explicit reason-class weighting in the rubric. For round 1, report FPR separately from recall so the headline isn't blocked by a fixable issue.
+
+**14.3 Rubric undercovers; most recommendations route to panel.** Auto-score handles <50% of recommendations; panel review becomes the actual rubric.
+
+- *Signature:* among non-restraint recommendations, the auto-scored fraction is <50% across most conditions. The [`other` category rate](#worked-example) is the most direct signal — high `other` indicates agent creativity, low `other` with high panel routing indicates specifics-tolerance mismatch.
+- *Diagnostic:* breakdown of panel-routed recommendations by route reason: (a) `category == "other"`, (b) primary-category match but specifics out of tolerance, (c) alternative match but specifics out of tolerance. Per-category breakdown surfaces whether one category's tolerance is systematically too tight.
+- *Recovery:* if `other` dominates and panel grades most of those favorably, the recommendation taxonomy is too narrow — widen for round 2 (add a category, broaden an existing one). If specifics-out-of-tolerance dominates, the tolerances themselves are the issue — log to `rubric-modifications.md` per [§10 item 3](#pre-registration), widen, and re-score. The panel-routing budget in [Phase E of the roadmap](#roadmap) absorbs this for round 1; round 2 adjusts the rubric accordingly.
+
+**14.4 V4 batching variance returns.** Same plant scores wildly different across trials of the same condition.
+
+- *Signature:* intra-trial Jaccard on cluster_id sets within S2 falls below 0.90 (V5 baseline was 1.00). Per-plant variance: some plants score 1.0 in one trial and 0.0 in another.
+- *Diagnostic:* compare the cluster_id set across trials of the same condition. If trial T1 emits 13 cluster recommendations and trial T2 emits 3 grouped recommendations for the same plant set, that's exactly the V4 pattern resurfaced. Per-cluster recommendation count per trial is the direct diagnostic.
+- *Recovery:* defensive measure was supposed to be the [issue #5 substrate-emitted cluster_id prerequisite](#substrate-enrichments) plus sharp "one recommendation per row" prompt language. If both are in place and batching still appears, the failure is prompt-following capability — sharpen further, retry the affected condition. For unfixed batching, [§13 risk 7](#risks) flagged ~30–40% expected variance on cross-package categories; report it as a model-capability finding rather than a recall-loss finding.
+
+**14.5 Plant artifice doesn't transfer to natural findings.** Synthetic-plant recall is high; natural-findings panel grade is low.
+
+- *Signature:* on the natural-findings sub-experiment described in [§12](#cant-measure), the panel-grade mean for natural-findings recommendations is more than 0.3 lower than the auto-score mean for canonical plants in the matching category.
+- *Diagnostic:* qualitative review of the natural-findings panel notes — which axes did the agent get wrong on naturals that it got right on plants? Likely candidates: plants encode the missing-abstraction signal too cleanly (lab vs field); naturals have noise (multiple plausible refactors, mid-migration code, intentional non-orthogonality) the plants don't model.
+- *Recovery:* report the gap explicitly as the natural-findings result. If the gap is concentrated in one category, redesign that category's plants to encode more realistic noise. For round 1, the plant-derived numbers retain validity as a methodology-validation result; the natural-findings gap becomes round 2's primary design input. Plant design is a generation-from-naturals process by [V3's de-abstraction principle](dj-site-divergence-experiment-v3-plant-manifest.md#what-de-abstraction-means-here) — closing this gap is what round 2 of the experiment is *for*.
+
+Failure modes not in this top five but tracked in [§13](#risks) and resolvable inline during execution: designer-as-actor bias on category mix (calibrate against wxyc-ios-64 PR history if scope-tractable, otherwise report the bias), rubric drift during execution (log to `rubric-modifications.md` and re-score affected recommendations), `other` escape-hatch abuse (caught by the natural-findings panel sample and the §19.5-style panel-route protocol).
+
 <a id="roadmap"></a>
 
-## 14. Implementation roadmap
+## 15. Implementation roadmap
 
 Realistic phasing. Each phase has a defined deliverable; later phases gated on earlier ones.
 
@@ -637,7 +676,7 @@ Realistic phasing. Each phase has a defined deliverable; later phases gated on e
 
 <a id="mvp"></a>
 
-## 15. Minimum viable round
+## 16. Minimum viable round
 
 If 7–11 weeks is too much, a useful first round is:
 
@@ -653,11 +692,11 @@ This produces a credible result on a smaller scope, validates the methodology, a
 
 <a id="decisions-outstanding"></a>
 
-## 16. Decisions outstanding before kickoff
+## 17. Decisions outstanding before kickoff
 
 The methodology is specified to the point that a kickoff is meaningful, but several judgment calls remain open. Each must be resolved before pre-registration freezes, since each materially shapes the rubric, the plant set, or the cost envelope. The list is roughly ordered by how blocking each decision is — the first few must be decided to scope Phase A, the later ones can be settled during the Phase A `/review-plan` cycle.
 
-1. **Round 1 scope — MVP or full.** [§15 MVP](#mvp) at 25 plants / 5 categories / 2 conditions / $100–200 vs [§14 full round](#roadmap) at 40 plants / 8 categories / 3 conditions / $400–600. The MVP delivers a credible result in ~4–6 weeks; the full round delivers the complete methodology in ~7–11 weeks. **Default if uncontested:** MVP, on the principle that round 1 should validate the methodology cheaply and round 2 broadens. **Decided by:** the person committing the API budget.
+1. **Round 1 scope — MVP or full.** [§16 MVP](#mvp) at 25 plants / 5 categories / 2 conditions / $100–200 vs [§15 full round](#roadmap) at 40 plants / 8 categories / 3 conditions / $400–600. The MVP delivers a credible result in ~4–6 weeks; the full round delivers the complete methodology in ~7–11 weeks. **Default if uncontested:** MVP, on the principle that round 1 should validate the methodology cheaply and round 2 broadens. **Decided by:** the person committing the API budget.
 
 2. **Model versions to pin.** [§11 conditions](#conditions) specifies one trial pair across model tiers as a sub-experiment; [§10 reproducibility checklist](#pre-registration) requires `model_versions` be pinned with version suffix. **Open:** which specific Claude (or other) model identifier(s) to commit to. **Default if uncontested:** the latest Claude Opus tier with a date-pinned suffix (e.g., `claude-opus-4-7-20260101`) for the primary run; defer cross-tier comparison to round 2. **Decided by:** experiment owner, with the cost-math in [Phase D of the roadmap](#roadmap) re-derived against the pinned model's published pricing.
 
@@ -665,13 +704,13 @@ The methodology is specified to the point that a kickoff is meaningful, but seve
 
 4. **Plant-tree serving strategy.** [§10 contamination vectors](#pre-registration) allow either a flat non-git directory (V4 precedent) or a clean-history worktree. **Open:** pick one. **Default if uncontested:** flat non-git directory at `/tmp/wxyc-audit/plants-v7/` per V4's precedent (the same contamination class is being defended against). **Decided by:** experiment owner; preview the plant tree with `git status` / `git log` in the candidate environment to confirm no plant-naming leaks before pre-registration freezes.
 
-5. **Weak-rationale scoring policy.** [§18.2](#worked-example) explicitly flags two reasonable settings for the case where category and specifics match but a required citation is missing: (a) auto-score 0.5 per the §8 rubric table; (b) route to panel for grounding judgment. **Default if uncontested:** (a), with a panel-validated grounding-audit sample at 10–20% to catch systematic abuse of citation-substring matching. **Decided by:** experiment owner during pre-registration; this is a one-line rubric change so reversibility is cheap until trials start.
+5. **Weak-rationale scoring policy.** [§19.2](#worked-example) explicitly flags two reasonable settings for the case where category and specifics match but a required citation is missing: (a) auto-score 0.5 per the §8 rubric table; (b) route to panel for grounding judgment. **Default if uncontested:** (a), with a panel-validated grounding-audit sample at 10–20% to catch systematic abuse of citation-substring matching. **Decided by:** experiment owner during pre-registration; this is a one-line rubric change so reversibility is cheap until trials start.
 
 6. **Issue #5 (substrate-emitted `cluster_id`) status.** The [§6 prerequisite](#substrate-enrichments) flags [issue #5](https://github.com/jakebromberg/code-audit-pipeline/issues/5) as a V7 blocker. **Open:** does issue #5 land first, or does V7 ship with a defensive fuzzy-ID matcher in the scoring tooling? **Default if uncontested:** land #5 first (it's in the V5 backlog regardless and is the substrate-side fix for [V4's batching variance](#risks)); if scope-blocked, the fuzzy matcher is roughly 50 lines in the analyzer. **Decided by:** the substrate owner.
 
 7. **Category-mix calibration.** [§13 risk 1](#risks) flags that the 8-category mix is designer-chosen and that real refactor PRs from wxyc-ios-64 history could calibrate it. **Open:** do the calibration pass, or accept the bias and call it out in the results writeup? **Default if uncontested:** accept the bias for the MVP and address in round 2; the calibration is ~1 day of PR-title sampling that would shift category weights by a small amount and isn't load-bearing for a methodology-validation result. **Decided by:** experiment owner.
 
-8. **README update timing.** [§1](#background) and [§17 V6 postscript](#v6-postscript) both flag that the project README needs updating to match the V7 framing of "actionable refactor recommendations" before V7 lands. **Open:** update the README now (before Phase A) or after V7 results land? **Default if uncontested:** update before Phase A — the framing has to be settled by the time pre-registration freezes anyway, and a stale README is a contamination vector for any S0 cold-agent run that follows the README into the codebase. **Decided by:** experiment owner.
+8. **README update timing.** [§1](#background) and [§18 V6 postscript](#v6-postscript) both flag that the project README needs updating to match the V7 framing of "actionable refactor recommendations" before V7 lands. **Open:** update the README now (before Phase A) or after V7 results land? **Default if uncontested:** update before Phase A — the framing has to be settled by the time pre-registration freezes anyway, and a stale README is a contamination vector for any S0 cold-agent run that follows the README into the codebase. **Decided by:** experiment owner.
 
 9. **Population-clustering calibration source and exit criterion** (only if Cat. 7 in scope). [§6.7](#enrichment-population-clustering) requires calibration against real wxyc-ios-64 patterns before the macro-synthesis plant trial. **Open:** calibration corpus (just wxyc-ios-64, or wxyc-ios-64 plus other Swift codebases the team has access to), N-threshold tuning procedure, exit criterion (e.g., "surfaces ≥3 known macro candidates without >10 incidental matches"). **Default if uncontested:** out of scope for round 1 — Cat. 7 is dropped in the MVP. **Decided by:** experiment owner if and when round 2 picks up Cat. 7.
 
@@ -679,7 +718,7 @@ The list is intentionally short; the methodology cannot productively answer ever
 
 <a id="v6-postscript"></a>
 
-## 17. What this changes about how to talk about V6
+## 18. What this changes about how to talk about V6
 
 The [V6 results doc](wxyc-ios-64-experiment-results.md) currently treats substrate-fidelity at 19/20 plants as a successful validation. With this V7 methodology on the page, V6 needs a postscript acknowledging the scope limit: V6 validates the *input layer* (rhymes get from source into cluster rows); V7 validates the *output layer* (cluster rows get converted into actionable recommendations). Both are necessary, neither is sufficient on its own. The project's working definition of its deliverable — actionable refactor recommendations — rides on the joint result, not on V6 alone. (See [§1](#background) for the gap between this working definition and the current [README](../README.md) framing; both V6's postscript and the README need updating before V7 lands.)
 
@@ -687,11 +726,11 @@ The substrate roadmap also needs reframing. V6's "next gap to close" (extension-
 
 <a id="worked-example"></a>
 
-## 18. Worked-example scoring walkthrough
+## 19. Worked-example scoring walkthrough
 
 Five hypothetical agent outputs walked through the [§8 rubric](#scoring-rubric) — canonical-strong, canonical-weak-rationale, alternative-answer, restraint false positive, panel-routed novel answer. The aim is to make the auto-score → panel-route decision rule operational rather than abstract.
 
-### 18.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
+### 19.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
 
 Plant 4.1's manifest entry is in §8. Suppose an agent emits this recommendation for the cluster that surfaces the planted `TrackContainer` / `ShowContainer` pair:
 
@@ -723,7 +762,7 @@ Auto-scorer walkthrough per §8:
 
 This recommendation contributes 1.0 to Plant 4.1's per-plant score and 0.25 (1.0 / 4) to Cat. 4's per-category recall. The grounding check (a sample of recommendations gets panel-validated per §8) might still flag this for the 10–20% audit sample, but the auto-score stands unless the panel marks it as non-load-bearing citation.
 
-### 18.2 Auto-scored canonical: Plant 4.1, weak rationale
+### 19.2 Auto-scored canonical: Plant 4.1, weak rationale
 
 Same plant, different agent output:
 
@@ -752,7 +791,7 @@ Walkthrough:
 
 → Auto-score: §8 case 1 conditions are not all met (citation requirement fails). The rubric has two reasonable settings here, both defensible and worth pre-registering: (a) score **0.5** ("right specifics with weak rationale" per the §8 table); (b) route to panel for grounding judgment. Pre-registration should pick one before trials run; the default in the doc is (a) — auto-scorer applies the 0.5 floor for missing required citations, and the 10–20% grounding-audit sample catches systematic abuse of the citation-substring loophole separately.
 
-### 18.3 Auto-scored canonical: Plant 4.1, alternative-answer match
+### 19.3 Auto-scored canonical: Plant 4.1, alternative-answer match
 
 Same plant, agent picks the generic-struct alternative:
 
@@ -781,7 +820,7 @@ Walkthrough:
 
 → Auto-score: **0.7** (alternative answer, grounded rationale). The agent traded the protocol-shaped answer for a struct-shaped one, which the manifest weights at 0.7 because for *protocol*-shaped source pairs, PAT is more idiomatic than collapsing-to-generic-struct.
 
-### 18.4 Restraint plant: Plant 1R, false positive
+### 19.4 Restraint plant: Plant 1R, false positive
 
 Plant 1R is a test-vs-production restraint. The agent emits:
 
@@ -813,7 +852,7 @@ Walkthrough per §8 restraint rubric:
 
 This contributes 0.0 to the false-positive rate denominator-of-action: across all 8 restraint plants, the false-positive rate is the count of action recommendations / 8. The agent also ignored the `is_test: true` context flag on the `_Plant_CacheClientConfigMock.swift` member — a recommendation that *cites the flag and recommends action anyway* would still score 0.0 but is qualitatively different (informed false positive vs context-blind false positive), so panel notes flag the distinction during the citation-audit sample.
 
-### 18.5 Panel-routed: novel-but-defensible answer
+### 19.5 Panel-routed: novel-but-defensible answer
 
 Suppose Plant 3.1 (default implementation) draws this recommendation:
 
