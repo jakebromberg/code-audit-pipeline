@@ -1,6 +1,9 @@
 # subset-pairs.jq — find type pairs (A, B) where A's field-NAME set is a strict subset of B's.
 #
-# Run:  jq -rf subset-pairs.jq catalog.json    (-r for raw multi-line output)
+# Run:  jq -L pipeline/queries -rf pipeline/queries/subset-pairs.jq catalog.json
+#        (-r for raw text output)
+#
+# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -rf pipeline/queries/subset-pairs.jq catalog.json
 #
 # Signals types that could be modeled as `Pick<B, …>`, `extends`, or as a base from which B
 # specializes. Strictness means |A| < |B| AND every field name in A appears in B.
@@ -11,6 +14,10 @@
 #
 # Excludes 0- and 1-field types (too noisy: every type with one field is "subset" of every other
 # type containing that field name).
+#
+# cluster_id format:  subset-pairs:Sub__Sup  (directed; sub then sup, '__' separator)
+
+include "_canonical";
 
 [ .[] | select(.fields != null and (.fields | length) >= 2 and (.generated // false) != true) ] as $bs
 | [
@@ -29,10 +36,18 @@
 | group_by((.sub.shape_sig // .sub.name) + "::" + (.sup.shape_sig // .sup.name))
 | map(.[0])
 | sort_by([(.sub_fields | length), (.sup_fields | length), .sub.name])
+| map(. + {
+    cluster_id: cluster_id_directed_pair("subset-pairs"; .sub.name; .sup.name),
+    query: "subset-pairs"
+  })
 | .[]
 | . as $row
-| "\($row.sub.name) [\($row.sub_fields | length) fields] ⊂ \($row.sup.name) [\($row.sup_fields | length) fields]\n"
-  + "  sub:  \($row.sub.package)/\($row.sub.file):\($row.sub.line)\n"
-  + "  sup:  \($row.sup.package)/\($row.sup.file):\($row.sup.line)\n"
-  + "  shared fields: \($row.sub_fields | join(", "))\n"
-  + "  sup-only:      \([$row.sup_fields[] | select(. as $x | $row.sub_fields | index($x) == null)] | join(", "))\n"
+| if output_format == "jsonl" then
+    @json
+  else
+    "\($row.sub.name) [\($row.sub_fields | length) fields] ⊂ \($row.sup.name) [\($row.sup_fields | length) fields] cid=\($row.cluster_id)\n"
+    + "  sub:  \($row.sub.package)/\($row.sub.file):\($row.sub.line)\n"
+    + "  sup:  \($row.sup.package)/\($row.sup.file):\($row.sup.line)\n"
+    + "  shared fields: \($row.sub_fields | join(", "))\n"
+    + "  sup-only:      \([$row.sup_fields[] | select(. as $x | $row.sub_fields | index($x) == null)] | join(", "))\n"
+  end
