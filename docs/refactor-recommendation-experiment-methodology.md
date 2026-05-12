@@ -1,6 +1,6 @@
 # Refactor-Recommendation Experiment — Methodology
 
-> Companion to the substrate-fidelity experiments documented in V2–V6 ([V2 results](dj-site-divergence-experiment-v2-results.md), [V3 manifest](dj-site-divergence-experiment-v3-plant-manifest.md), [V3 results](dj-site-divergence-experiment-v3-results.md), [V4 results](dj-site-divergence-experiment-v4-results.md), [V5 results](dj-site-divergence-experiment-v5-results.md), [wxyc-ios-64 V6 manifest](wxyc-ios-64-experiment-plant-manifest.md), [wxyc-ios-64 V6 results](wxyc-ios-64-experiment-results.md)). Those experiments measured whether the substrate emits structural rhymes; this experiment measures whether substrate-plus-agent converts surfaced rhymes into **actionable refactor recommendations**, which is the project's actual deliverable per the [top-level README](../README.md).
+> Companion to the substrate-fidelity experiments documented in V2–V6 ([V2 results](dj-site-divergence-experiment-v2-results.md), [V3 manifest](dj-site-divergence-experiment-v3-plant-manifest.md), [V3 results](dj-site-divergence-experiment-v3-results.md), [V4 results](dj-site-divergence-experiment-v4-results.md), [V5 results](dj-site-divergence-experiment-v5-results.md), [wxyc-ios-64 V6 manifest](wxyc-ios-64-experiment-plant-manifest.md), [wxyc-ios-64 V6 results](wxyc-ios-64-experiment-results.md)). Those experiments measured whether the substrate emits structural rhymes; this experiment measures whether substrate-plus-agent converts surfaced rhymes into **actionable refactor recommendations**. The [top-level README](../README.md) frames the project's deliverable as "duplicate types, missed abstractions, and pattern drift" with the agent's role being judgment on whether a cluster is "consolidate-worthy" — V7 extends that toward *which* consolidation (the specific Swift / TypeScript refactor) the cluster is calling for. Before V7 lands, the README should be updated to match.
 
 ## Table of contents
 
@@ -33,9 +33,9 @@
 
 ## 1. Background: what the prior experiments measured, and didn't
 
-V2 through V6 established that the substrate (the [type-catalog](pipeline-contract.md#type-catalog-type-catalogjson), the [function-catalog](pipeline-contract.md#function-catalog-function-catalogjson), and the [file-hash catalog](pipeline-contract.md#file-hash-catalog-file-hashesjson)) plus the eight [pipeline queries](../pipeline/queries) produces structured "rhyme" findings (exact duplicates, cross-package shadows, subset-pairs, near-duplicates, function-body Jaccard pairs, file-content duplicates) at 95–100% per-plant recall across two languages and 40 synthetic plants ([dj-site V5 → 100% across 20 plants](dj-site-divergence-experiment-v5-results.md), [wxyc-ios-64 V6 → 19/20 plants with one predicted gap](wxyc-ios-64-experiment-results.md)). Intra-trial Jaccard on cluster IDs converged to 1.00 in V5 — three pipeline-aware agent trials produced byte-identical cluster ID sets ([V5 results §3](dj-site-divergence-experiment-v5-results.md#intra-trial-agreement)).
+The substrate (the [type-catalog](pipeline-contract.md#type-catalog-type-catalogjson), the [function-catalog](pipeline-contract.md#function-catalog-function-catalogjson), and the [file-hash catalog](pipeline-contract.md#file-hash-catalog-file-hashesjson)) plus the eight [pipeline queries](../pipeline/queries) produces structured "rhyme" findings (exact duplicates, cross-package shadows, subset-pairs, near-duplicates, function-body Jaccard pairs, file-content duplicates). V2–V4 were the iterations that surfaced substrate gaps (function-body duplication, file-content hashing, cross-package shape near-duplicates, intersection-type field resolution) where the early substrate had close-to-zero recall on the substrate-gap plant category. V5 closed those gaps on dj-site and hit 100% per-plant recall across 20 plants ([V5 results](dj-site-divergence-experiment-v5-results.md)). V6 ported the substrate to wxyc-ios-64 Swift and hit 19/20 plants with one Swift-specific predicted gap ([V6 results](wxyc-ios-64-experiment-results.md)). Across V5 and V6, that's 39/40 plant-trial cells surfacing — but the claim of "complete substrate" applies to the **post-V5-closures** substrate, not to the substrate at every prior version. Intra-trial Jaccard on cluster IDs converged to 1.00 in V5 — three pipeline-aware agent trials produced byte-identical cluster ID sets ([V5 results, "Intra-trial agreement"](dj-site-divergence-experiment-v5-results.md#intra-trial-agreement)).
 
-Those experiments tested *substrate fidelity*: does the rhyme make it from source into a structured cluster row that an agent can read? They did not test *recommendation quality*: given the cluster row, does the agent recommend a refactor in the right category, with adequate specificity, with grounded rationale, without false-positive action on intentional clusters? Recommendation quality is the project's actual deliverable, and it has been untested. This document specifies the experiment that tests it.
+Those experiments tested *substrate fidelity*: does the rhyme make it from source into a structured cluster row that an agent can read? They did not test *recommendation quality*: given the cluster row, does the agent recommend a refactor in the right category, with adequate specificity, with grounded rationale, without false-positive action on intentional clusters? Recommendation quality is the project's working definition of its deliverable (see the README discussion above for the gap between that and the README's current wording), and it has been untested. This document specifies the experiment that tests it.
 
 <a id="reframe"></a>
 
@@ -51,7 +51,7 @@ The substrate's role is not to find duplications and propose deduplication. It i
 | Near-duplicates ([`near-duplicates-any.jq`](../pipeline/queries/near-duplicates-any.jq)) | A parameterizable axis exists; the differing field/method *is* the parameter |
 | Function-body Jaccard ([`function-duplicates.jq`](../pipeline/queries/function-duplicates.jq)) | The body has a parameterizable axis — default impl + protocol witness, or one generic function |
 | Cross-package, different name, same shape ([`cross-package-shape-near-duplicates-any.jq`](../pipeline/queries/cross-package-shape-near-duplicates-any.jq)) | A concept is being independently reinvented across a boundary; suggests a shared module or protocol that captures the contract |
-| Extension-fragmented + sibling unified ([§4 of V6 results](wxyc-ios-64-experiment-results.md#the-expected-gap-extension-fragmented-types)) | Fragmentation may be intentional module-org and the unified sibling is the outsider, or the type wants consolidation — direction is a judgment call |
+| Extension-fragmented + sibling unified ([V6 results, "The expected gap"](wxyc-ios-64-experiment-results.md#the-expected-gap-extension-fragmented-types)) | Fragmentation may be intentional module-org and the unified sibling is the outsider, or the type wants consolidation — direction is a judgment call |
 
 The taxonomy of Swift (or TypeScript) refactorings — subclass, protocol inheritance, default implementation, PAT, macro synthesis, generic parameterization, composition — is the *reader's vocabulary for answering the substrate's complaint*, not the substrate's vocabulary for making it. The substrate says "these N things rhyme." The agent's job is to say "so that means the missing abstraction is X." That mapping from rhyme to abstraction is what the V7 experiment measures, and it is independent of the rhyme-detection axis that V2–V6 measured.
 
@@ -88,11 +88,13 @@ These three together — multi-valued correctness, specificity, grounding — tu
 
 ## 5. Plant design: refactor categories
 
-Eight categories, four plants each, plus one [restraint twin](#restraint) per category (a plant that looks structurally indistinguishable from its canonical counterpart but is intentional and should NOT be acted on). Total 8 × 5 = 40 plants. A streamlined version with five categories is in [§15](#mvp).
+Eight categories, four canonical plants each, plus one [restraint twin](#restraint) per category (a plant whose field-level shape matches its canonical counterpart but whose surrounding context — file location, naming convention, codegen markers, API-vs-impl boundary — marks it as an intentional duplication the agent should NOT act on). Total 8 × (4 canonical + 1 restraint) = 40 plants. A streamlined version with five categories is in [§15](#mvp).
 
 Plants follow the [V3 de-abstraction methodology](dj-site-divergence-experiment-v3-plant-manifest.md#what-de-abstraction-means-here): take an existing well-abstracted construct, create a duplicate / subset / parallel variant whose existence would not be justified if the missing abstraction had been recognized. The plant is the placement of the missing-abstraction signal, not the invention of one. Plant source types are drawn from the isolated-source set verified absent from baseline cluster outputs ([V6 isolated-source procedure](wxyc-ios-64-experiment-plant-manifest.md#isolated-source-set)).
 
 Each plant's manifest entry includes: source type, plant location, expected substrate signals (which clusters it should appear in), expected primary refactor category, alternative defensible categories, wrong-answer categories with notes on what makes each wrong, and a `restraint_pair` reference if it has a twin.
+
+**Note on the recommendation taxonomy.** The agent prompt ([§7](#agent-prompt)) enumerates eleven recommendation categories (the eight plant categories plus `extension-consolidation`, `no-action`, and `other`). `extension-consolidation` is a valid Swift refactor pattern but not a planted plant category for this round — an agent recommending it for a Cat. 1–8 plant is scored as a wrong-category answer; for natural-findings sub-experiments, it's a legitimate primary answer. The plant set is a subset of the recommendation taxonomy, not a partition.
 
 <a id="cat-1-extract-to-common"></a>
 
@@ -100,7 +102,7 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 **Substrate signal it sits on:** [`exact-duplicates.jq`](../pipeline/queries/exact-duplicates.jq), [`cross-package-shape-near-duplicates-any.jq`](../pipeline/queries/cross-package-shape-near-duplicates-any.jq). Subsumes V5/V6's exact-duplicates and cross-package-different-name plant categories.
 
-**Substrate enrichment required:** [package-dependency graph](#enrichment-package-graph) so the recommendation can name a *specific* extraction target package (the one already upstream of both consumers).
+**Substrate enrichment used:** [package-dependency graph](#enrichment-package-graph) for plants 1.1–1.3 so the recommendation can name a *specific* extraction target package (the one already upstream of both consumers). Plant 1.4 (within-package consolidation) needs no new substrate beyond V6.
 
 **Plant 1.1 — Canonical.** Three identical `struct Configuration { url, timeout, retries, headers }` declarations in three Shared packages, none depending on each other. Right answer: extract to a fourth common package (or a new shared module each can import). Alternative (weight 0.7): extract to one of the three if all three callers can be flipped to import from it.
 
@@ -108,7 +110,7 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 **Plant 1.3 — Cross-app duplicates.** Same shape in `app:iOS` and `app:WatchXYC`. Right answer: extract to a Shared package both apps already depend on (e.g., `Shared/Core`).
 
-**Plant 1.4 — Intra-package, different files.** Two structs with identical shape in different files of the same package. Right answer: consolidate to one declaration in the more sensible file (the one whose surrounding context relates to the type).
+**Plant 1.4 — Within-package consolidation.** Two structs with identical shape in different files of the same package. Right answer: consolidate to one declaration in the more sensible file (the one whose surrounding context relates to the type). The package-dependency graph isn't relevant here — the extraction target is determined by intra-package file structure, not by inter-package upstream/downstream — so this plant tests whether the agent recognizes when the dependency graph *isn't* needed and falls back to file-locality reasoning.
 
 **Restraint 1R — Test-vs-production.** Identical struct shapes; one in production (`Shared/Foo/Sources/Foo/`), one in test (`Shared/Foo/Tests/FooTests/`). Right answer: no-action. The mock exists *because of* its shape parallel; consolidating would break test isolation. The substrate should flag this via [is_test markers](#enrichment-context-flags).
 
@@ -162,7 +164,7 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 **Plant 4.3 — Constrained PAT.** Two protocols differing at one type slot, where both type-slot values conform to a common protocol (e.g., both are `Identifiable`). Right answer: `protocol Container { associatedtype Item: Identifiable; ... }` with the constraint named explicitly. Tests whether the agent extracts the type constraint.
 
-**Plant 4.4 — Async PAT.** Two protocols differing at one type slot where the slot is the type of an `async` method's parameter. Right answer: PAT with the async signature preserved. Tests Swift-specific async-protocol typing.
+**Plant 4.4 — PAT with effect specifiers.** Two protocols whose methods differ at one type slot AND carry Swift effect specifiers (`async`, `throws`, `rethrows`) on at least one signature. Right answer: PAT with the full signature preserved including effects (e.g., `func reload() async throws -> Item`). Tests whether the substrate's name/type tracking captures effect specifiers as part of the type-slot — without that, a `func reload() -> Item` protocol and a `func reload() async throws -> Item` protocol cluster as "differ only at return type" rather than "differ at both return type and effect specifiers," and the agent can't faithfully reproduce the original contracts.
 
 **Restraint 4R — Parallel structure, independent intent.** Two protocols with parallel name shape and parallel type shape, but representing unrelated concepts (e.g., physics `MeasurementUnit` vs UI-spacing `MeasurementUnit`). Right answer: no-action.
 
@@ -214,7 +216,7 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 **Plant 7.2 — Codable boilerplate.** 12 types, each manually implementing `init(from decoder:)` and `encode(to:)` with identical structure. Right answer: lean on Swift's built-in `Codable` synthesis — a macro opportunity that Swift already provides for free. Tests whether the agent recognizes the *built-in* macro before recommending custom-macro work.
 
-**Plant 7.3 — Analytics events.** 25 small struct definitions each conforming to `AnalyticsEvent` with a parallel `eventName` and `properties` shape. Right answer: a macro mirroring the real [`@AnalyticsEvent` macro in the wxyc-ios-64 `AnalyticsMacros` package](../examples/swift-plants).
+**Plant 7.3 — Analytics events.** 25 small struct definitions each conforming to `AnalyticsEvent` with a parallel `eventName` and `properties` shape. Right answer: a macro mirroring the real `@AnalyticsEvent` macro that already lives at `Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift` in the wxyc-ios-64 repo (outside this project, so no relative link). The agent recognizing the macro pattern *and* recognizing the project already has the macro available is the strongest signal.
 
 **Plant 7.4 — Builder pattern.** 8 types each with a parallel `Builder` nested struct providing `.with*()` methods returning a copy. Right answer: a macro that generates the builder.
 
@@ -244,6 +246,8 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 Each enrichment below has a stable anchor for the plant categories above to cross-reference. The order is roughly priority for the [minimum viable round](#mvp).
 
+**Prerequisite from V5 backlog: substrate-emitted cluster IDs.** [Issue #5](https://github.com/jakebromberg/code-audit-pipeline/issues/5) ("V5 substrate: substrate-emitted cluster_ids") is still open as of this writing. V5 punch-listed it because V4's C3 trials exhibited a prompt-following split — 2 of 5 trials emitted batched grouped findings (3 rows) instead of one-per-cluster (13 rows). V5's 3 trials happened to dodge the issue with its specific plant set and "score every row" prompt. V7's per-cluster recommendation prompt is structurally vulnerable to the same batching variance: if the agent re-derives `cluster_id` rather than reading a substrate-emitted ID, two agents can refer to the same cluster row by different IDs and the per-cluster rubric scores incoherently. Closing #5 — having each cluster query emit a stable, content-addressable `cluster_id` field on each row — is a V7 prerequisite. Until it lands, plant trials will need defensive prompt language ("emit one recommendation per row in the cluster output") and the scorer will need fuzzy ID matching.
+
 <a id="enrichment-name-type-split"></a>
 
 ### 6.1 Separated name/type tracking in type-catalog
@@ -266,13 +270,17 @@ Implementation in [`extractors/swift/TypeCatalogVisitor.swift`](../extractors/sw
 
 <a id="enrichment-inheritance-edges"></a>
 
-### 6.3 Protocol- and class-inheritance edges
+### 6.3 Protocol- and class-inheritance edges + resolution
 
 **Used by:** [Cat. 2 protocol inheritance](#cat-2-protocol-inheritance), [Cat. 6 subclass lift](#cat-6-subclass-lift).
 
-When `protocol B: A` is parsed, emit `B -inherits-> A`. When `class C: B` is parsed, emit `C -inherits-> B`. Stored alongside [conformance edges](#enrichment-conformance-edges) since the parsing pass is the same; the distinction is the kind of the parent (protocol vs class).
+Two distinct enrichments under one anchor — both are needed for Cat. 2 and Cat. 6 plants to surface.
 
-These edges power two new queries: `default-impl-candidates.jq` joins function-duplicates against conformance edges; `subclass-lift-candidates.jq` joins function-duplicates against class-inheritance edges. Both narrow the cluster-of-rhymes set down to clusters that *also* share a structural relationship the agent can act on.
+**Edges (graph relationship).** When `protocol B: A` is parsed, emit `B -inherits-> A`. When `class C: B` is parsed, emit `C -inherits-> B`. Stored alongside [conformance edges](#enrichment-conformance-edges) since the parsing pass is the same; the distinction is the kind of the parent (protocol vs class).
+
+**Resolution (field union).** A second-pass step, conceptually mirroring V5's [intersection-type resolution](pipeline-contract.md#intersection-type-resolution): walk the catalog, find protocol records whose inheritance edge points at a resolvable parent, union the parent's field set into the child's `fields` array (marking `resolved_from: "protocol-inheritance"`). Without resolution, `subset-pairs.jq` sees a child protocol's *declared* members only; with resolution, it sees declared-plus-inherited and can correctly cluster a planted parallel protocol against a child whose total surface includes inherited requirements. V6's "what stays as future work" section ([V6 results, "What stays as future work"](wxyc-ios-64-experiment-results.md#what-stays-as-future-work)) lists this resolution as a known follow-up.
+
+**Where they're consumed.** Edges power two new queries: `default-impl-candidates.jq` joins function-duplicates against conformance edges; `subclass-lift-candidates.jq` joins function-duplicates against class-inheritance edges. Resolution updates existing `subset-pairs.jq` and `near-duplicates-any.jq` inputs (the child protocol's `fields` becomes richer), and powers `protocol-inheritance-candidates.jq` directly. Both narrow the cluster-of-rhymes set down to clusters that *also* share a structural relationship the agent can act on.
 
 <a id="enrichment-erased-body-sig"></a>
 
@@ -290,13 +298,13 @@ Implementation in Swift: SwiftSyntax has [`IdentifierTypeSyntax`](https://github
 
 **Used by:** [Cat. 1 extract-to-common](#cat-1-extract-to-common), [Cat. 2 cross-package inheritance](#cat-2-protocol-inheritance), [Cat. 3 cross-package default impl](#cat-3-default-implementation).
 
-Parse each `Package.swift` for inter-package dependencies. Emit `package-graph.json` with edges. For wxyc-ios-64 this means parsing 21 manifest files (Swift's manifests are Swift code — SwiftSyntax can parse them directly). For TypeScript repos, parse `package.json` dependencies.
+Parse each `Package.swift` for inter-package dependencies. Emit `package-graph.json` with edges. For wxyc-ios-64 this means parsing 19 `Package.swift` files (the `Shared/*` SwiftPM packages — Swift's manifests are Swift code, so SwiftSyntax can parse them directly). The 3 app targets (`iOS`, `WatchXYC`, `WXYC TV`) don't have `Package.swift` — their dependencies have to be extracted from `WXYC.xcodeproj/project.pbxproj`, which is a separate parsing problem (the wxyc-ios-64 repo's `CLAUDE.md` flags that the `xcodeproj` Ruby gem and Python `pbxproj` library occasionally fail on complex projects and recommends line-by-line text processing with brace counting as a fallback). For TypeScript repos, parse `package.json` dependencies.
 
 The graph enables a recommendation to name the *correct* extraction target package (one already upstream of both consumers) rather than recommending an arbitrary "common" package the consumers don't yet depend on. Agents without the graph have to guess.
 
 <a id="enrichment-context-flags"></a>
 
-### 6.6 Context flags (is_test, is_codegen, is_sample, is_mock)
+### 6.6 Context flags (is_test, is_codegen, is_sample_app, is_mock)
 
 **Used by:** Every [restraint twin](#restraint).
 
@@ -315,17 +323,22 @@ These flags are heuristics, not ground truth. The agent's job is to *weigh* them
 
 **Used by:** [Cat. 7 macro synthesis](#cat-7-macro-synthesis).
 
-Currently the queries are all pairwise (`group_by(.shape_sig)` for exact duplicates, pairwise loops for Jaccard near-duplicates). Macro recognition needs a *third* algorithmic primitive: given a corpus of records, find shape *templates* (with one or more variable slots) that recur N+ times across the corpus.
+Existing queries cluster records two ways: N-way exact equivalence (`group_by(.shape_sig)` in `exact-duplicates.jq`, `name-collisions.jq`, `subset-pairs.jq`, `function-duplicates.jq`'s exact section, `file-duplicates.jq`, `cross-package-shadows-any.jq`) and pairwise Jaccard (`near-duplicates(-any).jq`, `cross-package-shape-near-duplicates(-any).jq`, `function-duplicates.jq`'s near section). Neither catches structurally-parallel populations where N records share a *template* with one or more variable slots — the shape that signals "this boilerplate wants a macro." Population clustering is the genuinely new algorithmic primitive in V7.
 
-Implementation sketch: a clustering pass that groups type-catalog records by structural template (method-name shape held fixed; per-case body content allowed to vary) and reports templates matching ≥ N (e.g., 8) instances. Output consumed by `macro-candidates.jq`.
+**Concrete algorithm sketch (template = wildcard-generalized shape_sig).** For each record with a populated `fields` array:
 
-This is the largest V7 substrate addition. Defer to V8 if scope-constrained; the [minimum viable round](#mvp) drops Cat. 7.
+1. **Generate generalized templates.** Replace each *type* in each `name:type` field with a wildcard `_T` (one wildcard per record at first; multiple if records have >1 type slot). Sort and join as a `template_sig`. Example: a record with `fields: ["count:Int", "value:String"]` generates the template `count:_T|value:_T` (single-wildcard) and `count:_T1|value:_T2` (two-wildcard, slots indexed by first appearance).
+2. **Group records by template_sig.** Records with the same template_sig recur structurally — same field names, types vary at the wildcard slots.
+3. **Filter by population size and slot-fanout.** A template is a macro candidate if (a) it matches ≥ N records (N ≈ 8 is a reasonable default; tune in the [MVP](#mvp)), AND (b) the wildcard slots are filled with ≥ 2 distinct concrete types across the population (a template that always sees `Int` at slot 0 isn't a template — it's an exact duplicate).
+4. **Emit `macro-candidates.json`.** Each candidate carries: the template_sig, the concrete record IDs that match, the per-slot distinct-type set, and a confidence score (population size × slot fanout).
+
+This is the largest V7 substrate addition. Two known limitations: (1) it catches *syntactic* boilerplate only — same field names, different types — and misses semantic-but-syntactically-divergent parallels (different field names encoding the same domain concept); (2) the N=8 threshold and the "1+ wildcard slots" generalization are designer choices that should be calibrated against real wxyc-ios-64 patterns before any plant trial — concretely, run the prototype population-clusterer against the wxyc-ios-64 catalog and tune N until it surfaces known macro candidates (the pre-macro form of `@AnalyticsEvent`, and similar patterns the manual code review already finds) without flooding the output with incidental matches. Defer to V8 if scope-constrained; the [MVP](#mvp) drops Cat. 7.
 
 <a id="enrichment-new-queries"></a>
 
 ### 6.8 New queries that consume the new substrate
 
-For symmetry with V6's [eight existing queries](../pipeline/queries):
+V6 ships [eight queries](../pipeline/queries); V7 adds seven more for a total of 15. Cats. 1 and 8 don't get a dedicated new query because existing `exact-duplicates.jq` + `cross-package-shape-near-duplicates-any.jq` (Cat. 1) and `subset-pairs.jq` (Cat. 8) already surface the right substrate signals.
 
 | New query | Substrate enrichment it depends on | Plant category it serves |
 |---|---|---|
@@ -335,9 +348,9 @@ For symmetry with V6's [eight existing queries](../pipeline/queries):
 | `generic-function-candidates.jq` | [erased body signature](#enrichment-erased-body-sig) | [Cat. 5](#cat-5-generic-parameterization) |
 | `generic-struct-candidates.jq` | [name/type split](#enrichment-name-type-split) | [Cat. 5](#cat-5-generic-parameterization) |
 | `macro-candidates.jq` | [population clustering](#enrichment-population-clustering) | [Cat. 7](#cat-7-macro-synthesis) |
-| `protocol-inheritance-candidates.jq` | [protocol-inheritance edges](#enrichment-inheritance-edges) plus [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) join | [Cat. 2](#cat-2-protocol-inheritance) |
+| `protocol-inheritance-candidates.jq` | [inheritance edges + resolution](#enrichment-inheritance-edges) plus [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) join | [Cat. 2](#cat-2-protocol-inheritance) |
 
-The dj-site/iOS V6 queries continue to work unchanged. New queries are additive.
+The V6 queries continue to work unchanged. New queries are additive.
 
 <a id="agent-prompt"></a>
 
@@ -454,13 +467,22 @@ Aggregate metrics:
 - **Grounding rate** — fraction of recommendations where `rationale_must_cite` evidence was actually quoted.
 - **Specificity rate** — fraction where the `specifics` tolerance was satisfied.
 
-The hard methodological case is the **novel-but-defensible answer**: the agent proposes a refactor the manifest didn't anticipate but is plausibly correct. The rubric has an explicit human-review escape hatch: recommendations not matching any pre-registered answer are flagged for panel scoring rather than auto-failed. Without this escape, the rubric punishes agent creativity. Panel time is budgeted in the [roadmap](#roadmap).
+**Citation-check implementation.** The `rationale_must_cite` field lists substrings (type names, package names, key phrases) that should appear in the rationale. The auto-check is a substring presence test on the rationale text. This is gameable — an agent can list the names without engaging with them ("the cluster contains TrackContainer and ShowContainer; my recommendation is no-action") and pass the check while ignoring the evidence. Mitigation: a panel-reviewed sample (10–20% of recommendations) validates that citations appear in *load-bearing* context — i.e., that the rationale's claim actually depends on the cited evidence rather than mentioning it in passing. Discrepancies between auto-score grounding rate and panel-checked grounding rate are reported as a calibration metric.
+
+**Decision rule for routing to panel review.** Auto-scoring handles four cases: (1) `category` matches `primary_answer.category` AND `specifics` within tolerance → score per the canonical rubric; (2) `category` matches a `alternative_answers[i].category` AND `specifics` match that alternative's tolerance → score `alternative_answers[i].weight`; (3) `category` matches a `wrong_answers[i].category` → score 0.0 (or -0.5 for breaking-action wrong answers); (4) `category` is `no-action` on a restraint plant → score per restraint rubric. Everything else routes to panel:
+
+- `category == "other"`
+- `category` matches `primary_answer.category` but `specifics` fall outside tolerance
+- `category` matches an alternative but specifics fall outside tolerance
+- `category` matches neither primary, alternative, nor wrong-answer enumerations (post-hoc agent creativity)
+
+The **novel-but-defensible answer** case lives in the last bucket. Panel scores it on a 0.0–1.0 scale per the same criteria as auto-scored answers (category-correctness × specifics × grounding); the score gets recorded with a `panel_reviewed: true` flag. Without this escape, the rubric punishes agent creativity by auto-failing reasonable answers the manifest didn't anticipate. Panel time is budgeted in the [roadmap](#roadmap).
 
 <a id="restraint"></a>
 
 ## 9. Restraint and false-positive measurement
 
-Restraint plants (the `1R`, `2R`, ... twins in [§5](#plant-design)) are the most important methodological addition over V5/V6. They measure **specificity**: does the substrate-plus-agent system recommend action only when action is warranted? V2–V6 had no analog. Plant 1's twin restraint 1R has the same substrate evidence as plant 1.1; both surface in cluster outputs. The agent has to distinguish them using *context* — file location (under `Tests/`), naming convention (`*Mock` suffix), codegen markers, the boundary between API and implementation types.
+Restraint plants (the `1R`, `2R`, ... twins in [§5](#plant-design)) are the most important methodological addition over V5/V6. They measure **specificity**: does the substrate-plus-agent system recommend action only when action is warranted? V2–V6 had no analog. A restraint twin shares its canonical counterpart's field-level shape — both surface in the same cluster outputs — but the surrounding context (file location, naming convention, codegen markers, API-vs-impl boundary) marks the restraint as intentional. The agent must distinguish them via context flags ([§6.6](#enrichment-context-flags)), not via the substrate's shape comparison alone.
 
 The substrate helps by emitting [context flags](#enrichment-context-flags) (`is_test`, `is_codegen`, `is_sample_app`, `is_mock`). The agent's job is to weigh those flags against the action signal. A recommendation that *acts* on a cluster where every member has `is_test: true` is a clear false positive.
 
@@ -473,27 +495,34 @@ False-positive rate is reported separately from per-category recall in [§8](#sc
 This experiment cannot run cleanly without pre-registration. The rubric is judgment-heavy; small post-hoc adjustments can move the result substantially. Discipline:
 
 1. **Manifest and rubric committed before any trial.** Hash recorded in the experiment doc.
-2. **`/review-plan` (or equivalent reviewer) called on the manifest before plants land.** Reviewer checks: do plant categories actually map to distinct refactors? Are alternative answers defensible? Are restraint twins indistinguishable from their canonical plants at the substrate level (i.e., the agent really has to use context, not just shape)? Does any plant accidentally test two categories at once?
+2. **`/review-plan` (or equivalent reviewer) called on the manifest before plants land.** Reviewer checks: do plant categories actually map to distinct refactors? Are alternative answers defensible? Are restraint twins distinguishable from their canonical plants *only* via context flags (not via field-level shape)? Does any plant accidentally test two categories at once?
 3. **Post-hoc rubric modifications allowed but documented.** A separate `rubric-modifications.md` records what changed, why, and what the impact on prior results is.
 4. **Plant manifest commits separate from trial execution commits.** The manifest's git history is the audit trail.
 
-The [V3 manifest review](dj-site-divergence-experiment-v3-plant-manifest.md) set the precedent for this discipline in this project; V7 should be more rigorous still because the rubric has more degrees of freedom.
+**Specific contamination vectors V7 must close.** V4 demonstrated that V3's headline numbers were inflated by leaks the methodology had not anticipated ([V4 results](dj-site-divergence-experiment-v4-results.md) showed C4 substrate-gap recall dropped from 95% to 50% after de-contamination, with one plant collapsing from 100% to 0%). The two vectors V4 identified, which V7 inherits and must close before any trial:
+
+- **Plant-naming comment leaks.** Plant files must not contain explanatory comments naming the plant, its category, or its purpose. Cold-condition agents grep for `// Plant`, `# Plant`, etc. and use the comments as cues. V7's planted source files should look indistinguishable from organic code at the textual level; the manifest carrying the plant identity is the source of truth, not in-source comments.
+- **Git-tooling leaks.** Planted source trees must not provide git history that reveals plant inventory. V4 served plants from a flat non-git directory specifically to prevent `git status` / `git log` from listing the planted files. V7 should do the same — either flatten to non-git or use a worktree whose history doesn't include plant-naming commits.
+
+The [V3 manifest review](dj-site-divergence-experiment-v3-plant-manifest.md) set the precedent for review discipline in this project; V4 demonstrated the cost of skipping it on contamination questions. V7 should be more rigorous on both axes because the rubric has more degrees of freedom than substrate-fidelity rubrics did.
 
 <a id="conditions"></a>
 
 ## 11. Conditions to compare
 
-Three conditions, all evaluated against the same plant manifest:
+Three conditions, all evaluated against the same plant manifest. Conditions are labeled **S0/S1/S2** (substrate level) rather than C1/C2/C3 — V2–V4 used `C2/C3/C4` for `narrow/widened/cold` and reusing those letters with different semantics would be misleading. The V7 mapping:
 
-- **C1 (cold).** Agent gets the planted source tree, no substrate. Open-ended audit prompt. Baseline for how well raw-source agent reading works without any pipeline support.
-- **C2 (V6 substrate).** Agent gets cluster outputs from V6 substrate (the eight queries in [`pipeline/queries/`](../pipeline/queries) at the [V6 state](wxyc-ios-64-experiment-results.md)). Recommendation prompt applied per cluster.
-- **C3 (V7 substrate).** Agent gets cluster outputs from V7 substrate (the new queries listed in [§6.8](#enrichment-new-queries) plus the V6 set). Same prompt as C2.
+- **S0 (cold).** Agent gets the planted source tree, no substrate. Open-ended audit prompt. Baseline for how well raw-source agent reading works without any pipeline support. Closest V4 analog: C4 cold.
+- **S1 (V6 substrate).** Agent gets cluster outputs from V6 substrate (the eight queries in [`pipeline/queries/`](../pipeline/queries) at the [V6 state](wxyc-ios-64-experiment-results.md)). Recommendation prompt applied per cluster.
+- **S2 (V7 substrate).** Agent gets cluster outputs from V7 substrate (the new queries listed in [§6.8](#enrichment-new-queries) plus the V6 set). Same prompt as S1.
 
 Interesting deltas:
 
-- **C2 − C1**: does *any* substrate add value over cold source reading?
-- **C3 − C2**: does substrate *enrichment* (V7's name-type split, conformance/inheritance edges, etc.) add value over V6's pair-shape rhymes?
-- **C3 vs human-expert recommendations**: how close does the pipeline-aware agent get to expert quality? (Optional fourth-condition, sampled.)
+- **S1 − S0**: does *any* substrate add value over cold source reading?
+- **S2 − S1**: does substrate *enrichment* (V7's name-type split, conformance/inheritance edges, etc.) add value over V6's pair-shape rhymes?
+- **S2 vs human-expert recommendations**: how close does the pipeline-aware agent get to expert quality? (Optional fourth condition, sampled.)
+
+**S0 carries language-specific blind spots from prior experiments.** V3 and V4 documented that cold agents on TypeScript codebases systematically miss every plant in `.tsx` files — 0/35 cells in V3, identical pattern in V4 ([V3 results, "Cold-agent attention biases"](dj-site-divergence-experiment-v3-results.md), [V4 results "Robustness of cold attention biases"](dj-site-divergence-experiment-v4-results.md#robustness-of-cold-attention-biases-v3--v4)). For Swift, no `.tsx` analog exists, but the underlying mechanism generalizes: cold attention has language-and-file-extension-specific allocation biases. S0 plant recall on JSX-heavy or platform-specific extensions will mechanically underperform; S0 vs S1 deltas concentrated in those file types are an attention artifact, not a substrate win. Worth flagging in the writeup.
 
 Trial count: 3–5 per condition. Plant set fixed across conditions. Model tier fixed within a comparison; cross-tier comparison is a separate sub-experiment (see [risks](#risks)).
 
@@ -503,7 +532,7 @@ Trial count: 3–5 per condition. Plant set fixed across conditions. Model tier 
 
 Honest scope limits:
 
-**Long-tail correctness.** Real codebases have refactor opportunities the 40 plants won't anticipate. Mitigation: a parallel **natural-findings sub-experiment** where the agent makes recommendations on the actual wxyc-ios-64 cluster outputs surfaced in [§3 of the V6 results](wxyc-ios-64-experiment-results.md) (`DebugMetricsProvider` duplication, `PlayerState`/`PlaybackState` parallelism, `StreamingService`/`MusicServiceIdentifier`, etc.). A 3-person panel grades a sample. Smaller statistical power, but tests transferability from synthetic to natural.
+**Long-tail correctness.** Real codebases have refactor opportunities the 40 plants won't anticipate. Mitigation: a parallel **natural-findings sub-experiment** where the agent makes recommendations on the actual wxyc-ios-64 cluster outputs surfaced in the [V6 results' conclusion section](wxyc-ios-64-experiment-results.md#conclusion) (`DebugMetricsProvider` duplication across DebugPanel and Wallpaper, `PlayerState`/`PlaybackState` parallelism at 83% Jaccard, `StreamingService`/`MusicServiceIdentifier` enums at 83% across Metadata and MusicShareKit). A reviewer panel (≥3 reviewers, sized for inter-rater reliability via Fleiss κ) grades a sample. Smaller statistical power, but tests transferability from synthetic to natural.
 
 **Stakeholder acceptance.** A technically-correct refactor can be rejected because the codebase is mid-migration, the area is slated for removal, contributors disagree on direction, or scheduling. The agent has no way to see this. Acceptance is a separate metric — a real CI integration that opens refactor PRs and tracks accept rates would measure it. V8+.
 
@@ -513,21 +542,25 @@ Honest scope limits:
 
 **Macro non-syntactic recognition.** The macro-synthesis category ([§5.7](#cat-7-macro-synthesis)) detects syntactic boilerplate. Some macro opportunities are *semantic* — the parallel implementations all encode the same business rule but in subtly different syntactic forms. Population clustering as defined in [§6.7](#enrichment-population-clustering) won't catch these; semantic clustering would, and is not in scope.
 
+**Adjacent open work not addressed by V7.** Three open enhancement issues are orthogonal to this experiment and should be acknowledged so the V7 scope is honest about what it doesn't change: [issue #6 (polyglot cross-language drift detection)](https://github.com/jakebromberg/code-audit-pipeline/issues/6) — V7 runs are single-language per measurement; cross-language drift between, say, a Swift API type and its TypeScript codegen counterpart is a separate substrate problem. [Issue #7 (audit-as-changelog / temporal substrate)](https://github.com/jakebromberg/code-audit-pipeline/issues/7) — V7 measures recommendations at one repo SHA; recommending refactors against drift over time is a temporal-substrate question. [Issue #8 (SQLite-backed substrate)](https://github.com/jakebromberg/code-audit-pipeline/issues/8) — storage; V7 stays on the JSON-array substrate the V5/V6 queries consume.
+
 <a id="risks"></a>
 
 ## 13. Risks specific to this experiment
 
-1. **Designer-as-actor bias on category mix.** The 8 categories (4 in the MVP) reflect intuition, not measured distribution of real refactor needs. Real codebases don't sample uniformly across them. Calibrate by sampling real refactor PRs from wxyc-ios-64 history (PR titles containing "refactor", "extract", "consolidate", "lift", "generic", "default impl") and classifying them; weight the plant set's category mix to match. Without calibration, category recall is over-precise.
+1. **Designer-as-actor bias on category mix, plant placement, and the categories themselves.** V3 acknowledged three flavors of this bias ([V3 results, "V3 limitations carried forward"](dj-site-divergence-experiment-v3-results.md#v3-limitations-carried-forward)): plant placement, category mix, and substrate-gap design. V7 inherits all three plus a new fourth — I chose the eight refactor categories that constitute the answer taxonomy. Category mix can be calibrated by sampling real refactor PRs from wxyc-ios-64 history (PR titles containing "refactor", "extract", "consolidate", "lift", "generic", "default impl") and weighting the plant set to match. Placement bias and category-taxonomy bias are harder — both are mitigable only via external review during the [pre-registration phase](#pre-registration), not via measurement. Without calibration on at least the mix axis, per-category recall is over-precise.
 
-2. **Restraint twins are hard to design well.** A good restraint twin is structurally indistinguishable from its canonical plant but contextually distinct. If the substrate trivially distinguishes them (e.g., test file obviously under `Tests/`), the restraint is too easy. If the substrate provides no distinguishing signal, the agent is guessing — also bad. Calibrate restraint difficulty during the manifest-review cycle.
+2. **Restraint twins are hard to design well.** A good restraint twin shares its canonical counterpart's field-level shape but differs in context. If the substrate's context flags trivially distinguish them (e.g., test file obviously under `Tests/`), the restraint is too easy and any agent with context flags scores 1.0 — the experiment can't differentiate model capability. If the substrate provides no distinguishing signal, the agent is guessing — also bad. Calibrate restraint difficulty during the manifest-review cycle: aim for restraints where the context flag is present but the cluster shape is otherwise so strongly action-shaped that an agent without weighting discipline will recommend action anyway.
 
 3. **Rubric drift during execution.** As surprising agent behaviors emerge, the temptation is to adjust the rubric to fit them. Pre-registration ([§10](#pre-registration)) defends against this; honest reporting of modifications in the writeup is the second line of defense.
 
-4. **C1 ≈ C2 ≈ C3 outcome.** Cold-agent on raw source might score nearly as well as substrate-aware agents — capable models are surprisingly good at audit-from-scratch. If this happens, the headline is "substrate did not materially help," which is real information but politically uncomfortable. Plan for that finding: report it cleanly, identify which categories *did* benefit, and don't claim a substrate win where none exists.
+4. **S0 ≈ S1 ≈ S2 outcome.** Cold-agent (S0) on raw source might score nearly as well as substrate-aware agents (S1, S2) — capable models are surprisingly good at audit-from-scratch. V4's "C3 alone ≈ C3 + C4 union" finding ([V4 results, "C3 + C4 combined recall"](dj-site-divergence-experiment-v4-results.md#c3--c4-combined-recall-the-v3-complementary-work-claim-retested)) is the closest precedent — cold and pipeline overlapped more than expected. If S0 ≈ S2, the headline is "substrate did not materially help," which is real information but politically uncomfortable. Plan for that finding: report it cleanly, identify which categories *did* benefit, and don't claim a substrate win where none exists.
 
 5. **The "other" escape hatch.** Agents proposing novel categories may be right or hallucinating. Without panel scoring on "other" recommendations, the experiment has a blind spot. Budget panel time in the [roadmap](#roadmap).
 
 6. **Plant artifice transfer.** Plants score well, naturals score poorly. Mitigated by the natural-findings sub-experiment ([§12](#cant-measure)), but if the gap is large, the experiment's claim about "actionable recommendations" is weaker than the headline suggests.
+
+7. **Prompt-interpretation variance (V4 batching).** V4's C3 trials showed a real prompt-following split: 2 of 5 trials emitted batched grouped findings (3 rows) instead of one-per-cluster (13 rows), without the comment cues that had previously held emission consistent ([V4 results, "C3 cross-package-shadows recall"](dj-site-divergence-experiment-v4-results.md#2-c3-cross-package-shadows-recall-100--60-the-score-every-row-batching-variance)). V7's per-cluster recommendation prompt is structurally exposed to the same variance — if two trials emit a single grouped recommendation for what should be N row-per-recommendations, the per-cluster rubric scores incoherently. The dependency on issue #5 (substrate-emitted cluster_ids, [§6 prerequisite](#substrate-enrichments)) is the substrate-side fix; sharp "one recommendation per row" prompt language is the agent-side fix. Both should be in place before trials; if neither lands, expected batching variance is roughly 30–40% of conditions on cross-package categories.
 
 <a id="roadmap"></a>
 
@@ -535,39 +568,39 @@ Honest scope limits:
 
 Realistic phasing. Each phase has a defined deliverable; later phases gated on earlier ones.
 
-**Phase A — Plant manifest + rubric (1–2 weeks).** Design 40 plants + 8 restraint twins per [§5](#plant-design). Pre-register rubric per plant per [§8](#scoring-rubric). Submit for `/review-plan` per [§10](#pre-registration). Iterate.
+**Phase A — Plant manifest + rubric (1–2 weeks).** Design 40 plants total per [§5](#plant-design): 8 categories × (4 canonical + 1 restraint twin) = 32 canonical + 8 restraints. Pre-register rubric per plant per [§8](#scoring-rubric). Submit for `/review-plan` per [§10](#pre-registration). Iterate. Calendar estimate is based on the [V3 manifest](dj-site-divergence-experiment-v3-plant-manifest.md), authored across roughly 2 weeks with review cycles; V7 at twice V3's plant count plus a richer rubric (alternative answers, restraint twins, citation requirements) is closer to the 2-week end of the range if review iterates more than once.
 
-**Phase B — Substrate V7 enrichments (3–4 weeks).** Implement in rough priority order: [name/type split](#enrichment-name-type-split) → [conformance edges](#enrichment-conformance-edges) → [protocol-inheritance edges](#enrichment-inheritance-edges) → [class-inheritance edges](#enrichment-inheritance-edges) → [function-body erased signature](#enrichment-erased-body-sig) → [package-dependency graph](#enrichment-package-graph) → [context flags](#enrichment-context-flags) → [new queries](#enrichment-new-queries). [Population clustering](#enrichment-population-clustering) for macro synthesis deferred to V8 unless [Cat. 7](#cat-7-macro-synthesis) is in scope. Each enrichment lands as a separate PR with tests and doc updates to [`pipeline-contract.md`](pipeline-contract.md) and the relevant extractor README ([Swift](../extractors/swift/README.md), [TypeScript](../extractors/typescript/README.md), [file-hashes](../extractors/file-hashes/README.md)).
+**Phase B — Substrate V7 enrichments (3–4 weeks).** Implement in rough priority order: [substrate-emitted cluster_ids (issue #5)](#substrate-enrichments) → [name/type split](#enrichment-name-type-split) → [conformance edges](#enrichment-conformance-edges) → [protocol-inheritance edges + resolution](#enrichment-inheritance-edges) → [class-inheritance edges](#enrichment-inheritance-edges) → [function-body erased signature](#enrichment-erased-body-sig) → [package-dependency graph](#enrichment-package-graph) → [context flags](#enrichment-context-flags) → [new queries](#enrichment-new-queries). [Population clustering](#enrichment-population-clustering) for macro synthesis deferred to V8 unless [Cat. 7](#cat-7-macro-synthesis) is in scope. Each enrichment lands as a separate PR with tests and doc updates to [`pipeline-contract.md`](pipeline-contract.md) and the relevant extractor README ([Swift](../extractors/swift/README.md), [TypeScript](../extractors/typescript/README.md), [file-hashes](../extractors/file-hashes/README.md)). Calendar estimate is based on the V5 substrate work — 4 issues (function-body, file-hashes, cross-package-shape-near-dups, intersection resolution) landed in PR #10 across about two weeks of focused work. V7's enrichment set is roughly 2× that volume.
 
-**Phase C — Plant tree + cluster generation (3–5 days).** Inject plants into [`examples/swift-plants-v7/`](../examples/swift-plants) (new directory; preserve V6 tree). Run V6 substrate against the planted tree for C2 inputs. Run V7 substrate against the planted tree for C3 inputs. For C1, the agent reads the planted source tree directly.
+**Phase C — Plant tree + cluster generation (3–5 days).** Inject plants into `examples/swift-plants-v7/` (new directory; preserve V6 tree at `examples/swift-plants/`). Run V6 substrate against the planted tree for S1 inputs. Run V7 substrate against the planted tree for S2 inputs. For S0, the agent reads the planted source tree directly. **Note for Swift codebases:** wxyc-ios-64's `Shared/Wallpaper` is a private git submodule (`github.com:WXYC/wallpaper-ios`) — ensure `git submodule update --init --recursive` ran before substrate extraction, or Wallpaper-package plants will be unreachable and category recall on `Shared/Wallpaper` plants will under-report.
 
-**Phase D — Trial execution (2–3 weeks).** Three conditions × 4 trials each × 40 plants ≈ 480 recommendations per model tier. With two model tiers, ~960 recommendations. Each recommendation costs N tokens; budget based on prompt size + cluster context size. Estimate: USD low-thousands of API spend for a thorough run.
+**Phase D — Trial execution (2–5 days wallclock, API-budget-bound).** Three conditions × 4 trials × 40 plants ≈ 480 recommendations per model tier. With two model tiers, ~960 recommendations. Per-recommendation cost estimate: roughly 10–15K input tokens (the prompt plus cluster-context for one cluster row) × ~1.5K output tokens (one structured JSON recommendation). At rough Claude API pricing for an Opus-tier model (~$15/M input, ~$75/M output as of early 2026), that's ~$0.27 per recommendation. For 960 recommendations: **~$260 in trial-execution API spend**. Sub-experiments (panel-reviewed sample, natural-findings round, optional human-expert comparison condition) add roughly another $100–300. **Total Phase D budget: $400–800.** Wallclock is dominated by API rate limits and parallelization choices, not by serial work — a thorough run can complete in 2–5 days.
 
-**Phase E — Scoring + writeup (2–3 weeks).** Auto-score what the rubric handles. Panel-score the "other" and "novel-but-defensible" recommendations. Compute aggregate metrics per [§8](#scoring-rubric). Compare conditions. Identify which refactor categories are well-served by V7 enrichments vs which still need V8+. Document false-positive rates explicitly. Companion results doc, structured like [V5 results](dj-site-divergence-experiment-v5-results.md) and [V6 results](wxyc-ios-64-experiment-results.md).
+**Phase E — Scoring + writeup (2–3 weeks).** Auto-score what the rubric handles per [§8](#scoring-rubric). Panel-review the "other" and "novel-but-defensible" recommendations and the 10–20% citation-grounding sample. Compute aggregate metrics. Compare conditions. Identify which refactor categories are well-served by V7 enrichments vs which still need V8+. Document false-positive rates explicitly. Companion results doc, structured like [V5 results](dj-site-divergence-experiment-v5-results.md) and [V6 results](wxyc-ios-64-experiment-results.md).
 
-**Total: 8–12 weeks** for a comprehensive first round.
+**Total wallclock: 7–11 weeks** for a comprehensive first round (Phase A 1–2w + Phase B 3–4w + Phase C 3–5 days + Phase D 2–5 days + Phase E 2–3w; sequential addition gives 7–11 weeks, light parallelization of A vs B can shave a week). Earlier draft estimated 8–12 weeks before splitting Phase D's wallclock from its API budget; the revised range is tighter.
 
 <a id="mvp"></a>
 
 ## 15. Minimum viable round
 
-If 8–12 weeks is too much, a useful first round is:
+If 7–11 weeks is too much, a useful first round is:
 
 - **Categories:** [Cat. 1 extract-to-common](#cat-1-extract-to-common), [Cat. 2 protocol inheritance](#cat-2-protocol-inheritance), [Cat. 3 default implementation](#cat-3-default-implementation), [Cat. 4 PAT introduction](#cat-4-pat-introduction), [Cat. 5 generic parameterization](#cat-5-generic-parameterization).
 - **Plants:** 5 categories × 4 canonical plants + 1 restraint per category = **25 plants**.
 - **Dropped:** [Cat. 6 subclass lift](#cat-6-subclass-lift), [Cat. 7 macro synthesis](#cat-7-macro-synthesis), [Cat. 8 composition](#cat-8-composition). Defer to round 2.
 - **Substrate enrichments (V7-min):** [name/type split](#enrichment-name-type-split), [conformance edges](#enrichment-conformance-edges), [protocol-inheritance edges](#enrichment-inheritance-edges), [function-body erased signature](#enrichment-erased-body-sig), [package-dependency graph](#enrichment-package-graph), [context flags](#enrichment-context-flags). Skip class-inheritance edges (no Cat. 6) and population clustering (no Cat. 7).
-- **Conditions:** C2 (V6 substrate) and C3 (V7 substrate). Skip C1 (cold) for round 1; pick it up if C2-vs-C3 deltas are inconclusive.
+- **Conditions:** S1 (V6 substrate) and S2 (V7 substrate). Skip S0 (cold) for round 1; pick it up if S1-vs-S2 deltas are inconclusive.
 - **Trials:** 3 per condition.
 - **Model tiers:** 1.
 
-This produces a credible result on a smaller scope, validates the methodology, and informs round 2's design. **Cost: 4–6 weeks.** Probably the right shape for the next milestone.
+This produces a credible result on a smaller scope, validates the methodology, and informs round 2's design. **Wallclock: 4–6 weeks; API budget: roughly $100–200** (S0 skipped, one model tier, 25 plants × 2 conditions × 3 trials = 150 recommendations, plus ~50 for sub-experiments). Probably the right shape for the next milestone.
 
 <a id="v6-postscript"></a>
 
 ## 16. What this changes about how to talk about V6
 
-The [V6 results doc](wxyc-ios-64-experiment-results.md) currently treats substrate-fidelity at 19/20 plants as a successful validation. With this V7 methodology on the page, V6 needs a postscript acknowledging the scope limit: V6 validates the *input layer* (rhymes get from source into cluster rows); V7 validates the *output layer* (cluster rows get converted into actionable recommendations). Both are necessary, neither is sufficient on its own, and the project's claim ("pipeline that produces actionable refactor recommendations" per the [README](../README.md)) rides on the joint result, not on V6 alone.
+The [V6 results doc](wxyc-ios-64-experiment-results.md) currently treats substrate-fidelity at 19/20 plants as a successful validation. With this V7 methodology on the page, V6 needs a postscript acknowledging the scope limit: V6 validates the *input layer* (rhymes get from source into cluster rows); V7 validates the *output layer* (cluster rows get converted into actionable recommendations). Both are necessary, neither is sufficient on its own. The project's working definition of its deliverable — actionable refactor recommendations — rides on the joint result, not on V6 alone. (See [§1](#background) for the gap between this working definition and the current [README](../README.md) framing; both V6's postscript and the README need updating before V7 lands.)
 
 The substrate roadmap also needs reframing. V6's "next gap to close" (extension-merging for [plant 20](wxyc-ios-64-experiment-results.md#the-expected-gap-extension-fragmented-types)) is a substrate-fidelity closure with no bearing on refactor-recommendation quality. From the actionable-recommendations perspective, extension-merging is roughly irrelevant. The genuinely high-leverage substrate work is the [V7 enrichments](#substrate-enrichments) — name/type split, conformance edges, inheritance edges, erased body signatures, package-dependency graph, context flags, population clustering. Reframing extension-merging as "deferred substrate-fidelity polish" rather than "next priority" reflects the actual goal.
 
