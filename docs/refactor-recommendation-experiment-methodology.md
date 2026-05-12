@@ -2,6 +2,34 @@
 
 > Companion to the substrate-fidelity experiments documented in V2–V6 ([V2 results](dj-site-divergence-experiment-v2-results.md), [V3 manifest](dj-site-divergence-experiment-v3-plant-manifest.md), [V3 results](dj-site-divergence-experiment-v3-results.md), [V4 results](dj-site-divergence-experiment-v4-results.md), [V5 results](dj-site-divergence-experiment-v5-results.md), [wxyc-ios-64 V6 manifest](wxyc-ios-64-experiment-plant-manifest.md), [wxyc-ios-64 V6 results](wxyc-ios-64-experiment-results.md)). Those experiments measured whether the substrate emits structural rhymes; this experiment measures whether substrate-plus-agent converts surfaced rhymes into **actionable refactor recommendations**. The [top-level README](../README.md) frames the project's deliverable as "duplicate types, missed abstractions, and pattern drift" with the agent's role being judgment on whether a cluster is "consolidate-worthy" — V7 extends that toward *which* consolidation (the specific Swift / TypeScript refactor) the cluster is calling for. Before V7 lands, the README should be updated to match.
 
+## Executive summary
+
+V2–V6 built and validated a substrate that catalogs structural rhymes (duplicates, shadows, near-duplicates, subsets, function-body matches) across a codebase and surfaces them as cluster rows for an agent to read. V5 hit 100% per-plant recall on dj-site; V6 hit 19/20 on Swift. The substrate-fidelity axis is closed.
+
+What's untested: when an agent reads those cluster rows, does it produce a refactor recommendation that's actionable, correct, grounded in cluster evidence, and specific enough to land? V7 is that experiment. The design uses 40 planted refactor opportunities across 8 categories (extract-to-common, protocol inheritance, default impl, PAT, generic parameterization, subclass lift, macro synthesis, composition) plus 8 restraint twins that share the cluster signal but where action is the *wrong* answer. Three conditions compare cold agent (S0), V6 substrate (S1), V7 substrate (S2). Trial cost ~$400–600 full / ~$100–200 for the [Minimum Viable Round](#mvp); wallclock ~7–11 weeks / ~4–6 weeks.
+
+Success looks like: S2 outperforms S0 by ≥10pp per-category recall on at least 5 of 8 categories, restraint false-positive rate < 25%, and the natural-findings sub-experiment shows the synthetic-to-natural transfer gap is < 0.3 on the rubric scale. Failure looks like the modes enumerated in [§14 pre-mortem](#pre-mortem); each has a defined recovery path.
+
+## TL;DR (for the impatient)
+
+- **The deliverable:** the project ships actionable refactor recommendations. V7 measures whether the substrate-plus-agent system actually produces them.
+- **The plant set:** 40 planted refactor opportunities across 8 Swift refactoring categories, each with a restraint twin testing false-positive resistance.
+- **The substrate work:** 8 enrichments to the V6 substrate (name/type split, conformance edges, inheritance edges, erased body sig, package-dep graph, context flags, population clustering, plus issue #5 cluster IDs as prerequisite).
+- **The rubric:** auto-scored against pre-registered per-plant expected answers with alternative-answer weights and `specifics_tolerance` bands; novel-but-defensible recommendations route to panel.
+- **The cost:** $100–200 (MVP, 4–6 weeks) to $400–600 (full round, 7–11 weeks). Pre-flight + cost-control gates in [§15](#roadmap) cap downside risk.
+- **What's open:** nine pre-kickoff decisions enumerated in [§17](#decisions-outstanding) — model pinning, panel composition, MVP vs full, plant-tree serving strategy, weak-rationale scoring policy, others.
+
+## Audience pointers
+
+Read these sections if you're a:
+
+- **Stakeholder / sponsor.** Executive summary above, [§1 baseline numbers](#background), [§15 roadmap and cost](#roadmap), [§17 decisions outstanding](#decisions-outstanding). Skim the rest.
+- **Methodology reviewer (`/review-plan` or equivalent).** [§5 plant design](#plant-design) including the [§5.9 summary matrix](#summary-matrix), [§8 scoring rubric](#scoring-rubric), [§10 pre-registration and reproducibility](#pre-registration), [§13 risks](#risks), [§14 pre-mortem](#pre-mortem). Companion: [`plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) for the per-plant YAML schema.
+- **Substrate implementer (Phase B).** [§5.9 summary matrix](#summary-matrix), [§6 enrichments](#substrate-enrichments) including the [§6.8 dependency graph](#enrichment-new-queries), [§14.4 batching variance failure mode](#pre-mortem). Companion: [`macro-candidates.md`](refactor-recommendation-experiment-macro-candidates.md) for the population-clustering query.
+- **Trial harness implementer (Phase C/D).** [§7 agent prompt design](#agent-prompt), [§15 roadmap](#roadmap) including pre-flight and cost-control gates, [§20 worked-example scoring](#worked-example). Companion: [`agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) for the full prompt and schemas.
+- **Future-experiment designer (post-V7).** [§19 forward roadmap](#forward-roadmap), [`future-directions.md`](future-directions.md) for the project-level capability roadmap.
+- **Reader of V6 results who's wondering "wait, is 19/20 not the answer?".** [§18 V6 postscript](#v6-postscript) — V6 closed the input layer, V7 measures the output layer; both necessary.
+
 ## Table of contents
 
 1. [Background: what the prior experiments measured, and didn't](#background)
