@@ -17,6 +17,7 @@
    - 5.6 [Category 6 — Subclass lift](#cat-6-subclass-lift)
    - 5.7 [Category 7 — Macro synthesis](#cat-7-macro-synthesis)
    - 5.8 [Category 8 — Composition over inheritance](#cat-8-composition)
+   - 5.9 [Category-to-substrate summary matrix](#summary-matrix)
 6. [Substrate enrichments V7 needs](#substrate-enrichments)
 7. [Agent prompt design](#agent-prompt)
 8. [Scoring rubric](#scoring-rubric)
@@ -269,6 +270,25 @@ Each plant's manifest entry includes: source type, plant location, expected subs
 
 **Restraint 8R — Intentional public/internal boundary.** A public-API struct and an internal-implementation struct, the latter having all of the former's fields plus internal-only bookkeeping. The duplication is the API/impl boundary. Right answer: no-action.
 
+<a id="summary-matrix"></a>
+
+### 5.9 Category-to-substrate summary matrix
+
+The 8 categories, the existing or new substrate signal each sits on, the V7 enrichment each requires, the new query (if any) that implements the signal, and the restraint-twin context the agent must weigh. One row per category. Cross-references resolve to the per-category prose above and the substrate-enrichment anchors in [§6](#substrate-enrichments).
+
+| Cat | Refactor | Substrate signal | V7 enrichment required | New query | Restraint context |
+|---|---|---|---|---|---|
+| [1](#cat-1-extract-to-common) | extract-to-common | [`exact-duplicates.jq`](../pipeline/queries/exact-duplicates.jq), [`cross-package-shape-near-duplicates-any.jq`](../pipeline/queries/cross-package-shape-near-duplicates-any.jq) | [package-dependency graph](#enrichment-package-graph) | (existing queries enriched) | test fixtures, codegen mirrors |
+| [2](#cat-2-protocol-inheritance) | protocol inheritance | [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) (post-resolution) | [inheritance edges + resolution](#enrichment-inheritance-edges) | `protocol-inheritance-candidates.jq` | incidental shared shape, unrelated domains |
+| [3](#cat-3-default-implementation) | default impl | [`function-duplicates.jq`](../pipeline/queries/function-duplicates.jq) | [conformance edges](#enrichment-conformance-edges) | `default-impl-candidates.jq` | incidental body match, divergent intent |
+| [4](#cat-4-pat-introduction) | PAT introduction | (no V6 surface; new) | [name/type split](#enrichment-name-type-split) | `pat-candidates.jq` | parallel structure, independent intent |
+| [5](#cat-5-generic-parameterization) | generic parameterization | [`near-duplicates-any.jq`](../pipeline/queries/near-duplicates-any.jq), [`function-duplicates.jq`](../pipeline/queries/function-duplicates.jq) | [erased body sig](#enrichment-erased-body-sig) + [name/type split](#enrichment-name-type-split) | `generic-function-candidates.jq`, `generic-struct-candidates.jq` | intentional specialization |
+| [6](#cat-6-subclass-lift) | subclass lift | [`function-duplicates.jq`](../pipeline/queries/function-duplicates.jq) | [class-inheritance edges](#enrichment-inheritance-edges) | `subclass-lift-candidates.jq` | platform-specific dispatch under shared signature |
+| [7](#cat-7-macro-synthesis) | macro synthesis | (no V6 surface; new — *population*-level not pairwise) | [population clustering](#enrichment-population-clustering) | `macro-candidates.jq` | intentional handwritten boilerplate |
+| [8](#cat-8-composition) | composition over inheritance | [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) | (none — agent judgment on kind of type) | (none) | API/impl boundary |
+
+Prerequisite for all eight: [issue #5 substrate-emitted `cluster_id`](#substrate-enrichments). Cross-cutting enrichment used by every restraint twin: [context flags](#enrichment-context-flags) (`is_test`, `is_codegen`, `is_sample_app`, `is_mock`).
+
 <a id="substrate-enrichments"></a>
 
 ## 6. Substrate enrichments V7 needs
@@ -382,6 +402,79 @@ V6 ships [eight queries](../pipeline/queries); V7 adds seven more for a total of
 | `protocol-inheritance-candidates.jq` | [inheritance edges + resolution](#enrichment-inheritance-edges) plus [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) join | [Cat. 2](#cat-2-protocol-inheritance) |
 
 The V6 queries continue to work unchanged. New queries are additive.
+
+The enrichments-to-queries-to-plant-categories dependency graph (arrows read "is required by"):
+
+```mermaid
+flowchart LR
+    Issue5[issue #5<br/>cluster_id]
+    NameType[name/type split]
+    Conform[conformance edges]
+    Inherit[inheritance edges<br/>+ resolution]
+    Erased[erased body sig]
+    PkgGraph[package-dep graph]
+    Ctx[context flags]
+    PopCluster[population clustering]
+
+    Pat[pat-candidates.jq]
+    DefImpl[default-impl-<br/>candidates.jq]
+    ProtoInh[protocol-inheritance-<br/>candidates.jq]
+    SubLift[subclass-lift-<br/>candidates.jq]
+    GenFunc[generic-function-<br/>candidates.jq]
+    GenStruct[generic-struct-<br/>candidates.jq]
+    Macro[macro-candidates.jq]
+
+    Cat1[Cat. 1]
+    Cat2[Cat. 2]
+    Cat3[Cat. 3]
+    Cat4[Cat. 4]
+    Cat5[Cat. 5]
+    Cat6[Cat. 6]
+    Cat7[Cat. 7]
+    Cat8[Cat. 8]
+
+    Issue5 -.prerequisite.-> Pat
+    Issue5 -.prerequisite.-> DefImpl
+    Issue5 -.prerequisite.-> ProtoInh
+    Issue5 -.prerequisite.-> SubLift
+    Issue5 -.prerequisite.-> GenFunc
+    Issue5 -.prerequisite.-> GenStruct
+    Issue5 -.prerequisite.-> Macro
+
+    NameType --> Pat
+    NameType --> GenStruct
+    Conform --> DefImpl
+    Inherit --> ProtoInh
+    Inherit --> Cat2
+    Erased --> GenFunc
+    PkgGraph --> Cat1
+    PkgGraph --> Cat2
+    PkgGraph --> Cat3
+    Ctx --> Cat1
+    Ctx --> Cat2
+    Ctx --> Cat3
+    Ctx --> Cat4
+    Ctx --> Cat5
+    Ctx --> Cat6
+    Ctx --> Cat7
+    Ctx --> Cat8
+    PopCluster --> Macro
+
+    Pat --> Cat4
+    DefImpl --> Cat3
+    ProtoInh --> Cat2
+    SubLift --> Cat6
+    GenFunc --> Cat5
+    GenStruct --> Cat5
+    Macro --> Cat7
+
+    classDef prereq fill:#fde,stroke:#000
+    classDef cxg fill:#cde,stroke:#000
+    class Issue5,Ctx prereq
+    class Cat1,Cat2,Cat3,Cat4,Cat5,Cat6,Cat7,Cat8 cxg
+```
+
+Reading the graph: issue #5 (top-left, pink) is a prerequisite for every new query — its closure unblocks the whole substrate layer. Context flags (also pink) are consumed by every category for restraint-twin recognition rather than being plumbed through a specific query. Cat. 8 (composition) gets no dedicated query — the [`subset-pairs.jq`](../pipeline/queries/subset-pairs.jq) signal is sufficient and the discrimination is the agent's judgment call. The Phase B priority ordering in [§15](#roadmap) walks the graph roughly in topological order, with issue #5 first and population clustering last.
 
 <a id="agent-prompt"></a>
 
@@ -661,7 +754,28 @@ Failure modes not in this top five but tracked in [§13](#risks) and resolvable 
 
 ## 15. Implementation roadmap
 
-Realistic phasing. Each phase has a defined deliverable; later phases gated on earlier ones.
+Realistic phasing. Each phase has a defined deliverable; later phases gated on earlier ones. The diagram below shows phase ordering, parallelization (A and B run concurrently after A's first week), and the pre-flight gate that sits between Phase C completion and Phase D launch.
+
+```mermaid
+flowchart LR
+    A["Phase A<br/>Plant manifest + rubric<br/>1–2 weeks<br/>/review-plan gate"]
+    B["Phase B<br/>Substrate V7 enrichments<br/>3–4 weeks"]
+    C["Phase C<br/>Plant tree + cluster gen<br/>3–5 days"]
+    PF{"Pre-flight<br/>validation<br/>~2 hours, ~$5"}
+    D["Phase D<br/>Trial execution<br/>2–5 days<br/>$400–600 / $100–200 MVP"]
+    E["Phase E<br/>Scoring + writeup<br/>2–3 weeks"]
+
+    A --> B
+    A --> C
+    B --> C
+    C --> PF
+    PF -->|all checks pass| D
+    PF -.->|hash drift /<br/>render fail /<br/>cost overrun| A
+    D --> E
+
+    classDef gate fill:#ffe4b5,stroke:#000
+    class PF gate
+```
 
 **Phase A — Plant manifest + rubric (1–2 weeks).** Design 40 plants total per [§5](#plant-design): 8 categories × (4 canonical + 1 restraint twin) = 32 canonical + 8 restraints. Pre-register rubric per plant per [§8](#scoring-rubric). Submit for `/review-plan` per [§10](#pre-registration). Iterate. The [V3 manifest](dj-site-divergence-experiment-v3-plant-manifest.md) was the precedent for plant-design discipline; V7 has roughly twice V3's plant count plus richer per-plant data (alternative answers with weights, restraint twins, citation requirements), so the high end of the range is realistic if `/review-plan` flags issues that require manifest revisions.
 
