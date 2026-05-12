@@ -296,6 +296,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       let type_text = null;
       let type_sig = null;
       let infer_ref = null;
+      let operands = null;
 
       if (ts.isTypeLiteralNode(node.type)) {
         fields = membersToFields(node.type.members, sf, {
@@ -314,7 +315,22 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         infer_ref = isInferModelType(node.type, sf);
         if (infer_ref) kind = 'type-alias-infer-model';
         else if (ts.isUnionTypeNode(node.type)) kind = 'type-alias-union';
-        else if (ts.isIntersectionTypeNode(node.type)) kind = 'type-alias-intersection';
+        else if (ts.isIntersectionTypeNode(node.type)) {
+          kind = 'type-alias-intersection';
+          // Capture operands for second-pass resolution. Inline literals are resolved here
+          // (without emitting synthetic catalog entries — intersection operands are not
+          // named inner objects). Type references stash their name for later lookup.
+          operands = node.type.types.map((t) => {
+            if (ts.isTypeLiteralNode(t)) {
+              const inlineFields = membersToFields(t.members, sf, null);
+              return { kind: 'literal', fields: inlineFields };
+            } else if (ts.isTypeReferenceNode(t)) {
+              return { kind: 'ref', name: t.typeName.getText(sf) };
+            } else {
+              return { kind: 'unresolvable', text: normalize(t.getText(sf)).slice(0, 120) };
+            }
+          });
+        }
       }
 
       pushBase(node, {
@@ -327,6 +343,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         type_text,
         type_sig,
         infer_ref,
+        operands,
       });
     }
 
@@ -393,6 +410,79 @@ for (const f of mainFiles) {
 for (const f of sharedFiles) {
   try { all.push(...extractFromFile(f, 'shared', SHARED)); }
   catch (e) { errors++; process.stderr.write(`  ERR ${f}: ${e.message}\n`); }
+}
+
+// --- intersection-type field resolution second pass ---
+// Resolve `type X = A & B & { c: number }` intersections by unioning operand field sets.
+// Multi-pass to handle transitive cases (`X = A & B; Y = X & C`); fixed point or max 5 iters.
+//
+// Resolution rules:
+//   - 'literal' operand: use its inline fields directly.
+//   - 'ref' operand: look up the named type's `fields` in `fieldsByName`. If it has none
+//     (unresolved itself, or no shape), this operand is unresolvable this iteration.
+//   - 'unresolvable' operand: stays unresolvable.
+//
+// Output:
+//   - All operands resolved → fields = unique union, shape_sig set, resolved_from = "intersection",
+//     operands stays as a names list for traceability.
+//   - At least one operand unresolved after max iters → fields stays null, unresolved = true,
+//     unresolved_operands lists the offenders (for debugging).
+{
+  const MAX_ITERS = 5;
+  // fieldsByName: built fresh each iteration so newly-resolved intersections feed transitive cases.
+  for (let iter = 0; iter < MAX_ITERS; iter++) {
+    const fieldsByName = new Map();
+    for (const e of all) {
+      if (e.fields && Array.isArray(e.fields)) fieldsByName.set(e.name, e.fields);
+    }
+    let changed = false;
+    for (const e of all) {
+      if (e.kind !== 'type-alias-intersection') continue;
+      if (e.fields) continue; // already resolved in a prior iter
+      if (!e.operands || e.operands.length === 0) continue;
+      const collected = [];
+      let unresolved = false;
+      const unresolvedOps = [];
+      for (const op of e.operands) {
+        if (op.kind === 'literal') {
+          collected.push(...(op.fields || []));
+        } else if (op.kind === 'ref') {
+          const f = fieldsByName.get(op.name);
+          if (f) {
+            collected.push(...f);
+          } else {
+            unresolved = true;
+            unresolvedOps.push(op.name);
+          }
+        } else {
+          unresolved = true;
+          unresolvedOps.push(op.text || '<unresolvable>');
+        }
+      }
+      if (!unresolved) {
+        // Dedupe by field NAME (left of `:`) — same-named field from two operands collapses.
+        const seenName = new Set();
+        const merged = [];
+        for (const f of collected) {
+          const fname = f.split(':')[0].replace(/\?$/, '');
+          if (seenName.has(fname)) continue;
+          seenName.add(fname);
+          merged.push(f);
+        }
+        merged.sort();
+        e.fields = merged;
+        e.shape_sig = shapeSig(merged);
+        e.resolved_from = 'intersection';
+        e.operands = e.operands.map((op) => op.kind === 'ref' ? op.name : op.kind === 'literal' ? '<literal>' : op.text);
+        changed = true;
+      } else if (iter === MAX_ITERS - 1) {
+        // Final pass: mark anything still unresolved
+        e.unresolved = true;
+        e.unresolved_operands = unresolvedOps;
+      }
+    }
+    if (!changed) break;
+  }
 }
 
 // --- reference_count second pass ---
