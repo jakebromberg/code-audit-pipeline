@@ -1,6 +1,6 @@
 # function-duplicates.jq — find duplicate / near-duplicate function bodies.
 #
-# Run:  jq -rf function-duplicates.jq --argjson threshold 0.7 function-catalog.json
+# Run:  jq -r --argjson threshold 0.7 -f function-duplicates.jq function-catalog.json
 #
 # Two-section output:
 #   [exact body-hash clusters]   functions with byte-identical normalized bodies (clusters)
@@ -11,11 +11,12 @@
 # accidental retypes) and near-misses (forked-then-edited helpers, sync/async siblings,
 # "Lite" variants stripped of one branch).
 #
-# Default threshold is 0.7; lower for broader recall, higher to focus only on near-exact.
+# `--argjson threshold 0.7` is REQUIRED — jq errors at compile time on an undefined variable.
+# Lower the threshold for broader recall, higher to focus only on near-exact.
 
 . as $all
 | ([ $all[] | select((.generated // false) != true and (.body_line_count // 0) >= 3) ]) as $fns
-| ($threshold // 0.7) as $thr
+| $threshold as $thr
 
 # --- Section 1: exact body-hash clusters ---
 | ( $fns
