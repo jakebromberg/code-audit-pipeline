@@ -2,9 +2,17 @@
 
 Every extractor in `extractors/<language>/` emits the same JSON shape so cluster queries don't care which language they're operating on. This is the schema.
 
-## Catalog shape
+The substrate has three catalog kinds today, each in its own JSON file:
 
-The catalog is a single JSON array. Each entry describes one declared type-like construct.
+- `type-catalog.json` — type / interface / Zod / Drizzle declarations (shape-of-named-members).
+- `function-catalog.json` — function / method / arrow-function declarations (body-of-named-callable).
+- `file-hashes.json` — file-level content hashes (raw and whitespace-normalized).
+
+Each section below specifies one. Queries in `pipeline/queries/` consume one specific catalog kind and document which.
+
+## Type catalog (`type-catalog.json`)
+
+The type catalog is a single JSON array. Each entry describes one declared type-like construct.
 
 ```jsonc
 [
@@ -64,6 +72,20 @@ Languages without an exact analog can extend with their own kind values — keep
 
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`
 
+### Intersection-type resolution
+
+`type X = A & B & { c: number }` entries (kind `type-alias-intersection`) emit `fields` populated by unioning their operands' field sets, when all operands resolve. A second pass walks the catalog up to 5 iterations to handle transitive cases (`Y = X & C`). Resolved entries carry:
+
+- `resolved_from: "intersection"` — marker so downstream queries can include or exclude these synthetically-resolved shapes.
+- `operands: ["A", "B", "<literal>"]` — names of the type references and `"<literal>"` placeholders for inline literals. Diagnostic trace.
+
+If at least one operand can't be resolved (utility types like `Pick<X, 'a'>`, conditional types, or references whose declaration was outside the scanned roots), the entry stays at `fields: null` and gains:
+
+- `unresolved: true`
+- `unresolved_operands: ["Pick<X, 'a'>", …]` — the operands that defeated resolution.
+
+This is additive: intersection types that resolve get treated like normal shape-bearing constructs by `subset-pairs.jq`, `near-duplicates.jq`, `exact-duplicates.jq`, etc. Intersection entries that fail to resolve stay invisible to those queries, as before.
+
 ## Conventions
 
 ### Field encoding
@@ -100,6 +122,67 @@ Default skip-list (extractors may extend):
 - Files matching `*.test.*`, `*.spec.*`
 
 Use `--include-tests` to keep test directories in scope when auditing test-fixture duplication.
+
+## Function catalog (`function-catalog.json`)
+
+The function catalog is a single JSON array. Each entry describes one declared function-like construct (function declaration, class method, arrow function or function expression assigned to a named binding).
+
+```jsonc
+[
+  {
+    "name": "betterAuthSessionToAuthenticationData",
+    "kind": "function",                          // function | method | arrow-function | function-expression
+    "package": "main",
+    "file": "lib/features/authentication/utilities.ts",
+    "line": 89,
+    "generated": false,
+    "exported": true,
+    "async": false,
+    "param_count": 1,
+    "param_names": ["session"],
+    "body_line_count": 48,                       // after normalization (comments stripped, blank lines dropped)
+    "body_length": 1500,                         // chars of normalized body
+    "body_hash": "<sha256 of normalized body>",  // exact-equality clustering
+    "body_lines": [                              // sorted-unique normalized non-empty lines
+      "const authority = mapRoleToAuthorization(roleToMap);",
+      "const token = session.session?.token;",
+      "…"
+    ]
+  }
+]
+```
+
+**Method-name qualification.** For class methods, `name` is `ClassName.methodName`. For methods on anonymous classes, just the method name.
+
+**Body normalization.** Comments (line `//` and block `/* */`) are stripped, internal whitespace runs collapsed to single spaces, each line trimmed, blank lines dropped. `body_hash` is sha256 of `body_lines.join('\n')`. `body_lines` is also de-duplicated and sorted, so it can serve as the input set for Jaccard pairwise comparison without further work.
+
+**Skip rules.** Functions with `< --min-body-lines` (default 3) normalized lines are not emitted — one-liners and trivial stubs aren't useful duplication signal. Generated files (`*.d.ts`, `generated/`) are marked `generated: true` like the type catalog.
+
+Used by `pipeline/queries/function-duplicates.jq`, which emits two sections: exact body-hash clusters (size ≥ 2) and pairwise Jaccard near-duplicates on `body_lines` above a threshold (default 0.7).
+
+## File-hash catalog (`file-hashes.json`)
+
+The file-hash catalog is a single JSON array. Each entry describes one source file:
+
+```jsonc
+[
+  {
+    "package": "main",
+    "file": "lib/features/playlist-search/utils.ts",
+    "generated": false,
+    "size_bytes": 994,                                  // raw size
+    "size_normalized": 994,                             // after CRLF→LF, trailing-whitespace strip, trailing blank lines dropped
+    "sha256": "<raw bytes sha256>",
+    "sha256_normalized": "<normalized sha256>"
+  }
+]
+```
+
+**Normalization.** `CRLF` → `LF`, trailing whitespace stripped per line, trailing blank lines dropped. `sha256_normalized` catches "same file, editor / line-ending drift" pairs that raw `sha256` would miss.
+
+**Skip rules.** Same dir skip-list as the type extractor (`.dotdirs`, `node_modules`, `dist`, `build`, `coverage`, `tests` unless `--include-tests`). Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`).
+
+Used by `pipeline/queries/file-duplicates.jq`, which emits two sections: exact-byte clusters and whitespace-normalized-only clusters (files identical after normalization but not byte-equal).
 
 ## CLI contract
 
