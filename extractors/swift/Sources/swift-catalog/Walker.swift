@@ -21,7 +21,16 @@ struct WalkOptions {
 
 func walkRoot(root: String, options: WalkOptions) -> [WalkedFile] {
     let fm = FileManager.default
-    let rootURL = URL(fileURLWithPath: root).standardizedFileURL
+    // POSIX realpath() canonicalizes /tmp → /private/tmp on macOS so the
+    // enumerator's URLs (which always come back canonicalized) and our
+    // rootPath share the same form for the prefix-strip below. URL's
+    // resolvingSymlinksInPath does NOT cross /tmp on macOS.
+    let canonicalRoot: String = root.withCString { cstr in
+        guard let r = realpath(cstr, nil) else { return root }
+        defer { free(r) }
+        return String(cString: r)
+    }
+    let rootURL = URL(fileURLWithPath: canonicalRoot)
     let rootPath = rootURL.path
     var results: [WalkedFile] = []
 
