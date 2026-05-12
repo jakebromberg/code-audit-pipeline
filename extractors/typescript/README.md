@@ -1,4 +1,13 @@
-# TypeScript extractor
+# TypeScript extractors
+
+Two complementary extractors live here:
+
+- `type-catalog.mjs` — type/interface/Zod/Drizzle declarations (one record per declared shape).
+- `function-catalog.mjs` — function/method/arrow-function declarations (one record per function with a normalized body hash and a body-line set for Jaccard near-duplicate detection).
+
+Both follow the same `--root` / `--shared` / `--output` CLI shape and emit JSON arrays.
+
+## type-catalog.mjs
 
 Walks a TypeScript repo and emits a JSON catalog of every type / interface / Zod schema / Drizzle table declared.
 
@@ -64,3 +73,28 @@ These are all fine for type-duplication auditing, but if you want a richer surfa
 ## Performance
 
 Pure AST walk, no type checking. ~5000 lines/sec on typical hardware. The WXYC audit (~300 source files across two packages) finishes in under 2 seconds.
+
+## function-catalog.mjs
+
+Walks the same TypeScript repos and emits one JSON record per function-like construct: `function` declarations, class `method` declarations, and arrow / function expressions assigned to named bindings.
+
+```bash
+node function-catalog.mjs --root /path/to/repo > function-catalog.json
+node function-catalog.mjs --root /path/to/main --shared /path/to/shared --output function-catalog.json
+```
+
+Each record carries:
+
+| Field | Meaning |
+|---|---|
+| `name`, `package`, `file`, `line`, `exported`, `generated` | Same conventions as `type-catalog.mjs` |
+| `kind` | `function`, `method`, `arrow-function`, or `function-expression` |
+| `async` | `true` if declared `async` |
+| `param_count`, `param_names` | Function arity and parameter identifiers |
+| `body_line_count`, `body_length` | After comment + whitespace normalization |
+| `body_hash` | SHA-256 of the normalized body (comments stripped, lines trimmed, blank lines dropped) |
+| `body_lines` | Sorted-unique normalized non-empty non-comment lines — the input set for Jaccard near-duplicate queries |
+
+Used by `pipeline/queries/function-duplicates.jq`, which emits two sections: exact body-hash clusters and pairwise Jaccard near-duplicates (default threshold 0.7, override with `--argjson threshold 0.6` etc).
+
+Skip rules and `--include-tests` work the same way as `type-catalog.mjs`. Functions with `< --min-body-lines` (default 3) normalized lines are skipped — one-liners and trivial stubs aren't useful duplication signal.

@@ -55,6 +55,18 @@ jq -rf pipeline/queries/exact-duplicates.jq catalog.json
 jq -rf pipeline/queries/name-collisions.jq catalog.json
 jq -rf pipeline/queries/cross-package-shadows.jq catalog.json
 jq -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates.jq catalog.json
+jq -rf pipeline/queries/subset-pairs.jq catalog.json
+jq -r --argjson threshold 0.7 -f pipeline/queries/cross-package-shape-near-duplicates.jq catalog.json
+```
+
+For function-body and file-content duplicates (separate catalogs):
+
+```bash
+node extractors/typescript/function-catalog.mjs --root /path/to/your/repo --output function-catalog.json
+jq -r --argjson threshold 0.7 -f pipeline/queries/function-duplicates.jq function-catalog.json
+
+node extractors/file-hashes/file-hashes.mjs --root /path/to/your/repo --output file-hashes.json
+jq -rf pipeline/queries/file-duplicates.jq file-hashes.json
 ```
 
 ## What the catalog contains
@@ -77,12 +89,16 @@ One JSON record per declared type. The contract is in [`docs/pipeline-contract.m
 
 All operate on the JSON catalog and emit human-readable output. Drop into a chat or report.
 
-| Query | What it finds |
-|---|---|
-| `exact-duplicates.jq` | Same `shape_sig` across ≥2 declarations |
-| `name-collisions.jq` | Same `name` across multiple files (often signals shadowing or naming-by-accident) |
-| `cross-package-shadows.jq` | Type in `main` whose name exists in `shared` — likely should be an import |
-| `near-duplicates.jq` | Pairs with Jaccard ≥ threshold on field-name sets (default `0.7`) |
+| Query | What it finds | Catalog |
+|---|---|---|
+| `exact-duplicates.jq` | Same `shape_sig` across ≥2 declarations | type |
+| `name-collisions.jq` | Same `name` across multiple files (often signals shadowing or naming-by-accident) | type |
+| `cross-package-shadows.jq` | Type in `main` whose name exists in `shared` — likely should be an import | type |
+| `near-duplicates.jq` | Pairs with Jaccard ≥ threshold on field-name sets (default `0.7`) | type |
+| `subset-pairs.jq` | Pairs (A, B) where A's field-name set is a strict subset of B's. Surfaces unrealized `extends` / `Pick<…>` relationships | type |
+| `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold on field-name sets — re-typed contracts | type |
+| `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
+| `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |
 
 ## Adding a new extractor
 
