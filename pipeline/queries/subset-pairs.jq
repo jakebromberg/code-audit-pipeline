@@ -15,7 +15,8 @@
 # Excludes 0- and 1-field types (too noisy: every type with one field is "subset" of every other
 # type containing that field name).
 #
-# cluster_id format:  subset-pairs:Sub__Sup  (directed; sub then sup, '__' separator)
+# cluster_id format:  subset-pairs:LocSub__LocSup  (directed; sub then sup,
+#                     '__' separator; location keys — package:file:line:name)
 
 include "_canonical";
 
@@ -37,7 +38,7 @@ include "_canonical";
 | map(.[0])
 | sort_by([(.sub_fields | length), (.sup_fields | length), .sub.name])
 | map(. + {
-    cluster_id: cluster_id_directed_pair("subset-pairs"; .sub.name; .sup.name),
+    cluster_id: cluster_id_directed_pair("subset-pairs"; loc_key(.sub); loc_key(.sup)),
     query: "subset-pairs"
   })
 | .[]

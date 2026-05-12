@@ -18,7 +18,8 @@
 #
 # `--argjson threshold 0.7` is REQUIRED — jq errors at compile time on an undefined variable.
 #
-# cluster_id format:  cross-package-shape-near-duplicates:NameA+NameB  (sorted)
+# cluster_id format:  cross-package-shape-near-duplicates:LocA+LocB
+#                     (sorted location keys — package:file:line:name)
 
 include "_canonical";
 
@@ -43,7 +44,7 @@ include "_canonical";
     | ([$af[] | select(. as $x | $bf | index($x) != null)] | length) as $ic
     | ($ic / $u) as $jacc
     | select($jacc >= $thr and ($af | length) >= 3 and ($bf | length) >= 3)
-    | { cluster_id: cluster_id_sorted_pair("cross-package-shape-near-duplicates"; $a.name; $b.name),
+    | { cluster_id: cluster_id_sorted_pair("cross-package-shape-near-duplicates"; loc_key($a); loc_key($b)),
         query: "cross-package-shape-near-duplicates",
         jacc: $jacc, main: $a, shared: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
         shared_only: ([$bf[] | . as $x | select(($af | index($x)) == null)]),

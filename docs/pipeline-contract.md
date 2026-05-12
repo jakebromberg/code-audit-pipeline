@@ -218,8 +218,12 @@ The `-L pipeline/queries` flag tells jq where to find `_canonical.jq` (the share
 
 Every JSONL row is one self-contained cluster as a JSON object, with at minimum:
 
-- `cluster_id` — stable content-addressed identifier (see formats below).
-- `query` — the query that emitted the row (e.g., `"exact-duplicates"`, `"function-duplicates-near"`).
+- `cluster_id` — stable content-addressed identifier, unique within a single query's output (see formats below).
+- `query` — the query that emitted the row.
+
+**On the `query` field:** for most queries the value matches the .jq file name (`"exact-duplicates"`, `"name-collisions"`, `"subset-pairs"`, etc.). For the two dual-section queries (`function-duplicates.jq` and `file-duplicates.jq`) the value carries the section suffix so downstream consumers can filter by section: `"function-duplicates-exact"` vs `"function-duplicates-near"`, and `"file-duplicates-exact"` vs `"file-duplicates-norm"`. A consumer filtering `select(.query == "function-duplicates")` will find no rows; filter by prefix (`startswith("function-duplicates")`) or by exact section name instead.
+
+**On `cluster_id` uniqueness:** within a single query's run, every emitted row has a unique `cluster_id`. This invariant is what lets the V7 trial harness join agent recommendations back to clusters without canonicalization heuristics. The integration tests in `pipeline/queries/_tests/test_queries_integration.sh` assert it per-query; downstream tooling can assume it.
 
 Query-specific fields (decls, members, jaccard, intersection, union, etc.) are emitted as the query computes them. Downstream consumers should treat the row as a structured snapshot rather than a fixed schema — Phase B of the V7 experiment runs a normalization pass that flattens these into the agent-prompt input shape; the raw schema captures everything the query knows.
 
@@ -229,21 +233,27 @@ Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonica
 
 | Query | `cluster_id` format | Sorting / direction |
 |---|---|---|
-| `exact-duplicates` | `exact-duplicates:NameA+NameB+...` | sorted lexicographically, `+` separator |
+| `exact-duplicates` | `exact-duplicates:NameA+NameB+...` | sorted member names, `+` separator |
 | `name-collisions` | `name-collisions:Name` | the colliding name |
 | `cross-package-shadows` | `cross-package-shadows:Name` | asymmetric (main↔shared); just the shadowed name |
 | `cross-package-shadows-any` | `cross-package-shadows-any:Name` | symmetric N-package; just the shadowed name |
-| `cross-package-shape-near-duplicates` | `cross-package-shape-near-duplicates:NameA+NameB` | sorted lexicographically |
-| `cross-package-shape-near-duplicates-any` | `cross-package-shape-near-duplicates-any:NameA+NameB` | sorted lexicographically |
-| `near-duplicates` | `near-duplicates:NameA+NameB` | sorted lexicographically |
-| `near-duplicates-any` | `near-duplicates-any:NameA+NameB` | sorted lexicographically |
-| `subset-pairs` | `subset-pairs:Sub__Sup` | directed (sub then sup); swap changes the id |
-| `function-duplicates` (exact section) | `function-duplicates-exact:Loc+Loc+...` | sorted by `package:file:line:name` location key |
+| `cross-package-shape-near-duplicates` | `cross-package-shape-near-duplicates:LocA+LocB` | sorted location keys (`package:file:line:name`) |
+| `cross-package-shape-near-duplicates-any` | `cross-package-shape-near-duplicates-any:LocA+LocB` | sorted location keys |
+| `near-duplicates` | `near-duplicates:LocA+LocB` | sorted location keys |
+| `near-duplicates-any` | `near-duplicates-any:LocA+LocB` | sorted location keys |
+| `subset-pairs` | `subset-pairs:LocSub__LocSup` | directed (sub then sup); swap changes the id |
+| `function-duplicates` (exact section) | `function-duplicates-exact:Loc+Loc+...` | sorted location keys |
 | `function-duplicates` (near section) | `function-duplicates-near:Loc+Loc` | sorted location keys |
 | `file-duplicates` (exact section) | `file-duplicates-exact:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
 | `file-duplicates` (norm section) | `file-duplicates-norm:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
 
-**Why function-duplicates uses location keys instead of bare names:** function names collide more often than type names (`hashSlug` can legitimately exist in N packages). A bare-name id like `function-duplicates-exact:hashSlug+hashSlug` would be ambiguous within a cluster; `function-duplicates-exact:Core:Foo.swift:10:hashSlug+Shared:Bar.swift:20:hashSlug` is unambiguous.
+**Why every pair-based query uses location keys instead of bare names:** Swift and TypeScript both allow the same `name` to appear on multiple records — `enum Foo` plus `extension Foo` adding computed properties is two records, both named `Foo`. The substrate emits one record per declaration, so pair-based queries that compare records can produce multiple pairs whose endpoints share names. A name-only id like `near-duplicates-any:PlayerState+PlaybackState` would collide whenever both `PlayerState` (enum + extension) and `PlaybackState` (enum + extension) participate in distinct pairs. Location keys (`package:file:line:name`, the same convention `function-duplicates` already used) make each endpoint unambiguous and the cluster_id unique. Real example surfaced on wxyc-ios-64: `PlayerState`/`PlaybackState` collisions on both `near-duplicates-any` (enum-pair plus extension-pair) and `subset-pairs`.
+
+**Grouped queries (`exact-duplicates`, `name-collisions`, `cross-package-shadows*`) keep bare names** because the row IS the group keyed by name (or shape_sig), with all decls in `members[]` (or `decls[]`). Same-name records collapse into the same row by design, not into separate rows that would collide.
+
+**Why cross-package-shadows is one-row-per-name, not one-row-per-decl:** the original V2 emission was one row per shadowed *decl*, which meant multiple main-package decls shadowing the same shared name would all carry the same cluster_id `cross-package-shadows:Name`. That breaks the within-query uniqueness invariant. V7 changes the asymmetric query to mirror the -any variant: one row per shadowed name, with all main-package occurrences listed in `members`. The cluster_id remains `cross-package-shadows:Name`, now unambiguously identifying a single row.
+
+**Known limitation on `exact-duplicates`:** the id discriminator is the sorted member-name set. Two distinct shape_sig clusters whose member names happen to be identical (different shapes, same names across the cluster) would collide. Practically rare in real codebases — names usually correlate with shapes — but worth knowing if a downstream join surfaces a duplicate. If observed, qualify the id with `shape_sig` at the cost of a longer identifier.
 
 **Why subset-pairs is directed:** the pair (A, B) where A ⊂ B is fundamentally different from (B, A) where B ⊂ A. Most clusters are symmetric; subset-pairs is the one exception, and the directed `Sub__Sup` form preserves that distinction.
 
@@ -259,10 +269,10 @@ Cluster-id construction lives in `pipeline/queries/_canonical.jq` so the rules a
 
 - `cluster_id_sorted_names(prefix; names)` — for N-member clusters keyed by sorted names.
 - `cluster_id_single_name(prefix; name)` — for single-name clusters.
-- `cluster_id_sorted_pair(prefix; a; b)` — for unordered pairs.
-- `cluster_id_directed_pair(prefix; sub; sup)` — for directed pairs (subset-pairs).
+- `cluster_id_sorted_pair(prefix; a; b)` — for unordered pairs; pass `loc_key($x)` rather than bare names.
+- `cluster_id_directed_pair(prefix; sub; sup)` — for directed pairs (subset-pairs); pass `loc_key(.sub)` and `loc_key(.sup)`.
 - `cluster_id_sorted_paths(prefix; paths)` — for path-keyed clusters (file-duplicates).
-- `fn_location_key(decl)` — location key for function disambiguation.
+- `loc_key(decl)` — `package:file:line:name` location key for record disambiguation. Also aliased as `fn_location_key` for backwards compatibility.
 - `output_format` — `"text"` (default) or `"jsonl"`, read from `$ENV.OUTPUT_FORMAT`.
 
 Unit tests covering each helper live in `pipeline/queries/_tests/test_canonical.sh`; integration tests covering each query in both modes live in `pipeline/queries/_tests/test_queries_integration.sh`. Both run with no dependencies beyond `jq` and `bash`.

@@ -14,19 +14,34 @@
 #   name-collisions:Name                          just the name
 #   cross-package-shadows:Name                    asymmetric main↔shared
 #   cross-package-shadows-any:Name                symmetric N-package
-#   cross-package-shape-near-duplicates:A+B       sorted, '+' separator
-#   cross-package-shape-near-duplicates-any:A+B   sorted, '+' separator
-#   near-duplicates:A+B                           sorted, '+' separator
-#   near-duplicates-any:A+B                       sorted, '+' separator
-#   subset-pairs:Sub__Sup                         directed (sub then sup), '__' separator
+#   cross-package-shape-near-duplicates:Loc+Loc   sorted by package:file:line:name
+#   cross-package-shape-near-duplicates-any:Loc+Loc   sorted, '+' separator
+#   near-duplicates:Loc+Loc                       sorted location keys
+#   near-duplicates-any:Loc+Loc                   sorted location keys
+#   subset-pairs:LocSub__LocSup                   directed; sub then sup, '__' separator
 #   function-duplicates-exact:Loc+Loc+...         sorted by package:file:line:name
 #   function-duplicates-near:Loc+Loc              sorted
 #   file-duplicates-exact:pathA+pathB+...         sorted, repo-relative paths
 #   file-duplicates-norm:pathA+pathB+...          sorted, repo-relative paths
 #
-# Function-duplicates uses location-keyed members (`package:file:line:name`)
-# rather than bare names because function names collide more often than type
-# names — name-only ids would be ambiguous within a single cluster.
+# Pair-based queries (near-duplicates, subset-pairs, etc.) use *location keys*
+# (`package:file:line:name`) on each endpoint rather than bare names because
+# Swift and TypeScript both let the same name appear on multiple records
+# (`enum Foo` plus `extension Foo` plus another file's `Foo`). Name-only pair
+# ids collide whenever multiple records share a name — observed on wxyc-ios-64
+# `PlayerState`/`PlaybackState` (each has an enum decl + an extension decl).
+# Function-duplicates already used the same convention for the same reason.
+#
+# Grouped queries (exact-duplicates, *-collisions, *-shadows*) use bare names
+# in the id because the row IS the group keyed by name (or shape_sig) — the
+# members[] field lists all decls. Collision-by-name within the same row is
+# not a collision-of-rows.
+#
+# Known limitation: exact-duplicates uses sorted member names as its cluster_id
+# discriminator. Two distinct shape_sig clusters whose member name sets happen
+# to be identical would emit the same cluster_id. Practically rare in real
+# codebases (identical names usually correlate with identical shapes — that's
+# what duplication is). If observed, qualify the cluster_id with shape_sig.
 #
 # Output format: every query supports two modes:
 #   default (or OUTPUT_FORMAT=text)   human-readable text (the V5/V6 behavior),
@@ -65,7 +80,12 @@ def cluster_id_directed_pair(prefix; sub; sup):
 def cluster_id_sorted_paths(prefix; paths):
   prefix + ":" + (paths | sort | join("+"));
 
-# Function-location key: stable per-decl id used to disambiguate same-name
-# functions inside a cluster. Concatenation of package, file, line, name.
-def fn_location_key(decl):
+# Record-location key: stable per-decl id used to disambiguate same-name
+# records (functions or types) inside a cluster. Concatenation of package,
+# file, line, name. Used by all pair-based queries' cluster_ids.
+def loc_key(decl):
   "\(decl.package):\(decl.file):\(decl.line):\(decl.name)";
+
+# Backwards-compatible alias — keep the older name working since downstream
+# helpers and tests reference it. New code should prefer loc_key.
+def fn_location_key(decl): loc_key(decl);

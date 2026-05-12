@@ -12,7 +12,8 @@
 # legitimate "should be unified" pairs; lower for broader recall, higher to
 # focus only on near-exact matches.
 #
-# cluster_id format:  near-duplicates:NameA+NameB  (sorted)
+# cluster_id format:  near-duplicates:LocA+LocB  (sorted location keys
+#                                                 — package:file:line:name)
 
 include "_canonical";
 
@@ -27,7 +28,7 @@ include "_canonical";
     | ([$af, $bf] | .[0] | map(select(. as $x | [$bf[]] | index($x))) | length) as $i_count
     | ($i_count / $u) as $jacc
     | select($jacc >= $threshold and $jacc < 1.0 and ($af | length) >= 3 and ($bf | length) >= 3)
-    | { cluster_id: cluster_id_sorted_pair("near-duplicates"; $a.name; $b.name),
+    | { cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
         query: "near-duplicates",
         jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf }
   ]
