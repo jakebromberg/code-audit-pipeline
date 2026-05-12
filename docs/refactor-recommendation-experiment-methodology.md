@@ -28,13 +28,13 @@
 14. [Implementation roadmap](#roadmap)
 15. [Minimum viable round](#mvp)
 16. [What this changes about how to talk about V6](#v6-postscript)
+17. [Worked-example scoring walkthrough](#worked-example)
 
-Appendices:
+Companion docs (split for navigability; full details live in the dedicated docs, with cross-references from the methodology body where relevant):
 
-- A. [Plant manifest YAML — canonical entries](#appendix-a-plant-yaml)
-- B. [Full agent prompt and per-category specifics schemas](#appendix-b-full-prompt)
-- C. [Worked-example scoring walkthrough](#appendix-c-worked-example)
-- D. [`macro-candidates.jq` algorithmic sketch](#appendix-d-macro-candidates)
+- [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) — per-plant manifest YAML schema with one canonical entry per category plus a restraint twin.
+- [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) — full agent prompt text, per-category specifics schemas, and the normalized cluster-row input shape.
+- [`refactor-recommendation-experiment-macro-candidates.md`](refactor-recommendation-experiment-macro-candidates.md) — `macro-candidates.jq` algorithmic sketch and extractor-side `template_sig` precomputation.
 
 <a id="background"></a>
 
@@ -341,7 +341,7 @@ Existing queries cluster records two ways: N-way exact equivalence (`group_by(.s
 
 This is the largest V7 substrate addition. Two known limitations: (1) it catches *syntactic* boilerplate only — same field names, different types — and misses semantic-but-syntactically-divergent parallels (different field names encoding the same domain concept); (2) the N=8 threshold and the "1+ wildcard slots" generalization are designer choices that should be calibrated against real wxyc-ios-64 patterns before any plant trial — concretely, run the prototype population-clusterer against the wxyc-ios-64 catalog and tune N until it surfaces known macro candidates (the pre-macro form of `@AnalyticsEvent`, and similar patterns the manual code review already finds) without flooding the output with incidental matches. Defer to V8 if scope-constrained; the [MVP](#mvp) drops Cat. 7.
 
-The concrete jq pipeline and the extractor-side `template_sig` precomputation are sketched in [Appendix D](#appendix-d-macro-candidates).
+The concrete jq pipeline and the extractor-side `template_sig` precomputation are in [`refactor-recommendation-experiment-macro-candidates.md`](refactor-recommendation-experiment-macro-candidates.md).
 
 <a id="enrichment-new-queries"></a>
 
@@ -416,13 +416,13 @@ Per-category `specifics` schemas (abbreviated, full schema in the manifest):
 - `extension-consolidation`: `{target_type, consolidate_from: [extension locations]}`
 - `no-action`: `{reason_class: "test-fixture"|"codegen"|"intentional-specialization"|"api-impl-boundary"|"coincidental"}`
 
-The prompt is published alongside the experiment doc in `experiments/v7-refactor-recommendation/prompt.md` (TBD) and hashed for [pre-registration](#pre-registration). The full prompt text and unabbreviated per-category specifics schemas — including the normalized cluster-row input shape the agent receives — are in [Appendix B](#appendix-b-full-prompt).
+The prompt is published alongside the experiment doc in `experiments/v7-refactor-recommendation/prompt.md` (TBD) and hashed for [pre-registration](#pre-registration). The full prompt text and unabbreviated per-category specifics schemas — including the normalized cluster-row input shape the agent receives — are in [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md).
 
 <a id="scoring-rubric"></a>
 
 ## 8. Scoring rubric
 
-Per-plant manifest entries pre-register the expected answers. Example shape (with one canonical entry per category and one restraint twin in [Appendix A](#appendix-a-plant-yaml)):
+Per-plant manifest entries pre-register the expected answers. Example shape (with one canonical entry per category and one restraint twin in [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md)):
 
 ```yaml
 plant_id: 4.1
@@ -487,7 +487,7 @@ Aggregate metrics:
 
 The **novel-but-defensible answer** case lives in the last bucket. Panel scores it on a 0.0–1.0 scale per the same criteria as auto-scored answers (category-correctness × specifics × grounding); the score gets recorded with a `panel_reviewed: true` flag. Without this escape, the rubric punishes agent creativity by auto-failing reasonable answers the manifest didn't anticipate. Panel time is budgeted in the [roadmap](#roadmap).
 
-[Appendix C](#appendix-c-worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
+[§17](#worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
 
 <a id="restraint"></a>
 
@@ -615,510 +615,13 @@ The [V6 results doc](wxyc-ios-64-experiment-results.md) currently treats substra
 
 The substrate roadmap also needs reframing. V6's "next gap to close" (extension-merging for [plant 20](wxyc-ios-64-experiment-results.md#the-expected-gap-extension-fragmented-types)) is a substrate-fidelity closure with no bearing on refactor-recommendation quality. From the actionable-recommendations perspective, extension-merging is roughly irrelevant. The genuinely high-leverage substrate work is the [V7 enrichments](#substrate-enrichments) — name/type split, conformance edges, inheritance edges, erased body signatures, package-dependency graph, context flags, population clustering. Reframing extension-merging as "deferred substrate-fidelity polish" rather than "next priority" reflects the actual goal.
 
-## See also
+<a id="worked-example"></a>
 
-- [`pipeline-contract.md`](pipeline-contract.md) — substrate schema, the contract V7 enrichments will extend.
-- [`dj-site-divergence-experiment-v3-plant-manifest.md`](dj-site-divergence-experiment-v3-plant-manifest.md) — V3 manifest, the precedent for plant-based experimental design in this project.
-- [`dj-site-divergence-experiment-v5-results.md`](dj-site-divergence-experiment-v5-results.md) — V5 substrate-fidelity result that this experiment builds on.
-- [`wxyc-ios-64-experiment-plant-manifest.md`](wxyc-ios-64-experiment-plant-manifest.md) — V6 plant manifest, the latest substrate-fidelity precedent.
-- [`wxyc-ios-64-experiment-results.md`](wxyc-ios-64-experiment-results.md) — V6 results, the experiment this methodology extends.
-- [`../extractors/swift/README.md`](../extractors/swift/README.md), [`../extractors/typescript/README.md`](../extractors/typescript/README.md), [`../extractors/file-hashes/README.md`](../extractors/file-hashes/README.md) — extractor docs that V7 enrichments will modify.
-- [`../pipeline/queries/`](../pipeline/queries) — existing queries; V7 adds new ones per [§6.8](#enrichment-new-queries).
-- [`../pipeline/analysis/swift-plant-analyzer.mjs`](../pipeline/analysis/swift-plant-analyzer.mjs) — V6 analyzer, the structural precedent for the V7 scoring tooling.
+## 17. Worked-example scoring walkthrough
 
-<a id="appendix-a-plant-yaml"></a>
+Five hypothetical agent outputs walked through the [§8 rubric](#scoring-rubric) — canonical-strong, canonical-weak-rationale, alternative-answer, restraint false positive, panel-routed novel answer. The aim is to make the auto-score → panel-route decision rule operational rather than abstract.
 
-## Appendix A. Plant manifest YAML — canonical entries
-
-The §8 example (Plant 4.1) shows the manifest shape in isolation. This appendix gives one canonical entry per category plus one restraint twin, so the full operational shape of the manifest is on the page. The full manifest (40 plants) will live at `experiments/v7-refactor-recommendation/plant-manifest.yaml` once Phase A lands; the entries below are the per-category schemas an implementer would expand from.
-
-Conventions: `plant_id` matches the §5 numbering. `source_type` names the real wxyc-ios-64 declaration the plant derives from (drawn from the isolated-source set per [V6 procedure](wxyc-ios-64-experiment-plant-manifest.md#isolated-source-set)). `expected_substrate_signals` is the set of query names the plant should surface in. `primary_answer`, `alternative_answers`, `wrong_answers` follow the §8 schema. `specifics_tolerance` defines what counts as "within tolerance" for the auto-scorer; missing fields are treated as required.
-
-### A.1 — Plant 1.1 (extract-to-common, canonical)
-
-```yaml
-plant_id: 1.1
-category: extract-to-common
-source_type: "AppServices:AppConfig"     # 4 fields
-plant_locations:
-  - "Shared/Caching/Sources/Caching/_Plant_CacheClientConfig.swift"
-  - "Shared/Metadata/Sources/Metadata/_Plant_MetadataFetcherConfig.swift"
-  - "Shared/Analytics/Sources/Analytics/_Plant_AnalyticsClientConfig.swift"
-expected_substrate_signals:
-  - exact-duplicates                     # 3 identical shapes
-  - cross-package-shape-near-duplicates-any
-primary_answer:
-  category: extract-to-common
-  specifics:
-    target_package: "<any package upstream of all three, e.g., Shared/Core or a new Shared/Config>"
-    type_name_pattern: "ClientConfig | Config"
-    remove_from:
-      - "Shared/Caching/Sources/Caching/_Plant_CacheClientConfig.swift"
-      - "Shared/Metadata/Sources/Metadata/_Plant_MetadataFetcherConfig.swift"
-      - "Shared/Analytics/Sources/Analytics/_Plant_AnalyticsClientConfig.swift"
-  rationale_must_cite: ["CacheClientConfig", "MetadataFetcherConfig", "AnalyticsClientConfig", "same shape"]
-specifics_tolerance:
-  target_package_must_be_upstream_of_all_consumers: true
-alternative_answers:
-  - category: extract-to-common
-    weight: 0.7
-    note: "Naming an existing Shared/* package as target when a new Shared/Config would have been more idiomatic. Defensible if the named package is already a common upstream."
-wrong_answers:
-  - category: no-action
-    note: "Three identical configs across three Shared packages with no test/codegen markers is a clear extract candidate; no-action is a false negative."
-  - category: subclass-lift
-    note: "Structs don't subclass in Swift; would be a language-level error."
-restraint: false
-```
-
-### A.2 — Plant 2.4 (protocol inheritance, sibling-with-missing-parent)
-
-```yaml
-plant_id: 2.4
-category: protocol-inheritance
-source_type: "synthesized: Cacheable + Persistable parallel pair"
-plant_locations:
-  - "Shared/Caching/Sources/Caching/_Plant_Cacheable.swift"
-  - "Shared/Caching/Sources/Caching/_Plant_Persistable.swift"
-expected_substrate_signals:
-  - subset-pairs                         # after protocol-inheritance resolution
-  - protocol-inheritance-candidates      # new V7 query
-primary_answer:
-  category: protocol-inheritance
-  specifics:
-    parent_protocol_name_pattern: "Identifiable | KeyedItem | <shared-core name>"
-    parent_members: ["id: String", "displayName: String"]
-    children: ["Cacheable", "Persistable"]
-  rationale_must_cite: ["Cacheable", "Persistable", "id", "displayName"]
-specifics_tolerance:
-  parent_must_include_both_shared_members: true
-  reusing_swift_Identifiable_allowed: true
-alternative_answers:
-  - category: extract-to-common
-    weight: 0.5
-    note: "Extracting the shared two-member surface as a struct misses the protocol-shaped abstraction but isn't actively wrong if the agent rationalizes it as a value type."
-wrong_answers:
-  - category: no-action
-    note: "Two protocols sharing a load-bearing two-member core in the same package is a recognizable missing-parent pattern."
-  - category: subclass-lift
-    note: "Protocols don't subclass."
-restraint: false
-```
-
-### A.3 — Plant 3.1 (default implementation, canonical)
-
-```yaml
-plant_id: 3.1
-category: default-implementation
-source_type: "synthesized: Loggable protocol + 3 conformers"
-plant_locations:
-  - "Shared/Logger/Sources/Logger/_Plant_Loggable.swift"           # protocol decl
-  - "Shared/Caching/Sources/Caching/_Plant_CacheLoggable.swift"    # conformer 1
-  - "Shared/Metadata/Sources/Metadata/_Plant_MetadataLoggable.swift" # conformer 2
-  - "Shared/Analytics/Sources/Analytics/_Plant_AnalyticsLoggable.swift" # conformer 3
-expected_substrate_signals:
-  - function-duplicates                  # 3 identical method bodies
-  - default-impl-candidates              # new V7 query
-primary_answer:
-  category: default-implementation
-  specifics:
-    protocol: "Loggable"
-    method: "logDebugInfo()"
-    target_location: "extension Loggable { ... } in Shared/Logger"
-    conformers_simplified:
-      - "Shared/Caching/Sources/Caching/_Plant_CacheLoggable.swift"
-      - "Shared/Metadata/Sources/Metadata/_Plant_MetadataLoggable.swift"
-      - "Shared/Analytics/Sources/Analytics/_Plant_AnalyticsLoggable.swift"
-  rationale_must_cite: ["Loggable", "logDebugInfo", "identical"]
-specifics_tolerance:
-  default_impl_must_be_in_protocols_own_package: true
-alternative_answers:
-  - category: extract-to-common
-    weight: 0.4
-    note: "Extracting the function to a free helper misses the protocol-default-impl idiom."
-wrong_answers:
-  - category: no-action
-    note: "Three identical method bodies on three types conforming to the same protocol is the textbook default-impl signal."
-  - category: subclass-lift
-    note: "The conformers are structs/protocols, not a class hierarchy."
-restraint: false
-```
-
-### A.4 — Plant 4.1 (PAT introduction, canonical)
-
-The full YAML for this plant is in §8 as the rubric example. Cross-referenced here for completeness.
-
-### A.5 — Plant 5.1 (generic struct, canonical)
-
-```yaml
-plant_id: 5.1
-category: generic-parameterization
-source_type: "synthesized: IntCache + StringCache pair"
-plant_locations:
-  - "Shared/Caching/Sources/Caching/_Plant_IntCache.swift"
-  - "Shared/Caching/Sources/Caching/_Plant_StringCache.swift"
-expected_substrate_signals:
-  - near-duplicates-any                  # shapes differ at Key type only
-  - generic-struct-candidates            # new V7 query
-primary_answer:
-  category: generic-parameterization
-  specifics:
-    generic_kind: "struct"
-    type_params:
-      - name: "Key"
-        constraint: "Hashable"
-    new_type_name: "Cache"
-    replaces: ["IntCache", "StringCache"]
-  rationale_must_cite: ["IntCache", "StringCache", "Int", "String", "differ at Key"]
-specifics_tolerance:
-  type_param_must_be_constrained_to_Hashable: true
-  unconstrained_T_acceptable_with_note: false
-alternative_answers:
-  - category: extract-to-common
-    weight: 0.4
-    note: "Extracting CacheEntry alone leaves the outer Cache types parallel; partial credit only."
-wrong_answers:
-  - category: no-action
-    note: "Two caches differing only at the key type are a clear generic-struct opportunity."
-  - category: pat-introduction
-    note: "PAT is for protocols; these are structs. Wrong language-level construct."
-restraint: false
-```
-
-### A.6 — Plant 6.1 (subclass lift, canonical)
-
-```yaml
-plant_id: 6.1
-category: subclass-lift
-source_type: "synthesized: BaseViewModel + 3 subclass siblings"
-plant_locations:
-  - "WXYC/iOS/_Plant_IOSViewModel.swift"
-  - "WXYC/WatchXYC/_Plant_WatchViewModel.swift"
-  - "WXYC/WXYC TV/_Plant_TVViewModel.swift"
-  - "Shared/Core/Sources/Core/_Plant_BaseViewModel.swift"  # shared base
-expected_substrate_signals:
-  - function-duplicates                  # 3 identical handleError(_:) bodies
-  - subclass-lift-candidates             # new V7 query
-primary_answer:
-  category: subclass-lift
-  specifics:
-    base_class: "BaseViewModel"
-    method: "handleError(_:)"
-    subclasses: ["IOSViewModel", "WatchViewModel", "TVViewModel"]
-    target_location: "BaseViewModel in Shared/Core"
-  rationale_must_cite: ["BaseViewModel", "handleError", "identical", "subclass"]
-specifics_tolerance:
-  target_must_be_nearest_common_ancestor: true
-alternative_answers:
-  - category: default-implementation
-    weight: 0.7
-    note: "Lifting to a protocol-default-impl is Swift-idiomatic; for an existing class hierarchy, lift to base is more direct but protocol is defensible."
-wrong_answers:
-  - category: no-action
-    note: "Three identical methods on three subclasses of the same base is the canonical lift signal."
-restraint: false
-```
-
-### A.7 — Plant 7.1 (macro synthesis, displayName)
-
-```yaml
-plant_id: 7.1
-category: macro-synthesis
-source_type: "synthesized: 18 enums with parallel displayName computed property"
-plant_locations:
-  - "Shared/Metadata/Sources/Metadata/_Plant_DisplayName_*.swift"   # 18 files
-expected_substrate_signals:
-  - macro-candidates                     # new V7 query, population-clustered
-primary_answer:
-  category: macro-synthesis
-  specifics:
-    macro_name_pattern: "@CaseDisplayName | @DisplayName"
-    applies_to: ["enum"]
-    synthesizes: "var displayName: String { get } switching over self.cases returning hardcoded labels"
-    population_size_evidence: ">= 8 enums"
-  rationale_must_cite: ["18", "displayName", "switch", "case"]
-specifics_tolerance:
-  population_size_in_rationale_must_be_within_2_of_actual: true
-alternative_answers:
-  - category: default-implementation
-    weight: 0.6
-    note: "Protocol with default impl backed by CaseIterable + reflection is a defensible alternative — slower than macro, but no macro-build-time cost."
-wrong_answers:
-  - category: no-action
-    note: "18 parallel computed properties is the canonical macro signal."
-  - category: extract-to-common
-    note: "There's nothing to extract — each enum's cases are unique; the parallel is the *shape* of the property, not its body."
-restraint: false
-```
-
-### A.8 — Plant 8.1 (composition, class subset)
-
-```yaml
-plant_id: 8.1
-category: composition
-source_type: "synthesized: BasicProfile + FullProfile class pair"
-plant_locations:
-  - "Shared/Core/Sources/Core/_Plant_BasicProfile.swift"
-  - "Shared/Core/Sources/Core/_Plant_FullProfile.swift"
-expected_substrate_signals:
-  - subset-pairs                         # FullProfile is a superset of BasicProfile
-primary_answer:
-  category: composition
-  specifics:
-    composing_type: "FullProfile"
-    composed_type: "BasicProfile"
-    field_name: "basic | core"
-  rationale_must_cite: ["FullProfile", "BasicProfile", "subset", "class"]
-specifics_tolerance:
-  composition_via_stored_property_required: true
-alternative_answers:
-  - category: subclass-lift
-    weight: 0.5
-    note: "FullProfile: BasicProfile via class inheritance is technically valid Swift but couples the two — composition is preferred for value-like models."
-  - category: protocol-inheritance
-    weight: 0.6
-    note: "Extract a BasicProfile-shaped protocol, both classes conform — defensible if callers want polymorphism over the shared surface."
-wrong_answers:
-  - category: no-action
-    note: "Two classes where one's fields are a strict superset of the other's, in the same package, is a clear composition/protocol signal."
-restraint: false
-```
-
-### A.9 — Plant 1R (restraint twin, test-vs-production)
-
-```yaml
-plant_id: 1R
-category: extract-to-common   # SHARES Cat. 1's substrate signal; restraint is the correct answer
-restraint_pair: 1.1
-source_type: "Mirrors Plant 1.1's planted ClientConfig shape"
-plant_locations:
-  - "Shared/Caching/Sources/Caching/_Plant_CacheClientConfig.swift"        # already from 1.1
-  - "Shared/Caching/Tests/CachingTests/_Plant_CacheClientConfigMock.swift" # test-only mirror
-expected_substrate_signals:
-  - exact-duplicates                     # surfaces in same cluster as 1.1
-expected_context_flags:
-  - "_Plant_CacheClientConfigMock.swift: is_test=true"
-primary_answer:
-  category: no-action
-  specifics:
-    reason_class: "test-fixture"
-  rationale_must_cite: ["test", "Tests/", "mock", "is_test"]
-specifics_tolerance:
-  reason_class_must_be_test_fixture: true
-wrong_answers:
-  - category: extract-to-common
-    note: "Lifting the mock into shared production code breaks test isolation; this is the canonical restraint failure mode."
-  - category: protocol-inheritance
-    note: "Any *action* recommendation here is a false positive — the duplication is intentional."
-restraint: true
-```
-
-The remaining 31 plants follow the same shape, parameterized by category and source type. The full manifest will land in Phase A per the [roadmap](#roadmap).
-
-<a id="appendix-b-full-prompt"></a>
-
-## Appendix B. Full agent prompt and per-category specifics schemas
-
-§7 abbreviates the prompt body. This appendix gives the full text and the unabbreviated per-category specifics schemas. The full prompt will be committed to `experiments/v7-refactor-recommendation/prompt.md` once Phase A lands; the hash recorded in the [pre-registration](#pre-registration) section.
-
-### B.1 Full prompt text
-
-```
-You are reviewing the wxyc-ios-64 Swift codebase. A structural-analysis pipeline
-has surfaced N clusters of code that share shape, name, or content across the
-codebase. Each cluster row carries: a stable cluster_id, the type of structural
-signal (exact-duplicates, cross-package-shadows, subset-pairs, near-duplicates,
-function-duplicates, file-duplicates, cross-package-shape-near-duplicates,
-pat-candidates, default-impl-candidates, subclass-lift-candidates,
-generic-function-candidates, generic-struct-candidates, macro-candidates,
-protocol-inheritance-candidates), the participating type or function records
-(with package, file path, line number, kind, and field/method list), and
-context flags (is_test, is_codegen, is_sample_app, is_mock) on each record.
-
-Your task: for each cluster, produce one structured refactor recommendation in
-the JSON shape below. Emit exactly one recommendation per cluster row in the
-input. Do not group recommendations. Do not skip clusters that look uninteresting
-— if no action is warranted, recommend "no-action" explicitly with a reason.
-
-Recommendation schema:
-
-{
-  "cluster_id": "<verbatim from the cluster row>",
-  "category": "extract-to-common | protocol-inheritance | default-implementation |
-               pat-introduction | generic-parameterization | subclass-lift |
-               macro-synthesis | composition | extension-consolidation |
-               no-action | other",
-  "specifics": { /* schema-per-category, see below */ },
-  "rationale": "<2-5 sentences citing specific evidence from the cluster row>",
-  "evidence_quote": "<literal substring copied from the cluster output>",
-  "alternative": null | { "category": "...", "specifics": {...}, "rationale": "..." },
-  "confidence": 0.0
-}
-
-Decision rules:
-
-1. INTENTIONAL DUPLICATION → "no-action".
-   If any of the following hold, the cluster is likely intentional and the
-   recommendation must be "no-action" with the corresponding reason_class:
-   - All participating records have is_test=true → reason_class: "test-fixture".
-   - All participating records have is_codegen=true → reason_class: "codegen".
-   - All records sit under Examples/ or SampleApp/ → reason_class: "sample-app-mirror".
-   - The records straddle a public-API boundary (e.g., a public struct in a
-     framework target and an internal struct in the same package's
-     implementation) → reason_class: "api-impl-boundary".
-   - The records are intentionally specialized for divergent performance
-     reasons (e.g., one is SIMD-optimized, the other is a tree) →
-     reason_class: "intentional-specialization".
-   - The records share shape but encode unrelated domain concepts whose
-     coincidence is structural only → reason_class: "coincidental".
-   When in doubt, prefer "no-action" over a low-confidence action.
-
-2. EVIDENCE GROUNDING. The rationale must cite at least one piece of literal
-   evidence from the cluster row: a type name, package name, file path, field
-   list, or context-flag value. The evidence_quote field must be a verbatim
-   substring of the cluster output. Do not invoke knowledge of the codebase
-   you weren't given.
-
-3. PRIMARY VS ALTERNATIVE. If two categories are both defensible, pick the
-   more idiomatic Swift answer as primary; put the other in alternative with
-   its own rationale. Do not list more than one alternative.
-
-4. "OTHER" IS A REAL OPTION. If none of the named categories fit, use
-   category: "other" and explain in the rationale why none apply. "Other"
-   recommendations will be panel-reviewed — they are not penalized as wrong.
-
-5. SPECIFICS PRECISION. Name files, packages, type names, method names
-   precisely. A recommendation that says "extract to a common package" without
-   naming which package is incomplete; one that says "extract to Shared/Core
-   because all three consumers already depend on it" is grounded.
-
-6. NO HALLUCINATION. If you can't ground a recommendation in the cluster row,
-   recommend "no-action" with reason_class: "coincidental" — do not invent
-   evidence.
-
-Output: a single JSON array of N recommendations, one per cluster row,
-preserving the input cluster_id ordering.
-```
-
-### B.2 Per-category specifics schemas (unabbreviated)
-
-```json
-{
-  "extract-to-common": {
-    "target_package": "string (must be a real package name from the catalog)",
-    "type_name": "string (the name the extracted type should carry; may match an existing duplicate)",
-    "remove_from": ["array of file paths where the duplicate currently lives"]
-  },
-
-  "protocol-inheritance": {
-    "parent": "string (parent protocol name; may be an existing protocol or proposed new name)",
-    "child": "string (child protocol name from the cluster)",
-    "moved_members": ["array of member names that move from child to parent"],
-    "reuse_existing_swift_protocol": "boolean (true if parent is Identifiable, Equatable, Hashable, Codable, etc.)"
-  },
-
-  "default-implementation": {
-    "protocol": "string (protocol whose extension gets the default impl)",
-    "method": "string (method signature including effect specifiers)",
-    "target_location": "string (file path, ideally within the protocol's own package)",
-    "conformers_simplified": ["array of file paths where conformer impls should be deleted"]
-  },
-
-  "pat-introduction": {
-    "new_protocol": "string (name for the new PAT)",
-    "associated_type": "string (the associatedtype name, e.g., 'Item')",
-    "constraints": ["array of protocol constraints on the associatedtype, may be empty"],
-    "replaces": ["array of old protocol names this PAT replaces"]
-  },
-
-  "generic-parameterization": {
-    "generic_kind": "'function' | 'struct' | 'class'",
-    "type_params": [
-      { "name": "string", "constraint": "string or null" }
-    ],
-    "new_name": "string (name for the generic type or function)",
-    "replaces": ["array of old type/function names this replaces"]
-  },
-
-  "subclass-lift": {
-    "base_class": "string (existing or proposed base class)",
-    "method": "string (method signature being lifted)",
-    "subclasses": ["array of subclass names whose impl is being removed"],
-    "target_location": "string (file path where the lifted method lands)"
-  },
-
-  "macro-synthesis": {
-    "macro_name": "string (proposed macro name, e.g., '@CaseDisplayName')",
-    "applies_to": ["array of type kinds: 'enum', 'struct', 'class', 'protocol'"],
-    "synthesizes": "string (what members the macro generates, in prose)",
-    "population_size_evidence": "string (the row count or size from the cluster row)",
-    "use_swift_builtin": "boolean (true if Swift already provides this, e.g., Codable)"
-  },
-
-  "composition": {
-    "composing_type": "string (the larger type that gets a field)",
-    "composed_type": "string (the smaller type that becomes a field)",
-    "field_name": "string (proposed field name)"
-  },
-
-  "extension-consolidation": {
-    "target_type": "string",
-    "consolidate_from": ["array of extension declaration locations"]
-  },
-
-  "no-action": {
-    "reason_class": "'test-fixture' | 'codegen' | 'sample-app-mirror' | 'api-impl-boundary' | 'intentional-specialization' | 'coincidental'"
-  },
-
-  "other": {
-    "proposed_action": "string (free-form description of the recommended change)",
-    "why_no_category_fits": "string (explanation)"
-  }
-}
-```
-
-### B.3 Cluster-row input shape (what the agent receives)
-
-For pre-registration, the input shape the agent sees is fixed too. Each cluster row, regardless of which query produced it, is normalized into:
-
-```json
-{
-  "cluster_id": "string (stable, content-addressed, emitted by the substrate per issue #5)",
-  "query": "string (one of the 15 query names)",
-  "members": [
-    {
-      "name": "string",
-      "kind": "'struct' | 'class' | 'enum' | 'protocol' | 'function' | 'extension' | 'file'",
-      "package": "string",
-      "file": "string (relative path)",
-      "line": "integer",
-      "fields_or_signature": ["array of strings"],
-      "context_flags": {
-        "is_test": "boolean",
-        "is_codegen": "boolean",
-        "is_sample_app": "boolean",
-        "is_mock": "boolean"
-      }
-    }
-  ],
-  "structural_evidence": {
-    "jaccard": "float or null",
-    "shared_field_count": "integer or null",
-    "differing_slots": ["array of slot descriptions or null"],
-    "shared_ancestor": "string or null"
-  }
-}
-```
-
-A normalization pass over the 15 raw query outputs produces this shape; the pass is part of Phase B per the [roadmap](#roadmap).
-
-<a id="appendix-c-worked-example"></a>
-
-## Appendix C. Worked-example scoring walkthrough
-
-Two examples: a canonical-plant recommendation that auto-scores, and a restraint-plant recommendation that fails the auto-check and routes to panel. The aim is to make the §8 decision rule operational rather than abstract.
-
-### C.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
+### 17.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
 
 Plant 4.1's manifest entry is in §8. Suppose an agent emits this recommendation for the cluster that surfaces the planted `TrackContainer` / `ShowContainer` pair:
 
@@ -1150,7 +653,7 @@ Auto-scorer walkthrough per §8:
 
 This recommendation contributes 1.0 to Plant 4.1's per-plant score and 0.25 (1.0 / 4) to Cat. 4's per-category recall. The grounding check (a sample of recommendations gets panel-validated per §8) might still flag this for the 10–20% audit sample, but the auto-score stands unless the panel marks it as non-load-bearing citation.
 
-### C.2 Auto-scored canonical: Plant 4.1, weak rationale
+### 17.2 Auto-scored canonical: Plant 4.1, weak rationale
 
 Same plant, different agent output:
 
@@ -1179,7 +682,7 @@ Walkthrough:
 
 → Auto-score: §8 case 1 conditions are not all met (citation requirement fails). The rubric has two reasonable settings here, both defensible and worth pre-registering: (a) score **0.5** ("right specifics with weak rationale" per the §8 table); (b) route to panel for grounding judgment. Pre-registration should pick one before trials run; the default in the doc is (a) — auto-scorer applies the 0.5 floor for missing required citations, and the 10–20% grounding-audit sample catches systematic abuse of the citation-substring loophole separately.
 
-### C.3 Auto-scored canonical: Plant 4.1, alternative-answer match
+### 17.3 Auto-scored canonical: Plant 4.1, alternative-answer match
 
 Same plant, agent picks the generic-struct alternative:
 
@@ -1208,7 +711,7 @@ Walkthrough:
 
 → Auto-score: **0.7** (alternative answer, grounded rationale). The agent traded the protocol-shaped answer for a struct-shaped one, which the manifest weights at 0.7 because for *protocol*-shaped source pairs, PAT is more idiomatic than collapsing-to-generic-struct.
 
-### C.4 Restraint plant: Plant 1R, false positive
+### 17.4 Restraint plant: Plant 1R, false positive
 
 Plant 1R is a test-vs-production restraint. The agent emits:
 
@@ -1240,7 +743,7 @@ Walkthrough per §8 restraint rubric:
 
 This contributes 0.0 to the false-positive rate denominator-of-action: across all 8 restraint plants, the false-positive rate is the count of action recommendations / 8. The agent also ignored the `is_test: true` context flag on the `_Plant_CacheClientConfigMock.swift` member — a recommendation that *cites the flag and recommends action anyway* would still score 0.0 but is qualitatively different (informed false positive vs context-blind false positive), so panel notes flag the distinction during the citation-audit sample.
 
-### C.5 Panel-routed: novel-but-defensible answer
+### 17.5 Panel-routed: novel-but-defensible answer
 
 Suppose Plant 3.1 (default implementation) draws this recommendation:
 
@@ -1270,116 +773,23 @@ Walkthrough:
 
 Panel scores it on the same 0.0–1.0 scale: was the proposed action correct (panel judgment), specific (would a competent engineer land the change from this alone?), grounded (does the rationale cite cluster evidence?). Suppose panel returns 0.7 with a note that the free-function reframe is defensible but the manifest's primary answer (default impl) is more idiomatic for the planted pattern. The recommendation is recorded with `panel_reviewed: true`, score 0.7, panel_notes attached. The `other`-rate is reported separately as a calibration metric: high rates suggest either the rubric is undercovering legitimate answers (rubric needs widening) or the agent is hallucinating creative answers to dodge category constraints (a model-quality signal).
 
-<a id="appendix-d-macro-candidates"></a>
+<a id="see-also"></a>
 
-## Appendix D. `macro-candidates.jq` algorithmic sketch
+## See also
 
-§6.7 sketches population clustering in prose. This appendix gives the concrete jq pipeline and notes the (non-jq) preprocessing step. The full implementation lands in Phase B per the [roadmap](#roadmap); query lives at `pipeline/queries/macro-candidates.jq` once committed.
+Companion docs (V7 experiment, mirroring the eventual `experiments/v7-refactor-recommendation/` layout):
 
-### D.1 Two-stage pipeline
+- [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) — per-plant manifest YAML schema with one canonical entry per category plus a restraint twin.
+- [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) — full agent prompt, per-category specifics schemas, normalized cluster-row input shape.
+- [`refactor-recommendation-experiment-macro-candidates.md`](refactor-recommendation-experiment-macro-candidates.md) — `macro-candidates.jq` algorithmic sketch and extractor-side `template_sig` precomputation.
 
-Population clustering needs to (a) generate a wildcard-generalized `template_sig` for each record, and (b) group by `template_sig`. (a) is awkward in jq because it involves rewriting each `name:Type` field with type-replacement; for clarity and testability the substrate emits `template_sig` as a *precomputed field* on each type-catalog record during extraction. The jq query then becomes a straightforward `group_by` + filter.
+Precedents and substrate-side references:
 
-This is the same pattern V5 used for `shape_sig` and `field_set_hash` — precompute structural keys at extraction time, let jq queries cluster on them.
-
-### D.2 Extractor-side precomputation (Swift / TypeScript)
-
-Pseudocode (extractor-side, Swift example in `extractors/swift/Sources/swift-catalog/TypeCatalogVisitor.swift`):
-
-```
-function computeTemplateSig(record):
-  if record.fields is empty: return null
-  if record.kind not in {"struct", "class", "enum", "protocol"}: return null
-
-  sorted_fields = sort(record.fields) by name
-  type_first_seen = {}  // Type name → wildcard index
-  wildcard_counter = 0
-  template_parts = []
-
-  for field in sorted_fields:
-    name, type = field.name, field.type
-    if type not in type_first_seen:
-      type_first_seen[type] = wildcard_counter
-      wildcard_counter += 1
-    wildcard = "_T" + type_first_seen[type]
-    template_parts.append(name + ":" + wildcard)
-
-  return join(template_parts, "|")
-```
-
-For a record with `fields: ["count:Int", "value:String"]`:
-- sorted by name → `["count:Int", "value:String"]`
-- `Int` first seen → `_T0`; `String` first seen → `_T1`
-- template_sig: `"count:_T0|value:_T1"`
-
-For 18 enum records each carrying `var displayName: String` (and varying case sets), the relevant population signal is on a *property-template* axis rather than on the field set: a parallel `computeMethodTemplateSig(record)` runs over `record.methods[]` and emits `method_template_sig` per record. The same jq query joins on whichever template_sig the cluster targets.
-
-Records that pass the kind and field-population checks get `template_sig` (and `method_template_sig` where applicable) populated; others get `null`.
-
-### D.3 Query side (`macro-candidates.jq`)
-
-```jq
-# macro-candidates.jq
-#
-# Cluster records by precomputed template_sig, filter for population size and
-# slot fanout. Each output row is a macro candidate: N records sharing a
-# template, with at least 2 distinct concrete types filling the wildcard slots.
-#
-# Run: jq -r -f macro-candidates.jq catalog.json > queries/macro-candidates.txt
-#
-# Tunables: MIN_POP_SIZE (>= N records), MIN_SLOT_FANOUT (>= K distinct types
-# at any wildcard position). Defaults to N=8, K=2 — calibrate per §6.7.
-
-def min_pop_size: 8;
-def min_slot_fanout: 2;
-
-# Walk a template_sig like "count:_T0|value:_T1" and a fields array like
-# ["count:Int", "value:String"] to produce per-slot type-sets.
-def slot_types_for_record(record):
-  record.fields
-  | map(split(":") | .[1])      # ["Int", "String"]
-  | to_entries                  # [{key: 0, value: "Int"}, {key: 1, value: "String"}]
-  | map({slot: .key, type: .value});
-
-[.types[]
- | select(.template_sig != null)
- | {template_sig, name, package, file, line, fields, kind, context_flags}
-]
-| group_by(.template_sig)
-| map(select(length >= min_pop_size))
-| map({
-    template_sig: .[0].template_sig,
-    population_size: length,
-    members: map({name, package, file, line, kind, fields, context_flags}),
-    slot_fanout: (
-      [.[]
-       | .fields
-       | map(split(":") | .[1])
-       | to_entries
-       | map({slot: .key, type: .value})
-      ]
-      | add
-      | group_by(.slot)
-      | map({slot: .[0].slot, distinct_types: ([.[].type] | unique | length)})
-    )
-  })
-| map(select(
-    .slot_fanout
-    | map(.distinct_types)
-    | max >= min_slot_fanout
-  ))
-| sort_by(-.population_size)
-| .[]
-| "macro-candidate: template=\(.template_sig)  population=\(.population_size)  slot_fanout=\(.slot_fanout | map(.distinct_types) | join(","))\n  members: \(.members | map(.package + ":" + .name) | join(", "))\n"
-```
-
-Notes:
-
-- The query reads `template_sig` directly from the catalog — extractor-side precomputation per D.2. If `template_sig` is absent, the record was deemed ineligible (kind / field-count gate) and is skipped.
-- `min_pop_size` and `min_slot_fanout` are the two tunables called out in §6.7. The §6.7 calibration step (run the prototype against unmodified wxyc-ios-64 and adjust until known macro candidates surface without flooding) lives here — change the defaults in this file once calibrated.
-- The output is a multi-line raw string (note the `\n` interpolation and the `-r` invocation in the file header), matching the convention of other queries.
-- Recall-of-population is the primary metric for this query: when 18 enums carry parallel `displayName` shapes (Plant 7.1), the query should surface them as a single 18-member cluster, not as 18 pairwise rows. The §6.7 calibration step has to confirm this on real data; the [MVP](#mvp) drops Cat. 7 specifically because the calibration loop is unscoped at this writing.
-
-### D.4 Method-template variant
-
-For property/method populations (Plant 7.1's `displayName` shape), a parallel `macro-method-candidates.jq` runs the same algorithm against `method_template_sig` (precomputed similarly at extraction time over `record.methods[]`'s signatures rather than `record.fields`). The two queries can be unified later; keeping them separate during Phase B lets Plant 7.1 (method-template) be scored independently of struct-template macros if either signal is weaker than expected.
+- [`pipeline-contract.md`](pipeline-contract.md) — substrate schema, the contract V7 enrichments will extend.
+- [`dj-site-divergence-experiment-v3-plant-manifest.md`](dj-site-divergence-experiment-v3-plant-manifest.md) — V3 manifest, the precedent for plant-based experimental design in this project.
+- [`dj-site-divergence-experiment-v5-results.md`](dj-site-divergence-experiment-v5-results.md) — V5 substrate-fidelity result that this experiment builds on.
+- [`wxyc-ios-64-experiment-plant-manifest.md`](wxyc-ios-64-experiment-plant-manifest.md) — V6 plant manifest, the latest substrate-fidelity precedent.
+- [`wxyc-ios-64-experiment-results.md`](wxyc-ios-64-experiment-results.md) — V6 results, the experiment this methodology extends.
+- [`../extractors/swift/README.md`](../extractors/swift/README.md), [`../extractors/typescript/README.md`](../extractors/typescript/README.md), [`../extractors/file-hashes/README.md`](../extractors/file-hashes/README.md) — extractor docs that V7 enrichments will modify.
+- [`../pipeline/queries/`](../pipeline/queries) — existing queries; V7 adds new ones per [§6.8](#enrichment-new-queries).
+- [`../pipeline/analysis/swift-plant-analyzer.mjs`](../pipeline/analysis/swift-plant-analyzer.mjs) — V6 analyzer, the structural precedent for the V7 scoring tooling.
