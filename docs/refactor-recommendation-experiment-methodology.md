@@ -30,7 +30,8 @@
 16. [Minimum viable round](#mvp)
 17. [Decisions outstanding before kickoff](#decisions-outstanding)
 18. [What this changes about how to talk about V6](#v6-postscript)
-19. [Worked-example scoring walkthrough](#worked-example)
+19. [Forward roadmap: V7 → V8 → V9](#forward-roadmap)
+20. [Worked-example scoring walkthrough](#worked-example)
 
 Companion docs (split for navigability; full details live in the dedicated docs, with cross-references from the methodology body where relevant):
 
@@ -508,7 +509,7 @@ Aggregate metrics:
 
 The **novel-but-defensible answer** case lives in the last bucket. Panel scores it on a 0.0–1.0 scale per the same criteria as auto-scored answers (category-correctness × specifics × grounding); the score gets recorded with a `panel_reviewed: true` flag. Without this escape, the rubric punishes agent creativity by auto-failing reasonable answers the manifest didn't anticipate. Panel time is budgeted in the [roadmap](#roadmap).
 
-[§19](#worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
+[§20](#worked-example) walks through the auto-score → panel-route decision rule on five hypothetical agent outputs (canonical match, weak rationale, alternative-answer match, restraint false positive, panel-routed novel answer) so the rubric is exercised against concrete cases rather than read in the abstract.
 
 <a id="restraint"></a>
 
@@ -557,7 +558,7 @@ Captured at execution (during/after the trial):
 - `model_parameters`: `temperature`, `top_p`, `top_k`, `max_tokens`, `system_prompt` (if set), and any other API knobs that affect output. Default is `temperature: 0.0` to minimize trial-to-trial variance, but a higher value is a defensible deliberate choice for surfacing answer diversity — record what was used.
 - `api_pricing_snapshot`: a timestamped pricing table for each model used (the basis of [Phase D's cost math](#roadmap)). Pricing changes over time; the snapshot lets the originally-budgeted figures be retrospectively interpreted.
 - `trial_date_range`: ISO 8601 start and end timestamps for trial execution. Includes any calendar drift that's relevant — e.g., model deprecations announced during the trial window, or substrate enrichments landing mid-trial (which would invalidate the run).
-- `panel_composition`: the human reviewer roster for [§19 panel-routed recommendations](#worked-example) and the 10–20% citation-grounding audit sample called out in [§8](#scoring-rubric). Count, role, blind-review protocol (was the panel blind to which condition produced the recommendation?), and the [Fleiss κ](#cant-measure) target met.
+- `panel_composition`: the human reviewer roster for [§20 panel-routed recommendations](#worked-example) and the 10–20% citation-grounding audit sample called out in [§8](#scoring-rubric). Count, role, blind-review protocol (was the panel blind to which condition produced the recommendation?), and the [Fleiss κ](#cant-measure) target met.
 - `rubric_modifications`: pointer to `rubric-modifications.md` per §10 item 3 if any post-hoc adjustments occurred during scoring. Each entry: what changed, why, and impact on prior scores.
 
 The `reproducibility.yaml` commits as part of the experiment's results doc, mirroring how [V5 results](dj-site-divergence-experiment-v5-results.md) and [V6 results](wxyc-ios-64-experiment-results.md) document their setup. A future replay is then: check out the recorded `repo_sha`, `substrate_sha`, `submodule_shas.*`, and `plant_tree_sha`; re-run the substrate extractor; verify `catalog_hashes` and `query_output_hashes` match; replay the prompt (hash-pinned) through the recorded `model_versions` with the recorded `model_parameters`; auto-score with the rubric (hash-pinned). Discrepancies between replay and original results are one of: substrate non-determinism (which V5/V6 ruled out for the substrate; V7 should re-verify on Swift after the new enrichments land), LLM non-determinism (the dominant axis — see [§13](#risks)), or rubric drift (caught by `rubric_modifications` if disciplined, undetectable if not).
@@ -654,7 +655,7 @@ Honest scope limits:
 - *Diagnostic:* qualitative review of the natural-findings panel notes — which axes did the agent get wrong on naturals that it got right on plants? Likely candidates: plants encode the missing-abstraction signal too cleanly (lab vs field); naturals have noise (multiple plausible refactors, mid-migration code, intentional non-orthogonality) the plants don't model.
 - *Recovery:* report the gap explicitly as the natural-findings result. If the gap is concentrated in one category, redesign that category's plants to encode more realistic noise. For round 1, the plant-derived numbers retain validity as a methodology-validation result; the natural-findings gap becomes round 2's primary design input. Plant design is a generation-from-naturals process by [V3's de-abstraction principle](dj-site-divergence-experiment-v3-plant-manifest.md#what-de-abstraction-means-here) — closing this gap is what round 2 of the experiment is *for*.
 
-Failure modes not in this top five but tracked in [§13](#risks) and resolvable inline during execution: designer-as-actor bias on category mix (calibrate against wxyc-ios-64 PR history if scope-tractable, otherwise report the bias), rubric drift during execution (log to `rubric-modifications.md` and re-score affected recommendations), `other` escape-hatch abuse (caught by the natural-findings panel sample and the §19.5-style panel-route protocol).
+Failure modes not in this top five but tracked in [§13](#risks) and resolvable inline during execution: designer-as-actor bias on category mix (calibrate against wxyc-ios-64 PR history if scope-tractable, otherwise report the bias), rubric drift during execution (log to `rubric-modifications.md` and re-score affected recommendations), `other` escape-hatch abuse (caught by the natural-findings panel sample and the §20.5-style panel-route protocol).
 
 <a id="roadmap"></a>
 
@@ -704,7 +705,7 @@ The methodology is specified to the point that a kickoff is meaningful, but seve
 
 4. **Plant-tree serving strategy.** [§10 contamination vectors](#pre-registration) allow either a flat non-git directory (V4 precedent) or a clean-history worktree. **Open:** pick one. **Default if uncontested:** flat non-git directory at `/tmp/wxyc-audit/plants-v7/` per V4's precedent (the same contamination class is being defended against). **Decided by:** experiment owner; preview the plant tree with `git status` / `git log` in the candidate environment to confirm no plant-naming leaks before pre-registration freezes.
 
-5. **Weak-rationale scoring policy.** [§19.2](#worked-example) explicitly flags two reasonable settings for the case where category and specifics match but a required citation is missing: (a) auto-score 0.5 per the §8 rubric table; (b) route to panel for grounding judgment. **Default if uncontested:** (a), with a panel-validated grounding-audit sample at 10–20% to catch systematic abuse of citation-substring matching. **Decided by:** experiment owner during pre-registration; this is a one-line rubric change so reversibility is cheap until trials start.
+5. **Weak-rationale scoring policy.** [§20.2](#worked-example) explicitly flags two reasonable settings for the case where category and specifics match but a required citation is missing: (a) auto-score 0.5 per the §8 rubric table; (b) route to panel for grounding judgment. **Default if uncontested:** (a), with a panel-validated grounding-audit sample at 10–20% to catch systematic abuse of citation-substring matching. **Decided by:** experiment owner during pre-registration; this is a one-line rubric change so reversibility is cheap until trials start.
 
 6. **Issue #5 (substrate-emitted `cluster_id`) status.** The [§6 prerequisite](#substrate-enrichments) flags [issue #5](https://github.com/jakebromberg/code-audit-pipeline/issues/5) as a V7 blocker. **Open:** does issue #5 land first, or does V7 ship with a defensive fuzzy-ID matcher in the scoring tooling? **Default if uncontested:** land #5 first (it's in the V5 backlog regardless and is the substrate-side fix for [V4's batching variance](#risks)); if scope-blocked, the fuzzy matcher is roughly 50 lines in the analyzer. **Decided by:** the substrate owner.
 
@@ -724,13 +725,37 @@ The [V6 results doc](wxyc-ios-64-experiment-results.md) currently treats substra
 
 The substrate roadmap also needs reframing. V6's "next gap to close" (extension-merging for [plant 20](wxyc-ios-64-experiment-results.md#the-expected-gap-extension-fragmented-types)) is a substrate-fidelity closure with no bearing on refactor-recommendation quality. From the actionable-recommendations perspective, extension-merging is roughly irrelevant. The genuinely high-leverage substrate work is the [V7 enrichments](#substrate-enrichments) — name/type split, conformance edges, inheritance edges, erased body signatures, package-dependency graph, context flags, population clustering. Reframing extension-merging as "deferred substrate-fidelity polish" rather than "next priority" reflects the actual goal.
 
+<a id="forward-roadmap"></a>
+
+## 19. Forward roadmap: V7 → V8 → V9
+
+V7 results inform V8 design more than V8 design informs V7. The list below is therefore directional, not contractual — V8 scope will be set by what V7 reveals. The project-level future-directions roadmap is in [`future-directions.md`](future-directions.md); this section ties experiment rounds to where each project capability comes online.
+
+**V8 candidates (after V7 results land):**
+
+1. **Round 2 of V7.** If V7 ships as the [MVP](#mvp) (Cat. 1–5 only, 25 plants, 2 conditions, 1 model tier), round 2 expands to Cat. 6 (subclass lift), Cat. 7 (macro synthesis), and Cat. 8 (composition) with class-inheritance edges and population clustering as the new substrate work. If V7 ships full ([§15](#roadmap) 40 plants), round 2 broadens along the model-tier axis (Anthropic + non-Anthropic comparison) and scales the natural-findings panel sample to the size needed for tight [Fleiss κ](#cant-measure) bounds. Estimated 4–6 weeks after V7 results land.
+
+2. **Population-clustering calibration round.** If [§6.7's](#enrichment-population-clustering) calibration step is unscoped at V7 freeze, V8 dedicates a sub-experiment to it: tune `min_pop_size` and `min_slot_fanout` thresholds on unmodified wxyc-ios-64 plus 2–3 other Swift codebases the team has access to, measure macro-candidate recall vs incidental-match rate. The calibration result feeds the round-2 Cat. 7 plant trial. Conceptually adjacent to [V5's substrate-closure round](dj-site-divergence-experiment-v5-results.md) — substrate work whose value is measured by the next plant trial that depends on it.
+
+3. **Recommendation-acceptance proxy.** V7 measures recommendation quality against a pre-registered rubric. The next layer is *acceptance* — would the recommendation get merged? V8 could open draft PRs for top-scoring recommendations and track accept rate as a second metric, with the caveat that PR-merge depends on many factors V7's scope didn't see (mid-migration, area-being-removed, scheduling). This is the [§12 stakeholder-acceptance](#cant-measure) gap, partially addressable.
+
+**V9 candidates (post-V8, more speculative):**
+
+4. **Polyglot cross-language drift detection.** [Issue #6](https://github.com/jakebromberg/code-audit-pipeline/issues/6). V7–V8 measure single-language substrate; V9 extends to cross-language: when an API type in Swift drifts from its TypeScript codegen counterpart (or vice versa), the substrate should flag it. Plant design is harder than V7 because the "drift" is between two languages, so plant generation needs paired AST extractors and a join key (likely the `api.yaml`-style schema both languages codegen from). The recommendation taxonomy extends with a `codegen-realign` category. Several open design questions; not feasible until the substrate has dual-language join machinery — V9, not V8.
+
+5. **Temporal substrate / audit-as-changelog.** [Issue #7](https://github.com/jakebromberg/code-audit-pipeline/issues/7) plus [`future-directions.md` §1](future-directions.md). V7–V8 measure recommendations at a single repo SHA. V9 extends to time: when a cluster grew over a sequence of commits, which commit introduced the divergence? Which PR would have prevented it? Diff-based snapshot storage ([Issue #8 SQLite substrate](https://github.com/jakebromberg/code-audit-pipeline/issues/8)) is the prerequisite — the storage shape pivots from flat JSON to indexed rows. The substrate questions then change from "what's the current state?" to "where did this drift start, and was a structural moment available?" — same plant categories, additional temporal axis.
+
+6. **Beyond types: route handlers, SQL ASTs, telemetry calls.** [`future-directions.md` §2](future-directions.md) enumerates the structural-extraction-as-universal-index direction. The methodology in this doc generalizes: same plant categories (extract-to-common, protocol inheritance, default impl, etc.), same rubric, but applied to new substrates. Each new extractor is its own plant trial. V9 could pilot route handlers as the next-most-mature substrate after types/functions; SQL ASTs and telemetry calls follow.
+
+The list is not a commitment — it's a sketch of what becomes feasible after V7 lands. The actual V8 plan should be drafted from V7 results plus [§14 pre-mortem findings](#pre-mortem) (which categories underperformed, which substrate enrichments turned out load-bearing). If V7 hits a stop-the-line failure mode like [§14.1 substrate-didn't-help](#pre-mortem), V8 priorities reorient toward understanding *why* before adding new dimensions.
+
 <a id="worked-example"></a>
 
-## 19. Worked-example scoring walkthrough
+## 20. Worked-example scoring walkthrough
 
 Five hypothetical agent outputs walked through the [§8 rubric](#scoring-rubric) — canonical-strong, canonical-weak-rationale, alternative-answer, restraint false positive, panel-routed novel answer. The aim is to make the auto-score → panel-route decision rule operational rather than abstract.
 
-### 19.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
+### 20.1 Auto-scored canonical: Plant 4.1 (PAT), exemplary agent output
 
 Plant 4.1's manifest entry is in §8. Suppose an agent emits this recommendation for the cluster that surfaces the planted `TrackContainer` / `ShowContainer` pair:
 
@@ -762,7 +787,7 @@ Auto-scorer walkthrough per §8:
 
 This recommendation contributes 1.0 to Plant 4.1's per-plant score and 0.25 (1.0 / 4) to Cat. 4's per-category recall. The grounding check (a sample of recommendations gets panel-validated per §8) might still flag this for the 10–20% audit sample, but the auto-score stands unless the panel marks it as non-load-bearing citation.
 
-### 19.2 Auto-scored canonical: Plant 4.1, weak rationale
+### 20.2 Auto-scored canonical: Plant 4.1, weak rationale
 
 Same plant, different agent output:
 
@@ -791,7 +816,7 @@ Walkthrough:
 
 → Auto-score: §8 case 1 conditions are not all met (citation requirement fails). The rubric has two reasonable settings here, both defensible and worth pre-registering: (a) score **0.5** ("right specifics with weak rationale" per the §8 table); (b) route to panel for grounding judgment. Pre-registration should pick one before trials run; the default in the doc is (a) — auto-scorer applies the 0.5 floor for missing required citations, and the 10–20% grounding-audit sample catches systematic abuse of the citation-substring loophole separately.
 
-### 19.3 Auto-scored canonical: Plant 4.1, alternative-answer match
+### 20.3 Auto-scored canonical: Plant 4.1, alternative-answer match
 
 Same plant, agent picks the generic-struct alternative:
 
@@ -820,7 +845,7 @@ Walkthrough:
 
 → Auto-score: **0.7** (alternative answer, grounded rationale). The agent traded the protocol-shaped answer for a struct-shaped one, which the manifest weights at 0.7 because for *protocol*-shaped source pairs, PAT is more idiomatic than collapsing-to-generic-struct.
 
-### 19.4 Restraint plant: Plant 1R, false positive
+### 20.4 Restraint plant: Plant 1R, false positive
 
 Plant 1R is a test-vs-production restraint. The agent emits:
 
@@ -852,7 +877,7 @@ Walkthrough per §8 restraint rubric:
 
 This contributes 0.0 to the false-positive rate denominator-of-action: across all 8 restraint plants, the false-positive rate is the count of action recommendations / 8. The agent also ignored the `is_test: true` context flag on the `_Plant_CacheClientConfigMock.swift` member — a recommendation that *cites the flag and recommends action anyway* would still score 0.0 but is qualitatively different (informed false positive vs context-blind false positive), so panel notes flag the distinction during the citation-audit sample.
 
-### 19.5 Panel-routed: novel-but-defensible answer
+### 20.5 Panel-routed: novel-but-defensible answer
 
 Suppose Plant 3.1 (default implementation) draws this recommendation:
 
