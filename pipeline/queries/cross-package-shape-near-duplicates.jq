@@ -1,7 +1,10 @@
 # cross-package-shape-near-duplicates.jq — find shape-similar types across packages
 # whose NAMES differ, so the existing cross-package-shadows query misses them.
 #
-# Run:  jq -r --argjson threshold 0.7 -f cross-package-shape-near-duplicates.jq catalog.json
+# Run:  jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/cross-package-shape-near-duplicates.jq catalog.json
+#        (-r for raw text output)
+#
+# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/cross-package-shape-near-duplicates.jq catalog.json
 #
 # Signals: main-package types that should probably be importing from shared/, but
 # have been re-declared with a different name. Catches the "re-typed contract" antipattern.
@@ -14,6 +17,10 @@
 # packages is the highest-signal finding.
 #
 # `--argjson threshold 0.7` is REQUIRED — jq errors at compile time on an undefined variable.
+#
+# cluster_id format:  cross-package-shape-near-duplicates:NameA+NameB  (sorted)
+
+include "_canonical";
 
 . as $all
 | $threshold as $thr
@@ -36,16 +43,22 @@
     | ([$af[] | select(. as $x | $bf | index($x) != null)] | length) as $ic
     | ($ic / $u) as $jacc
     | select($jacc >= $thr and ($af | length) >= 3 and ($bf | length) >= 3)
-    | { jacc: $jacc, main: $a, shared: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
+    | { cluster_id: cluster_id_sorted_pair("cross-package-shape-near-duplicates"; $a.name; $b.name),
+        query: "cross-package-shape-near-duplicates",
+        jacc: $jacc, main: $a, shared: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
         shared_only: ([$bf[] | . as $x | select(($af | index($x)) == null)]),
         main_only:   ([$af[] | . as $x | select(($bf | index($x)) == null)])
       }
   ]
 | sort_by(-(.jacc), .main.name, .shared.name)
 | .[]
-| "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] main:\(.main.name)  <->  shared:\(.shared.name)\n"
-  + "    main:    \(.main.kind) — \(.main.file):\(.main.line)\n"
-  + "    shared:  \(.shared.kind)\(if .shared.generated then " (generated)" else "" end) — \(.shared.file):\(.shared.line)\n"
-  + "    shared field names: \(.bf | join(", "))\n"
-  + "    shared only:        \(.shared_only | join(", "))\n"
-  + "    main only:          \(.main_only | join(", "))"
+| if output_format == "jsonl" then
+    @json
+  else
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] main:\(.main.name)  <->  shared:\(.shared.name) cid=\(.cluster_id)\n"
+    + "    main:    \(.main.kind) — \(.main.file):\(.main.line)\n"
+    + "    shared:  \(.shared.kind)\(if .shared.generated then " (generated)" else "" end) — \(.shared.file):\(.shared.line)\n"
+    + "    shared field names: \(.bf | join(", "))\n"
+    + "    shared only:        \(.shared_only | join(", "))\n"
+    + "    main only:          \(.main_only | join(", "))"
+  end

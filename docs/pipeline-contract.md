@@ -197,3 +197,72 @@ extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <pat
 Defaults: `--output` writes to stdout. Summary stats (file counts, kind histogram, error count) go to stderr.
 
 Exit code: `0` if at least one file was successfully indexed, `1` if no files could be parsed.
+
+## Cluster-query output contract
+
+Every query in `pipeline/queries/*.jq` (excluding the `_canonical.jq` helper library) emits cluster rows in one of two modes, controlled by the `OUTPUT_FORMAT` environment variable.
+
+### Invocation
+
+```bash
+# Default (text): human-readable output with `cid=<cluster_id>` annotated on each cluster header.
+jq -L pipeline/queries -rf pipeline/queries/<query>.jq <input.json>
+
+# JSONL: one cluster object per line, consumed by the V7 trial harness and the auto-scorer.
+OUTPUT_FORMAT=jsonl jq -L pipeline/queries -rf pipeline/queries/<query>.jq <input.json>
+```
+
+The `-L pipeline/queries` flag tells jq where to find `_canonical.jq` (the shared library each query includes). Both modes require `-r` — text mode renders multi-line cluster output, JSONL mode emits the `@json`-encoded cluster as a raw line.
+
+### JSONL row schema
+
+Every JSONL row is one self-contained cluster as a JSON object, with at minimum:
+
+- `cluster_id` — stable content-addressed identifier (see formats below).
+- `query` — the query that emitted the row (e.g., `"exact-duplicates"`, `"function-duplicates-near"`).
+
+Query-specific fields (decls, members, jaccard, intersection, union, etc.) are emitted as the query computes them. Downstream consumers should treat the row as a structured snapshot rather than a fixed schema — Phase B of the V7 experiment runs a normalization pass that flattens these into the agent-prompt input shape; the raw schema captures everything the query knows.
+
+### `cluster_id` formats (substrate-emitted, stable)
+
+Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonical.jq`. The format is content-addressed: the same set of declarations always produces the same cluster_id, regardless of which trial or invocation surfaces them.
+
+| Query | `cluster_id` format | Sorting / direction |
+|---|---|---|
+| `exact-duplicates` | `exact-duplicates:NameA+NameB+...` | sorted lexicographically, `+` separator |
+| `name-collisions` | `name-collisions:Name` | the colliding name |
+| `cross-package-shadows` | `cross-package-shadows:Name` | asymmetric (main↔shared); just the shadowed name |
+| `cross-package-shadows-any` | `cross-package-shadows-any:Name` | symmetric N-package; just the shadowed name |
+| `cross-package-shape-near-duplicates` | `cross-package-shape-near-duplicates:NameA+NameB` | sorted lexicographically |
+| `cross-package-shape-near-duplicates-any` | `cross-package-shape-near-duplicates-any:NameA+NameB` | sorted lexicographically |
+| `near-duplicates` | `near-duplicates:NameA+NameB` | sorted lexicographically |
+| `near-duplicates-any` | `near-duplicates-any:NameA+NameB` | sorted lexicographically |
+| `subset-pairs` | `subset-pairs:Sub__Sup` | directed (sub then sup); swap changes the id |
+| `function-duplicates` (exact section) | `function-duplicates-exact:Loc+Loc+...` | sorted by `package:file:line:name` location key |
+| `function-duplicates` (near section) | `function-duplicates-near:Loc+Loc` | sorted location keys |
+| `file-duplicates` (exact section) | `file-duplicates-exact:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
+| `file-duplicates` (norm section) | `file-duplicates-norm:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
+
+**Why function-duplicates uses location keys instead of bare names:** function names collide more often than type names (`hashSlug` can legitimately exist in N packages). A bare-name id like `function-duplicates-exact:hashSlug+hashSlug` would be ambiguous within a cluster; `function-duplicates-exact:Core:Foo.swift:10:hashSlug+Shared:Bar.swift:20:hashSlug` is unambiguous.
+
+**Why subset-pairs is directed:** the pair (A, B) where A ⊂ B is fundamentally different from (B, A) where B ⊂ A. Most clusters are symmetric; subset-pairs is the one exception, and the directed `Sub__Sup` form preserves that distinction.
+
+**Why file paths are package-qualified:** two packages can have files at the same relative path (`Sources/Utils.swift`). The `package:path` key disambiguates.
+
+### Why substrate-emitted, not agent-derived
+
+V4 measured the cost of agent-derived cluster ids: 2 of 5 trials emitted batched grouped findings instead of one-per-cluster, dropping plant 5–8 detection from 5/5 to 3/5 and dragging C3 intra-trial Jaccard from 1.00 down to 0.85. V5/V6 didn't surface the same variance with their plant sets but the structural exposure stayed. The substrate-emitted `cluster_id` closes the exposure: the agent reads it verbatim and the scorer joins on it without canonicalization heuristics. This is the V7 prerequisite ([issue #5](https://github.com/jakebromberg/code-audit-pipeline/issues/5)).
+
+### Helper library (`_canonical.jq`)
+
+Cluster-id construction lives in `pipeline/queries/_canonical.jq` so the rules are DRY and unit-testable. Helpers:
+
+- `cluster_id_sorted_names(prefix; names)` — for N-member clusters keyed by sorted names.
+- `cluster_id_single_name(prefix; name)` — for single-name clusters.
+- `cluster_id_sorted_pair(prefix; a; b)` — for unordered pairs.
+- `cluster_id_directed_pair(prefix; sub; sup)` — for directed pairs (subset-pairs).
+- `cluster_id_sorted_paths(prefix; paths)` — for path-keyed clusters (file-duplicates).
+- `fn_location_key(decl)` — location key for function disambiguation.
+- `output_format` — `"text"` (default) or `"jsonl"`, read from `$ENV.OUTPUT_FORMAT`.
+
+Unit tests covering each helper live in `pipeline/queries/_tests/test_canonical.sh`; integration tests covering each query in both modes live in `pipeline/queries/_tests/test_queries_integration.sh`. Both run with no dependencies beyond `jq` and `bash`.

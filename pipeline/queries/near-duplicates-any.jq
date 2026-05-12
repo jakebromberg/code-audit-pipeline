@@ -1,7 +1,10 @@
 # near-duplicates-any.jq — find type pairs with field-name Jaccard ≥ threshold
 # across ALL packages (not just one).
 #
-# Run:  jq -r --argjson threshold 0.7 -f near-duplicates-any.jq catalog.json
+# Run:  jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates-any.jq catalog.json
+#        (-r for raw text output)
+#
+# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates-any.jq catalog.json
 #
 # Unlike near-duplicates.jq (which filters to package == "main" for the dj-site /
 # main↔shared layout), this query compares every shape-bearing type against every
@@ -13,6 +16,10 @@
 # focus only on near-exact matches.
 #
 # `--argjson threshold N` is REQUIRED — jq errors at compile time on an undefined variable.
+#
+# cluster_id format:  near-duplicates-any:NameA+NameB  (sorted)
+
+include "_canonical";
 
 [ .[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $bs
 | [
@@ -26,12 +33,18 @@
     | ([$af[] | select(. as $x | $bf | index($x) != null)] | length) as $ic
     | ($ic / $u) as $jacc
     | select($jacc >= $threshold and $jacc < 1.0 and ($af | length) >= 3 and ($bf | length) >= 3)
-    | { jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf, intersection: $ic, union: $u }
+    | { cluster_id: cluster_id_sorted_pair("near-duplicates-any"; $a.name; $b.name),
+        query: "near-duplicates-any",
+        jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf, intersection: $ic, union: $u }
   ]
 | sort_by(-(.jacc))
 | .[]
-| "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.a.package):\(.a.name)  <->  \(.b.package):\(.b.name)\n"
-  + "    A: \(.a.kind) — \(.a.file):\(.a.line)\n"
-  + "    B: \(.b.kind) — \(.b.file):\(.b.line)\n"
-  + "    A fields: \(.af | join(", "))\n"
-  + "    B fields: \(.bf | join(", "))"
+| if output_format == "jsonl" then
+    @json
+  else
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.a.package):\(.a.name)  <->  \(.b.package):\(.b.name) cid=\(.cluster_id)\n"
+    + "    A: \(.a.kind) — \(.a.file):\(.a.line)\n"
+    + "    B: \(.b.kind) — \(.b.file):\(.b.line)\n"
+    + "    A fields: \(.af | join(", "))\n"
+    + "    B fields: \(.bf | join(", "))"
+  end
