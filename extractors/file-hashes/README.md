@@ -40,4 +40,5 @@ See [`../../docs/pipeline-contract.md`](../../docs/pipeline-contract.md) under "
 ## What it doesn't
 
 - Doesn't fingerprint semantic equivalence — re-formatted code with reordered imports won't normalize to the same hash. For semantic dedup, see `function-catalog.mjs` + `function-duplicates.jq` (function-body-level) or the type catalog's `shape_sig` clustering.
-- Doesn't dedupe symlinks. If the repo has symlinks, both ends will appear in the catalog with identical raw bytes.
+- Doesn't follow symlinks. `readdirSync({withFileTypes:true}).isFile()` uses `lstat`, so symlinked files are skipped silently. If the repo has a symlinked source tree, only files reached by ordinary directory walk appear in the catalog.
+- The `--include-tests` filter regex matches JS-family test conventions (`*.test.ts`, `*.spec.tsx`, etc). If you broaden `--extensions` to include Python or another language with a different test-naming convention (Python's `test_*.py` / `*_test.py`), those test files won't be filtered automatically — pass `--include-tests` and accept the noise, or pre-filter the directory.

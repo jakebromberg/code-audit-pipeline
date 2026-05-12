@@ -1,7 +1,7 @@
 # cross-package-shape-near-duplicates.jq — find shape-similar types across packages
 # whose NAMES differ, so the existing cross-package-shadows query misses them.
 #
-# Run:  jq -rf cross-package-shape-near-duplicates.jq --argjson threshold 0.7 catalog.json
+# Run:  jq -r --argjson threshold 0.7 -f cross-package-shape-near-duplicates.jq catalog.json
 #
 # Signals: main-package types that should probably be importing from shared/, but
 # have been re-declared with a different name. Catches the "re-typed contract" antipattern.
@@ -12,9 +12,11 @@
 # Pairs with the same name are excluded (those belong to cross-package-shadows).
 # Exact-shape-match pairs (Jaccard 1.0) ARE included — different name, same shape across
 # packages is the highest-signal finding.
+#
+# `--argjson threshold 0.7` is REQUIRED — jq errors at compile time on an undefined variable.
 
 . as $all
-| ($threshold // 0.7) as $thr
+| $threshold as $thr
 | ([ $all[]
      | select(.fields != null and (.fields | length) >= 3)
      | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object")
@@ -36,8 +38,7 @@
     | select($jacc >= $thr and ($af | length) >= 3 and ($bf | length) >= 3)
     | { jacc: $jacc, main: $a, shared: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
         shared_only: ([$bf[] | . as $x | select(($af | index($x)) == null)]),
-        main_only:   ([$af[] | . as $x | select(($bf | index($x)) == null)]),
-        intersection_fields: ([$af[] | . as $x | select(($bf | index($x)) != null)] | sort)
+        main_only:   ([$af[] | . as $x | select(($bf | index($x)) == null)])
       }
   ]
 | sort_by(-(.jacc), .main.name, .shared.name)

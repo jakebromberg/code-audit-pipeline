@@ -14,8 +14,8 @@
 
 import ts from 'typescript';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { join, relative, resolve, dirname, basename } from 'node:path';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const { values } = parseArgs({
@@ -95,12 +95,9 @@ function bodyHashOf(normLines) {
 }
 
 function bodyTextOf(node, sf) {
-  // For function/method declarations, the body is the block statement.
-  // For arrow functions, body is either a Block or an Expression — for the latter, the
-  // body is a single expression; we still want to capture it.
-  if (!node) return '';
-  if (ts.isBlock(node)) return node.getText(sf);
-  return node.getText(sf);
+  // Function/method declarations have a Block body; arrow functions have either a
+  // Block or an Expression. getText() handles all of these uniformly.
+  return node ? node.getText(sf) : '';
 }
 
 function paramsOf(parameters, sf) {

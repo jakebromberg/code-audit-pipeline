@@ -13,8 +13,10 @@
 . as $all
 | ([ $all[] | select((.generated // false) != true) ]) as $files
 
-# Section 1: exact byte duplicates
+# Section 1: exact byte duplicates. Filter 0-byte files — empty stubs aren't substantive
+# duplication signal and the agent doesn't need to score them.
 | ( $files
+    | map(select(.size_bytes > 0))
     | group_by(.sha256)
     | map(select(length > 1))
     | map({
@@ -27,8 +29,9 @@
 
 | ( [ $exact[].members[] | "\(.package):\(.file)" ] | unique) as $exact_paths
 
-# Section 2: whitespace-normalized duplicates that aren't in $exact
+# Section 2: whitespace-normalized duplicates that aren't in $exact (and aren't empty)
 | ( $files
+    | map(select(.size_normalized > 0))
     | map(select(("\(.package):\(.file)") as $p | $exact_paths | index($p) == null))
     | group_by(.sha256_normalized)
     | map(select(length > 1))

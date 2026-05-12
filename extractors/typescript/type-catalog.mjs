@@ -424,9 +424,13 @@ for (const f of sharedFiles) {
 //
 // Output:
 //   - All operands resolved → fields = unique union, shape_sig set, resolved_from = "intersection",
-//     operands stays as a names list for traceability.
+//     operands rewritten from {kind, ...} objects to a flat names list for traceability.
 //   - At least one operand unresolved after max iters → fields stays null, unresolved = true,
 //     unresolved_operands lists the offenders (for debugging).
+//
+// NOTE: the `operands` field changes shape between the first pass (array of {kind, ...} objects)
+// and the resolved post-pass (array of strings). This is intentional and all in-process —
+// external consumers reading `catalog.json` only ever see the post-resolution shape.
 {
   const MAX_ITERS = 5;
   // fieldsByName: built fresh each iteration so newly-resolved intersections feed transitive cases.
@@ -460,7 +464,11 @@ for (const f of sharedFiles) {
         }
       }
       if (!unresolved) {
-        // Dedupe by field NAME (left of `:`) — same-named field from two operands collapses.
+        // Dedupe by field NAME (left of `:`) — same-named field from two operands collapses
+        // to the FIRST occurrence in declaration order. TypeScript's true semantics would
+        // intersect (`{a:string} & {a:number}` → `a: never`), but the substrate is for
+        // clustering, not type-checking — we just need a deterministic `shape_sig`. Order-
+        // dependence is documented in `docs/pipeline-contract.md`.
         const seenName = new Set();
         const merged = [];
         for (const f of collected) {
