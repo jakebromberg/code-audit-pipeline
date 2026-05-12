@@ -11,7 +11,8 @@
 # If you use a non-default extractor that emits different package names, adjust
 # the comparisons below.
 #
-# cluster_id format:  cross-package-shadows:Name  (per shadowed name)
+# cluster_id format:  cross-package-shadows:Name  (per shadowed name; ONE row per
+# shadowed name even if multiple main-package decls share it — see members[]).
 
 include "_canonical";
 
@@ -22,17 +23,22 @@ include "_canonical";
     | select(.package == "main")
     | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object")
     | select(.name as $n | $shared_names | index($n))
-    | {
-        cluster_id: cluster_id_single_name("cross-package-shadows"; .name),
-        query: "cross-package-shadows",
-        name, kind, package, file, line, touched_in_window, shape_sig
-      }
   ]
+| group_by(.name)
+| map({
+    cluster_id: cluster_id_single_name("cross-package-shadows"; .[0].name),
+    query: "cross-package-shadows",
+    name: .[0].name,
+    members: map({kind, package, file, line, touched_in_window, shape_sig})
+  })
 | sort_by(.name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "  \(if .touched_in_window then "*" else " " end) \(.name) [\(.kind)] — \(.file):\(.line) cid=\(.cluster_id)"
-    + (if .shape_sig then "  sig=" + (.shape_sig | .[0:80]) else "" end)
+    "\(.name) (\(.members | length) main-package decl\(if (.members | length) == 1 then "" else "s" end)) cid=\(.cluster_id)\n"
+    + (.members
+        | map("  \(if .touched_in_window then "*" else " " end) [\(.kind)] — \(.file):\(.line)"
+              + (if .shape_sig then "  sig=" + (.shape_sig | .[0:80]) else "" end))
+        | join("\n"))
   end

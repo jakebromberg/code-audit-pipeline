@@ -42,21 +42,15 @@ include "_canonical";
   ) as $exact
 
 # Names already covered by an exact cluster — exclude from near-dup section.
-| ( [ $exact[].decls[] | "\(.package):\(.file):\(.line):\(.name)" ] | unique) as $exact_ids
+| ( [ $exact[].decls[] | fn_location_key(.) ] | unique) as $exact_ids
 
 # --- Section 2: near-duplicate pairs (Jaccard ≥ threshold on body_lines, < 1.0) ---
 | ( [ range(0; $fns | length) as $i
       | range($i + 1; $fns | length) as $j
       | $fns[$i] as $a | $fns[$j] as $b
       | select($a.body_hash != $b.body_hash)
-      | select(
-          (("\($a.package):\($a.file):\($a.line):\($a.name)") as $aid
-           | $exact_ids | index($aid) == null)
-        )
-      | select(
-          (("\($b.package):\($b.file):\($b.line):\($b.name)") as $bid
-           | $exact_ids | index($bid) == null)
-        )
+      | select($exact_ids | index(fn_location_key($a)) == null)
+      | select($exact_ids | index(fn_location_key($b)) == null)
       | ($a.body_lines) as $al
       | ($b.body_lines) as $bl
       | ($al + $bl | unique | length) as $u
