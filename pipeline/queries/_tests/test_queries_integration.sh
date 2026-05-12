@@ -4,7 +4,8 @@
 # Verifies:
 #   1. Each query runs without error in both text and JSONL modes against synthetic fixtures.
 #   2. Every JSONL line is valid JSON and carries a `cluster_id` field with the expected prefix.
-#   3. Text-mode output contains `cid=<cluster_id>` markers.
+#   3. Every JSONL output's cluster_id values are unique within that query's run.
+#   4. Text-mode output contains `cid=<cluster_id>` markers.
 #
 # Run from repo root: pipeline/queries/_tests/test_queries_integration.sh
 
@@ -60,8 +61,19 @@ assert_jsonl_has_prefix() {
     fi
   done <<< "$jsonl"
 
+  # Verify cluster_id uniqueness within this query's output.
+  local total unique
+  total=$(echo "$jsonl" | grep -c .)
+  unique=$(echo "$jsonl" | jq -r '.cluster_id' | sort -u | grep -c .)
+  if [[ "$total" != "$unique" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s: %d rows but only %d unique cluster_ids — collision!\n" "$query" "$total" "$unique"
+    echo "$jsonl" | jq -r '.cluster_id' | sort | uniq -c | awk '$1 > 1 {print "      duplicate:", $2}'
+    return
+  fi
+
   PASS=$((PASS + 1))
-  printf "  ✓ %s: %d JSONL row(s), all with cluster_id starting '%s'\n" "$query" "$line_count" "$expected_prefix"
+  printf "  ✓ %s: %d JSONL row(s), all with cluster_id starting '%s' (unique)\n" "$query" "$line_count" "$expected_prefix"
 }
 
 assert_text_has_cid() {

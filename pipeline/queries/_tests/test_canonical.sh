@@ -81,8 +81,12 @@ assert_eq "sorts repo-relative paths" \
   "file-duplicates-exact:Shared/A.swift+Shared/B.swift" \
   "$(run 'cluster_id_sorted_paths("file-duplicates-exact"; ["Shared/B.swift", "Shared/A.swift"])')"
 
-echo "=== fn_location_key ==="
+echo "=== loc_key ==="
 assert_eq "concatenates package:file:line:name" \
+  "Shared/Core:Sources/Core/Foo.swift:42:hashSlug" \
+  "$(run 'loc_key({package: "Shared/Core", file: "Sources/Core/Foo.swift", line: 42, name: "hashSlug"})')"
+
+assert_eq "fn_location_key alias produces identical output" \
   "Shared/Core:Sources/Core/Foo.swift:42:hashSlug" \
   "$(run 'fn_location_key({package: "Shared/Core", file: "Sources/Core/Foo.swift", line: 42, name: "hashSlug"})')"
 
