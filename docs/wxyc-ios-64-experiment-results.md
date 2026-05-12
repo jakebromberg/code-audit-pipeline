@@ -85,3 +85,13 @@ Deferred to a follow-up. The gap is documented, predicted in the plant manifest,
 The substrate transfers cleanly to Swift. The same five-query class structure that gave 100% plant-recall on dj-site gives the same on wxyc-ios-64 once the extractor is rewritten in SwiftSyntax, the file-hashes extractor learns about Swift package layouts, and the cross-package queries generalize from main↔shared to N packages. The one known gap (extension-fragmented types) is Swift-specific and predicted in the plant manifest; the substrate's architectural posture toward gap closure is the same as the V4 → V5 transition on dj-site.
 
 The high-signal natural findings the substrate surfaces in the unmodified wxyc-ios-64 — `DebugMetricsProvider` duplicated byte-identical across two packages (6 methods), `PlayerState` vs `PlaybackState` enums at 83% Jaccard with a parallel pair of computed-property extensions at 85%, `StreamingService` vs `MusicServiceIdentifier` as 83%-similar enums across `Metadata` and `MusicShareKit` — are independent confirmation that the queries are doing real work on real code, not just on synthetic plants.
+
+## Postscript: V6's scope, after V7 was specified
+
+V6 validates the **input layer**: rhymes get from Swift source into cluster rows at 19/20 plant recall, matching the V5 dj-site result line-for-line on a 350-file codebase across 22 packages. That's what plant-recall measures, and that's what this doc reports.
+
+V6 does **not** validate the output layer — whether those cluster rows turn into actionable refactor recommendations. The cluster outputs in the conclusion section above (`DebugMetricsProvider`, `PlayerState`/`PlaybackState`, `StreamingService`/`MusicServiceIdentifier`) are *findings*, not recommendations. A finding tells you "these two enums look parallel"; a recommendation tells you "introduce a parent protocol with these two members and these conformers, because the existing package-dependency graph allows it."
+
+The [V7 refactor-recommendation experiment](refactor-recommendation-experiment-methodology.md) is the methodology for the output layer. V6's 19/20 plant recall is a *prerequisite* for V7 (cluster rows must exist to be turned into recommendations), not a *substitute* for it. The project's working definition of its deliverable — actionable refactor recommendations — rides on V6 ∧ V7, not on V6 alone.
+
+If you read V6 in isolation and concluded "the pipeline works," that conclusion is correct for the input layer and premature for the output layer. The two-layer framing in the [README](../README.md) and the V7 methodology doc's [background section](refactor-recommendation-experiment-methodology.md#background) walk through the distinction in more detail.
