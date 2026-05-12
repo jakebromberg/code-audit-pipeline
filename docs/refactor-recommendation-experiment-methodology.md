@@ -517,6 +517,30 @@ This experiment cannot run cleanly without pre-registration. The rubric is judgm
 
 The [V3 manifest review](dj-site-divergence-experiment-v3-plant-manifest.md) set the precedent for review discipline in this project; V4 demonstrated the cost of skipping it on contamination questions. V7 should be more rigorous on both axes because the rubric has more degrees of freedom than substrate-fidelity rubrics did.
 
+**Reproducibility checklist.** Each V7 trial run produces a `reproducibility.yaml` artifact committed alongside the results doc. It records every input needed to replay the experiment from scratch, so a future reader can re-derive results rather than take them on trust.
+
+Captured at pre-registration (before any trial):
+
+- `repo_sha`: the wxyc-ios-64 SHA the experiment ran against — full 40-character SHA, not abbreviated. The wxyc-ios-64 repo uses `Shared/Wallpaper` as a private submodule (called out in [Phase C of the roadmap](#roadmap)); record the submodule SHA separately under `submodule_shas.wallpaper`. Without this, Wallpaper-package plants can't be replayed.
+- `plant_tree_sha`: SHA-256 of the tarred `examples/swift-plants-v7/` directory, or — if served from a non-git flat directory per the [contamination-vectors mitigation above](#pre-registration) — SHA-256 of a tar of the served tree. The point is content-addressed identity that survives the non-git serving choice.
+- `substrate_sha`: the `code-audit-pipeline-swift-substrate` commit that produced the catalog (covers extractor source, query files, and any post-processing scripts). The catalog itself should byte-match if the same `substrate_sha` is replayed against the same `repo_sha` + `plant_tree_sha`, modulo OS-level filesystem ordering quirks the extractors should normalize away.
+- `manifest_hash`: SHA-256 of [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) (or its `experiments/v7-refactor-recommendation/plant-manifest.yaml` successor once Phase A lands). Both expected answers and `specifics_tolerance` values are covered by this hash.
+- `rubric_hash`: SHA-256 of the §8 rubric as committed. If the rubric is colocated in `plant-manifest.yaml`, only `manifest_hash` is needed; otherwise hash both.
+- `prompt_hash`: SHA-256 of [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) — covers the prompt body, all per-category specifics schemas, and the normalized cluster-row input shape.
+- `catalog_hashes`: per-catalog SHA-256 hashes — `type-catalog.json`, `function-catalog.json`, `file-hashes.json`, `package-graph.json` (V7-new), and any other [V7 enrichment artifacts](#substrate-enrichments).
+- `query_output_hashes`: per-query SHA-256 hashes of the 15 query output files in `/tmp/wxyc-ios-audit-planted/queries/` (or wherever the per-run scratch directory is set to per the project's [CLAUDE.md](../CLAUDE.md) convention).
+
+Captured at execution (during/after the trial):
+
+- `model_versions`: the API model identifier including version suffix (e.g., `claude-opus-4-7-20260101`). For multi-tier runs, one entry per tier. "No version suffix means latest" — always pin; un-pinned identifiers silently drift as new versions ship.
+- `model_parameters`: `temperature`, `top_p`, `top_k`, `max_tokens`, `system_prompt` (if set), and any other API knobs that affect output. Default is `temperature: 0.0` to minimize trial-to-trial variance, but a higher value is a defensible deliberate choice for surfacing answer diversity — record what was used.
+- `api_pricing_snapshot`: a timestamped pricing table for each model used (the basis of [Phase D's cost math](#roadmap)). Pricing changes over time; the snapshot lets the originally-budgeted figures be retrospectively interpreted.
+- `trial_date_range`: ISO 8601 start and end timestamps for trial execution. Includes any calendar drift that's relevant — e.g., model deprecations announced during the trial window, or substrate enrichments landing mid-trial (which would invalidate the run).
+- `panel_composition`: the human reviewer roster for [§17 panel-routed recommendations](#worked-example) and the 10–20% citation-grounding audit sample called out in [§8](#scoring-rubric). Count, role, blind-review protocol (was the panel blind to which condition produced the recommendation?), and the [Fleiss κ](#cant-measure) target met.
+- `rubric_modifications`: pointer to `rubric-modifications.md` per §10 item 3 if any post-hoc adjustments occurred during scoring. Each entry: what changed, why, and impact on prior scores.
+
+The `reproducibility.yaml` commits as part of the experiment's results doc, mirroring how [V5 results](dj-site-divergence-experiment-v5-results.md) and [V6 results](wxyc-ios-64-experiment-results.md) document their setup. A future replay is then: check out the recorded `repo_sha`, `substrate_sha`, `submodule_shas.*`, and `plant_tree_sha`; re-run the substrate extractor; verify `catalog_hashes` and `query_output_hashes` match; replay the prompt (hash-pinned) through the recorded `model_versions` with the recorded `model_parameters`; auto-score with the rubric (hash-pinned). Discrepancies between replay and original results are one of: substrate non-determinism (which V5/V6 ruled out for the substrate; V7 should re-verify on Swift after the new enrichments land), LLM non-determinism (the dominant axis — see [§13](#risks)), or rubric drift (caught by `rubric_modifications` if disciplined, undetectable if not).
+
 <a id="conditions"></a>
 
 ## 11. Conditions to compare
