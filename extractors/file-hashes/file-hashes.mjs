@@ -47,8 +47,30 @@ const SHARED = values.shared ? resolve(values.shared) : null;
 const INCLUDE_TESTS = values['include-tests'];
 const EXTS = new Set(values.extensions.split(',').map((s) => s.trim()).filter(Boolean));
 
+// Swift mode: enabled when 'swift' is among --extensions. Mirrors the swift-catalog
+// extractor's skip-list and package resolution so cross-catalog queries see the same
+// `package` field for the same file.
+const SWIFT_MODE = EXTS.has('swift');
+
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
 if (!INCLUDE_TESTS) SKIP_DIRS.add('tests');
+if (SWIFT_MODE) {
+  SKIP_DIRS.add('scripts');
+  SKIP_DIRS.add('ci_scripts');
+  SKIP_DIRS.add('.build');
+  SKIP_DIRS.add('.swiftpm');
+  SKIP_DIRS.add('DerivedData');
+  SKIP_DIRS.add('Pods');
+  if (!INCLUDE_TESTS) SKIP_DIRS.add('Tests');
+}
+
+function resolveSwiftPackage(relPath) {
+  const parts = relPath.split('/');
+  if (parts.length >= 2 && parts[0] === 'Shared') return parts[1];
+  if (parts.length >= 2 && parts[0] === 'WXYC') return `app:${parts[1]}`;
+  if (parts.length >= 2 && parts[0] === 'Sources') return parts[1];
+  return parts[0] || 'root';
+}
 
 function walkDir(root) {
   const out = [];
@@ -67,6 +89,7 @@ function walkDir(root) {
         const ext = m ? m[1] : '';
         if (!EXTS.has(ext)) continue;
         if (!INCLUDE_TESTS && /\.(test|spec)\.(tsx|ts|mts|cts|js|jsx|mjs|cjs)$/.test(e.name)) continue;
+        if (!INCLUDE_TESTS && SWIFT_MODE && /Tests\.swift$/.test(e.name)) continue;
         out.push(full);
       }
     }
@@ -92,9 +115,10 @@ function hashFile(filePath, pkgName, pkgRoot) {
   const buf = readFileSync(filePath);
   const norm = normalize(buf);
   const relPath = relative(pkgRoot, filePath);
-  const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts');
+  const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts') || relPath.endsWith('.generated.swift');
+  const pkg = SWIFT_MODE ? resolveSwiftPackage(relPath) : pkgName;
   return {
-    package: pkgName,
+    package: pkg,
     file: relPath,
     generated: isGenerated,
     size_bytes: buf.length,
