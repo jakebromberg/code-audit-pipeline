@@ -270,9 +270,10 @@ final class TypeCatalogVisitor: SyntaxVisitor {
 
     /// Both forms of the field set, returned together so emitShapeBearing can
     /// populate the flat (V6) `fields` and structured (V7 §6.1) `fields_structured`
-    /// from a single walk over the member block. The two arrays are sorted in
-    /// lockstep (`flat[i]` corresponds to `structured[i]` after both are sorted
-    /// by the structured form's `name`).
+    /// from a single walk over the member block. The pair is sorted by the
+    /// flat string (`"name:type"`), so `flat[i]` and `structured[i]` always
+    /// refer to the same member. This matches V6's `cases.sorted()` ordering
+    /// in `emitEnum`, so V6 byte-equivalence is preserved.
     private func extractFields(members: MemberBlockSyntax, includeMethods: Bool)
         -> (flat: [String], structured: [FieldStructured])
     {
@@ -289,10 +290,10 @@ final class TypeCatalogVisitor: SyntaxVisitor {
                 pairs.append(methodSignatureField(funcDecl: funcDecl))
             }
         }
-        // Lockstep sort by the field name so flat[i] and structured[i] refer
-        // to the same member. shapeSig() re-sorts flat for hash stability,
-        // so its input order doesn't matter; structured's order needs to
-        // match flat's after both go through .sorted() at the call site.
+        // Sort the pair by the flat string (`"name:type"`) so flat[i] and
+        // structured[i] refer to the same member. `shapeSig()` re-sorts flat
+        // internally for hash stability, so the re-sort on already-sorted
+        // input is a no-op and introduces no drift.
         pairs.sort { $0.flat < $1.flat }
         return (flat: pairs.map(\.flat), structured: pairs.map(\.structured))
     }
@@ -343,13 +344,17 @@ final class TypeCatalogVisitor: SyntaxVisitor {
 
     /// True if the SwiftSyntax type annotation is optional in any of its
     /// recognized forms: `T?` (OptionalTypeSyntax), `T!`
-    /// (ImplicitlyUnwrappedOptionalTypeSyntax), or the explicit `Optional<T>`
-    /// identifier form. The first two cover the syntactic sugar; the third
-    /// covers the rare explicit form.
+    /// (ImplicitlyUnwrappedOptionalTypeSyntax), the bare `Optional<T>`
+    /// identifier form, or the qualified `Swift.Optional<T>` member form.
+    /// The first two cover the syntactic sugar; the last two cover the rare
+    /// explicit forms.
     private func isOptionalType(_ type: TypeSyntax) -> Bool {
         if type.is(OptionalTypeSyntax.self) { return true }
         if type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) { return true }
         if let id = type.as(IdentifierTypeSyntax.self), id.name.text == "Optional" {
+            return true
+        }
+        if let member = type.as(MemberTypeSyntax.self), member.name.text == "Optional" {
             return true
         }
         return false
