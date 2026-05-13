@@ -36,22 +36,29 @@ Decision rule (methodology §8):
 
 `category == "other"` always routes to panel (case 6).
 
-Usage
------
+MVP scope (explicit limitations):
 
-    # Score a single recommendation:
-    python3 auto-scorer.py --recommendation rec.json
-    # → emits {"plant_id": "...", "score": 1.0, "match": "primary_match_full", ...}
-
-    # Dry-run against §20.1–20.5 worked examples (regression check):
-    python3 auto-scorer.py --dry-run
-    # → exits 0 if all 5 worked examples reproduce their asserted scores
-
-The MVP scorer is deliberately minimal: substring presence on rationale text,
-key-set superset check on specifics, structural comparison against manifest
-fields the manifest declares. The 10–20% grounding-audit sample (per §8) is
-the human counterweight to substring-matching's gameability — it is not
-implemented here.
+  • Specifics matching is KEY-ONLY, not value-aware. Case 1 fires when the
+    recommendation's `specifics` has all keys required by
+    `rubric.specifics_schemas[category]`; the values themselves are NOT
+    compared to `plant.primary_answer.specifics`, and the per-plant
+    `specifics_tolerance` field is UNREAD. A recommendation with correct keys
+    but wrong values (e.g., `new_protocol: "Wrong"`) will score 1.0 here.
+    Phase D's scoring path must add value-alignment if the methodology
+    requires it; this MVP is sufficient for the §20 worked examples because
+    their fixtures happen to agree on values.
+  • Extras-in-specifics are tolerated by the scorer (superset semantics: a
+    recommendation may carry extra keys beyond `required` and still match).
+    The validator (`validate-manifest.py`) stays closed-set — extras there
+    indicate manifest drift.
+  • Rationale citation is case-sensitive substring presence. `must_cite`
+    strings are symbol names and key phrases that should appear verbatim;
+    normalizing case would let "trackcontainer" satisfy "TrackContainer".
+  • The breaking-action (-0.5) heuristic reads wrong-answer note prose for
+    Swift-error phrasing; a structured `would_break: true` field on
+    `wrong_answers` entries would be more robust but is not the MVP shape.
+  • The 10–20% grounding-audit sample (per §8) is the human counterweight to
+    substring-match gameability — it is not implemented here.
 
 Exit code: 0 on success; nonzero on dry-run failure or input error.
 """
@@ -120,17 +127,18 @@ def _rationale_cites_all(rationale: str, must_cite: list[str]) -> tuple[bool, li
 
 
 def _specifics_keys_match(rec_specifics: dict, schema_required: list[str]) -> tuple[bool, list[str]]:
-    """Closed-set key check: the recommendation's specifics keys must equal
-    the schema's required set. Returns (ok, problem_descriptions)."""
+    """Superset key check: the recommendation's specifics keys must include
+    every key in the schema's `required` set. Extra keys are tolerated —
+    an LLM that emits additional metadata (e.g., a nested `notes` field)
+    should not lose a Case-1 match. Closed-set drift detection is the
+    validator's job, not the scorer's. Returns (ok, problem_descriptions).
+    """
     rec_keys = set(rec_specifics.keys()) if isinstance(rec_specifics, dict) else set()
     required = set(schema_required)
     missing = required - rec_keys
-    extra = rec_keys - required
     problems = []
     if missing:
         problems.append(f"missing keys: {sorted(missing)}")
-    if extra:
-        problems.append(f"unknown keys: {sorted(extra)}")
     return (not problems, problems)
 
 
@@ -327,8 +335,8 @@ def score_recommendation(
 # against. Matches the YAML in methodology §8 verbatim (modulo the YAML→dict
 # conversion).
 INLINE_PLANTS = {
-    "4.1-§8-example": {
-        "plant_id": "4.1-§8-example",
+    "4.1-s8-example": {
+        "plant_id": "4.1-s8-example",
         "category": "pat-introduction",
         "primary_answer": {
             "category": "pat-introduction",
@@ -370,7 +378,7 @@ INLINE_PLANTS = {
 WORKED_EXAMPLES = [
     {
         "label": "§20.1 canonical-strong: Plant 4.1 (§8 example) exemplary",
-        "plant_id": "4.1-§8-example",
+        "plant_id": "4.1-s8-example",
         "recommendation": {
             "cluster_id": "pat-candidates:TrackContainer+ShowContainer",
             "category": "pat-introduction",
@@ -401,7 +409,7 @@ WORKED_EXAMPLES = [
     },
     {
         "label": "§20.2 canonical-weak-rationale: Plant 4.1 (§8 example), missing 'differs at Item' citation",
-        "plant_id": "4.1-§8-example",
+        "plant_id": "4.1-s8-example",
         "recommendation": {
             "cluster_id": "pat-candidates:TrackContainer+ShowContainer",
             "category": "pat-introduction",
@@ -421,7 +429,7 @@ WORKED_EXAMPLES = [
     },
     {
         "label": "§20.3 alternative-answer match: Plant 4.1 (§8 example), generic-parameterization",
-        "plant_id": "4.1-§8-example",
+        "plant_id": "4.1-s8-example",
         "recommendation": {
             "cluster_id": "pat-candidates:TrackContainer+ShowContainer",
             "category": "generic-parameterization",
@@ -513,46 +521,187 @@ WORKED_EXAMPLES = [
     },
 ]
 
+# ─── Synthetic fixtures: branch-coverage backstop ─────────────────────────
+#
+# The §20.1–20.5 examples cover five of the auto-scorer's emit values
+# (`primary_match_full`, `primary_match_weak_rationale`, `alternative_match`,
+# `restraint_false_positive`, `other_routes_to_panel`). The branches below
+# (`breaking_action`, `adjacent_wrong_category`, `wrong_category_enumerated`,
+# `wrong_category_not_enumerated`, `no_action_grounded`,
+# `no_action_ungrounded`, `primary_category_wrong_specifics`) are live in
+# score_recommendation() but not exercised by §20. The fixtures below close
+# that gap with synthetic recommendations bound to real manifest plants —
+# they are NOT methodology-asserted scores, but they pin scorer behavior so
+# future logic changes can't silently break a branch.
+#
+# Synthetic fixtures are kept structurally minimal: each one exercises ONE
+# branch via the smallest meaningful recommendation shape.
+
+SYNTHETIC_FIXTURES = [
+    {
+        "label": "[synthetic] primary_category_wrong_specifics: Plant 4.1, missing 'replaces' key",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "pat-introduction",
+            "specifics": {
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                # `replaces` deliberately omitted — required by schema
+            },
+            "rationale": "TrackContainer and ShowContainer can become a PAT. differs at Item.",
+        },
+        "expected_score": 0.5,
+        "expected_match": "primary_category_wrong_specifics",
+    },
+    {
+        "label": "[synthetic] adjacent_wrong_category (0.3): Plant 4.1, protocol-inheritance against PAT",
+        "plant_id": "4.1-s8-example",
+        # Note: protocol-inheritance is adjacent to pat-introduction in
+        # rubric.adjacent_categories. extract-to-common would also be adjacent,
+        # but 4.1's §8 alternative_answers also lists extract-to-common, so
+        # that path hits Case 2 (alternative_match) before adjacency. Choose a
+        # category that is adjacent but NOT in alternative_answers.
+        "recommendation": {
+            "category": "protocol-inheritance",
+            "specifics": {
+                "parent": "Container",
+                "children": ["TrackContainer", "ShowContainer"],
+                "moved_members": ["item", "reload"],
+                "reuse_existing_swift_protocol": False,
+            },
+            "rationale": "Both protocols share members; lift them to a parent protocol.",
+        },
+        "expected_score": 0.3,
+        "expected_match": "adjacent_wrong_category",
+    },
+    {
+        "label": "[synthetic] breaking_action (-0.5): Plant 4.1, subclass-lift on protocols",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "subclass-lift",
+            "specifics": {
+                "base_class": "ContainerBase",
+                "method": "reload",
+                "subclasses": ["TrackContainer", "ShowContainer"],
+                "target_location": "Shared/Core",
+            },
+            "rationale": "Lift reload() into a shared base class.",
+        },
+        "expected_score": -0.5,
+        "expected_match": "breaking_action",
+    },
+    {
+        "label": "[synthetic] wrong_category_enumerated (0.0): Plant 4.1, no-action enumerated as wrong",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "no-action",
+            "specifics": {"reason_class": "coincidental"},
+            "rationale": "The two protocols look similar by coincidence.",
+        },
+        "expected_score": 0.0,
+        "expected_match": "wrong_category_enumerated",
+    },
+    {
+        "label": "[synthetic] wrong_category_not_enumerated (0.0): Plant 4.1, macro-synthesis fallback",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "macro-synthesis",
+            "specifics": {
+                "macro_name": "ContainerMacro",
+                "applies_to": ["TrackContainer", "ShowContainer"],
+                "synthesizes": ["item", "reload"],
+                "population_size_evidence": "2 conformers",
+                "use_swift_builtin": False,
+            },
+            "rationale": "Generate the protocol with a macro.",
+        },
+        "expected_score": 0.0,
+        "expected_match": "wrong_category_not_enumerated",
+    },
+    {
+        "label": "[synthetic] no_action_grounded (1.0): Plant 1R, no-action with cited rationale",
+        "plant_id": "1R",
+        # Uses the real 1R manifest entry (sample-app-mirror restraint).
+        # Rationale must cite all of 1R's rationale_must_cite substrings; if
+        # the manifest's must_cite set changes, this fixture FAILS — that is
+        # intentional drift detection. Keep the rationale's substring set in
+        # sync with the manifest, or rewrite both together.
+        "recommendation": {
+            "category": "no-action",
+            "specifics": {"reason_class": "sample-app-mirror"},
+            "rationale": (
+                "MetricRow appears in both the main app and in "
+                "Examples/WallpaperSampleApp. The sample-app copy is "
+                "intentional: it mirrors production but is gated by "
+                "is_sample_app — they MUST stay separate so the sample app "
+                "can demonstrate the type independently."
+            ),
+        },
+        "expected_score": 1.0,
+        "expected_match": "no_action_grounded",
+    },
+    {
+        "label": "[synthetic] no_action_ungrounded (0.5): Plant 1R, no-action without required citation",
+        "plant_id": "1R",
+        "recommendation": {
+            "category": "no-action",
+            "specifics": {"reason_class": "sample-app-mirror"},
+            "rationale": "These look duplicated but probably shouldn't be merged.",
+        },
+        "expected_score": 0.5,
+        "expected_match": "no_action_ungrounded",
+    },
+]
+
 
 def run_dry_run(rubric: dict, manifest: dict[str, dict]) -> int:
-    """Verify §20.1–20.5 worked examples reproduce their asserted scores.
+    """Verify worked-example + branch-coverage fixtures reproduce expected scores.
 
-    Methodology §20 is the spec; this is the regression test. Exits 0 if all
-    five examples match; nonzero (and prints diffs) otherwise. The dry-run is
-    the auto-scorer's TDD harness — changes to the matching logic that break
-    any §20 example are caught here.
+    Methodology §20.1–20.5 is the methodology-asserted spec; the SYNTHETIC_FIXTURES
+    pin scorer behavior on branches that §20 doesn't exercise (breaking_action,
+    adjacent_wrong_category, etc.). Exits 0 iff every fixture matches.
     """
+    fixtures = [("§20", WORKED_EXAMPLES), ("synthetic", SYNTHETIC_FIXTURES)]
     failures = []
-    for ex in WORKED_EXAMPLES:
-        plant = INLINE_PLANTS.get(ex["plant_id"]) or manifest.get(ex["plant_id"])
-        if plant is None:
-            failures.append(f"{ex['label']}: plant_id {ex['plant_id']!r} not in manifest")
-            continue
-        result = score_recommendation(ex["recommendation"], plant, rubric)
-        ok = (result.score == ex["expected_score"]) and (
-            result.match == ex["expected_match"]
-        )
-        status = "PASS" if ok else "FAIL"
-        print(
-            f"[{status}] {ex['label']}: "
-            f"score={result.score!r} (expected {ex['expected_score']!r}); "
-            f"match={result.match!r} (expected {ex['expected_match']!r})"
-        )
-        if not ok:
-            for note in result.notes:
-                print(f"    note: {note}")
-            failures.append(ex["label"])
+    total = 0
+    for label, group in fixtures:
+        for ex in group:
+            total += 1
+            plant = INLINE_PLANTS.get(ex["plant_id"]) or manifest.get(ex["plant_id"])
+            if plant is None:
+                failures.append(f"{ex['label']}: plant_id {ex['plant_id']!r} not in manifest")
+                continue
+            result = score_recommendation(ex["recommendation"], plant, rubric)
+            ok = (result.score == ex["expected_score"]) and (
+                result.match == ex["expected_match"]
+            )
+            status = "PASS" if ok else "FAIL"
+            print(
+                f"[{status}] {ex['label']}: "
+                f"score={result.score!r} (expected {ex['expected_score']!r}); "
+                f"match={result.match!r} (expected {ex['expected_match']!r})"
+            )
+            if not ok:
+                for note in result.notes:
+                    print(f"    note: {note}")
+                failures.append(ex["label"])
     if failures:
-        print(f"\nFAIL: {len(failures)}/{len(WORKED_EXAMPLES)} worked examples did not reproduce", file=sys.stderr)
+        print(f"\nFAIL: {len(failures)}/{total} fixtures did not reproduce", file=sys.stderr)
         for f in failures:
             print(f"  - {f}", file=sys.stderr)
         return 1
-    print(f"\nOK: all {len(WORKED_EXAMPLES)} §20 worked examples reproduce their asserted scores")
+    print(
+        f"\nOK: all {total} fixtures reproduce their asserted scores "
+        f"({len(WORKED_EXAMPLES)} §20 worked examples + {len(SYNTHETIC_FIXTURES)} synthetic branch-coverage)"
+    )
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(
+        description="Auto-score a single refactor recommendation against the V7 plant manifest."
+    )
     parser.add_argument(
         "--rubric", type=Path, default=DEFAULT_RUBRIC, help="Path to rubric.yaml"
     )
