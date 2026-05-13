@@ -219,7 +219,7 @@ cat /tmp/wxyc-ios-audit-planted/queries/function-duplicates.txt
 
 ### Candidates (2 fn + 2 struct canonical, 1 fn restraint — totals 3 fn + 2 struct counting 5R)
 
-> **Post-review revision:** the first draft included a third Cat 5 fn plant on the `NotificationMessageSequence.AsyncIterator.init` pair, alongside Cat 2.1 (missing-parent protocol pair) and Cat 5.4 (sequence-struct pair). The PR #21 review noted both the count over-budget (6 plants instead of 5 in Cat 5) and the multi-lens-overlap intensity (one substrate cluster driving 3 plants). The iterator-init plant was the simplest to drop; remaining Cat 5 plants are renumbered 5.1–5.4.
+> **Post-review revision:** the first draft included a third Cat 5 fn plant on the `NotificationMessageSequence.AsyncIterator.init` pair, alongside Cat 2.1 (missing-parent protocol pair) and the sequence-struct pair (now Plant 5.3). The PR #21 review noted both the count over-budget (6 plants instead of 5 in Cat 5) and the multi-lens-overlap intensity (one substrate cluster driving 3 plants). The iterator-init plant was the simplest to drop; remaining Cat 5 plants are renumbered 5.1–5.4.
 
 | plant_id | shape | source | package / location | rationale |
 |---|---|---|---|---|
@@ -259,7 +259,7 @@ Validating no canonical plant accidentally tests two categories:
 
 ### Multi-signal clusters acknowledged
 
-The MainActor/Async notification cluster in Core drives **plants 2.1, 5.2, and 5.4**. This is consistent with how the methodology treats the V7 plant set: plants are *recommendations the agent emits for one cluster row*, and one cluster row can legitimately admit multiple categorical recommendations. Per the [methodology §10 pre-registration review criterion #2](../../docs/refactor-recommendation-experiment-methodology.md#pre-registration), the review must explicitly check "does any plant accidentally test two categories at once?" — the answer here is "the substrate cluster drives three plants, each targeting a distinct lens; the rubric's per-plant `primary_answer` schema isolates which categorical recommendation each plant scores against." This is the correct shape; the alternative (three plants pointing at three distinct clusters) would waste real-substrate signal.
+The MainActor/Async notification cluster in Core drives **plants 2.1 and 5.3** (down from three plants in the first draft — see the post-review revision callout in §Category 5). The two remaining plants take orthogonal angles on the cluster: 2.1 names the missing-parent protocol (`NotificationMessage` with `var name: Notification.Name`); 5.3 generifies the sequence container over that protocol bound. Per the [methodology §10 pre-registration review criterion #2](../../docs/refactor-recommendation-experiment-methodology.md#pre-registration), the review must explicitly check "does any plant accidentally test two categories at once?" — the answer is that the rubric's per-plant `primary_answer` schema isolates which categorical recommendation each plant scores against, even when the underlying substrate signal is shared. The alternative (two plants pointing at two distinct clusters) would waste a real cross-category opportunity.
 
 The other multi-lens cluster is **3.2 BlendMode** which the rubric scores at the function-body angle; the struct-body angle is left to Cat 5 synthesized plant 5.4 to avoid double-counting.
 
