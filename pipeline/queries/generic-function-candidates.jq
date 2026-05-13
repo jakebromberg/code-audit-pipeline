@@ -49,7 +49,8 @@
 # body_line_count filter). The pair iteration is O(N²); per-pair work includes
 # body_lines Jaccard + per-line buddy search. Worst case O(N² * L²) where L is
 # body_line_count, but the same-body_line_count filter early-prunes most pairs.
-# Expect ~30-60s on a 5000-function catalog before further tuning.
+# Expect ~30-60s on a 5000-function catalog (extrapolated from the 1.0s
+# baseline; not measured) before further tuning.
 #
 # Output: one row per pair, ordered by Jaccard desc.
 #

@@ -57,7 +57,8 @@
 # Performance: 1.3s on the planted catalog (N=815 types, ~120 interface/struct
 # survivors of the kind+length filter). Pair iteration is O(N²); the per-pair
 # work is O(field_count) for the sort + zip. Scales as O(N² * field_count);
-# expect ~30s on a 5000-type catalog before further tuning.
+# expect ~30s on a 5000-type catalog (extrapolated from the 1.3s baseline; not
+# measured) before further tuning.
 #
 # Output: one row per protocol pair, ordered by field_count desc then slot diff
 # asc (cleanest matches first).
