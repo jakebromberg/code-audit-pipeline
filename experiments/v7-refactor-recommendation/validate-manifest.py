@@ -3,23 +3,26 @@
 
 Checks performed:
   1. yaml syntactically valid; top-level shape has `plants:` with a list.
-  2. plant_id values are unique.
-  3. category in the V7 MVP enum; synthesis in {none, full, hybrid}; generic_kind in {function, struct} when present.
-  4. For each non-planted source_file path (those NOT containing `_Plant_`), assert the path appears in either
-     the type-catalog or function-catalog (matched against the catalog's `file` field, which is the relative
-     path from the substrate root). This is the path-existence check that would have caught the 4 wrong paths
-     in the first draft of the manifest reviewed in PR #21.
-  5. For synthesis == hybrid or full, `planted_extras` must equal the count of `_Plant_*` paths under
+  2. §2.2 budget topology: exactly 25 plants total; exactly 5 plants per category; exactly 1 restraint per category.
+  3. plant_id values are unique.
+  4. category in the V7 MVP enum; synthesis in {none, full, hybrid}; generic_kind in {function, struct} when present.
+  5. For each non-planted source_file basename (filename NOT starting with `_Plant_`), assert the path appears in
+     either the type-catalog or function-catalog (matched against the catalog's `file` field, which is the relative
+     path from the substrate root). This is the path-existence check that would have caught the 4 wrong paths in
+     the first draft of the manifest reviewed in PR #21.
+  6. For synthesis == hybrid or full, `planted_extras` must equal the count of `_Plant_*` paths under
      source_files. Catches drift between the field and the underlying file list.
-  6. Restraint entries (restraint: true) must declare restraint_pair and restraint_signal.
+  7. Restraint entries (restraint: true) must declare restraint_pair and restraint_signal.
+  8. Unknown field warning: per-plant keys outside the documented schema produce warnings (not errors) so typos
+     like `restraintpair` surface without blocking schema evolution.
 
 Usage
 -----
     python3 validate-manifest.py
     python3 validate-manifest.py --catalog-root /tmp/wxyc-ios-audit-planted
 
-Exit code: 0 if all checks pass; 1 otherwise. Findings printed to stderr; a `OK n=<plant_count>` summary
-prints to stdout on success.
+Exit code: 0 if all checks pass; 1 otherwise. Errors and warnings printed to stderr; a `OK n=<plant_count>`
+summary prints to stdout on success. Warnings do not affect exit code.
 
 Dependencies: PyYAML (stdlib `json` for the catalogs).
 """
@@ -42,7 +45,33 @@ CATEGORIES = {
 }
 SYNTHESIS_VALUES = {"none", "full", "hybrid"}
 GENERIC_KINDS = {"function", "struct"}
-PLANTED_MARKER = "_Plant_"
+PLANTED_PREFIX = "_Plant_"
+
+# §2.2 budget topology
+TOTAL_PLANTS = 25
+PLANTS_PER_CATEGORY = 5
+RESTRAINTS_PER_CATEGORY = 1
+
+# Documented schema fields. Anything outside this set produces a warning, not an error,
+# so the schema can evolve without breaking the validator.
+KNOWN_KEYS = {
+    "plant_id",
+    "category",
+    "source_type",
+    "source_files",
+    "synthesis",
+    "planted_extras",
+    "generic_kind",
+    "cross_layer",
+    "restraint",
+    "restraint_pair",
+    "restraint_signal",
+}
+
+
+def is_planted_path(path: str) -> bool:
+    """Return True if the path's basename starts with `_Plant_` (V6 plant-file convention)."""
+    return Path(path).name.startswith(PLANTED_PREFIX)
 
 
 def load_catalog_files(catalog_root: Path) -> set[str]:
@@ -62,6 +91,7 @@ def load_catalog_files(catalog_root: Path) -> set[str]:
 
 def validate(manifest_path: Path, catalog_root: Path) -> int:
     errors: list[str] = []
+    warnings: list[str] = []
 
     with manifest_path.open() as f:
         doc = yaml.safe_load(f)
@@ -76,6 +106,24 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
         print(f"error: no catalog entries loaded from {catalog_root}", file=sys.stderr)
         return 1
 
+    # §2.2 budget topology checks
+    if len(plants) != TOTAL_PLANTS:
+        errors.append(f"§2.2 budget: expected {TOTAL_PLANTS} plants, got {len(plants)}")
+    by_category = Counter(p.get("category") for p in plants)
+    restraints_by_category = Counter(
+        p.get("category") for p in plants if p.get("restraint")
+    )
+    for cat in CATEGORIES:
+        if by_category[cat] != PLANTS_PER_CATEGORY:
+            errors.append(
+                f"§2.2 budget: category {cat!r} has {by_category[cat]} plants, expected {PLANTS_PER_CATEGORY}"
+            )
+        if restraints_by_category[cat] != RESTRAINTS_PER_CATEGORY:
+            errors.append(
+                f"§2.2 budget: category {cat!r} has {restraints_by_category[cat]} restraints, "
+                f"expected {RESTRAINTS_PER_CATEGORY}"
+            )
+
     ids = [p.get("plant_id") for p in plants]
     duplicates = [pid for pid, count in Counter(ids).items() if count > 1]
     if duplicates:
@@ -84,6 +132,10 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
     for i, plant in enumerate(plants):
         pid = plant.get("plant_id", f"<index {i}>")
         prefix = f"plant {pid}"
+
+        unknown_keys = set(plant.keys()) - KNOWN_KEYS
+        if unknown_keys:
+            warnings.append(f"{prefix}: unknown field(s) {sorted(unknown_keys)} (typo? schema change?)")
 
         category = plant.get("category")
         if category not in CATEGORIES:
@@ -106,7 +158,7 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
             if not isinstance(sf, str):
                 errors.append(f"{prefix}: source_files entry {sf!r} is not a string")
                 continue
-            if PLANTED_MARKER in sf:
+            if is_planted_path(sf):
                 planted_count += 1
                 continue
             if sf not in catalog_files:
@@ -127,6 +179,11 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
                 errors.append(f"{prefix}: restraint=true but restraint_pair missing")
             if not plant.get("restraint_signal"):
                 errors.append(f"{prefix}: restraint=true but restraint_signal missing")
+
+    if warnings:
+        print(f"{len(warnings)} warning(s):", file=sys.stderr)
+        for w in warnings:
+            print(f"  ! {w}", file=sys.stderr)
 
     if errors:
         print(f"FAIL: {len(errors)} error(s) in {manifest_path}", file=sys.stderr)
