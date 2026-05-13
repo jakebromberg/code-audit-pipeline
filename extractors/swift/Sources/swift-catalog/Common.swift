@@ -14,12 +14,20 @@ import Foundation
 /// "find type pairs whose name set is identical but type set differs at slot X"
 /// without re-splitting strings at query time.
 ///
-/// `type` includes any trailing `?` for optionality (the syntactic form a
-/// Swift programmer would type). `isOptional` is the structural flag derived
-/// from SwiftSyntax (set when the type-annotation node is OptionalTypeSyntax,
-/// ImplicitlyUnwrappedOptionalTypeSyntax, or syntactically Optional<T>).
-/// Carrying both is intentional redundancy: `type` is ergonomic for display,
-/// `isOptional` is reliable for structural matching.
+/// `type` is the verbatim type annotation as written in source (Swift syntax
+/// sugar preserved: `Int?` stays `Int?`, `Optional<Int>` stays `Optional<Int>`).
+/// `isOptional` is the structural flag derived from SwiftSyntax, true when
+/// the type-annotation node is OptionalTypeSyntax (`T?`),
+/// ImplicitlyUnwrappedOptionalTypeSyntax (`T!`), or an identifier/member
+/// reference to `Optional` / `Swift.Optional`. Carrying both is intentional
+/// redundancy: `type` is ergonomic for display and string-matching, but
+/// optionality detection on `type` alone is unreliable across the Swift
+/// spelling variants — `isOptional` is the load-bearing structural flag.
+///
+/// For enum cases (emitted by `emitEnum`), `type` is the associated-value
+/// parameter clause as written (e.g., `"(Int, String)"`), or `"=<rawValue>"`
+/// for raw-value cases, or `""` for parameterless cases. Enum cases always
+/// emit `isOptional: false` and `isStatic: false`.
 struct FieldStructured: Encodable {
     var name: String
     var type: String
