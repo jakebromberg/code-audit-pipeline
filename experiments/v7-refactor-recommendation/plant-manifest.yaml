@@ -6,18 +6,25 @@
 #
 # Candidate enumeration and rationale: `experiments/v7-refactor-recommendation/plant-source-candidates.md`.
 # Substrate snapshot used for selection: `/tmp/wxyc-ios-audit-planted/` (captured 2026-05-11).
+# Path validation: `experiments/v7-refactor-recommendation/validate-manifest.mjs` (cross-checks every non-synthesized
+# source_file against the catalog).
 #
 # Schema for these initial entries:
-#   plant_id        — §5 numbering from methodology
-#   category        — one of {extract-to-common, protocol-inheritance, default-implementation,
-#                              pat-introduction, generic-parameterization}
-#   source_type     — real wxyc-ios-64 declaration (or "synthesized: ..." with parallel-pattern note)
-#   source_files    — file paths in wxyc-ios-64 the plant derives from (real candidates) OR planned plant locations
-#                     (synthesized candidates, with `_Plant_*` prefix per V6 convention)
-#   synthesized     — true if the plant body is synthesized rather than derived from a real declaration
-#   restraint       — true for restraint twins (correct answer is no-action)
-#   restraint_pair  — for restraints, the canonical plant_id whose shape it mirrors
-#   restraint_signal — for restraints, the context flag that distinguishes it from the canonical
+#   plant_id          — §5 numbering from methodology
+#   category          — one of {extract-to-common, protocol-inheritance, default-implementation,
+#                                pat-introduction, generic-parameterization}
+#   source_type       — real wxyc-ios-64 declaration (or "synthesized: ..." with parallel-pattern note)
+#   source_files      — file paths the plant derives from. Real-substrate paths reference existing files in
+#                       wxyc-ios-64; `_Plant_*.swift` paths are planted-companion files added by Phase C.
+#   synthesis         — none | full | hybrid
+#                         none   — every source_file references a real declaration in the substrate
+#                         full   — the entire source pair/triple is synthesized (no real anchor)
+#                         hybrid — real anchor pair/triple + one or more `_Plant_*.swift` companions added
+#                                  to satisfy a cardinality constraint (e.g., Cat 3's "≥3 conformers")
+#   planted_extras    — for hybrid plants, count of `_Plant_*.swift` companions added (otherwise 0)
+#   restraint         — true for restraint twins (correct answer is no-action)
+#   restraint_pair    — for restraints, the canonical plant_id whose shape it mirrors
+#   restraint_signal  — for restraints, the context flag that distinguishes it from the canonical
 #
 # Phase A.3 will add the rubric/expected-answer fields documented in
 # `docs/refactor-recommendation-experiment-plant-manifest.md`.
@@ -26,46 +33,55 @@ plants:
   # ─── Category 1: extract-to-common ─────────────────────────────────────────
   - plant_id: "1.1"
     category: extract-to-common
-    source_type: "MetricRow (DebugPanel ↔ Wallpaper)"
+    source_type: "SwiftUI.Image extension pair: app:WatchXYC PlayerPage ↔ app:iOS NowPlayingWidget (logo + background)"
     source_files:
-      - "Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"            # line 53
-      - "Shared/Wallpaper/Sources/Wallpaper/DebugHUD.swift"              # parallel decl
-    synthesized: false
+      - "WXYC/WatchXYC/PlayerPage.swift"                                # ext SwiftUI.Image @ line 190
+      - "WXYC/iOS/NowPlayingWidget/Extensions.swift"                    # ext SwiftUI.Image @ line 27
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "1.2"
     category: extract-to-common
-    source_type: "PauseWXYC ↔ WhatsPlayingOnWXYC (parallel AppIntents)"
+    source_type: "PauseWXYC ↔ WhatsPlayingOnWXYC (parallel AppIntents across Shared/Intents and app:iOS)"
     source_files:
-      - "Shared/Intents/Sources/Intents/PauseWXYC.swift"                 # line 16
-      - "Shared/Intents/Sources/Intents/WhatsPlayingOnWXYC.swift"
-    synthesized: false
+      - "Shared/Intents/Sources/Intents/PauseWXYC.swift"                # line 16
+      - "WXYC/iOS/Intents.swift"                                        # line 41
+    synthesis: none
+    planted_extras: 0
     restraint: false
+    cross_layer: true  # WhatsPlayingOnWXYC lives in app:iOS, not Shared/Intents; lift target must be upstream of both
 
   - plant_id: "1.3"
     category: extract-to-common
-    source_type: "ApplicationWillTerminateMessage (4-decl cluster across Core/Playback/MusicShareKit)"
+    source_type: "Notification-message 1-field shape cluster (n=4 across 3 packages, shape_sig name:notification.name)"
     source_files:
-      - "Shared/Core/Sources/Core/Observation/ApplicationWillTerminateMessage.swift"  # line 15
-    synthesized: false
+      - "Shared/Core/Sources/Core/Observation/ApplicationWillTerminateMessage.swift"       # line 15
+      - "Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift"           # PlaybackStalledMessage @ 55
+      - "Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift"               # HLSPlaybackStalledMessage @ 51
+      - "Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift"                  # RequestSentMessage @ 23
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "1.4"
     category: extract-to-common
-    source_type: "SystemQualityClock ↔ SystemClock (Wallpaper Throttling ↔ Caching)"
+    source_type: "SystemQualityClock ↔ SystemClock (Wallpaper Throttling ↔ Caching, shape_sig now:timeinterval)"
     source_files:
-      - "Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift"  # line 26
-      - "Shared/Caching/Sources/Caching/SystemClock.swift"
-    synthesized: false
+      - "Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift"   # SystemQualityClock @ 26
+      - "Shared/Caching/Sources/Caching/Clock.swift"                                      # SystemClock @ 50
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "1R"
     category: extract-to-common
-    source_type: "MetricRow sample-app twin (Wallpaper SampleApp)"
+    source_type: "MetricRow sample-app twin (DebugPanel main ↔ WallpaperSampleApp)"
     source_files:
-      - "Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"
-      - "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"  # line 48
-    synthesized: false
+      - "Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"                              # MetricRow @ 53
+      - "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"              # MetricRow @ 48
+    synthesis: none
+    planted_extras: 0
     restraint: true
     restraint_pair: "1.1"
     restraint_signal: "is_sample_app=true on the WallpaperSampleApp copy"
@@ -77,7 +93,8 @@ plants:
     source_files:
       - "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"   # line 43
       - "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"       # line 39
-    synthesized: false
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "2.2"
@@ -86,7 +103,8 @@ plants:
     source_files:
       - "Shared/Playback/Sources/PlaybackCore/Protocols/RadioPlayerProtocol.swift"     # line 16
       - "Shared/Playback/Sources/HLSPlayer/Protocol/HLSAVPlayerProtocol.swift"         # line 20
-    synthesized: false
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "2.3"
@@ -95,7 +113,8 @@ plants:
     source_files:
       - "Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift"  # line 34
       - "Shared/Playback/Sources/PlaybackCore/Protocols/AudioPlayerProtocol.swift"      # line 19
-    synthesized: false
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "2.4"
@@ -104,7 +123,8 @@ plants:
     source_files:
       - "Shared/Playback/Sources/PlaybackCore/Protocols/AudioPlayerProtocol.swift"  # line 19
       - "Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift"   # line 27
-    synthesized: false
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "2R"
@@ -112,7 +132,8 @@ plants:
     source_type: "synthesized: MockNotificationMessage test-only protocol mirroring 2.1's parent shape"
     source_files:
       - "Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift"  # to plant
-    synthesized: true
+    synthesis: full
+    planted_extras: 1
     restraint: true
     restraint_pair: "2.1"
     restraint_signal: "is_test=true (file in *Testing/ library target)"
@@ -122,47 +143,52 @@ plants:
     category: default-implementation
     source_type: "HSBColor/AccentColor/HSBOffset init(hue:saturation:brightness:) — real n=3 cluster"
     source_files:
-      - "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"            # line 31
-      - "Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift"          # lines 62, 198
-    synthesized: false
+      - "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"            # init @ 31
+      - "Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift"          # AccentColor init @ 62, HSBOffset init @ 198
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "3.2"
     category: default-implementation
-    source_type: "PlaybackBlendMode.displayName / MaterialBlendMode.displayName — real n=2 + synthesized 3rd conformer"
+    source_type: "PlaybackBlendMode/MaterialBlendMode displayName — real n=2 + synthesized 3rd conformer"
     source_files:
-      - "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift"   # line 41
-      - "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift"   # line 41
+      - "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift"   # displayName @ 41
+      - "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift"   # displayName @ 41
       - "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift"  # synthesized 3rd
-    synthesized: false  # primary signal is real; 3rd conformer synthesized for ≥3 budget
+    synthesis: hybrid
+    planted_extras: 1
     restraint: false
 
   - plant_id: "3.3"
     category: default-implementation
     source_type: "RMSProcessor/FFTProcessor AudioProcessor conformers — real n=2 + synthesized 3rd"
     source_files:
-      - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift"  # lines 55, 61
-      - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift"  # lines 183, 189
+      - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift"  # setNormalizationMode @ 61, reset @ 55
+      - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift"  # setNormalizationMode @ 189, reset @ 183
       - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift"  # synthesized 3rd
-    synthesized: false
+    synthesis: hybrid
+    planted_extras: 1
     restraint: false
 
   - plant_id: "3.4"
     category: default-implementation
     source_type: "Breakpoint/Talkset PlaylistEntry conformers — real n=2 + synthesized 3rd"
     source_files:
-      - "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift"  # lines 57, 64, 96, 103
+      - "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift"  # Breakpoint @ 51 (init @ 64); Talkset @ 90 (init @ 103)
       - "Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift"  # synthesized 3rd
-    synthesized: false
+    synthesis: hybrid
+    planted_extras: 1
     restraint: false
 
   - plant_id: "3R"
     category: default-implementation
-    source_type: "Breakpoint.stub / Talkset.stub + synthesized PlaycutStub (test-fixture cluster)"
+    source_type: "Breakpoint.stub/Talkset.stub (test-fixture cluster) + synthesized PlaycutStub"
     source_files:
-      - "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"             # lines 58, 75
+      - "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"             # ext Breakpoint @ 56 (.stub @ 58); ext Talkset @ 73 (.stub @ 75)
       - "Shared/Playlist/Sources/PlaylistTesting/_Plant_PlaycutStub.swift"        # synthesized 3rd
-    synthesized: false
+    synthesis: hybrid
+    planted_extras: 1
     restraint: true
     restraint_pair: "3.1"
     restraint_signal: "is_mock=true (*Testing/ library target, stub-prefixed names)"
@@ -170,11 +196,12 @@ plants:
   # ─── Category 4: PAT introduction (associated-type generalization) ─────────
   - plant_id: "4.1"
     category: pat-introduction
-    source_type: "NowPlayingItem ↔ PlaycutSelection (differ at artwork type slot)"
+    source_type: "NowPlayingItem ↔ PlaycutSelection (artwork differs: Image? vs UIImage?, playcut shared)"
     source_files:
-      - "Shared/AppServices/Sources/AppServices/NowPlayingService.swift"  # line 23
-      - "Apps/iOS/PlaylistView.swift"                                     # line 23
-    synthesized: false
+      - "Shared/AppServices/Sources/AppServices/NowPlayingService.swift"   # NowPlayingItem @ 23
+      - "WXYC/iOS/Views/Playlist/PlaylistView.swift"                       # PlaycutSelection @ 23
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "4.2"
@@ -183,7 +210,8 @@ plants:
     source_files:
       - "Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift"
       - "Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift"
-    synthesized: true
+    synthesis: full
+    planted_extras: 2
     restraint: false
 
   - plant_id: "4.3"
@@ -192,7 +220,8 @@ plants:
     source_files:
       - "Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift"
       - "Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift"
-    synthesized: true
+    synthesis: full
+    planted_extras: 2
     restraint: false
 
   - plant_id: "4.4"
@@ -201,16 +230,18 @@ plants:
     source_files:
       - "Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift"
       - "Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift"
-    synthesized: true
+    synthesis: full
+    planted_extras: 2
     restraint: false
 
   - plant_id: "4R"
     category: pat-introduction
     source_type: "CPUSessionEvent ↔ MockStructuredAnalytics.CPUSessionEventProxy (87% near-duplicate)"
     source_files:
-      - "Shared/Playback/Sources/Playback/PlaybackAnalytics.swift"                          # line 272
-      - "Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift"          # line 97
-    synthesized: false
+      - "Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift"            # CPUSessionEvent @ 272
+      - "Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift"           # CPUSessionEventProxy @ 97
+    synthesis: none
+    planted_extras: 0
     restraint: true
     restraint_pair: "4.1"
     restraint_signal: "is_mock=true (AnalyticsTesting/ library target, Mock-prefixed name)"
@@ -221,47 +252,41 @@ plants:
     generic_kind: function
     source_type: "HSBColor.uiColor ↔ HSBColor.nsColor (UIColor / NSColor platform variants)"
     source_files:
-      - "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"  # lines 53, 63
-    synthesized: false
+      - "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"  # uiColor @ 53, nsColor @ 63
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
   - plant_id: "5.2"
     category: generic-parameterization
     generic_kind: function
-    source_type: "MainActor/Async NotificationMessageSequence AsyncIterator.init pair"
+    source_type: "synthesized: fetchInt + fetchString (function-shaped analog of companion plant 5.1)"
     source_files:
-      - "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"  # line 152
-      - "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"      # line 126
-    synthesized: false
+      - "Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift"
+    synthesis: full
+    planted_extras: 1
     restraint: false
 
   - plant_id: "5.3"
     category: generic-parameterization
-    generic_kind: function
-    source_type: "synthesized: fetchInt + fetchString (companion plant 5.1 function-shaped analog)"
-    source_files:
-      - "Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift"
-    synthesized: true
-    restraint: false
-
-  - plant_id: "5.4"
-    category: generic-parameterization
     generic_kind: struct
     source_type: "MainActorNotificationMessageSequence ↔ AsyncNotificationMessageSequence (differ at protocol bound)"
     source_files:
-      - "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"  # line 129
-      - "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"      # line 103
-    synthesized: false
+      - "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"  # MainActorNotificationMessageSequence @ 129
+      - "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"      # AsyncNotificationMessageSequence @ 103
+    synthesis: none
+    planted_extras: 0
     restraint: false
 
-  - plant_id: "5.5"
+  - plant_id: "5.4"
     category: generic-parameterization
     generic_kind: struct
     source_type: "synthesized: IntCache + StringCache (companion plant 5.1 canonical struct-shaped)"
     source_files:
       - "Shared/Caching/Sources/Caching/_Plant_IntCache.swift"
       - "Shared/Caching/Sources/Caching/_Plant_StringCache.swift"
-    synthesized: true
+    synthesis: full
+    planted_extras: 2
     restraint: false
 
   - plant_id: "5R"
@@ -269,16 +294,19 @@ plants:
     generic_kind: function
     source_type: "Breakpoint.stub ↔ Talkset.stub viewed under generic-function lens (test-fixture cluster, reuses 3R source pair)"
     source_files:
-      - "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"  # lines 58, 75
-    synthesized: false
+      - "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"  # .stub @ 58 / 75
+    synthesis: none
+    planted_extras: 0
     restraint: true
     restraint_pair: "5.1"
     restraint_signal: "is_mock=true (same cluster as 3R but scored under Cat. 5 lens; per Cross-checks in plant-source-candidates.md, two-category restraint coverage is intentional)"
 
 # Cross-category overlap notes (per candidates doc §Cross-checks):
-#   - Plants 2.1, 5.2, 5.4 share the MainActor/Async notification substrate cluster, each scoring a distinct lens.
+#   - Plants 2.1 and 5.3 share the MainActor/Async notification substrate cluster, each scoring a distinct lens
+#     (Cat. 2 missing-parent vs Cat. 5 generic struct over the iteration container). PR #21 review's earlier draft
+#     also had a Cat. 5 fn plant on the iterator init — removed to defuse the multi-lens-on-one-cluster concern.
 #   - Plant 3.2 BlendMode also has a Cat 5 struct angle; 3.2 scores the function-body angle only; the struct angle
-#     is covered by synthesized plant 5.5.
+#     is covered by synthesized plant 5.4.
 #   - Plants 3R and 5R share the PlaylistTesting stub cluster, each scoring no-action under a different category lens.
-# Per §2.5 (review-plan gate): reviewer evaluates whether multi-lens-on-one-cluster coverage is acceptable or
-# whether one of the overlapping plants should be replaced with a single-cluster alternative.
+# Per §2.5 (review-plan gate): reviewer evaluates whether the remaining multi-lens overlap (2.1 + 5.3) is acceptable
+# or whether one should be replaced with a single-cluster alternative.
