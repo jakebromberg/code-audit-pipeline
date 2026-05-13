@@ -24,12 +24,17 @@
 # Same convention as pat-candidates.jq: identical sorted field-name sets,
 # diff_count counts mismatched typed-field strings.
 #
+# Field-name extraction uses `sort` (not `unique`) — see
+# `pat-candidates.jq`'s header for the rationale (preserves duplicate-name
+# multiset for zip-and-mismatch correctness).
+#
 # `--argjson max_slot_diffs 1` is REQUIRED. The canonical generic-struct shape
 # is exactly 1 slot diff; raise for fuzzier candidates.
 #
 # Performance: 1.1s on the planted catalog (N=815 types, ~70 struct survivors).
-# Pair iteration is O(N²); expect ~25s on a 5000-type catalog. Faster than
-# pat-candidates because the kind restriction prunes earlier.
+# Pair iteration is O(N²); expect ~25s on a 5000-type catalog (extrapolated
+# from the 1.1s baseline; not measured). Faster than pat-candidates because the
+# kind restriction prunes earlier.
 #
 # Output: one row per struct pair, ordered by field_count desc then slot diff
 # asc (cleanest matches first).

@@ -120,9 +120,17 @@ assert_eq "underscores and digits stay inside tokens" \
   '["my_var_2","x3"]' \
   "$(run '"my_var_2 + x3" | tokens_of | tojson')"
 
-assert_eq "ASCII-only: Unicode identifiers elided" \
+assert_eq "ASCII-only: Greek identifier (π) elided" \
   '["let","x"]' \
   "$(run '"let π = x" | tokens_of | tojson')"
+
+assert_eq "ASCII-only: emoji elided as separator" \
+  '["a","b"]' \
+  "$(run '"a 🎉 b" | tokens_of | tojson')"
+
+assert_eq "ASCII-only: RTL Hebrew elided" \
+  '["world"]' \
+  "$(run '"שלום world" | tokens_of | tojson')"
 
 assert_eq "empty input yields empty list" \
   '[]' \
