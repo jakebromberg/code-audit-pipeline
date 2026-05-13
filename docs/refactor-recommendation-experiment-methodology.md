@@ -546,20 +546,20 @@ Rules:
    categories fit.
 ```
 
-Per-category `specifics` schemas (abbreviated, full schema in the manifest):
+Per-category `specifics` schemas (abbreviated; [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) §2 is the normative unabbreviated form):
 
 - `extract-to-common`: `{target_package, type_name, remove_from: [file paths]}`
-- `protocol-inheritance`: `{parent, child, moved_members: [...]}`
-- `default-implementation`: `{protocol, method, conformers_simplified: [...]}`
+- `protocol-inheritance`: `{parent, children: [...], moved_members: [...], reuse_existing_swift_protocol: bool}`
+- `default-implementation`: `{protocol, method, target_location, conformers_simplified: [...]}`
 - `pat-introduction`: `{new_protocol, associated_type, constraints: [...], replaces: [old protocol names]}`
-- `generic-parameterization`: `{generic_kind: "function"|"struct", type_params: [...], replaces: [...]}`
-- `subclass-lift`: `{base_class, method, subclasses: [...]}`
-- `macro-synthesis`: `{macro_name, applies_to: [type kinds], synthesizes: [member shape]}`
+- `generic-parameterization`: `{generic_kind: "function"|"struct"|"class", type_params: [{name, constraint}], new_name, replaces: [...]}`
+- `subclass-lift`: `{base_class, method, subclasses: [...], target_location}`
+- `macro-synthesis`: `{macro_name, applies_to: [type kinds], synthesizes, population_size_evidence, use_swift_builtin: bool}`
 - `composition`: `{composing_type, composed_type, field_name}`
 - `extension-consolidation`: `{target_type, consolidate_from: [extension locations]}`
-- `no-action`: `{reason_class: "test-fixture"|"codegen"|"intentional-specialization"|"api-impl-boundary"|"coincidental"}`
+- `no-action`: `{reason_class: "test-fixture"|"codegen"|"sample-app-mirror"|"api-impl-boundary"|"intentional-specialization"|"coincidental"}`
 
-The prompt is published alongside the experiment doc in `experiments/v7-refactor-recommendation/prompt.md` (TBD) and hashed for [pre-registration](#pre-registration). The full prompt text and unabbreviated per-category specifics schemas — including the normalized cluster-row input shape the agent receives — are in [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md).
+The prompt is published alongside the experiment doc in `experiments/v7-refactor-recommendation/prompt.md` (TBD) and hashed for [pre-registration](#pre-registration). The full prompt text and unabbreviated per-category specifics schemas — including the normalized cluster-row input shape the agent receives — are in [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md), which is the normative source for schema field names.
 
 <a id="scoring-rubric"></a>
 
@@ -574,8 +574,10 @@ substrate_signal: pat-candidates  # which query should surface this
 primary_answer:
   category: pat-introduction
   specifics:
-    new_protocol_pattern: "Container with associatedtype Item"
-    must_subsume: [TrackContainer, ShowContainer]
+    new_protocol: "Container"
+    associated_type: "Item"
+    constraints: []
+    replaces: ["TrackContainer", "ShowContainer"]
   rationale_must_cite: ["TrackContainer", "ShowContainer", "differs at Item"]
 alternative_answers:
   - category: generic-parameterization
