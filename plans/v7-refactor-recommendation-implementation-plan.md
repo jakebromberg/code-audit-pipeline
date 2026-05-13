@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-Round 1 runs the **MVP shape** per [§16](../docs/refactor-recommendation-experiment-methodology.md#mvp): 25 plants × 5 categories (Cats. 1–5) × 2 conditions (S1 V6-substrate, S2 V7-substrate) × 3 trials × 1 model tier = 150 recommendations × ~$0.30 ≈ $45 trial-execution + $50–150 sub-experiments. **Total budget: $100–200. Wallclock: 4–6 weeks.** Cats. 6 (subclass lift), 7 (macro synthesis), 8 (composition) defer to round 2.
+Round 1 runs the **MVP shape** per [§16](../docs/refactor-recommendation-experiment-methodology.md#mvp): 25 plants × 5 categories (Cats. 1–5) × 2 conditions (S1 V6-substrate, S2 V7-substrate) × 3 trials × 1 model tier = 150 recommendations × ~$0.06 ≈ $9 trial-execution + $50–110 sub-experiments at Sonnet 4.6 rates (round 1's pinned model per §8 decision #2). **Total budget: $60–120. Wallclock: 4–6 weeks.** Cats. 6 (subclass lift), 7 (macro synthesis), 8 (composition) defer to round 2.
 
 Plan is structured as: (§1) round-zero prerequisites that must close before Phase A starts, (§2–§6) the five-phase execution per [§15 roadmap](../docs/refactor-recommendation-experiment-methodology.md#roadmap) with concrete deliverables and acceptance criteria each, (§7) decisions resolved with doc defaults, (§8) risk-driven exit ramps.
 
@@ -53,7 +53,16 @@ experiments/v7-refactor-recommendation/
 
 Per [§15 Phase A](../docs/refactor-recommendation-experiment-methodology.md#roadmap). MVP scope: design 25 plants (5 categories × [4 canonical + 1 restraint] each = 20 canonical + 5 restraints).
 
-### 2.1 Source-type sampling
+### 2.1 Category-mix calibration
+
+Per §8 decision #7 (overriding the methodology §17 default of "accept the bias"). Sample wxyc-ios-64 PR titles matching `refactor|extract|consolidate|lift|generic|default impl` over a meaningful history window. Classify each PR by which of the 5 MVP categories its title implies (Cat. 1 extract-to-common, Cat. 2 protocol inheritance, Cat. 3 default implementation, Cat. 4 PAT introduction, Cat. 5 generic parameterization). Compute the empirical distribution.
+
+- **Output:** `experiments/v7-refactor-recommendation/category-mix-calibration.md` with the PR count per category, the percentages, and a recommended reweighting of plant allocation within the 25-plant MVP budget if the empirical distribution differs from uniform (5-per-category) by more than ~20pp on any axis.
+- **Acceptance:** calibration doc committed; subsequent §2.2 source-type sampling uses the per-category plant counts from this calibration (defaulting back to 5-each if the empirical distribution is approximately uniform).
+- **Effort:** ~1 day, mostly `gh pr list` plus a small classifier (regex-and-judgment, not LLM-required).
+- **Caveat:** PR-title classification has high noise — most refactor PRs don't title themselves consistently. Treat the resulting mix as a coarse signal, not a precision metric. The calibration mitigates the methodology §13 risk-1 bias but doesn't eliminate it.
+
+### 2.2 Source-type sampling
 
 Per the [V6 plant-manifest precedent](../docs/wxyc-ios-64-experiment-plant-manifest.md), each plant derives from a real wxyc-ios-64 declaration. Run a sampling pass to pick source types for each of the 25 plants:
 
@@ -66,13 +75,13 @@ Per the [V6 plant-manifest precedent](../docs/wxyc-ios-64-experiment-plant-manif
 
 **Acceptance:** 25 source types named in `plant-manifest.yaml` with file paths into wxyc-ios-64; cross-checked that no plant accidentally tests two categories at once (per [§10 item 2](../docs/refactor-recommendation-experiment-methodology.md#pre-registration) review criteria).
 
-### 2.2 Per-plant manifest entries
+### 2.3 Per-plant manifest entries
 
 Expand each entry against the YAML schema documented in the [companion plant-manifest doc](../docs/refactor-recommendation-experiment-plant-manifest.md). Fields per entry: `plant_id`, `category`, `source_type`, `plant_locations`, `expected_substrate_signals`, `primary_answer`, `specifics_tolerance`, `alternative_answers`, `wrong_answers`, `restraint` flag.
 
 **Acceptance:** 25 entries committed at `experiments/v7-refactor-recommendation/plant-manifest.yaml`; each entry passes a yaml-schema check; restraint twins explicitly distinguish their context signal from the canonical pair's shape.
 
-### 2.3 Rubric extraction
+### 2.4 Rubric extraction
 
 Per [§8 scoring rubric](../docs/refactor-recommendation-experiment-methodology.md#scoring-rubric). The rubric is mostly in the methodology doc as prose + a scoring table; for execution it needs to land as machine-readable form.
 
@@ -82,7 +91,7 @@ Per [§8 scoring rubric](../docs/refactor-recommendation-experiment-methodology.
 
 **Acceptance:** `rubric.yaml` committed; an auto-scorer dry-run against the worked examples in [§20.1–20.5](../docs/refactor-recommendation-experiment-methodology.md#worked-example) produces the scores those examples assert.
 
-### 2.4 `/review-plan` gate on the manifest
+### 2.5 `/review-plan` gate on the manifest
 
 Per [§10 item 2](../docs/refactor-recommendation-experiment-methodology.md#pre-registration). Submit the committed `plant-manifest.yaml` + `rubric.yaml` for review. Reviewer checks:
 
@@ -174,7 +183,7 @@ Per [§17 decision #4](../docs/refactor-recommendation-experiment-methodology.md
 
 ### 4.4 Plant-recall sanity check
 
-Build `examples/swift-plants-v7/analyzer.mjs` by forking [`examples/swift-plants/analyzer.mjs`](../examples/swift-plants) and adapting it to consume the V7 plant-manifest YAML (V6's analyzer reads its manifest inline; V7's manifest is the external YAML from §2.2). The v7 analyzer reads `experiments/v7-refactor-recommendation/plant-manifest.yaml` plus the S1 and S2 cluster JSONL output directories from §4.3 and prints per-plant recall.
+Build `examples/swift-plants-v7/analyzer.mjs` by forking [`examples/swift-plants/analyzer.mjs`](../examples/swift-plants) and adapting it to consume the V7 plant-manifest YAML (V6's analyzer reads its manifest inline; V7's manifest is the external YAML from §2.3). The v7 analyzer reads `experiments/v7-refactor-recommendation/plant-manifest.yaml` plus the S1 and S2 cluster JSONL output directories from §4.3 and prints per-plant recall.
 
 Invocation: `node examples/swift-plants-v7/analyzer.mjs --clusters-s1 experiments/v7-refactor-recommendation/clusters-s1/ --clusters-s2 experiments/v7-refactor-recommendation/clusters-s2/`.
 
@@ -191,19 +200,19 @@ Per [§15 pre-flight](../docs/refactor-recommendation-experiment-methodology.md#
 
 1. **Substrate smoke test:** re-run substrate against a 3-plants-per-category slice; confirm `catalog_hashes` and `query_output_hashes` match values captured in `reproducibility.yaml` at pre-registration.
 2. **Prompt rendering test:** render the [agent prompt template](../docs/refactor-recommendation-experiment-agent-prompt.md) against one normalized cluster row; confirm context-window fit and no unfilled template variables.
-3. **Single-cluster end-to-end dry run:** send one cluster row through the pinned model, score the response, verify JSON-schema match. ~$0.30.
-4. **Cost projection:** multiply the MVP recommendation count (150) by the pinned `api_pricing_snapshot` rates; confirm ≤ $200 budget envelope.
-5. **Manifest-rubric review confirmation:** the §2.4 `/review-plan` approval is committed; contamination-vectors check (no `// Plant` comments, no plant-naming commits) passes.
+3. **Single-cluster end-to-end dry run:** send one cluster row through the pinned model, score the response, verify JSON-schema match. ~$0.06 at Sonnet rates.
+4. **Cost projection:** multiply the MVP recommendation count (150) by the pinned `api_pricing_snapshot` rates; confirm ≤ $120 budget envelope at Sonnet 4.6 rates (the round-1 default per §8 decision #2). If a later round upgrades to Opus, re-check against the $200–300 envelope that implies.
+5. **Manifest-rubric review confirmation:** the §2.5 `/review-plan` approval is committed; contamination-vectors check (no `// Plant` comments, no plant-naming commits) passes.
 
 **Gate behavior:** any failure aborts Phase D launch and loops back to the relevant phase. The pre-flight is cheap insurance against the four-figure spend a misconfigured Phase D would otherwise consume.
 
-## 6. Phase D — Trial execution (2–5 days wallclock, $45 trial + $50–150 sub-experiments)
+## 6. Phase D — Trial execution (2–5 days wallclock, ~$9 trial + ~$50–110 sub-experiments)
 
 Per [§15 Phase D](../docs/refactor-recommendation-experiment-methodology.md#roadmap) and [§16 MVP](../docs/refactor-recommendation-experiment-methodology.md#mvp). 25 plants × 2 conditions (S1, S2) × 3 trials × 1 model tier = 150 recommendations.
 
 ### 6.1 Model pinning
 
-Per [§17 decision #2](../docs/refactor-recommendation-experiment-methodology.md#decisions-outstanding), default to the latest Claude Opus tier with a date-pinned suffix. Pinned model identifier and `model_parameters` (temperature 0.0 default) recorded in `reproducibility.yaml`.
+Per [§8 decision #2](#decisions-resolved-with-doc-defaults), pin to the latest Claude Sonnet 4.6 tier with a date-pinned suffix (e.g., `claude-sonnet-4-6-20260101`). Pinned model identifier and `model_parameters` (temperature 0.0 default) recorded in `reproducibility.yaml`. The Opus tier costs ~5× more per token at the prompt/response sizes V7 uses; Sonnet keeps the MVP budget at $60–120 total, Opus pushes it to ~$200–300.
 
 ### 6.2 Trial harness
 
@@ -220,7 +229,7 @@ Build a small harness (~200 lines, language flexible — Python or TypeScript bo
 Per [§15 cost-control gates](../docs/refactor-recommendation-experiment-methodology.md#roadmap):
 
 1. **Per-recommendation token cap:** 50K combined; abort that recommendation if exceeded, log as `trial-overrun`.
-2. **Per-condition budget cap:** alert at 80% of condition budget ($30 for MVP S1+S2 combined), halt at 100%.
+2. **Per-condition budget cap:** alert at 80% of condition budget (~$3.50 per condition at Sonnet rates — half of the $9 MVP trial-execution split across S1 and S2 minus a 20% headroom), halt at 100%. The per-condition envelope is small enough that the cap's actionable role is catching surprise pricing changes between pre-registration and execution rather than runaway recommendations.
 3. **Mid-run abort on stop-the-line failure modes:** after 25% of trials in a condition, run the [§14.1 substrate-didn't-help](../docs/refactor-recommendation-experiment-methodology.md#pre-mortem) and [§14.4 batching variance](../docs/refactor-recommendation-experiment-methodology.md#pre-mortem) signature checks; pause if either fires.
 
 ### 6.4 Sub-experiments (optional within MVP budget)
@@ -228,7 +237,7 @@ Per [§15 cost-control gates](../docs/refactor-recommendation-experiment-methodo
 - **Natural-findings sub-experiment** per [§12](../docs/refactor-recommendation-experiment-methodology.md#cant-measure): run the agent prompt against the [V6 natural findings](../docs/wxyc-ios-64-experiment-results.md#conclusion) (`DebugMetricsProvider`, `PlayerState`/`PlaybackState`, `StreamingService`/`MusicServiceIdentifier`). Panel-graded.
 - **Cross-tier comparison** per [§17 decision #2](../docs/refactor-recommendation-experiment-methodology.md#decisions-outstanding): default is **deferred to round 2** to keep MVP scope tight.
 
-**Acceptance:** all 150 recommendations completed without exceeding $200 total spend; per-recommendation telemetry committed; cost-control gates' behavior recorded in `reproducibility.yaml`.
+**Acceptance:** all 150 recommendations completed without exceeding $120 total spend (at Sonnet rates; $250 if upgraded to Opus); per-recommendation telemetry committed; cost-control gates' behavior recorded in `reproducibility.yaml`.
 
 ## 7. Phase E — Scoring + writeup (2–3 weeks)
 
@@ -265,13 +274,13 @@ Per [methodology §17 — Decisions outstanding before kickoff](../docs/refactor
 
 | # | Decision | Resolution |
 |---|---|---|
-| 1 | Round 1 scope | **MVP** (25 plants, 5 categories, S1+S2, $100–200) |
-| 2 | Model versions to pin | **Latest Claude Opus tier with date-pinned suffix**, single tier for round 1 |
+| 1 | Round 1 scope | **MVP** (25 plants, 5 categories, S1+S2, $60–120 at Sonnet rates) |
+| 2 | Model versions to pin | **Latest Claude Sonnet 4.6 tier with date-pinned suffix**, single tier for round 1. Overrides the methodology §17 doc default of Opus; the Sonnet pin drops MVP envelope from $100–200 (Opus) to $60–120 (Sonnet) at ~5× cheaper per-token. Decided 2026-05-12. Escalate to Opus in round 2 if S1-vs-S2 deltas are inconclusive and the suspected cause is model capability |
 | 3 | Panel size and protocol | **3 internal reviewers**, blind to condition, ~4 hours each |
 | 4 | Plant-tree serving | **Flat non-git directory** at `/tmp/wxyc-audit/plants-v7/` |
 | 5 | Weak-rationale scoring | **(a) auto-score 0.5**, with 10–20% panel-validated grounding audit |
 | 6 | Issue #5 status | **Land first** (in §1.1 of this plan); defensive matcher only as fallback |
-| 7 | Category-mix calibration | **Accept the bias for MVP**, address in round 2 |
+| 7 | Category-mix calibration | **Calibrate via wxyc-ios-64 PR-history sampling in §2.1** (overrides methodology §17 default of "accept the bias"). The calibration is ~1 day and the result reweights plant allocation within the 25-plant MVP budget if the empirical distribution is materially non-uniform |
 | 8 | README update timing | **Update before Phase A** (§1.2 of this plan) |
 | 9 | Population-clustering calibration | **Out of scope for round 1** (Cat. 7 dropped) |
 
