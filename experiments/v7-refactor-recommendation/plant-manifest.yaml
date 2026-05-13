@@ -1,15 +1,14 @@
 # V7 plant manifest — wxyc-ios-64
 #
 # Phase A.2 deliverable per `plans/v7-refactor-recommendation-implementation-plan.md` §2.2: name 25 source types
-# with file paths. Full per-plant expansion (expected_substrate_signals, primary_answer, alternative_answers,
-# wrong_answers, specifics_tolerance, rationale_must_cite) is Phase A.3 — see plan §2.3.
+# with file paths. Phase A.3 expands each entry with the rubric/expected-answer fields per plan §2.3 and
+# `docs/refactor-recommendation-experiment-plant-manifest.md`.
 #
 # Candidate enumeration and rationale: `experiments/v7-refactor-recommendation/plant-source-candidates.md`.
 # Substrate snapshot used for selection: `/tmp/wxyc-ios-audit-planted/` (captured 2026-05-11).
-# Path validation: `experiments/v7-refactor-recommendation/validate-manifest.mjs` (cross-checks every non-synthesized
-# source_file against the catalog).
+# Path validation + rubric-field validation: `experiments/v7-refactor-recommendation/validate-manifest.py`.
 #
-# Schema for these initial entries:
+# Phase A.2 schema:
 #   plant_id          — §5 numbering from methodology
 #   category          — one of {extract-to-common, protocol-inheritance, default-implementation,
 #                                pat-introduction, generic-parameterization}
@@ -32,8 +31,18 @@
 #   restraint_pair    — for restraints, the canonical plant_id whose shape it mirrors
 #   restraint_signal  — for restraints, the context flag that distinguishes it from the canonical
 #
-# Phase A.3 will add the rubric/expected-answer fields documented in
-# `docs/refactor-recommendation-experiment-plant-manifest.md`.
+# Phase A.3 schema (per `docs/refactor-recommendation-experiment-plant-manifest.md` and methodology §8 rubric):
+#   expected_substrate_signals  — non-empty list of query names the plant should surface in
+#   primary_answer
+#     category                  — one of CATEGORIES ∪ {"no-action"} (no-action iff restraint=true)
+#     specifics                 — non-empty dict matching the per-category schema in
+#                                 `refactor-recommendation-experiment-agent-prompt.md` §2
+#     rationale_must_cite       — non-empty list of substrings the rationale must include (symbol names,
+#                                 package names, semantic keywords)
+#   specifics_tolerance         — dict of boolean tolerance flags for auto-scoring (may be empty)
+#   alternative_answers         — list (possibly empty) of {category, weight∈[0,1], note}
+#   wrong_answers               — non-empty list of {category, note}; always include `no-action` for canonicals
+#                                 and the canonical's category for restraints
 
 plants:
   # ─── Category 1: extract-to-common ─────────────────────────────────────────
@@ -47,6 +56,34 @@ plants:
     planted_extras: 0
     restraint: false
     cross_layer: true  # both files in app target layers (app:WatchXYC, app:iOS); lift target must be upstream of both
+    expected_substrate_signals:
+      - exact-duplicates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: extract-to-common
+      specifics:
+        target_package: "Shared/UI or a new Shared/Branding (must be upstream of both app:WatchXYC and app:iOS)"
+        type_name: "Image+Branding (extension on SwiftUI.Image)"
+        remove_from:
+          - "WXYC/WatchXYC/PlayerPage.swift"
+          - "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      rationale_must_cite:
+        - "SwiftUI.Image"
+        - "logo"
+        - "background"
+        - "same shape"
+    specifics_tolerance:
+      target_package_must_be_upstream_of_all_consumers: true
+      target_must_be_upstream_of_both_layers: true  # cross-layer plant
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.7
+        note: "Naming an existing Shared/* package like Shared/Core as target instead of a new Shared/Branding is defensible if it's already an upstream dep of both app targets."
+    wrong_answers:
+      - category: no-action
+        note: "Two identical SwiftUI.Image extensions across two app targets with no test/codegen markers is a clear extract candidate; no-action is a false negative."
+      - category: subclass-lift
+        note: "Extensions on a struct (SwiftUI.Image) cannot be subclassed; would be a Swift-level error."
 
   - plant_id: "1.2"
     category: extract-to-common
@@ -58,6 +95,36 @@ plants:
     planted_extras: 0
     restraint: false
     cross_layer: true  # WhatsPlayingOnWXYC lives in app:iOS, not Shared/Intents; lift target must be upstream of both
+    expected_substrate_signals:
+      - exact-duplicates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: extract-to-common
+      specifics:
+        target_package: "Shared/Intents (already upstream of app:iOS) or a new Shared/IntentsCore"
+        type_name: "shared AppIntent base shape (authenticationPolicy + title)"
+        remove_from:
+          - "WXYC/iOS/Intents.swift"
+      rationale_must_cite:
+        - "PauseWXYC"
+        - "WhatsPlayingOnWXYC"
+        - "AppIntent"
+        - "same shape"
+    specifics_tolerance:
+      target_package_must_be_upstream_of_all_consumers: true
+      target_must_be_upstream_of_both_layers: true  # cross-layer plant
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.7
+        note: "Moving WhatsPlayingOnWXYC into Shared/Intents (rather than introducing a new Shared/IntentsCore) is the simpler refactor and is defensible if app:iOS already depends on Shared/Intents."
+      - category: protocol-inheritance
+        weight: 0.4
+        note: "Introducing a shared AppIntent-shaped protocol both conform to misses the fact that AppIntent itself is already the parent; partial credit only."
+    wrong_answers:
+      - category: no-action
+        note: "Two AppIntent structs with identical 2-field shape across a Shared package and an app target with no test/codegen markers is a clear extract candidate."
+      - category: subclass-lift
+        note: "AppIntents are structs in Swift; structs don't subclass."
 
   - plant_id: "1.3"
     category: extract-to-common
@@ -70,6 +137,36 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - exact-duplicates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: extract-to-common
+      specifics:
+        target_package: "Shared/Core (already upstream of Playback and MusicShareKit)"
+        type_name: "NotificationMessage (protocol with static var name: Notification.Name)"
+        remove_from:
+          - "Shared/Core/Sources/Core/Observation/ApplicationWillTerminateMessage.swift"
+          - "Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift"
+          - "Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift"
+          - "Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift"
+      rationale_must_cite:
+        - "ApplicationWillTerminateMessage"
+        - "PlaybackStalledMessage"
+        - "HLSPlaybackStalledMessage"
+        - "RequestSentMessage"
+        - "Notification.Name"
+    specifics_tolerance:
+      target_package_must_be_upstream_of_all_consumers: true
+    alternative_answers:
+      - category: protocol-inheritance
+        weight: 0.7
+        note: "Introducing a NotificationMessage parent protocol with `static var name: Notification.Name` is idiomatic Swift and arguably stronger than a struct lift; the 1-field shape rhymes with the missing-parent idiom."
+    wrong_answers:
+      - category: no-action
+        note: "Four notification-message structs across three Shared packages sharing the same 1-field shape is a clear cross-package consolidation candidate."
+      - category: subclass-lift
+        note: "These are structs; structs don't subclass in Swift."
 
   - plant_id: "1.4"
     category: extract-to-common
@@ -80,6 +177,34 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - exact-duplicates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: extract-to-common
+      specifics:
+        target_package: "Shared/Core (upstream of both Wallpaper and Caching)"
+        type_name: "Clock (protocol with var now: TimeInterval) — name may differ to avoid Swift stdlib `Clock` collision"
+        remove_from:
+          - "Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift"
+          - "Shared/Caching/Sources/Caching/Clock.swift"
+      rationale_must_cite:
+        - "SystemQualityClock"
+        - "SystemClock"
+        - "TimeInterval"
+        - "same shape"
+    specifics_tolerance:
+      target_package_must_be_upstream_of_all_consumers: true
+      naming_collision_with_swift_stdlib_Clock_must_be_acknowledged: true
+    alternative_answers:
+      - category: protocol-inheritance
+        weight: 0.6
+        note: "A `protocol Clock { var now: TimeInterval { get } }` with both structs conforming is the idiomatic Swift answer for a 1-field surface; structurally distinct from extract-to-common but a defensible alternative."
+    wrong_answers:
+      - category: no-action
+        note: "Two clock structs across two semantically related Shared packages sharing the same 1-field shape is a clear consolidation candidate."
+      - category: subclass-lift
+        note: "Structs don't subclass."
 
   - plant_id: "1R"
     category: extract-to-common
@@ -92,6 +217,26 @@ plants:
     restraint: true
     restraint_pair: "1.1"
     restraint_signal: "is_sample_app=true on the WallpaperSampleApp copy"
+    expected_substrate_signals:
+      - exact-duplicates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: no-action
+      specifics:
+        reason_class: "sample-app-mirror"
+      rationale_must_cite:
+        - "MetricRow"
+        - "WallpaperSampleApp"
+        - "Examples/"
+        - "is_sample_app"
+    specifics_tolerance:
+      reason_class_must_be_sample_app_mirror: true
+    alternative_answers: []
+    wrong_answers:
+      - category: extract-to-common
+        note: "Lifting MetricRow from WallpaperSampleApp into shared production code couples production to sample-app demonstration code; this is the canonical restraint failure mode."
+      - category: protocol-inheritance
+        note: "Any action recommendation here is a false positive — the duplication is intentional because the sample app is meant to stand alone."
 
   # ─── Category 2: protocol inheritance (missing-parent) ─────────────────────
   - plant_id: "2.1"
@@ -103,6 +248,38 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - subset-pairs
+      - protocol-inheritance-candidates
+    primary_answer:
+      category: protocol-inheritance
+      specifics:
+        parent: "NotificationMessage (new shared parent protocol)"
+        child: "MainActorNotificationMessage and AsyncNotificationMessage"
+        moved_members:
+          - "name"
+          - "makeNotification"
+        reuse_existing_swift_protocol: false
+      rationale_must_cite:
+        - "MainActorNotificationMessage"
+        - "AsyncNotificationMessage"
+        - "name"
+        - "makeNotification"
+    specifics_tolerance:
+      parent_must_include_both_shared_members: true
+      sending_keyword_difference_is_acceptable_at_child_level: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.5
+        note: "Extracting the shared 2-member surface as a struct misses the protocol-shape but isn't actively wrong; partial credit."
+      - category: pat-introduction
+        weight: 0.5
+        note: "Introducing an associated type at the `makeMessage` parameter to capture the `sending` distinction is a defensible alternative to two-protocol inheritance, but loses the cleaner missing-parent framing."
+    wrong_answers:
+      - category: no-action
+        note: "Two sibling protocols sharing a load-bearing 2-member core in the same package is the textbook missing-parent pattern."
+      - category: subclass-lift
+        note: "Protocols don't subclass in Swift; this would be a language-level error."
 
   - plant_id: "2.2"
     category: protocol-inheritance
@@ -113,6 +290,35 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - subset-pairs
+      - protocol-inheritance-candidates
+    primary_answer:
+      category: protocol-inheritance
+      specifics:
+        parent: "PlaybackTransport (new shared parent capturing pause/play/rate)"
+        child: "PlayerProtocol and HLSAVPlayerProtocol"
+        moved_members:
+          - "pause"
+          - "play"
+          - "rate"
+        reuse_existing_swift_protocol: false
+      rationale_must_cite:
+        - "PlayerProtocol"
+        - "HLSAVPlayerProtocol"
+        - "pause"
+        - "play"
+    specifics_tolerance:
+      parent_must_include_pause_play_rate: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting the shared surface as a struct misses the protocol-shape; partial credit only."
+    wrong_answers:
+      - category: no-action
+        note: "Two player protocols in the same package sharing pause/play/rate is a recognizable missing-parent pattern."
+      - category: subclass-lift
+        note: "Protocols don't subclass."
 
   - plant_id: "2.3"
     category: protocol-inheritance
@@ -123,6 +329,38 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - subset-pairs
+      - protocol-inheritance-candidates
+    primary_answer:
+      category: protocol-inheritance
+      specifics:
+        parent: "RenderingAudioPlayer (new parent capturing render-tap + lifecycle surface)"
+        child: "AudioEnginePlayerProtocol and AudioPlayerProtocol"
+        moved_members:
+          - "eventStream"
+          - "installRenderTap"
+          - "isPlaying"
+          - "play"
+          - "removeRenderTap"
+          - "stop"
+        reuse_existing_swift_protocol: false
+      rationale_must_cite:
+        - "AudioEnginePlayerProtocol"
+        - "AudioPlayerProtocol"
+        - "installRenderTap"
+        - "removeRenderTap"
+    specifics_tolerance:
+      parent_must_include_all_six_shared_members: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting the 6-member shared surface as a struct misses the protocol-shape; partial credit only."
+    wrong_answers:
+      - category: no-action
+        note: "Two protocols sharing 6 of 9 fields in the same package is a clear missing-parent pattern."
+      - category: subclass-lift
+        note: "Protocols don't subclass."
 
   - plant_id: "2.4"
     category: protocol-inheritance
@@ -133,6 +371,39 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - subset-pairs
+      - protocol-inheritance-candidates
+    primary_answer:
+      category: protocol-inheritance
+      specifics:
+        parent: "RenderingAudioPlayer (new parent for the shared 7-member core)"
+        child: "AudioPlayerProtocol and PlaybackController"
+        moved_members:
+          - "installRenderTap"
+          - "isPlaying"
+          - "makeAudioBufferStream"
+          - "play"
+          - "removeRenderTap"
+          - "state"
+          - "stop"
+        reuse_existing_swift_protocol: false
+      rationale_must_cite:
+        - "AudioPlayerProtocol"
+        - "PlaybackController"
+        - "installRenderTap"
+        - "state"
+    specifics_tolerance:
+      parent_must_include_all_seven_shared_members: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting the shared surface as a struct misses the protocol-shape; partial credit only."
+    wrong_answers:
+      - category: no-action
+        note: "Two protocols sharing 7 of ~9 fields in the same package is the strongest missing-parent signal in the substrate."
+      - category: subclass-lift
+        note: "Protocols don't subclass."
 
   - plant_id: "2R"
     category: protocol-inheritance
@@ -144,6 +415,26 @@ plants:
     restraint: true
     restraint_pair: "2.1"
     restraint_signal: "is_test=true (file in *Testing/ library target)"
+    expected_substrate_signals:
+      - subset-pairs
+      - protocol-inheritance-candidates
+    primary_answer:
+      category: no-action
+      specifics:
+        reason_class: "test-fixture"
+      rationale_must_cite:
+        - "_Plant_MockNotificationMessage"
+        - "CoreTesting"
+        - "is_test"
+        - "mock"
+    specifics_tolerance:
+      reason_class_must_be_test_fixture: true
+    alternative_answers: []
+    wrong_answers:
+      - category: protocol-inheritance
+        note: "Lifting the mock's surface into the production parent protocol couples production to test mock semantics; this is the canonical restraint failure mode."
+      - category: extract-to-common
+        note: "Any action recommendation on a *Testing/ library target file is a false positive — the duplication exists to support test isolation."
 
   # ─── Category 3: default implementation (≥3 conformers) ────────────────────
   - plant_id: "3.1"
@@ -155,6 +446,38 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - default-impl-candidates
+    primary_answer:
+      category: default-implementation
+      specifics:
+        protocol: "HSBStorage (new protocol with hue/saturation/brightness stored-property contract)"
+        method: "init(hue: Double, saturation: Double, brightness: Double)"
+        target_location: "Shared/ColorPalette/Sources/ColorPalette/HSBStorage.swift (extension on HSBStorage)"
+        conformers_simplified:
+          - "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift"
+      rationale_must_cite:
+        - "HSBColor"
+        - "AccentColor"
+        - "HSBOffset"
+        - "identical"
+    specifics_tolerance:
+      default_impl_must_be_in_protocols_own_package: true
+      acknowledging_init_cannot_default_impl_directly_acceptable: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting an HSB-storage struct and embedding it via composition (since initializers can't be default-impl'd in Swift extensions) is a defensible alternative; partial credit."
+      - category: composition
+        weight: 0.6
+        note: "Composing an HSBValues struct field into each of the three types correctly handles Swift's init-default-impl limitation; arguably the more idiomatic answer."
+    wrong_answers:
+      - category: no-action
+        note: "Three types in two related packages with byte-identical init bodies is the textbook default-impl signal."
+      - category: subclass-lift
+        note: "The conformers are structs; structs don't subclass."
 
   - plant_id: "3.2"
     category: default-implementation
@@ -166,6 +489,39 @@ plants:
     synthesis: hybrid
     planted_extras: 1
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - default-impl-candidates
+    primary_answer:
+      category: default-implementation
+      specifics:
+        protocol: "BlendMode (new shared protocol over the 16-case union, with displayName + blendMode requirements)"
+        method: "displayName: String { get }"
+        target_location: "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode.swift (extension on BlendMode)"
+        conformers_simplified:
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift"
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift"
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift"
+      rationale_must_cite:
+        - "PlaybackBlendMode"
+        - "MaterialBlendMode"
+        - "_Plant_OverlayBlendMode"
+        - "displayName"
+        - "identical"
+    specifics_tolerance:
+      default_impl_must_be_in_protocols_own_package: true
+    alternative_answers:
+      - category: generic-parameterization
+        weight: 0.5
+        note: "Generifying over the case set (Cat 5 angle) is also valid but loses the displayName-default-impl angle; partial credit. Plant 5.4 separately scores the struct angle."
+      - category: extract-to-common
+        weight: 0.3
+        note: "Extracting displayName to a free helper misses the protocol-default-impl idiom."
+    wrong_answers:
+      - category: no-action
+        note: "Three enums in the same package with 18-line identical displayName switch bodies is the textbook default-impl signal."
+      - category: subclass-lift
+        note: "Enums don't subclass."
 
   - plant_id: "3.3"
     category: default-implementation
@@ -177,6 +533,37 @@ plants:
     synthesis: hybrid
     planted_extras: 1
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - default-impl-candidates
+    primary_answer:
+      category: default-implementation
+      specifics:
+        protocol: "AudioProcessor (already exists in PlayerHeaderView)"
+        method: "setNormalizationMode(_:) and reset()"
+        target_location: "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor.swift (extension on AudioProcessor)"
+        conformers_simplified:
+          - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift"
+          - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift"
+          - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift"
+      rationale_must_cite:
+        - "RMSProcessor"
+        - "FFTProcessor"
+        - "_Plant_AverageProcessor"
+        - "AudioProcessor"
+        - "identical"
+    specifics_tolerance:
+      default_impl_must_be_in_protocols_own_package: true
+      protocol_must_be_existing_AudioProcessor: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.3
+        note: "Extracting the reset/setNormalizationMode bodies to a free helper misses the protocol-default-impl idiom and ignores the existing AudioProcessor protocol."
+    wrong_answers:
+      - category: no-action
+        note: "Three conformers of the same protocol sharing two identical method bodies is the textbook default-impl signal."
+      - category: subclass-lift
+        note: "These are structs/classes conforming to a protocol; the lift target is the protocol extension, not a class hierarchy."
 
   - plant_id: "3.4"
     category: default-implementation
@@ -187,6 +574,36 @@ plants:
     synthesis: hybrid
     planted_extras: 1
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - default-impl-candidates
+    primary_answer:
+      category: default-implementation
+      specifics:
+        protocol: "PlaylistEntry (already exists in Shared/Playlist)"
+        method: "init(from decoder: any Decoder) throws"
+        target_location: "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift (extension PlaylistEntry where Self: Decodable)"
+        conformers_simplified:
+          - "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift"
+          - "Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift"
+      rationale_must_cite:
+        - "Breakpoint"
+        - "Talkset"
+        - "_Plant_Announcement"
+        - "PlaylistEntry"
+        - "identical"
+    specifics_tolerance:
+      default_impl_must_be_in_protocols_own_package: true
+      protocol_must_be_existing_PlaylistEntry: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.3
+        note: "Extracting the Decodable init to a free helper misses the protocol-default-impl idiom."
+    wrong_answers:
+      - category: no-action
+        note: "Three conformers of PlaylistEntry sharing an identical Decodable initializer body is the textbook default-impl signal."
+      - category: subclass-lift
+        note: "Conformers are structs; structs don't subclass."
 
   - plant_id: "3R"
     category: default-implementation
@@ -199,6 +616,26 @@ plants:
     restraint: true
     restraint_pair: "3.1"
     restraint_signal: "is_mock=true (*Testing/ library target, stub-prefixed names)"
+    expected_substrate_signals:
+      - function-duplicates
+      - default-impl-candidates
+    primary_answer:
+      category: no-action
+      specifics:
+        reason_class: "test-fixture"
+      rationale_must_cite:
+        - "Breakpoint.stub"
+        - "Talkset.stub"
+        - "PlaylistTesting"
+        - "is_mock"
+    specifics_tolerance:
+      reason_class_must_be_test_fixture_or_mock: true
+    alternative_answers: []
+    wrong_answers:
+      - category: default-implementation
+        note: "Lifting the stub bodies into a protocol default coerces production protocol shape to test convenience; this is the canonical restraint failure mode."
+      - category: extract-to-common
+        note: "Any action recommendation on a *Testing/ library target file is a false positive — the stubs are intentional test fixtures."
 
   # ─── Category 4: PAT introduction (associated-type generalization) ─────────
   - plant_id: "4.1"
@@ -210,6 +647,40 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    cross_layer: true  # PlaycutSelection in app:iOS, NowPlayingItem in Shared/AppServices
+    expected_substrate_signals:
+      - pat-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: pat-introduction
+      specifics:
+        new_protocol: "PlaycutWithArtwork"
+        associated_type: "Artwork"
+        constraints: []
+        replaces:
+          - "NowPlayingItem"
+          - "PlaycutSelection"
+      rationale_must_cite:
+        - "NowPlayingItem"
+        - "PlaycutSelection"
+        - "Image"
+        - "UIImage"
+        - "differ at"
+    specifics_tolerance:
+      associated_type_must_cover_the_artwork_slot: true
+      type_slot_at_artwork_must_be_identified: true
+    alternative_answers:
+      - category: generic-parameterization
+        weight: 0.7
+        note: "A generic struct over Artwork is defensible — these are structs, not protocols, so PAT vs generic-struct is a near-tie; PAT wins on the protocol-shaped read but generic-struct is acceptable."
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting both without PAT misses the abstraction but isn't actively wrong; partial credit."
+    wrong_answers:
+      - category: no-action
+        note: "Two structs in different layers with identical field-name sets differing only at the artwork type slot is the textbook PAT/generic signal."
+      - category: subclass-lift
+        note: "These are structs; structs don't subclass."
 
   - plant_id: "4.2"
     category: pat-introduction
@@ -220,6 +691,39 @@ plants:
     synthesis: full
     planted_extras: 2
     restraint: false
+    expected_substrate_signals:
+      - pat-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: pat-introduction
+      specifics:
+        new_protocol: "Container"
+        associated_type: "Item"
+        constraints: []
+        replaces:
+          - "_Plant_TrackContainer"
+          - "_Plant_ShowContainer"
+      rationale_must_cite:
+        - "_Plant_TrackContainer"
+        - "_Plant_ShowContainer"
+        - "item"
+        - "reload"
+        - "differ at Item"
+    specifics_tolerance:
+      associated_type_named_Item_or_synonym: true
+      type_slot_at_item_must_be_identified: true
+    alternative_answers:
+      - category: generic-parameterization
+        weight: 0.7
+        note: "Two protocols become one generic struct — defensible but less idiomatic for the protocol-shaped case."
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting both without PAT misses the abstraction."
+    wrong_answers:
+      - category: no-action
+        note: "Two protocols differing only at one type slot is the textbook PAT signature."
+      - category: subclass-lift
+        note: "Protocols don't subclass; this would be a Swift-level error."
 
   - plant_id: "4.3"
     category: pat-introduction
@@ -230,6 +734,35 @@ plants:
     synthesis: full
     planted_extras: 2
     restraint: false
+    expected_substrate_signals:
+      - pat-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: pat-introduction
+      specifics:
+        new_protocol: "EntityResolver"
+        associated_type: "Entity"
+        constraints: []
+        replaces:
+          - "_Plant_ArtistRepository"
+          - "_Plant_ReleaseRepository"
+      rationale_must_cite:
+        - "_Plant_ArtistRepository"
+        - "_Plant_ReleaseRepository"
+        - "resolve"
+        - "differ at Entity"
+    specifics_tolerance:
+      associated_type_named_Entity_or_synonym: true
+      type_slot_at_resolve_return_must_be_identified: true
+    alternative_answers:
+      - category: generic-parameterization
+        weight: 0.6
+        note: "Generic protocol/struct over Entity is defensible; PAT is more idiomatic for the protocol-shaped case."
+    wrong_answers:
+      - category: no-action
+        note: "Two repository protocols with parallel triple-method shape differing at the Entity type is the textbook PAT signature."
+      - category: subclass-lift
+        note: "Protocols don't subclass."
 
   - plant_id: "4.4"
     category: pat-introduction
@@ -240,6 +773,36 @@ plants:
     synthesis: full
     planted_extras: 2
     restraint: false
+    cross_layer: false  # both in Shared/* packages
+    expected_substrate_signals:
+      - pat-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: pat-introduction
+      specifics:
+        new_protocol: "Loader"
+        associated_type: "Output"
+        constraints: []
+        replaces:
+          - "_Plant_CacheLoader"
+          - "_Plant_MetadataLoader"
+      rationale_must_cite:
+        - "_Plant_CacheLoader"
+        - "_Plant_MetadataLoader"
+        - "async throws"
+        - "differ at"
+    specifics_tolerance:
+      effect_specifiers_async_throws_must_be_preserved_in_PAT_signature: true
+      associated_type_named_Output_or_synonym: true
+    alternative_answers:
+      - category: generic-parameterization
+        weight: 0.6
+        note: "Generic protocol over Output is defensible if effect specifiers are also preserved."
+    wrong_answers:
+      - category: no-action
+        note: "Two loader protocols differing at one type slot AND carrying matching async throws specifiers is the textbook PAT-with-effects signature."
+      - category: subclass-lift
+        note: "Protocols don't subclass."
 
   - plant_id: "4R"
     category: pat-introduction
@@ -252,6 +815,26 @@ plants:
     restraint: true
     restraint_pair: "4.1"
     restraint_signal: "is_mock=true (AnalyticsTesting/ library target, Mock-prefixed name)"
+    expected_substrate_signals:
+      - pat-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: no-action
+      specifics:
+        reason_class: "test-fixture"
+      rationale_must_cite:
+        - "CPUSessionEvent"
+        - "CPUSessionEventProxy"
+        - "AnalyticsTesting"
+        - "is_mock"
+    specifics_tolerance:
+      reason_class_must_be_test_fixture_or_mock: true
+    alternative_answers: []
+    wrong_answers:
+      - category: pat-introduction
+        note: "Lifting CPUSessionEvent and its mock proxy behind a PAT couples production to test-mock semantics; this is the canonical restraint failure mode."
+      - category: extract-to-common
+        note: "Any action recommendation on an AnalyticsTesting/ library target file is a false positive — the proxy exists to record the real event's fields in tests."
 
   # ─── Category 5: generic parameterization (~3 fn + ~2 struct) ──────────────
   - plant_id: "5.1"
@@ -263,6 +846,38 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - generic-function-candidates
+    primary_answer:
+      category: generic-parameterization
+      specifics:
+        generic_kind: "function"
+        type_params:
+          - name: "Color"
+            constraint: "PlatformColor"
+        new_name: "platformColor"
+        replaces:
+          - "uiColor"
+          - "nsColor"
+      rationale_must_cite:
+        - "HSBColor"
+        - "uiColor"
+        - "nsColor"
+        - "UIColor"
+        - "NSColor"
+    specifics_tolerance:
+      type_param_must_be_constrained_to_a_PlatformColor_typealias_or_protocol: true
+      unconstrained_T_acceptable_with_note: false
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting a PlatformColor typealias without a generic function leaves the two methods parallel; partial credit."
+    wrong_answers:
+      - category: no-action
+        note: "Two methods on the same type whose bodies differ only at UIColor / NSColor substitution is a clear generic-function opportunity."
+      - category: pat-introduction
+        note: "PAT is for protocols; this is two methods on a struct. Wrong language-level construct."
 
   - plant_id: "5.2"
     category: generic-parameterization
@@ -273,6 +888,37 @@ plants:
     synthesis: full
     planted_extras: 1
     restraint: false
+    expected_substrate_signals:
+      - function-duplicates
+      - generic-function-candidates
+    primary_answer:
+      category: generic-parameterization
+      specifics:
+        generic_kind: "function"
+        type_params:
+          - name: "T"
+            constraint: "Decodable"
+        new_name: "fetch"
+        replaces:
+          - "fetchInt"
+          - "fetchString"
+      rationale_must_cite:
+        - "_Plant_GenericFetcher"
+        - "fetchInt"
+        - "fetchString"
+        - "Int"
+        - "String"
+    specifics_tolerance:
+      type_param_must_be_constrained_to_Decodable_or_codable_kin: true
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting a shared free helper for the body misses the generic-parameterization idiom."
+    wrong_answers:
+      - category: no-action
+        note: "Two functions in the same file whose bodies differ only at type substitution is the textbook generic-function opportunity."
+      - category: pat-introduction
+        note: "PAT is for protocols; these are free functions. Wrong language-level construct."
 
   - plant_id: "5.3"
     category: generic-parameterization
@@ -284,6 +930,40 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    expected_substrate_signals:
+      - generic-struct-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: generic-parameterization
+      specifics:
+        generic_kind: "struct"
+        type_params:
+          - name: "M"
+            constraint: "NotificationMessage"  # The missing-parent from 2.1
+        new_name: "NotificationMessageSequence"
+        replaces:
+          - "MainActorNotificationMessageSequence"
+          - "AsyncNotificationMessageSequence"
+      rationale_must_cite:
+        - "MainActorNotificationMessageSequence"
+        - "AsyncNotificationMessageSequence"
+        - "differ at"
+        - "M:"
+    specifics_tolerance:
+      type_param_must_be_constrained_to_a_NotificationMessage_protocol: true
+      unconstrained_M_acceptable_with_note: false
+    alternative_answers:
+      - category: protocol-inheritance
+        weight: 0.5
+        note: "Lifting the protocol bound first (Plant 2.1's missing parent) is a prerequisite step but doesn't itself collapse the two sequence structs; partial credit."
+      - category: extract-to-common
+        weight: 0.3
+        note: "Extracting the shared 3-field shape misses the type-slot parameterization."
+    wrong_answers:
+      - category: no-action
+        note: "Two generic structs in the same package with identical field-name sets differing only at one protocol bound is the textbook generic-struct opportunity."
+      - category: pat-introduction
+        note: "PAT is for protocols; these are concrete generic structs. Wrong language-level construct."
 
   - plant_id: "5.4"
     category: generic-parameterization
@@ -295,6 +975,38 @@ plants:
     synthesis: full
     planted_extras: 2
     restraint: false
+    expected_substrate_signals:
+      - generic-struct-candidates
+      - cross-package-shape-near-duplicates-any
+    primary_answer:
+      category: generic-parameterization
+      specifics:
+        generic_kind: "struct"
+        type_params:
+          - name: "Key"
+            constraint: "Hashable"
+        new_name: "Cache"
+        replaces:
+          - "_Plant_IntCache"
+          - "_Plant_StringCache"
+      rationale_must_cite:
+        - "_Plant_IntCache"
+        - "_Plant_StringCache"
+        - "Int"
+        - "String"
+        - "differ at Key"
+    specifics_tolerance:
+      type_param_must_be_constrained_to_Hashable: true
+      unconstrained_T_acceptable_with_note: false
+    alternative_answers:
+      - category: extract-to-common
+        weight: 0.4
+        note: "Extracting CacheEntry alone leaves the outer Cache types parallel; partial credit only."
+    wrong_answers:
+      - category: no-action
+        note: "Two caches differing only at the key type are a clear generic-struct opportunity."
+      - category: pat-introduction
+        note: "PAT is for protocols; these are structs. Wrong language-level construct."
 
   - plant_id: "5R"
     category: generic-parameterization
@@ -307,6 +1019,26 @@ plants:
     restraint: true
     restraint_pair: "5.1"
     restraint_signal: "is_mock=true (same cluster as 3R but scored under Cat. 5 lens; per Cross-checks in plant-source-candidates.md, two-category restraint coverage is intentional)"
+    expected_substrate_signals:
+      - function-duplicates
+      - generic-function-candidates
+    primary_answer:
+      category: no-action
+      specifics:
+        reason_class: "test-fixture"
+      rationale_must_cite:
+        - "Breakpoint.stub"
+        - "Talkset.stub"
+        - "PlaylistTesting"
+        - "is_mock"
+    specifics_tolerance:
+      reason_class_must_be_test_fixture_or_mock: true
+    alternative_answers: []
+    wrong_answers:
+      - category: generic-parameterization
+        note: "Generifying the test stubs into a single <T> helper either coerces all stubs to a common surface or requires per-type customization that defeats the purpose; this is the canonical restraint failure mode under the Cat 5 lens."
+      - category: extract-to-common
+        note: "Any action recommendation on a *Testing/ library target file is a false positive — the stubs are intentional test fixtures."
 
 # Cross-category overlap notes (per candidates doc §Cross-checks):
 #   - Plants 2.1 and 5.3 share the MainActor/Async notification substrate cluster, each scoring a distinct lens
