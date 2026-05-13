@@ -27,7 +27,7 @@ primary_answer:
   category: extract-to-common
   specifics:
     target_package: "<any package upstream of all three, e.g., Shared/Core or a new Shared/Config>"
-    type_name_pattern: "ClientConfig | Config"
+    type_name: "ClientConfig"    # agent may also propose "Config"; accepted via tolerance below
     remove_from:
       - "Shared/Caching/Sources/Caching/_Plant_CacheClientConfig.swift"
       - "Shared/Metadata/Sources/Metadata/_Plant_MetadataFetcherConfig.swift"
@@ -62,13 +62,14 @@ expected_substrate_signals:
 primary_answer:
   category: protocol-inheritance
   specifics:
-    parent_protocol_name_pattern: "Identifiable | KeyedItem | <shared-core name>"
-    parent_members: ["id: String", "displayName: String"]
+    parent: "Identifiable"                    # agent may also propose KeyedItem or a new shared name; accepted via tolerance
     children: ["Cacheable", "Persistable"]
+    moved_members: ["id", "displayName"]
+    reuse_existing_swift_protocol: true       # parent is Swift's Identifiable
   rationale_must_cite: ["Cacheable", "Persistable", "id", "displayName"]
 specifics_tolerance:
   parent_must_include_both_shared_members: true
-  reusing_swift_Identifiable_allowed: true
+  reusing_swift_Identifiable_allowed: true    # tolerated for scoring; reuse_existing_swift_protocol may be false with a new shared-name parent
 alternative_answers:
   - category: extract-to-common
     weight: 0.5
@@ -143,7 +144,7 @@ primary_answer:
     type_params:
       - name: "Key"
         constraint: "Hashable"
-    new_type_name: "Cache"
+    new_name: "Cache"
     replaces: ["IntCache", "StringCache"]
   rationale_must_cite: ["IntCache", "StringCache", "Int", "String", "differ at Key"]
 specifics_tolerance:
@@ -208,10 +209,11 @@ expected_substrate_signals:
 primary_answer:
   category: macro-synthesis
   specifics:
-    macro_name_pattern: "@CaseDisplayName | @DisplayName"
+    macro_name: "@CaseDisplayName"           # agent may also propose @DisplayName; accepted via tolerance
     applies_to: ["enum"]
     synthesizes: "var displayName: String { get } switching over self.cases returning hardcoded labels"
     population_size_evidence: ">= 8 enums"
+    use_swift_builtin: false                   # Swift has no built-in case-display-name; macro is the right tool
   rationale_must_cite: ["18", "displayName", "switch", "case"]
 specifics_tolerance:
   population_size_in_rationale_must_be_within_2_of_actual: true
