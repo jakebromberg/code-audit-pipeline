@@ -51,18 +51,50 @@ The type catalog is a single JSON array. Each entry describes one declared type-
 
 ### V7 §6.1: `fields_structured`
 
-Parallel to `fields`, with each member split into its components. Emitted on every record where `fields` is non-null; sorted in lockstep with `fields` so `fields[i]` and `fields_structured[i]` refer to the same member.
+Parallel to `fields`, with each member split into its components. Emitted on every record where `fields` is non-null; sorted in lockstep with `fields` (by the flat `"name:type"` string) so `fields[i]` and `fields_structured[i]` refer to the same member.
 
 | Sub-field | Meaning |
 |---|---|
 | `name` | identifier (without trailing `?`) |
-| `type` | full type text (Swift includes trailing `?` for optionals; TypeScript includes `\| null` if declared) |
-| `is_optional` | structural flag: `true` for Swift `T?` / `T!` / `Optional<T>` and TS `T \| null` / `T \| undefined` / `T?` syntax |
+| `type` | verbatim type annotation as written in source. Swift preserves syntactic sugar (`Int?` stays `Int?`, `Optional<Int>` stays `Optional<Int>`); TypeScript preserves declared union form (`string \| null`). |
+| `is_optional` | structural flag: `true` for Swift `T?` / `T!` / `Optional<T>` / `Swift.Optional<T>` and TS `T \| null` / `T \| undefined` / `T?` syntax |
 | `is_static` | `true` for Swift `static` / `class` modifiers; TS `static` |
 
-`is_optional` is the load-bearing flag — string-matching trailing `?` on `type` is unreliable across language conventions, but the structural flag is consistent. Carrying both `type` (which may include `?`) and `is_optional` is intentional redundancy: `type` is ergonomic for display, `is_optional` is reliable for structural matching.
+`is_optional` is the load-bearing flag — string-matching trailing `?` on `type` is unreliable across the spelling variants (`Int?` vs `Optional<Int>` differ on trailing-`?` but are semantically equal), but the structural flag is consistent. Carrying both `type` (verbatim) and `is_optional` (structural) is intentional redundancy: `type` is ergonomic for display, `is_optional` is reliable for structural matching.
+
+**Enum cases.** Records of `kind: "type-alias-union"` derived from Swift enums emit one `fields_structured` entry per case:
+
+| Case shape | `type` value |
+|---|---|
+| `case foo` (no associated value, no raw value) | `""` (empty string) |
+| `case foo(Int, String)` (associated values) | `"(Int, String)"` (the parameter clause verbatim) |
+| `case foo = 1` or `case foo = "x"` (raw value) | `"=1"` or `"=\"x\""` (leading `=` then raw-value text) |
+
+Enum cases always emit `is_optional: false` and `is_static: false`.
+
+**Status.** Populated by the Swift extractor (V7 §6.1). TypeScript extractor parity follows the same schema and is tracked separately.
 
 The flat `fields[]` form is preserved unchanged for V6-era queries; new queries (`pat-candidates`, `generic-struct-candidates`, etc.) can consume either form.
+
+#### Example (Swift)
+
+```jsonc
+"fields_structured": [
+  { "name": "cacheLifespan", "type": "TimeInterval",       "is_optional": false, "is_static": true  },
+  { "name": "cacheLoadTask", "type": "Task<Void, Never>?", "is_optional": true,  "is_static": false },
+  { "name": "id",            "type": "String",             "is_optional": false, "is_static": false }
+]
+```
+
+#### Example (TypeScript, forward-looking)
+
+```jsonc
+"fields_structured": [
+  { "name": "album_title", "type": "string | null", "is_optional": true,  "is_static": false },
+  { "name": "artist_name", "type": "string | null", "is_optional": true,  "is_static": false },
+  { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
+]
+```
 
 ## Kinds
 
