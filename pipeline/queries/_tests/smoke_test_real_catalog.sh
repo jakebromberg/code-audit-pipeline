@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke-test all 11 queries against a real Swift catalog (default: wxyc-ios-64).
+# Smoke-test all cluster queries against a real Swift catalog (default: wxyc-ios-64).
 # Verifies that each query runs without error on real-scale input in both
 # text and JSONL modes, every JSONL line is valid JSON with a cluster_id,
 # and cluster_id values are unique within a query's output.
@@ -96,10 +96,15 @@ assert_query_clean near-duplicates-any.jq "$WORK_DIR/type-catalog.json" --argjso
 assert_query_clean cross-package-shape-near-duplicates.jq "$WORK_DIR/type-catalog.json" --argjson threshold 0.7
 assert_query_clean cross-package-shape-near-duplicates-any.jq "$WORK_DIR/type-catalog.json" --argjson threshold 0.7
 assert_query_clean subset-pairs.jq "$WORK_DIR/type-catalog.json"
+assert_query_clean protocol-inheritance-candidates.jq "$WORK_DIR/type-catalog.json" --argjson min_overlap 2
+assert_query_clean pat-candidates.jq "$WORK_DIR/type-catalog.json" --argjson max_slot_diffs 1
+assert_query_clean generic-struct-candidates.jq "$WORK_DIR/type-catalog.json" --argjson max_slot_diffs 1
 
 echo ""
 echo "=== Function-catalog query ==="
 assert_query_clean function-duplicates.jq "$WORK_DIR/function-catalog.json" --argjson threshold 0.7
+assert_query_clean default-impl-candidates.jq "$WORK_DIR/function-catalog.json" --argjson min_conformers 2
+assert_query_clean generic-function-candidates.jq "$WORK_DIR/function-catalog.json" --argjson threshold 0.7 --argjson max_subs 2
 
 echo ""
 echo "=== File-hash query ==="
