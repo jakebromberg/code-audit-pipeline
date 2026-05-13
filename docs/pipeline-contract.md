@@ -30,6 +30,11 @@ The type catalog is a single JSON array. Each entry describes one declared type-
       "artist_name:string | null",
       "id:number"
     ],
+    "fields_structured": [                // V7 §6.1: parallel to `fields`, with split name/type + flags
+      { "name": "album_title", "type": "string | null", "is_optional": true,  "is_static": false },
+      { "name": "artist_name", "type": "string | null", "is_optional": true,  "is_static": false },
+      { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
+    ],
     "shape_sig": "album_title:string | null|artist_name:string | null|id:number",  // fields.join("|").lower
 
     "touched_in_window": false,           // true if file is in --touched JSON list
@@ -43,6 +48,21 @@ The type catalog is a single JSON array. Each entry describes one declared type-
   }
 ]
 ```
+
+### V7 §6.1: `fields_structured`
+
+Parallel to `fields`, with each member split into its components. Emitted on every record where `fields` is non-null; sorted in lockstep with `fields` so `fields[i]` and `fields_structured[i]` refer to the same member.
+
+| Sub-field | Meaning |
+|---|---|
+| `name` | identifier (without trailing `?`) |
+| `type` | full type text (Swift includes trailing `?` for optionals; TypeScript includes `\| null` if declared) |
+| `is_optional` | structural flag: `true` for Swift `T?` / `T!` / `Optional<T>` and TS `T \| null` / `T \| undefined` / `T?` syntax |
+| `is_static` | `true` for Swift `static` / `class` modifiers; TS `static` |
+
+`is_optional` is the load-bearing flag — string-matching trailing `?` on `type` is unreliable across language conventions, but the structural flag is consistent. Carrying both `type` (which may include `?`) and `is_optional` is intentional redundancy: `type` is ergonomic for display, `is_optional` is reliable for structural matching.
+
+The flat `fields[]` form is preserved unchanged for V6-era queries; new queries (`pat-candidates`, `generic-struct-candidates`, etc.) can consume either form.
 
 ## Kinds
 
@@ -70,7 +90,7 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Optional but useful
 
-- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`
+- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
 
 ### Intersection-type resolution
 
