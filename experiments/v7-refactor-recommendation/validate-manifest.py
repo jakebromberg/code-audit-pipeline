@@ -15,6 +15,17 @@ Checks performed:
   7. Restraint entries (restraint: true) must declare restraint_pair and restraint_signal.
   8. Unknown field warning: per-plant keys outside the documented schema produce warnings (not errors) so typos
      like `restraintpair` surface without blocking schema evolution.
+  9. Rubric schema (Phase A.3, per methodology §8 + companion plant-manifest doc):
+     a. expected_substrate_signals is a non-empty list of strings.
+     b. primary_answer.category ∈ CATEGORIES ∪ {"no-action"}.
+     c. primary_answer.category == "no-action" iff restraint: true.
+     d. primary_answer.specifics is a non-empty dict.
+     e. primary_answer.rationale_must_cite is a non-empty list of strings.
+     f. specifics_tolerance is a dict (may be empty if no tolerances apply).
+     g. alternative_answers is a list (possibly empty); each entry has category ∈ CATEGORIES,
+        weight ∈ [0.0, 1.0], note non-empty string.
+     h. wrong_answers is a non-empty list; each entry has category ∈ CATEGORIES ∪ {"no-action"},
+        note non-empty string.
 
 Usage
 -----
@@ -66,7 +77,22 @@ KNOWN_KEYS = {
     "restraint",
     "restraint_pair",
     "restraint_signal",
+    # Phase A.3 rubric fields
+    "expected_substrate_signals",
+    "primary_answer",
+    "specifics_tolerance",
+    "alternative_answers",
+    "wrong_answers",
 }
+
+# Categories valid as a primary/alternative/wrong-answer recommendation. Mirrors the agent-prompt taxonomy
+# in `docs/refactor-recommendation-experiment-agent-prompt.md` §2 restricted to V7 MVP scope. `no-action`
+# is a permitted answer category but is NOT in CATEGORIES; it's a separate bucket because (a) it's only
+# valid as primary for restraints, and (b) it's the universal wrong-answer for canonical plants. The
+# `subclass-lift` and `composition` categories are out-of-MVP-scope plant categories but remain valid
+# as wrong-answer / alternative recommendations the manifest may cite.
+ANSWER_CATEGORIES = CATEGORIES | {"subclass-lift", "composition"}
+NO_ACTION = "no-action"
 
 
 def is_planted_path(path: str) -> bool:
@@ -87,6 +113,102 @@ def load_catalog_files(catalog_root: Path) -> set[str]:
                 if isinstance(entry, dict) and (file_val := entry.get("file")):
                     files.add(file_val)
     return files
+
+
+def _is_non_empty_string_list(value: object) -> bool:
+    return isinstance(value, list) and len(value) > 0 and all(
+        isinstance(item, str) and item != "" for item in value
+    )
+
+
+def validate_rubric(plant: dict, prefix: str, is_restraint: bool, errors: list[str]) -> None:
+    """Per Phase A.3, validate the rubric-related fields of a plant entry (methodology §8)."""
+    # 9a: expected_substrate_signals is a non-empty list of strings.
+    signals = plant.get("expected_substrate_signals")
+    if not _is_non_empty_string_list(signals):
+        errors.append(
+            f"{prefix}: expected_substrate_signals must be a non-empty list of strings"
+        )
+
+    # 9b–9e: primary_answer shape.
+    primary = plant.get("primary_answer")
+    if not isinstance(primary, dict):
+        errors.append(f"{prefix}: primary_answer must be a dict")
+    else:
+        pri_cat = primary.get("category")
+        valid_primary_cats = ANSWER_CATEGORIES | {NO_ACTION}
+        if pri_cat not in valid_primary_cats:
+            errors.append(
+                f"{prefix}: primary_answer.category {pri_cat!r} not in {sorted(valid_primary_cats)}"
+            )
+        # 9c: no-action iff restraint
+        if is_restraint and pri_cat != NO_ACTION:
+            errors.append(
+                f"{prefix}: restraint=true but primary_answer.category={pri_cat!r} (must be 'no-action')"
+            )
+        if (not is_restraint) and pri_cat == NO_ACTION:
+            errors.append(
+                f"{prefix}: primary_answer.category='no-action' but restraint is not true"
+            )
+        specifics = primary.get("specifics")
+        if not isinstance(specifics, dict) or len(specifics) == 0:
+            errors.append(f"{prefix}: primary_answer.specifics must be a non-empty dict")
+        cites = primary.get("rationale_must_cite")
+        if not _is_non_empty_string_list(cites):
+            errors.append(
+                f"{prefix}: primary_answer.rationale_must_cite must be a non-empty list of strings"
+            )
+
+    # 9f: specifics_tolerance is a dict (may be empty).
+    tolerance = plant.get("specifics_tolerance")
+    if not isinstance(tolerance, dict):
+        errors.append(f"{prefix}: specifics_tolerance must be a dict (possibly empty)")
+
+    # 9g: alternative_answers is a list; each entry has category ∈ ANSWER_CATEGORIES, weight ∈ [0,1],
+    # note non-empty string.
+    alts = plant.get("alternative_answers")
+    if not isinstance(alts, list):
+        errors.append(f"{prefix}: alternative_answers must be a list (possibly empty)")
+    else:
+        for idx, alt in enumerate(alts):
+            tag = f"{prefix}: alternative_answers[{idx}]"
+            if not isinstance(alt, dict):
+                errors.append(f"{tag}: entry must be a dict")
+                continue
+            cat = alt.get("category")
+            if cat not in ANSWER_CATEGORIES:
+                errors.append(
+                    f"{tag}: category {cat!r} not in {sorted(ANSWER_CATEGORIES)}"
+                )
+            weight = alt.get("weight")
+            if not isinstance(weight, (int, float)) or isinstance(weight, bool):
+                errors.append(f"{tag}: weight must be a number in [0.0, 1.0]")
+            elif not (0.0 <= float(weight) <= 1.0):
+                errors.append(f"{tag}: weight {weight!r} not in [0.0, 1.0]")
+            note = alt.get("note")
+            if not isinstance(note, str) or note.strip() == "":
+                errors.append(f"{tag}: note must be a non-empty string")
+
+    # 9h: wrong_answers is a non-empty list; each entry has category ∈ ANSWER_CATEGORIES ∪ {no-action},
+    # note non-empty string.
+    wrongs = plant.get("wrong_answers")
+    if not isinstance(wrongs, list) or len(wrongs) == 0:
+        errors.append(f"{prefix}: wrong_answers must be a non-empty list")
+    else:
+        valid_wrong_cats = ANSWER_CATEGORIES | {NO_ACTION}
+        for idx, wrong in enumerate(wrongs):
+            tag = f"{prefix}: wrong_answers[{idx}]"
+            if not isinstance(wrong, dict):
+                errors.append(f"{tag}: entry must be a dict")
+                continue
+            cat = wrong.get("category")
+            if cat not in valid_wrong_cats:
+                errors.append(
+                    f"{tag}: category {cat!r} not in {sorted(valid_wrong_cats)}"
+                )
+            note = wrong.get("note")
+            if not isinstance(note, str) or note.strip() == "":
+                errors.append(f"{tag}: note must be a non-empty string")
 
 
 def validate(manifest_path: Path, catalog_root: Path) -> int:
@@ -179,6 +301,10 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
                 errors.append(f"{prefix}: restraint=true but restraint_pair missing")
             if not plant.get("restraint_signal"):
                 errors.append(f"{prefix}: restraint=true but restraint_signal missing")
+
+        # Phase A.3 rubric schema checks
+        is_restraint = bool(plant.get("restraint"))
+        validate_rubric(plant, prefix, is_restraint, errors)
 
     if warnings:
         print(f"{len(warnings)} warning(s):", file=sys.stderr)
