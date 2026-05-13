@@ -216,38 +216,48 @@ final class TypeCatalogVisitor: SyntaxVisitor {
 
     private func emitEnum(_ node: EnumDeclSyntax) {
         let line = converter.location(for: node.positionAfterSkippingLeadingTrivia).line
-        var cases: [String] = []
+        // `pairs` holds the lockstep flat/structured rendering for each case;
+        // `caseTexts` retains the declaration-order spellings used to build
+        // `typeText` (which is *not* sorted — it's the source-order summary).
+        var pairs: [(flat: String, structured: FieldStructured)] = []
         var caseTexts: [String] = []
-        var structured: [FieldStructured] = []
         for member in node.memberBlock.members {
             guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else { continue }
             for element in caseDecl.elements {
                 let caseName = element.name.text
                 if let assoc = element.parameterClause {
                     let paramText = assoc.trimmedDescription
-                    cases.append("\(caseName):\(paramText)")
+                    pairs.append((
+                        flat: "\(caseName):\(paramText)",
+                        structured: FieldStructured(
+                            name: caseName, type: paramText, isOptional: false, isStatic: false)
+                    ))
                     caseTexts.append("\(caseName)\(paramText)")
-                    structured.append(FieldStructured(
-                        name: caseName, type: paramText, isOptional: false, isStatic: false))
                 } else if let raw = element.rawValue {
                     let rawText = raw.value.trimmedDescription
-                    cases.append("\(caseName):=\(rawText)")
+                    pairs.append((
+                        flat: "\(caseName):=\(rawText)",
+                        structured: FieldStructured(
+                            name: caseName, type: "=\(rawText)", isOptional: false, isStatic: false)
+                    ))
                     caseTexts.append("\(caseName)=\(rawText)")
-                    structured.append(FieldStructured(
-                        name: caseName, type: "=\(rawText)", isOptional: false, isStatic: false))
                 } else {
-                    cases.append(caseName)
+                    pairs.append((
+                        flat: caseName,
+                        structured: FieldStructured(
+                            name: caseName, type: "", isOptional: false, isStatic: false)
+                    ))
                     caseTexts.append(caseName)
-                    structured.append(FieldStructured(
-                        name: caseName, type: "", isOptional: false, isStatic: false))
                 }
             }
         }
         let typeText = "case " + caseTexts.joined(separator: " | case ")
-        // Sort flat and structured by name in lockstep so a downstream consumer
-        // can zip them confidently.
-        let sortedFlat = cases.sorted()
-        let sortedStructured = structured.sorted { $0.name < $1.name }
+        // Sort pairs by the flat string so flat[i] and structured[i] refer to
+        // the same case. Uses the same key as `extractFields` (`$0.flat`) so
+        // the two emission paths share one lockstep contract.
+        pairs.sort { $0.flat < $1.flat }
+        let sortedFlat = pairs.map(\.flat)
+        let sortedStructured = pairs.map(\.structured)
         var record = TypeRecord(
             name: qualify(node.name.text),
             kind: "type-alias-union",
@@ -256,9 +266,9 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(node.modifiers),
             generated: file.generated,
-            fields: cases.isEmpty ? nil : sortedFlat,
-            fieldsStructured: cases.isEmpty ? nil : sortedStructured,
-            shapeSig: cases.isEmpty ? nil : shapeSig(of: cases)
+            fields: sortedFlat.isEmpty ? nil : sortedFlat,
+            fieldsStructured: sortedStructured.isEmpty ? nil : sortedStructured,
+            shapeSig: sortedFlat.isEmpty ? nil : shapeSig(of: sortedFlat)
         )
         record.typeText = typeText
         record.typeSig = normalizeTypeText(typeText)
@@ -348,13 +358,23 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     /// identifier form, or the qualified `Swift.Optional<T>` member form.
     /// The first two cover the syntactic sugar; the last two cover the rare
     /// explicit forms.
+    ///
+    /// The qualified form requires `baseType` to spell as `Swift` so a
+    /// user-defined `Foo.Optional<T>` nested type doesn't get mis-flagged.
+    /// The bare-identifier form keeps the more permissive match (any type
+    /// literally named `Optional`) — this is consistent with how Swift
+    /// resolves an unqualified `Optional` reference at the type-checker
+    /// level, and the false-positive surface is small.
     private func isOptionalType(_ type: TypeSyntax) -> Bool {
         if type.is(OptionalTypeSyntax.self) { return true }
         if type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) { return true }
         if let id = type.as(IdentifierTypeSyntax.self), id.name.text == "Optional" {
             return true
         }
-        if let member = type.as(MemberTypeSyntax.self), member.name.text == "Optional" {
+        if let member = type.as(MemberTypeSyntax.self),
+           member.name.text == "Optional",
+           member.baseType.trimmedDescription == "Swift"
+        {
             return true
         }
         return false
