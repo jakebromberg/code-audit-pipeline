@@ -89,3 +89,35 @@ def loc_key(decl):
 # Backwards-compatible alias — keep the older name working since downstream
 # helpers and tests reference it. New code should prefer loc_key.
 def fn_location_key(decl): loc_key(decl);
+
+# ─── Naming utilities ─────────────────────────────────────────────────────
+#
+# Qualified-name → enclosing-type extraction. Used by default-impl-candidates
+# to bucket function records by the type they belong to.
+#
+# Drops the last `.`-separated segment of a qualified name. For Swift records
+# the catalog emits names in the form `Type.method` or `OuterType.NestedType.method`;
+# stripping the last segment yields the enclosing type. Free functions (no dot)
+# return unchanged, which keeps them distinct from each other in clustering.
+#
+# Examples:
+#   type_of("Foo.bar")         → "Foo"
+#   type_of("Foo.Bar.baz")     → "Foo.Bar"   (nested type's enclosing type)
+#   type_of("freeFunction")    → "freeFunction"
+#   type_of("")                → ""          (defensive; not expected in practice)
+def type_of(name):
+  (name | split(".")) as $parts
+  | if ($parts | length) <= 1 then name
+    else ($parts[0:-1] | join("."))
+    end;
+
+# Identifier-token extraction. Used by generic-function-candidates to find
+# substitution patterns between near-duplicate function body lines.
+#
+# Splits on non-identifier characters (anything outside `[A-Za-z0-9_]`) and
+# keeps non-empty tokens. ASCII-only by design — Swift permits Unicode
+# identifiers (e.g., `let π = 3.14`), but they would be silently elided
+# here. The pattern matches the standard `[A-Za-z0-9_]` identifier convention
+# of the substrate plants this is used against.
+def tokens_of:
+  split("[^A-Za-z0-9_]+"; "") | map(select(length > 0));

@@ -26,10 +26,30 @@
 #      generic-function candidate vs. a forked-then-edited helper.
 #
 # Identifier tokens are extracted by splitting each body line on non-identifier
-# characters `[^A-Za-z0-9_]+` and keeping non-empty parts.
+# characters `[^A-Za-z0-9_]+` and keeping non-empty parts. ASCII-only: Swift
+# permits Unicode identifiers (e.g., `let π = 3.14`) but the substrate plants
+# this query targets are conventional ASCII-named APIs. A Unicode identifier
+# would be silently elided from the token set, which could either suppress a
+# legitimate candidate or treat two Unicode-named lines as buddies; both are
+# acceptable for the audit-pipeline's recall posture and explicit here.
+#
+# Buddy-matching is NOT 1-to-1 (MVP simplification): when two A_only lines
+# both find the same B_only line as best buddy, that B_only line is "double-
+# counted" and another B_only line is orphaned. The swap-cardinality cap
+# (≤ max_subs * 2 across the AGGREGATED unique swap-token set) is the
+# backstop — inconsistent or orphaned mappings tend to inflate the aggregate
+# above the cap. False positives go to a panel, not a merge, so the
+# stricter assignment isn't worth jq's iteration cost here. If Phase D shows
+# this firing on contrived pairs, promote to true assignment matching.
 #
 # `--argjson threshold 0.7` and `--argjson max_subs 2` are REQUIRED. jq errors
 # at compile time on undefined variables.
+#
+# Performance: 1.0s on the planted catalog (N=1154 functions, ~600 survive the
+# body_line_count filter). The pair iteration is O(N²); per-pair work includes
+# body_lines Jaccard + per-line buddy search. Worst case O(N² * L²) where L is
+# body_line_count, but the same-body_line_count filter early-prunes most pairs.
+# Expect ~30-60s on a 5000-function catalog before further tuning.
 #
 # Output: one row per pair, ordered by Jaccard desc.
 #
@@ -38,13 +58,12 @@
 
 include "_canonical";
 
-# Tokenize a line into identifier-shaped tokens.
-def tokens_of:
-  split("[^A-Za-z0-9_]+"; "") | map(select(length > 0));
+# `tokens_of` lives in `_canonical.jq` as a shared naming utility.
 
 # For a line `a` and a list of candidate lines `bs`, find the best buddy in bs
 # whose token-set differs by the smallest sym-diff count. Returns null if no
-# candidate qualifies under max_subs.
+# candidate qualifies under max_subs. Query-local because the symmetric-diff /
+# swap-token shape is specific to generic-function detection.
 def best_buddy(a; bs; max_subs):
   (a | tokens_of | unique) as $at
   | [ bs[]

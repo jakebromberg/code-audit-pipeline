@@ -20,6 +20,10 @@
 # `--argjson min_overlap 2` is REQUIRED — jq errors at compile time on an
 # undefined variable. The Phase A.2 candidates doc uses `>= 2` as the kernel.
 #
+# Performance: 0.01s on the planted catalog (N=815 types; pair iteration is
+# O(N²) over interfaces, but the same-package filter prunes most pairs
+# cheaply).
+#
 # Output: one row per protocol pair, ordered by overlap desc then package.
 # Each row names both protocols, the shared member-name set, and each side's
 # extras.

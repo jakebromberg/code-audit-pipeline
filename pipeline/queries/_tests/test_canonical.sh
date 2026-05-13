@@ -90,6 +90,44 @@ assert_eq "fn_location_key alias produces identical output" \
   "Shared/Core:Sources/Core/Foo.swift:42:hashSlug" \
   "$(run 'fn_location_key({package: "Shared/Core", file: "Sources/Core/Foo.swift", line: 42, name: "hashSlug"})')"
 
+echo "=== type_of (qualified-name → enclosing-type) ==="
+assert_eq "Foo.bar drops .bar, returns Foo" \
+  "Foo" \
+  "$(run 'type_of("Foo.bar")')"
+
+assert_eq "Foo.Bar.baz drops .baz, returns Foo.Bar (nested type)" \
+  "Foo.Bar" \
+  "$(run 'type_of("Foo.Bar.baz")')"
+
+assert_eq "free function (no dot) is unchanged" \
+  "freeFunction" \
+  "$(run 'type_of("freeFunction")')"
+
+assert_eq "empty input returns empty" \
+  "" \
+  "$(run 'type_of("")')"
+
+echo "=== tokens_of (identifier extraction) ==="
+assert_eq "simple identifier line yields its tokens" \
+  '["return","UIColor","red"]' \
+  "$(run '"return UIColor.red" | tokens_of | tojson')"
+
+assert_eq "multi-char separators don't produce empty tokens" \
+  '["return","foo","bar"]' \
+  "$(run '"return  foo,, bar;" | tokens_of | tojson')"
+
+assert_eq "underscores and digits stay inside tokens" \
+  '["my_var_2","x3"]' \
+  "$(run '"my_var_2 + x3" | tokens_of | tojson')"
+
+assert_eq "ASCII-only: Unicode identifiers elided" \
+  '["let","x"]' \
+  "$(run '"let π = x" | tokens_of | tojson')"
+
+assert_eq "empty input yields empty list" \
+  '[]' \
+  "$(run '"" | tokens_of | tojson')"
+
 echo "=== output_format ==="
 assert_eq "default is text" \
   "text" \
