@@ -22,6 +22,12 @@
 #                         hybrid — real anchor pair/triple + one or more `_Plant_*.swift` companions added
 #                                  to satisfy a cardinality constraint (e.g., Cat 3's "≥3 conformers")
 #   planted_extras    — for hybrid plants, count of `_Plant_*.swift` companions added (otherwise 0)
+#   generic_kind      — for Cat. 5 only: function | struct, identifying which generic-parameterization shape
+#                       the plant targets (the methodology requires ~3 function + ~2 struct across Cat. 5)
+#   cross_layer       — optional bool. True when the source pair spans an app target layer (e.g., app:iOS,
+#                       app:WatchXYC) and a Shared/ package; flags lift-target ambiguity for the §2.5 reviewer
+#                       (the lift target must be upstream of both layers). Omitted when both source files live
+#                       in the same layer.
 #   restraint         — true for restraint twins (correct answer is no-action)
 #   restraint_pair    — for restraints, the canonical plant_id whose shape it mirrors
 #   restraint_signal  — for restraints, the context flag that distinguishes it from the canonical
@@ -40,6 +46,7 @@ plants:
     synthesis: none
     planted_extras: 0
     restraint: false
+    cross_layer: true  # both files in app target layers (app:WatchXYC, app:iOS); lift target must be upstream of both
 
   - plant_id: "1.2"
     category: extract-to-common
