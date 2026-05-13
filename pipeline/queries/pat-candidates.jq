@@ -43,8 +43,21 @@
 # handles it. A future tightening could decompose `slot_diff_count` into
 # `type_diff_count` and `optionality_diff_count`.
 #
+# Field-name extraction uses `sort` (not `unique`) — duplicate-name fields are
+# preserved as separate slots. Swift protocols / structs don't legally declare
+# duplicate field names, so in practice `sort` and `unique` produce the same
+# multiset; using `sort` makes the diff-counting loop (zip-and-mismatch) correct
+# even if a future extractor surface introduces duplicate-name records.
+# `protocol-inheritance-candidates.jq` uses `unique` because it computes a name-
+# set INTERSECTION, where dedup is the right semantic.
+#
 # `--argjson max_slot_diffs 1` is REQUIRED. The canonical PAT shape is exactly
 # 1 slot diff; raise to 2-3 for fuzzier near-PAT pairs.
+#
+# Performance: 1.3s on the planted catalog (N=815 types, ~120 interface/struct
+# survivors of the kind+length filter). Pair iteration is O(N²); the per-pair
+# work is O(field_count) for the sort + zip. Scales as O(N² * field_count);
+# expect ~30s on a 5000-type catalog before further tuning.
 #
 # Output: one row per protocol pair, ordered by field_count desc then slot diff
 # asc (cleanest matches first).
