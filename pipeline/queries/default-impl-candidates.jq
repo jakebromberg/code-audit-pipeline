@@ -25,7 +25,15 @@
 #
 # `--argjson min_conformers 3` is REQUIRED. The methodology's canonical Cat 3
 # shape is "≥ 3 conformers" (the synthesis tally in the candidates doc carries
-# the constraint). Lower it for broader recall against thin substrates.
+# the constraint). Lower it for broader recall against thin substrates — e.g.,
+# the round-1 smoke test uses `--argjson min_conformers 2` to surface plants
+# 3.2, 3.3, 3.4 alongside 3.1 even before all four plants are fully synthesized.
+#
+# Architectural caveat: the query does NOT verify that the distinct types share
+# a protocol — that requires protocol-conformance edges (methodology §6.2), a
+# separate substrate enrichment not in this PR. Until conformance edges land,
+# the candidate set is broader than the strict Cat 3 shape; the agent + the
+# downstream specifics-tolerance flags filter the noise.
 #
 # Output: one row per cluster, ordered by conformer-count desc then body-line-
 # count desc.

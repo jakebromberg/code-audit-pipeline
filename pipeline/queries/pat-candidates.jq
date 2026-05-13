@@ -30,6 +30,19 @@
 # methodology's plant 4.1 (`NowPlayingItem` in AppServices ↔ `PlaycutSelection`
 # in app:iOS).
 #
+# Overlap with other queries: a same-package interface pair with identical name
+# sets + 1 slot diff fires here AND in `protocol-inheritance-candidates.jq`
+# (which keys on name-set overlap, not identity). Same shape, two lenses — the
+# agent picks the PAT framing vs the missing-parent framing. Cluster_id prefixes
+# differ, so no scorer collision.
+#
+# Slot-diff caveat: each diffing position counts as one slot diff regardless of
+# whether the difference is at the type ("foo:A" vs "foo:B") or at the
+# optionality ("foo?:A" vs "foo:A"). An optionality-only diff is a less
+# interesting PAT candidate than a type-only diff; the agent's discrimination
+# handles it. A future tightening could decompose `slot_diff_count` into
+# `type_diff_count` and `optionality_diff_count`.
+#
 # `--argjson max_slot_diffs 1` is REQUIRED. The canonical PAT shape is exactly
 # 1 slot diff; raise to 2-3 for fuzzier near-PAT pairs.
 #
