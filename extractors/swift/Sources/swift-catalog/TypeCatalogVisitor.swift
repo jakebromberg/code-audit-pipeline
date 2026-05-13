@@ -282,8 +282,10 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     /// populate the flat (V6) `fields` and structured (V7 §6.1) `fields_structured`
     /// from a single walk over the member block. The pair is sorted by the
     /// flat string (`"name:type"`), so `flat[i]` and `structured[i]` always
-    /// refer to the same member. This matches V6's `cases.sorted()` ordering
-    /// in `emitEnum`, so V6 byte-equivalence is preserved.
+    /// refer to the same member. `emitEnum` uses the same paired-sort idiom
+    /// for the same lockstep guarantee on enum-case records, and the resulting
+    /// `flat` ordering is V6-byte-equivalent to the pre-§6.1 `cases.sorted()`
+    /// output.
     private func extractFields(members: MemberBlockSyntax, includeMethods: Bool)
         -> (flat: [String], structured: [FieldStructured])
     {
