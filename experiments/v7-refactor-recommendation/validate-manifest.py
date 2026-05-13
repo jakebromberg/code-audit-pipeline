@@ -99,9 +99,10 @@ KNOWN_KEYS = {
 # in `docs/refactor-recommendation-experiment-agent-prompt.md` §2 restricted to V7 MVP scope. `no-action`
 # is a permitted answer category but is NOT in CATEGORIES; it's a separate bucket because (a) it's only
 # valid as primary for restraints, and (b) it's the universal wrong-answer for canonical plants. The
-# `subclass-lift` and `composition` categories are out-of-MVP-scope plant categories but remain valid
-# as wrong-answer / alternative recommendations the manifest may cite.
-ANSWER_CATEGORIES = CATEGORIES | {"subclass-lift", "composition"}
+# three out-of-MVP-plant categories — Cat. 6 `subclass-lift`, Cat. 7 `macro-synthesis`, and Cat. 8
+# `composition` — are not plantable in MVP but remain valid as wrong-answer / alternative
+# recommendations the manifest may cite (an agent recommending one of these is in-scope to score).
+ANSWER_CATEGORIES = CATEGORIES | {"subclass-lift", "macro-synthesis", "composition"}
 NO_ACTION = "no-action"
 
 
