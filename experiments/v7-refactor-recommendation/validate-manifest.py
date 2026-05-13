@@ -26,6 +26,9 @@ Checks performed:
         weight ∈ [0.0, 1.0], note non-empty string.
      h. wrong_answers is a non-empty list; each entry has category ∈ CATEGORIES ∪ {"no-action"},
         note non-empty string.
+     i. wrong_answers convention enforcement: canonical plants must include 'no-action' as a
+        wrong-answer (an agent emitting no-action on a canonical is a false negative); restraint
+        plants must include the canonical's own category as a wrong-answer (the textbook FP mode).
  10. Specifics-keys schema (Phase A.4, sub-issue #27 — catches schema drift from agent-prompt.md §2):
      a. primary_answer.specifics keys are a SUPERSET of `rubric.specifics_schemas[category].required`.
      b. primary_answer.specifics has NO unknown keys beyond the schema's required set (catches typos
@@ -197,8 +200,20 @@ def validate_specifics_keys(
             )
 
 
-def validate_rubric(plant: dict, prefix: str, is_restraint: bool, errors: list[str]) -> None:
-    """Per Phase A.3, validate the rubric-related fields of a plant entry (methodology §8)."""
+def validate_rubric(
+    plant: dict,
+    prefix: str,
+    is_restraint: bool,
+    plants_by_id: dict[str, dict],
+    errors: list[str],
+) -> None:
+    """Per Phase A.3, validate the rubric-related fields of a plant entry (methodology §8).
+
+    `plants_by_id` is the manifest indexed by plant_id, used by check 9i to look up
+    a restraint's canonical and verify the canonical's category appears in this
+    plant's wrong_answers (convention enforcement; agents recommending the canonical's
+    own action on a restraint is the textbook FP mode).
+    """
     # 9a: expected_substrate_signals is a non-empty list of strings.
     signals = plant.get("expected_substrate_signals")
     if not _is_non_empty_string_list(signals):
@@ -286,6 +301,39 @@ def validate_rubric(plant: dict, prefix: str, is_restraint: bool, errors: list[s
             if not isinstance(note, str) or note.strip() == "":
                 errors.append(f"{tag}: note must be a non-empty string")
 
+        # 9i: convention enforcement on wrong_answers contents.
+        #
+        # Canonical plants (restraint=false): no-action MUST appear as a wrong_answer.
+        # An agent emitting no-action on a canonical is a false negative, and the
+        # methodology §8 routing makes that explicit only if no-action is enumerated;
+        # otherwise it falls to wrong_category_not_enumerated and the rubric coverage
+        # is implicit. Enforce the convention so the manifest stays the contract.
+        #
+        # Restraint plants (restraint=true): the canonical's category MUST appear as
+        # a wrong_answer. An agent that recommends the canonical's own action on a
+        # restraint is the textbook false-positive mode, so the restraint's wrong_answer
+        # list documents that explicitly. The canonical's category is looked up via
+        # restraint_pair (already validated non-empty by check 7).
+        wrong_cats = {w.get("category") for w in wrongs if isinstance(w, dict)}
+        if not is_restraint:
+            if NO_ACTION not in wrong_cats:
+                errors.append(
+                    f"{prefix}: canonical plant must include 'no-action' in wrong_answers "
+                    "(convention; an agent emitting no-action on a canonical is a false negative)"
+                )
+        else:
+            # For restraints: canonical's category must appear in wrong_answers.
+            pair_id = plant.get("restraint_pair")
+            canonical = plants_by_id.get(pair_id) if pair_id else None
+            if canonical is not None:
+                canonical_cat = canonical.get("category")
+                if canonical_cat and canonical_cat not in wrong_cats:
+                    errors.append(
+                        f"{prefix}: restraint must include canonical's category "
+                        f"{canonical_cat!r} (from restraint_pair={pair_id!r}) in wrong_answers "
+                        "(convention; an agent recommending the canonical's own action is the textbook FP mode)"
+                    )
+
 
 def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
     errors: list[str] = []
@@ -332,6 +380,12 @@ def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
     duplicates = [pid for pid, count in Counter(ids).items() if count > 1]
     if duplicates:
         errors.append(f"duplicate plant_id values: {duplicates}")
+
+    # Index plants by plant_id for cross-plant validations (rule 9i: restraint
+    # canonical-category lookup via restraint_pair).
+    plants_by_id: dict[str, dict] = {
+        p.get("plant_id"): p for p in plants if isinstance(p.get("plant_id"), str)
+    }
 
     for i, plant in enumerate(plants):
         pid = plant.get("plant_id", f"<index {i}>")
@@ -386,7 +440,7 @@ def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
 
         # Phase A.3 rubric schema checks
         is_restraint = bool(plant.get("restraint"))
-        validate_rubric(plant, prefix, is_restraint, errors)
+        validate_rubric(plant, prefix, is_restraint, plants_by_id, errors)
         # Phase A.4 specifics-keys allowlist (sub-issue #27)
         validate_specifics_keys(plant, prefix, rubric, errors)
 

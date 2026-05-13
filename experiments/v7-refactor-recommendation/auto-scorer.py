@@ -182,6 +182,7 @@ def _is_breaking_action(rec_cat: str, wrong_entry: dict | None) -> bool:
     breaking_phrases = (
         "swift-level error",
         "language-level error",
+        "wrong language-level construct",  # Cat 5 plants use this phrase for PAT-on-non-protocol etc.
         "don't subclass",
         "cannot be subclassed",
         "cannot subclass",
@@ -651,6 +652,28 @@ SYNTHETIC_FIXTURES = [
         },
         "expected_score": 0.5,
         "expected_match": "no_action_ungrounded",
+    },
+    {
+        # Cat 5 plants use "wrong language-level construct" (rather than "Swift-level
+        # error" or "don't subclass") for the canonical breaking action — recommending
+        # pat-introduction on structs/free functions. The heuristic must catch this
+        # phrasing or 4 of the 5 Cat-5 plants score 0.0 instead of -0.5 on the
+        # breaking-action case. Plant 5.1 (uiColor/nsColor → platformColor) is the
+        # representative case.
+        "label": "[synthetic] breaking_action (-0.5): Plant 5.1, pat-introduction on struct methods (Cat-5 phrasing)",
+        "plant_id": "5.1",
+        "recommendation": {
+            "category": "pat-introduction",
+            "specifics": {
+                "new_protocol": "PlatformColorProvider",
+                "associated_type": "Color",
+                "constraints": ["PlatformColor"],
+                "replaces": ["uiColor", "nsColor"],
+            },
+            "rationale": "Introduce a PAT to abstract over the platform color type.",
+        },
+        "expected_score": -0.5,
+        "expected_match": "breaking_action",
     },
 ]
 
