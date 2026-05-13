@@ -158,12 +158,12 @@ def corrupt_rule_4_synthesis(doc: dict) -> None:
 
 
 def corrupt_rule_4_generic_kind(doc: dict) -> None:
-    """Set generic_kind to an invalid value on a Cat. 5 plant."""
-    for p in doc["plants"]:
-        if p.get("category") == "generic-parameterization" and "generic_kind" in p:
-            p["generic_kind"] = "enum"
-            return
-    # No existing generic_kind — set on first Cat. 5 plant.
+    """Set generic_kind to an invalid value on a Cat. 5 plant.
+
+    Cat. 5 plants must declare `generic_kind` per the V7 schema, so the
+    first Cat. 5 plant we find is sufficient — we either flip an existing
+    value or set one if (defensively) the field is absent.
+    """
     for p in doc["plants"]:
         if p.get("category") == "generic-parameterization":
             p["generic_kind"] = "enum"
@@ -193,6 +193,22 @@ def corrupt_rule_6(doc: dict) -> None:
     p = _find_canonical(doc["plants"])
     p["synthesis"] = "full"
     p["planted_extras"] = 99  # but no _Plant_* paths in source_files
+
+
+def corrupt_rule_6_none_with_extras(doc: dict) -> None:
+    """Inject a `_Plant_*` path into a synthesis=none plant.
+
+    Exercises the validator's second rule-6 error path: `synthesis=none but N
+    `_Plant_*` paths present`. The first rule-6 fixture covers the hybrid/full
+    count-mismatch branch; this one covers the none-with-extras branch.
+    """
+    for p in doc["plants"]:
+        if p.get("synthesis") == "none":
+            p["source_files"] = list(p.get("source_files") or []) + [
+                "Shared/Fictional/_Plant_NotReal.swift"
+            ]
+            return
+    raise RuntimeError("no synthesis=none plant to mutate")
 
 
 # ─── Rule 7: restraint requires restraint_pair + restraint_signal ─────────────
@@ -399,6 +415,12 @@ FIXTURES: list[Fixture] = [
     ),
     Fixture("5", "source_file path not in catalog", corrupt_rule_5, "path-existence"),
     Fixture("6", "planted_extras mismatches `_Plant_*` count", corrupt_rule_6, "planted_extras"),
+    Fixture(
+        "6 (none with extras)",
+        "synthesis=none plant carries a `_Plant_*` path",
+        corrupt_rule_6_none_with_extras,
+        "synthesis=none but",
+    ),
     Fixture(
         "7",
         "restraint=true with no restraint_pair",
