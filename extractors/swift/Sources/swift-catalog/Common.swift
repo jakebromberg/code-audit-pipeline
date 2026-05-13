@@ -9,6 +9,24 @@
 import CryptoKit
 import Foundation
 
+/// One structured field on a type-catalog record. V7 §6.1: parallel to the
+/// flat `fields: ["name:Type"]` form, so downstream queries can ask
+/// "find type pairs whose name set is identical but type set differs at slot X"
+/// without re-splitting strings at query time.
+///
+/// `type` includes any trailing `?` for optionality (the syntactic form a
+/// Swift programmer would type). `isOptional` is the structural flag derived
+/// from SwiftSyntax (set when the type-annotation node is OptionalTypeSyntax,
+/// ImplicitlyUnwrappedOptionalTypeSyntax, or syntactically Optional<T>).
+/// Carrying both is intentional redundancy: `type` is ergonomic for display,
+/// `isOptional` is reliable for structural matching.
+struct FieldStructured: Encodable {
+    var name: String
+    var type: String
+    var isOptional: Bool
+    var isStatic: Bool
+}
+
 struct TypeRecord: Encodable {
     var name: String
     var kind: String
@@ -18,6 +36,7 @@ struct TypeRecord: Encodable {
     var exported: Bool
     var generated: Bool
     var fields: [String]?
+    var fieldsStructured: [FieldStructured]?
     var shapeSig: String?
     var touchedInWindow: Bool = false
 

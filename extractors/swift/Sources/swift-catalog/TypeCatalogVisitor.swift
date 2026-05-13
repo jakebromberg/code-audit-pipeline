@@ -192,7 +192,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         includeMethodSignatures: Bool = false
     ) {
         let line = converter.location(for: position).line
-        let fields = extractFields(members: members, includeMethods: includeMethodSignatures)
+        let extracted = extractFields(members: members, includeMethods: includeMethodSignatures)
         var record = TypeRecord(
             name: qualify(simpleName),
             kind: kind,
@@ -201,8 +201,9 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(modifiers),
             generated: file.generated,
-            fields: fields.isEmpty ? nil : fields,
-            shapeSig: fields.isEmpty ? nil : shapeSig(of: fields)
+            fields: extracted.flat.isEmpty ? nil : extracted.flat,
+            fieldsStructured: extracted.structured.isEmpty ? nil : extracted.structured,
+            shapeSig: extracted.flat.isEmpty ? nil : shapeSig(of: extracted.flat)
         )
         if let g = generics {
             record.generics = g.parameters.map { $0.name.text }.joined(separator: ",")
@@ -217,6 +218,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         let line = converter.location(for: node.positionAfterSkippingLeadingTrivia).line
         var cases: [String] = []
         var caseTexts: [String] = []
+        var structured: [FieldStructured] = []
         for member in node.memberBlock.members {
             guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else { continue }
             for element in caseDecl.elements {
@@ -225,17 +227,27 @@ final class TypeCatalogVisitor: SyntaxVisitor {
                     let paramText = assoc.trimmedDescription
                     cases.append("\(caseName):\(paramText)")
                     caseTexts.append("\(caseName)\(paramText)")
+                    structured.append(FieldStructured(
+                        name: caseName, type: paramText, isOptional: false, isStatic: false))
                 } else if let raw = element.rawValue {
                     let rawText = raw.value.trimmedDescription
                     cases.append("\(caseName):=\(rawText)")
                     caseTexts.append("\(caseName)=\(rawText)")
+                    structured.append(FieldStructured(
+                        name: caseName, type: "=\(rawText)", isOptional: false, isStatic: false))
                 } else {
                     cases.append(caseName)
                     caseTexts.append(caseName)
+                    structured.append(FieldStructured(
+                        name: caseName, type: "", isOptional: false, isStatic: false))
                 }
             }
         }
         let typeText = "case " + caseTexts.joined(separator: " | case ")
+        // Sort flat and structured by name in lockstep so a downstream consumer
+        // can zip them confidently.
+        let sortedFlat = cases.sorted()
+        let sortedStructured = structured.sorted { $0.name < $1.name }
         var record = TypeRecord(
             name: qualify(node.name.text),
             kind: "type-alias-union",
@@ -244,7 +256,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(node.modifiers),
             generated: file.generated,
-            fields: cases.isEmpty ? nil : cases.sorted(),
+            fields: cases.isEmpty ? nil : sortedFlat,
+            fieldsStructured: cases.isEmpty ? nil : sortedStructured,
             shapeSig: cases.isEmpty ? nil : shapeSig(of: cases)
         )
         record.typeText = typeText
@@ -255,36 +268,91 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         records.append(record)
     }
 
-    private func extractFields(members: MemberBlockSyntax, includeMethods: Bool) -> [String] {
-        var fields: [String] = []
+    /// Both forms of the field set, returned together so emitShapeBearing can
+    /// populate the flat (V6) `fields` and structured (V7 §6.1) `fields_structured`
+    /// from a single walk over the member block. The two arrays are sorted in
+    /// lockstep (`flat[i]` corresponds to `structured[i]` after both are sorted
+    /// by the structured form's `name`).
+    private func extractFields(members: MemberBlockSyntax, includeMethods: Bool)
+        -> (flat: [String], structured: [FieldStructured])
+    {
+        var pairs: [(flat: String, structured: FieldStructured)] = []
         for member in members.members {
             if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                let isStatic = hasStaticModifier(varDecl.modifiers)
                 for binding in varDecl.bindings {
-                    if let entry = fieldEntry(binding: binding) {
-                        fields.append(entry)
+                    if let pair = fieldEntry(binding: binding, isStatic: isStatic) {
+                        pairs.append(pair)
                     }
                 }
             } else if includeMethods, let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
-                fields.append(methodSignatureField(funcDecl: funcDecl))
+                pairs.append(methodSignatureField(funcDecl: funcDecl))
             }
         }
-        return fields.sorted()
+        // Lockstep sort by the field name so flat[i] and structured[i] refer
+        // to the same member. shapeSig() re-sorts flat for hash stability,
+        // so its input order doesn't matter; structured's order needs to
+        // match flat's after both go through .sorted() at the call site.
+        pairs.sort { $0.flat < $1.flat }
+        return (flat: pairs.map(\.flat), structured: pairs.map(\.structured))
     }
 
-    private func fieldEntry(binding: PatternBindingSyntax) -> String? {
+    private func fieldEntry(binding: PatternBindingSyntax, isStatic: Bool)
+        -> (flat: String, structured: FieldStructured)?
+    {
         guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self) else { return nil }
         let name = pattern.identifier.text
-        if let typeAnnot = binding.typeAnnotation {
-            let typeText = normalizeFieldType(typeAnnot.type.trimmedDescription)
-            return "\(name):\(typeText)"
-        }
-        return nil
+        guard let typeAnnot = binding.typeAnnotation else { return nil }
+        let typeText = normalizeFieldType(typeAnnot.type.trimmedDescription)
+        let isOptional = isOptionalType(typeAnnot.type)
+        return (
+            flat: "\(name):\(typeText)",
+            structured: FieldStructured(
+                name: name, type: typeText, isOptional: isOptional, isStatic: isStatic)
+        )
     }
 
-    private func methodSignatureField(funcDecl: FunctionDeclSyntax) -> String {
+    private func methodSignatureField(funcDecl: FunctionDeclSyntax)
+        -> (flat: String, structured: FieldStructured)
+    {
         let name = funcDecl.name.text
-        let sig = funcDecl.signature.trimmedDescription
-        return "\(name):\(normalizeFieldType(sig))"
+        let sig = normalizeFieldType(funcDecl.signature.trimmedDescription)
+        let isStatic = hasStaticModifier(funcDecl.modifiers)
+        // Methods aren't "optional" in the Swift sense — protocol requirements
+        // can be marked `optional` only inside `@objc` protocols, which the
+        // extractor doesn't yet special-case. For now methods are always
+        // isOptional: false; future enrichment could add @objc-optional support.
+        return (
+            flat: "\(name):\(sig)",
+            structured: FieldStructured(
+                name: name, type: sig, isOptional: false, isStatic: isStatic)
+        )
+    }
+
+    /// True if any modifier in the list is `static` or `class` (the Swift
+    /// modifiers that mark a type-level rather than instance-level member).
+    /// `class` is included because `class var foo` and `class func bar` are
+    /// the Swift idiom for overridable type-level members on classes — they
+    /// behave like `static` from an addressing standpoint.
+    private func hasStaticModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
+        for m in modifiers {
+            if m.name.text == "static" || m.name.text == "class" { return true }
+        }
+        return false
+    }
+
+    /// True if the SwiftSyntax type annotation is optional in any of its
+    /// recognized forms: `T?` (OptionalTypeSyntax), `T!`
+    /// (ImplicitlyUnwrappedOptionalTypeSyntax), or the explicit `Optional<T>`
+    /// identifier form. The first two cover the syntactic sugar; the third
+    /// covers the rare explicit form.
+    private func isOptionalType(_ type: TypeSyntax) -> Bool {
+        if type.is(OptionalTypeSyntax.self) { return true }
+        if type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) { return true }
+        if let id = type.as(IdentifierTypeSyntax.self), id.name.text == "Optional" {
+            return true
+        }
+        return false
     }
 
     private func normalizeFieldType(_ text: String) -> String {
