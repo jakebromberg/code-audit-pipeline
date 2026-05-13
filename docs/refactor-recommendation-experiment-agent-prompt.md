@@ -93,8 +93,8 @@ preserving the input cluster_id ordering.
 
   "protocol-inheritance": {
     "parent": "string (parent protocol name; may be an existing protocol or proposed new name)",
-    "child": "string (child protocol name from the cluster)",
-    "moved_members": ["array of member names that move from child to parent"],
+    "children": ["array of child protocol names from the cluster; >= 2 entries"],
+    "moved_members": ["array of member names that move from each child to parent"],
     "reuse_existing_swift_protocol": "boolean (true if parent is Identifiable, Equatable, Hashable, Codable, etc.)"
   },
 
