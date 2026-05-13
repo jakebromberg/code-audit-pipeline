@@ -26,11 +26,18 @@ Checks performed:
         weight ∈ [0.0, 1.0], note non-empty string.
      h. wrong_answers is a non-empty list; each entry has category ∈ CATEGORIES ∪ {"no-action"},
         note non-empty string.
+ 10. Specifics-keys schema (Phase A.4, sub-issue #27 — catches schema drift from agent-prompt.md §2):
+     a. primary_answer.specifics keys are a SUPERSET of `rubric.specifics_schemas[category].required`.
+     b. primary_answer.specifics has NO unknown keys beyond the schema's required set (catches typos
+        like `target_pkg` for `target_package`). If a category legitimately needs optional keys in the
+        future, extend the schema with an explicit `optional` list rather than relaxing this check.
+     c. For category 'no-action', specifics.reason_class ∈ the documented enum.
 
 Usage
 -----
     python3 validate-manifest.py
     python3 validate-manifest.py --catalog-root /tmp/wxyc-ios-audit-planted
+    python3 validate-manifest.py --rubric ./rubric.yaml
 
 Exit code: 0 if all checks pass; 1 otherwise. Errors and warnings printed to stderr; a `OK n=<plant_count>`
 summary prints to stdout on success. Warnings do not affect exit code.
@@ -119,6 +126,75 @@ def _is_non_empty_string_list(value: object) -> bool:
     return isinstance(value, list) and len(value) > 0 and all(
         isinstance(item, str) and item != "" for item in value
     )
+
+
+def load_rubric(rubric_path: Path) -> dict:
+    """Load the rubric.yaml. Returns the parsed dict.
+
+    Phase A.4 (sub-issue #27): the validator consumes `rubric.specifics_schemas`
+    to enforce per-category specifics-keys allowlists. Loading the rubric early
+    fails fast if the file is missing or malformed.
+    """
+    if not rubric_path.exists():
+        raise FileNotFoundError(f"rubric file not found: {rubric_path}")
+    with rubric_path.open() as f:
+        rubric = yaml.safe_load(f)
+    if not isinstance(rubric, dict) or "specifics_schemas" not in rubric:
+        raise ValueError(f"rubric at {rubric_path} is missing `specifics_schemas`")
+    return rubric
+
+
+def validate_specifics_keys(
+    plant: dict, prefix: str, rubric: dict, errors: list[str]
+) -> None:
+    """Phase A.4 / sub-issue #27: validate primary_answer.specifics keys against rubric schemas.
+
+    Three checks (per the issue's acceptance criteria):
+      (a) keys are a superset of `rubric.specifics_schemas[category].required` —
+          a missing key is hard-fail because the auto-scorer expects the closed shape.
+      (b) keys have no extras beyond `required` — catches typos (e.g., `target_pkg`
+          for `target_package`).
+      (c) For category 'no-action', `specifics.reason_class` must be in the
+          documented enum (`rubric.specifics_schemas['no-action'].reason_class_enum`).
+    """
+    primary = plant.get("primary_answer")
+    if not isinstance(primary, dict):
+        return  # earlier rubric check already flagged this
+    category = primary.get("category")
+    specifics = primary.get("specifics")
+    schemas = rubric.get("specifics_schemas", {})
+    schema = schemas.get(category)
+    if schema is None:
+        errors.append(
+            f"{prefix}: primary_answer.category={category!r} has no `specifics_schemas` entry "
+            f"in rubric.yaml — schema-drift indicator"
+        )
+        return
+    if not isinstance(specifics, dict):
+        return  # earlier check flagged this
+    required = set(schema.get("required", []))
+    actual = set(specifics.keys())
+    missing = required - actual
+    if missing:
+        errors.append(
+            f"{prefix}: primary_answer.specifics missing required keys for "
+            f"category={category!r}: {sorted(missing)}"
+        )
+    extra = actual - required
+    if extra:
+        errors.append(
+            f"{prefix}: primary_answer.specifics has unknown keys for "
+            f"category={category!r}: {sorted(extra)} (typo? schema drift?)"
+        )
+    # 10c: no-action reason_class enum check.
+    if category == "no-action":
+        reason_class = specifics.get("reason_class")
+        enum_values = schema.get("reason_class_enum", [])
+        if enum_values and reason_class not in enum_values:
+            errors.append(
+                f"{prefix}: primary_answer.specifics.reason_class={reason_class!r} "
+                f"not in documented enum {sorted(enum_values)}"
+            )
 
 
 def validate_rubric(plant: dict, prefix: str, is_restraint: bool, errors: list[str]) -> None:
@@ -211,9 +287,15 @@ def validate_rubric(plant: dict, prefix: str, is_restraint: bool, errors: list[s
                 errors.append(f"{tag}: note must be a non-empty string")
 
 
-def validate(manifest_path: Path, catalog_root: Path) -> int:
+def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
     errors: list[str] = []
     warnings: list[str] = []
+
+    try:
+        rubric = load_rubric(rubric_path)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     with manifest_path.open() as f:
         doc = yaml.safe_load(f)
@@ -305,6 +387,8 @@ def validate(manifest_path: Path, catalog_root: Path) -> int:
         # Phase A.3 rubric schema checks
         is_restraint = bool(plant.get("restraint"))
         validate_rubric(plant, prefix, is_restraint, errors)
+        # Phase A.4 specifics-keys allowlist (sub-issue #27)
+        validate_specifics_keys(plant, prefix, rubric, errors)
 
     if warnings:
         print(f"{len(warnings)} warning(s):", file=sys.stderr)
@@ -336,8 +420,14 @@ def main() -> int:
         default=Path("/tmp/wxyc-ios-audit-planted"),
         help="Directory containing type-catalog.json and function-catalog.json",
     )
+    parser.add_argument(
+        "--rubric",
+        type=Path,
+        default=here / "rubric.yaml",
+        help="Path to rubric.yaml (Phase A.4 specifics-keys allowlist source)",
+    )
     args = parser.parse_args()
-    return validate(args.manifest, args.catalog_root)
+    return validate(args.manifest, args.catalog_root, args.rubric)
 
 
 if __name__ == "__main__":

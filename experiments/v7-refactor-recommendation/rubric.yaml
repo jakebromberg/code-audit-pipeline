@@ -1,0 +1,138 @@
+# V7 refactor-recommendation experiment — machine-readable rubric
+#
+# Source of truth for scoring buckets, per-category specifics schemas, and
+# weak-rationale / grounding-audit policy. The auto-scorer and the manifest
+# validator both load this file.
+#
+# Normative-source pointer (do not violate):
+#
+#   `docs/refactor-recommendation-experiment-agent-prompt.md` §2 is the
+#   normative source for `specifics_schemas`. This file MIRRORS that section
+#   in machine-readable form; if they ever drift, agent-prompt.md wins and
+#   this file is updated to match (the validator detects drift).
+#
+#   `docs/refactor-recommendation-experiment-methodology.md` §8 is the
+#   normative source for `scores` (the rubric table) and the
+#   `weak_rationale_policy` / `grounding_audit_sample_rate` defaults
+#   (per §17 decision #5 — see comment block above `weak_rationale_policy`).
+#
+# Versioning: bump `rubric_version` on any change to scores or schemas; the
+# `rubric_hash` recorded in `reproducibility.yaml` covers a single committed
+# revision of this file.
+
+rubric_version: "v7.A.4"
+
+# ─── Score buckets ─────────────────────────────────────────────────────────
+# Methodology §8 "Scoring per recommendation" table (canonical plants). The
+# restraint-plant table is enumerated under `restraint_scores` below. The
+# auto-scorer walks `scores` in order and emits the FIRST matching score; the
+# `match` field documents the predicate, but the actual matching logic is
+# hard-coded in auto-scorer.py because the predicates require structural
+# comparison against the manifest entry, not just string matching against
+# this file.
+scores:
+  - score: 1.0
+    condition: "Primary answer match; specifics within tolerance; rationale cites required evidence"
+    match: primary_match_full
+  - score: 0.7
+    condition: "Listed alternative answer; grounded rationale"
+    match: alternative_match
+  - score: 0.5
+    condition: "Right category, wrong specifics (e.g., recommends extracting to wrong package), OR right specifics with weak rationale"
+    match: primary_category_only_or_weak_rationale
+  - score: 0.3
+    condition: "Wrong category but adjacent and defensible (e.g., extract-to-common when PAT was primary)"
+    match: adjacent_wrong_category
+  - score: 0.0
+    condition: "Wrong category; hallucinated rationale; no engagement with cluster evidence"
+    match: wrong_category_or_ungrounded
+  - score: -0.5
+    condition: "Recommended an action that would break the codebase (e.g., lift a method to a class hierarchy that doesn't exist)"
+    match: breaking_action
+
+# Restraint-plant scoring per §8 ("For restraint plants only:" table).
+restraint_scores:
+  - score: 1.0
+    condition: "no-action with grounded rationale citing the contextual signal (test/codegen/etc.)"
+    match: no_action_grounded
+  - score: 0.5
+    condition: "no-action without specific rationale"
+    match: no_action_ungrounded
+  - score: 0.0
+    condition: "Any action recommendation — false positive"
+    match: restraint_false_positive
+
+# ─── Per-category specifics schemas ────────────────────────────────────────
+# Mirror of `docs/refactor-recommendation-experiment-agent-prompt.md` §2.
+# `required` is the closed set of keys the agent must emit for that category;
+# the validator uses `required` as both the must-have set AND the allowed set
+# (no extras) — per sub-issue #27, to catch typos like `target_pkg` for
+# `target_package`. If a future category legitimately needs optional keys,
+# add an explicit `optional` list and update the validator to allow them.
+specifics_schemas:
+  extract-to-common:
+    required: [target_package, type_name, remove_from]
+  protocol-inheritance:
+    required: [parent, children, moved_members, reuse_existing_swift_protocol]
+  default-implementation:
+    required: [protocol, method, target_location, conformers_simplified]
+  pat-introduction:
+    required: [new_protocol, associated_type, constraints, replaces]
+  generic-parameterization:
+    required: [generic_kind, type_params, new_name, replaces]
+  subclass-lift:
+    required: [base_class, method, subclasses, target_location]
+  macro-synthesis:
+    required: [macro_name, applies_to, synthesizes, population_size_evidence, use_swift_builtin]
+  composition:
+    required: [composing_type, composed_type, field_name]
+  extension-consolidation:
+    required: [target_type, consolidate_from]
+  no-action:
+    required: [reason_class]
+    reason_class_enum:
+      - test-fixture
+      - codegen
+      - sample-app-mirror
+      - api-impl-boundary
+      - intentional-specialization
+      - coincidental
+  other:
+    required: [proposed_action, why_no_category_fits]
+
+# Adjacency map — used by the auto-scorer to award 0.3 ("wrong category but
+# adjacent and defensible") instead of 0.0. Methodology §8 cites
+# "extract-to-common when PAT was primary" as the canonical example. The
+# relation is symmetric (if A is adjacent to B, B is adjacent to A) and is
+# encoded as undirected pairs for readability. Conservative: only pairs the
+# methodology or manifest call out as defensible are listed; everything else
+# falls through to 0.0.
+adjacent_categories:
+  - [pat-introduction, generic-parameterization]
+  - [pat-introduction, extract-to-common]
+  - [protocol-inheritance, extract-to-common]
+  - [protocol-inheritance, pat-introduction]
+  - [default-implementation, extract-to-common]
+  - [default-implementation, composition]
+  - [generic-parameterization, extract-to-common]
+
+# ─── Policy knobs (per §17 decision #5 + §8 grounding-audit text) ─────────
+#
+# `weak_rationale_policy` — §20.2 walks through the case where category and
+# specifics match but a required `rationale_must_cite` substring is missing.
+# Two options were on the table:
+#   (a) auto-score 0.5 ("right specifics with weak rationale") — the §8 table
+#       row that explicitly covers this case.
+#   (b) route to panel for grounding judgment.
+# Methodology §17 decision #5 picks (a) as the pre-registered default, with
+# the grounding-audit sample at 10–20% to catch systematic abuse of the
+# citation-substring loophole. This is reversible until trials start (it's
+# a one-line change here).
+weak_rationale_policy: auto-score-0.5
+
+# `grounding_audit_sample_rate` — §8 "Citation-check implementation" cites
+# 10–20% as the panel-validated grounding-audit fraction. The MVP uses the
+# lower bound (10%) to keep panel time bounded; the full round can bump to
+# 0.20 if early results suggest citation gaming is more prevalent than the
+# pilot indicates.
+grounding_audit_sample_rate: 0.10
