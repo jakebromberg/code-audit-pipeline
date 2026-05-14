@@ -127,6 +127,18 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
 
     // ---- 2. Xcode project pbxproj discovery ---------------------------------
 
+    // Resolve pbxproj product references against a deterministically-ordered
+    // snapshot of the package nodes. `findPackageManifests` walks via
+    // `FileManager.enumerator`, whose ordering is not guaranteed to be stable
+    // across filesystems or platforms; resolving against the unsorted, walk-
+    // order list lets two packages with the same trailing path component
+    // (e.g. `Shared/Core` vs `Vendor/Core`) produce different edges on
+    // different machines. Sort once, here, and feed the sorted view to the
+    // resolver.
+    let sortedPackageNodes = nodes
+        .filter { $0.kind == "package" }
+        .sorted { $0.name < $1.name }
+
     let pbxprojPaths = findPbxprojs(root: canonicalRoot)
     for pbxpath in pbxprojPaths {
         let rel = relativize(pbxpath, root: canonicalRoot)
@@ -150,7 +162,7 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
                 // matches the *package* name in wxyc-ios-64's Shared/<Pkg> layout.
                 // Emit the edge against the package-name form so downstream joins
                 // against the SwiftPM-derived nodes line up.
-                let to = resolveAppEdgeTarget(productName: productName, packageNodes: nodes)
+                let to = resolveAppEdgeTarget(productName: productName, packageNodes: sortedPackageNodes)
                 edges.append(PackageGraphEdge(from: target.name, to: to, source: "pbxproj"))
             }
         }
@@ -163,12 +175,19 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
         return 1
     }
 
-    // Deduplicate nodes (Package.swift / pbxproj could plausibly both reference
-    // the same name; the node list should be a set keyed by name).
-    var seenNodes = Set<String>()
+    // Deduplicate nodes by (name, kind). Keying on name alone silently drops
+    // the second occurrence when, e.g., a package named `iOS` (a per-platform
+    // Shared/<Plat>/Package.swift layout) coexists with an app target also
+    // called `iOS` — the package-side and the app-side both legitimately
+    // appear in the graph and downstream queries need both rows to render
+    // the edge correctly. The (name, kind) key preserves the distinction
+    // while still collapsing real duplicates (same kind, same name).
+    struct NodeKey: Hashable { let name: String; let kind: String }
+    var seenNodes = Set<NodeKey>()
     let dedupedNodes = nodes.filter { node in
-        if seenNodes.contains(node.name) { return false }
-        seenNodes.insert(node.name)
+        let key = NodeKey(name: node.name, kind: node.kind)
+        if seenNodes.contains(key) { return false }
+        seenNodes.insert(key)
         return true
     }
 
@@ -247,11 +266,7 @@ private func findPbxprojs(root: String) -> [String] {
     while let url = enumerator.nextObject() as? URL {
         let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
         if values?.isDirectory == true {
-            // Allow descent into .xcodeproj dirs (they're not "hidden" — they
-            // start with a regular letter but contain project.pbxproj). We
-            // still skip the standard build/etc dirs and dot-prefixed dirs.
-            let name = url.lastPathComponent
-            if name.hasPrefix(".") || shouldSkipPackageWalkDir(name: name) {
+            if shouldSkipPackageWalkDir(name: url.lastPathComponent) {
                 enumerator.skipDescendants()
             }
             continue
@@ -263,11 +278,24 @@ private func findPbxprojs(root: String) -> [String] {
     return results
 }
 
+/// Shared skip predicate for the package-graph walkers. We can't rely on
+/// `FileManager`'s `.skipsHiddenFiles` alone: agent worktrees and IDE state
+/// (`.claude`, `.cursor`, `.idea`, `.vscode`, `.next`) often contain
+/// near-duplicate clones of the host repo, and HFS+/APFS will report some of
+/// those as non-hidden depending on filesystem flags. Per `CLAUDE.md`'s rule
+/// for extractors, we explicitly refuse to descend into any dot-prefixed
+/// directory, then layer the project-specific build/cache list on top.
+///
+/// `findPackageManifests` and `findPbxprojs` both call this so the two walks
+/// agree on what's in-bounds — asymmetry between them would let, e.g., a
+/// stale `.cursor/` clone contribute pbxproj edges while its sibling
+/// `Package.swift`es went unseen.
 private func shouldSkipPackageWalkDir(name: String) -> Bool {
     // Mirrors the existing Walker.swift skip rules; we explicitly do NOT skip
     // Tests/ here because Package.swift files can declare test targets and we
     // want to see those packages too.
-    if ["node_modules", "build", "dist", "coverage", "DerivedData", "Pods", ".build", ".swiftpm"].contains(name) {
+    if name.hasPrefix(".") { return true }
+    if ["node_modules", "build", "dist", "coverage", "DerivedData", "Pods"].contains(name) {
         return true
     }
     return false
@@ -525,6 +553,15 @@ private func parsePbxproj(text: String) -> ParsedPbxproj {
 /// top-level blocks (which fails because everything is nested inside the outer
 /// `objects = { ... };`), we recognize block boundaries as we cross them and
 /// hand each balanced body to the caller's classifier.
+///
+/// Paren tracking matters: pbxproj array literals (`buildSettings = ( ... );`)
+/// can contain `{ ... }` dictionaries as elements (e.g.
+/// `OTHER_LDFLAGS = ("$(inherited)", { foo = bar; });`). Those inner braces
+/// must not be treated as block openings — they aren't preceded by a
+/// `<uuid> = ` header, so emitting a visit for them would feed `pbxValue` a
+/// malformed body and could misclassify the enclosing target. While paren
+/// depth is > 0 we ignore both `{` and `}`; the paren-array text is opaque
+/// to the block walker.
 private func collectPbxBlocks(
     _ chars: [Character],
     openAt offset: Int,
@@ -533,6 +570,7 @@ private func collectPbxBlocks(
     var i = offset
     let n = chars.count
     var stack: [(uuid: String, bodyStart: Int)] = []
+    var parenDepth = 0
     var inString = false
     var inComment = false
 
@@ -571,7 +609,26 @@ private func collectPbxBlocks(
             continue
         }
 
+        if c == "(" {
+            parenDepth += 1
+            i += 1
+            continue
+        }
+
+        if c == ")" {
+            if parenDepth > 0 { parenDepth -= 1 }
+            i += 1
+            continue
+        }
+
         if c == "{" {
+            // While inside a paren-delimited array we treat `{...}` as opaque
+            // element syntax — it cannot be a block header here, since the
+            // grammar requires a `<uuid> = ` prefix at object-section depth.
+            if parenDepth > 0 {
+                i += 1
+                continue
+            }
             // Look backward to recover the block-header `<uuid> [/* ... */] = `.
             let header = pbxHeaderBefore(chars, openIdx: i)
             let uuid = pbxFirstToken(header)
@@ -581,6 +638,10 @@ private func collectPbxBlocks(
         }
 
         if c == "}" {
+            if parenDepth > 0 {
+                i += 1
+                continue
+            }
             if let frame = stack.popLast() {
                 let body = String(chars[frame.bodyStart..<i])
                 // Skip the outermost (rootObject-level) block — it has no uuid
