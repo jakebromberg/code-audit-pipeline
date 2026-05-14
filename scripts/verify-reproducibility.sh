@@ -2,9 +2,9 @@
 # Smoke test: re-hash every artifact and compare against reproducibility.yaml.
 # Exits 0 on match, 1 on any divergence.
 set -uo pipefail
-REPO=/Users/jake/Developer/code-audit-pipeline-v7-preflight
-EXP=$REPO/experiments/v7-refactor-recommendation
-YAML=$EXP/reproducibility.yaml
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXP="$REPO/experiments/v7-refactor-recommendation"
+YAML="$EXP/reproducibility.yaml"
 
 PASS=0
 FAIL=0
