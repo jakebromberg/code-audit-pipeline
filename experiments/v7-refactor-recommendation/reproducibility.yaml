@@ -1,0 +1,143 @@
+# V7 refactor-recommendation experiment — reproducibility manifest.
+#
+# Schema and field meanings: docs/refactor-recommendation-experiment-methodology.md
+# §10 "Reproducibility checklist". The fields under `pre_registration` are
+# frozen at gate §5 (this commit); fields under `execution` get populated
+# during Phase D and finalized at Phase E (results writeup).
+#
+# A replay procedure (per methodology §10): check out `substrate_sha`,
+# clone `wxyc_ios_64.repo_sha` (with submodule at `submodule_shas.wallpaper`),
+# rebuild the served plant tree from `examples/swift-plants-v7/`, re-run
+# the substrate, and verify every entry under `pre_registration.catalog_hashes`
+# and `pre_registration.query_output_hashes` matches byte-for-byte.
+
+pre_registration:
+  captured_at: "2026-05-14T22:30:00Z"
+  captured_by: pre-flight-gate-§5
+
+  # Source repository the experiment runs against.
+  wxyc_ios_64:
+    repo_sha: 77f347e72d3427d1de2979df6f3f43165a50ce6c
+    submodule_shas:
+      wallpaper: 42420a7c609c30beb3eb5e174e9424c5d6131360
+
+  # This pipeline repo at the time of cataloging. Covers extractor source,
+  # query files, and post-processing scripts (serve-plants-v7.sh,
+  # generate-clusters-v7.sh, analyzer.py).
+  substrate_sha: 95f7f720aa4786129625a52ea1088b9a59e4050c
+
+  # SHA-256 of the served plant tree at /tmp/wxyc-audit/plants-v7/.
+  # Tree-hash scheme (BSD-tar has no --sort, so we content-address differently):
+  #   cd /tmp/wxyc-audit/plants-v7
+  #   find . -type f -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256
+  # 485 swift files total, 14 plant overlays.
+  plant_tree_sha: 396cb2e667efc8e3a80e049a46c540f89d57a69f970018fd80664637db7b07d1
+  plant_tree_hash_scheme: "sha256(sorted(per-file-sha256))"
+  plant_tree_file_count: 485
+  plant_tree_plant_overlay_count: 14
+
+  # Manifest + rubric + prompt at pre-registration. Covers expected answers,
+  # specifics_tolerance, and the prompt body / per-category specifics schemas.
+  manifest_hash: cc2e5a5ef0c0747a82fc05a35ae7df9020183e32a113cd00de7295ac42be4a7f
+  rubric_hash: 8704ebd317fd06f3bb0a6a5715685b8a6f08899ac97571b500829fcaafef1a77
+  prompt_hash: 7d559c808a473a7871e2ca42d1fbb080d98840aee19433261327aa18ad3f230c
+
+  # Substrate extractor outputs against the served plant tree.
+  catalog_hashes:
+    type-catalog.json: 5796c8a9f120394456f6da4aa2787eb342b2af1a17f6f54b27274ed4e5135baf
+    function-catalog.json: aa254abdc230f1d7aa33876b39c21bed286e071b2a34692cbb936439d06565fe
+    file-hashes.json: 0ff06c8ca2701c51ae031464c72025d00dec558d923b8593c046dbac4f1992b7
+
+  # Cluster-query outputs under experiments/v7-refactor-recommendation/.
+  # Empty-file SHA (e3b0c44...) is normal — several V6 queries produce zero
+  # rows against this fixture and their hash is the empty-string SHA.
+  query_output_hashes:
+    s1:
+      cross-package-shadows-any.jsonl: 72f358b9d5ba98c7d9ed305a39d3042c3c44423759c7cf2c5ac7fa9de6ed82be
+      cross-package-shadows.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      cross-package-shape-near-duplicates-any.jsonl: 5062c7a866660f18227218e8bd0c31736f3b41eaf95723c4a9cf833d10881b97
+      cross-package-shape-near-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      exact-duplicates.jsonl: 8bf10d9e2a639e0b09ac5fb0ab112a5c9e37a7357a21212a7921317411e6374e
+      file-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      function-duplicates.jsonl: 510f36786e185d8cb14d76f7ff85aa65702787931eba93db98459a0e7ec16e86
+      name-collisions.jsonl: 3f8aa630cafed77f64d686c9f272b77c0df7599e982636eab14e2cc652363583
+      near-duplicates-any.jsonl: 24a636835094f1ac98a5d20b951c34c08a8283302c895c1d34c5d4b594e05c46
+      near-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      subset-pairs.jsonl: d0ecd5baf18debf91074408e18ed84842b97a0c5e5a59bacfde65e9b23489d3d
+    s2:
+      cross-package-shadows-any.jsonl: 72f358b9d5ba98c7d9ed305a39d3042c3c44423759c7cf2c5ac7fa9de6ed82be
+      cross-package-shadows.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      cross-package-shape-near-duplicates-any.jsonl: 5062c7a866660f18227218e8bd0c31736f3b41eaf95723c4a9cf833d10881b97
+      cross-package-shape-near-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      default-impl-candidates.jsonl: b2f6acd53f68c2285b1ea8e7c278cca60527e28a4673a5d7bd4050f53f4bfc70
+      exact-duplicates.jsonl: 8bf10d9e2a639e0b09ac5fb0ab112a5c9e37a7357a21212a7921317411e6374e
+      file-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      function-duplicates.jsonl: 510f36786e185d8cb14d76f7ff85aa65702787931eba93db98459a0e7ec16e86
+      generic-function-candidates.jsonl: 95de546ddaf09f443e2061acf891a910b31261a5227e11de57d128462f418f68
+      generic-struct-candidates.jsonl: 3717e2abcde219582924903b72fa2137bac0af530a22a4a119832a94ed3fb020
+      name-collisions.jsonl: 3f8aa630cafed77f64d686c9f272b77c0df7599e982636eab14e2cc652363583
+      near-duplicates-any.jsonl: 24a636835094f1ac98a5d20b951c34c08a8283302c895c1d34c5d4b594e05c46
+      near-duplicates.jsonl: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      pat-candidates.jsonl: a45af122529deaea9382fc393c35ae0178ef4e0f1757ddb95d1407b88ac12201
+      protocol-inheritance-candidates.jsonl: 38e9c0453f2cda9d5ad3e7d538f3292cadf66ed7464774c9a3e5430230f6d4f4
+      subset-pairs.jsonl: d0ecd5baf18debf91074408e18ed84842b97a0c5e5a59bacfde65e9b23489d3d
+
+  # Row counts for sanity (S2 ⊇ S1 row-wise on the 11 shared queries).
+  cluster_row_counts:
+    s1_total: 444
+    s2_total: 525
+
+  # Plant-recall analyzer output against S1 / S2 (run from analyzer.py).
+  # The 24/25 in S2 satisfies the §4.4 ≥23/25 acceptance threshold.
+  # Plant 5.3 doesn't surface in its declared signals (manifest-tuning, not
+  # substrate gap) — it does surface in exact-duplicates and is noted as a
+  # follow-up item.
+  plant_recall:
+    s1: "17/25"
+    s2: "24/25"
+    s2_minus_s1: 7
+    threshold: 23
+    threshold_met: true
+
+# Execution-time fields. Pin the model identifier and parameters before
+# Phase D launch (§5.3 dry run uses the pinned identifier). Finalize the
+# `api_pricing_snapshot` and `trial_date_range` after Phase D completes.
+execution:
+  # Per §8 decision #2: latest Claude Sonnet 4.6 tier with date-pinned suffix.
+  # The §5.3 dry-run sent model=claude-sonnet-4-6 and the API returned the
+  # bare id verbatim — methodology §10 requires a date-pinned suffix to avoid
+  # silent drift. Pre-Phase-D action: resolve the canonical date-pinned id
+  # (e.g., claude-sonnet-4-6-20260101) and update primary_pinned_at below.
+  model_versions:
+    primary: claude-sonnet-4-6
+    primary_pinned_at: TBD-pre-phase-d
+  model_parameters:
+    temperature: 0.0
+    max_tokens: 4096
+    top_p: null
+    top_k: null
+    system_prompt: null  # the agent prompt is the user-turn content; no system role used
+  # Pricing snapshot per §5.4 cost projection; rates confirmed in §5.3 dry run
+  # (actual cost matched expected to within $0.0001 / rec).
+  api_pricing_snapshot:
+    captured_at: "2026-05-14"
+    claude-sonnet-4-6:
+      input_per_mtok_usd: 3.00
+      output_per_mtok_usd: 15.00
+  # §5.3 dry-run reference numbers; the Phase D harness should observe rec-
+  # level variance in this range.
+  dry_run_reference:
+    query: pat-candidates
+    row: 0
+    input_tokens: 2735
+    output_tokens: 643
+    latency_ms: 21259
+    cost_usd: 0.01785
+    response_category: no-action
+    response_reason_class: sample-app-mirror
+    response_confidence: 0.82
+  trial_date_range:
+    start: TBD  # ISO 8601 at Phase D start
+    end: TBD    # ISO 8601 at Phase D end
+  panel_composition: TBD     # populated at Phase E
+  rubric_modifications: null # populated at Phase E (pointer to rubric-modifications.md if any)
