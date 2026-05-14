@@ -115,7 +115,7 @@ Name-keyed list of every entry in the record's inheritance clause. For `struct F
 
 **Names are kept verbatim.** Qualified protocol names like `Combine.Cancellable` stay qualified. Composed protocols (rare in inheritance clauses but legal) stay as written. The downstream consumer decides what to do with non-bare names.
 
-**Consumed by:** `pipeline/queries/default-impl-candidates.jq` joins a function-body cluster's distinct types against `conforms_to[]` and filters to clusters whose member types share at least one protocol (the substrate signal for "all conformers can default-impl this method via a common protocol extension"). The query loads the type catalog via `--slurpfile types` alongside the function catalog input — see the query's header comment.
+**Consumed by:** `pipeline/queries/default-impl-candidates.jq` joins a function-body cluster's distinct types against `conforms_to[]` and filters to clusters whose member types share at least one protocol (the substrate signal for "all conformers can default-impl this method via a common protocol extension"). The query loads the type catalog via `--slurpfile types` alongside the function catalog input — see the query's header comment. The join is name-keyed: same-name records (a struct and its extensions, for example) are grouped and their `conforms_to[]` lists are unioned, so the effective conformance set picks up conformances declared on extensions. Free functions, which have no enclosing type and thus no type-catalog record, are dropped from the cluster set by this filter (their effective `conforms_to[]` is `[]`).
 
 ## Kinds
 
