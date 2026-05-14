@@ -1,0 +1,50 @@
+// !$*UTF8*$!
+//
+// Regression fixture for string/comment handling inside pbxproj block bodies.
+//
+// The PBXNativeTarget below contains four traps:
+//   1. A `/* note: name = OldName */` block-comment ahead of the real `name`.
+//   2. A `// was: name = AnotherOld` line-comment ahead of the real `name`.
+//   3. An `INFOPLIST_KEY_X = "name = StringValue"` quoted-string containing
+//      a syntactic `name = ...` payload.
+//   4. A commented-out `/* packageProductDependencies = ( ZZZZ9999 ... ); */`
+//      ahead of the live one, so a parser that ignores comments would resolve
+//      the wrong UUID set.
+//
+// Expected behavior: target name is `iOS` (not `OldName`, `AnotherOld`, or
+// `StringValue`), and the live `packageProductDependencies` resolves to
+// `Core`. The string/comment-naive predecessor of this fixture produced
+// garbage names like `"OldName *\/\n\t\t\tname = iOS"`.
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXNativeTarget section */
+		AAAA0001 /* iOS */ = {
+			isa = PBXNativeTarget;
+			/* note: name = OldName */
+			// was: name = AnotherOld
+			INFOPLIST_KEY_LSApplicationCategoryType = "name = StringValue";
+			name = iOS;
+			/* packageProductDependencies = (
+				ZZZZ9999 /* Old */,
+			); */
+			packageProductDependencies = (
+				BBBB0001 /* Core */,
+			);
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BBBB0001 /* Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Core;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = ROOT0001 /* Project object */;
+}

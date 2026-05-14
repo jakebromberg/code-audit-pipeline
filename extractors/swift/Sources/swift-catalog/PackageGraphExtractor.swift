@@ -704,13 +704,51 @@ private func pbxFirstToken(_ s: String) -> String {
 /// bare identifiers or quoted strings; trailing comments (`/* ... */`) are
 /// stripped. Returns the trimmed value or nil if the key isn't present at
 /// brace-depth 0.
+///
+/// String and comment state are tracked so that a `key = ...` occurrence
+/// inside a quoted string (`INFOPLIST_KEY_X = "name = foo"`), inside a
+/// `/* ... */` block comment, or inside a `// ...` line comment does NOT
+/// shadow the real key. Without this, a developer-commented-out line above a
+/// live one ("`// was: name = OldName`" followed by `name = iOS`) silently
+/// returns the commented-out value.
 private func pbxValue(body: String, key: String) -> String? {
     let chars = Array(body)
     let pattern = Array("\(key) = ")
     var depth = 0
+    var inString = false
+    var inBlockComment = false
+    var inLineComment = false
     var i = 0
     while i < chars.count {
         let c = chars[i]
+
+        if inLineComment {
+            if c == "\n" { inLineComment = false }
+            i += 1
+            continue
+        }
+        if inBlockComment {
+            if c == "*" && i + 1 < chars.count && chars[i + 1] == "/" {
+                inBlockComment = false
+                i += 2
+                continue
+            }
+            i += 1
+            continue
+        }
+        if inString {
+            if c == "\\" && i + 1 < chars.count { i += 2; continue }
+            if c == "\"" { inString = false }
+            i += 1
+            continue
+        }
+
+        if c == "/" && i + 1 < chars.count {
+            if chars[i + 1] == "*" { inBlockComment = true; i += 2; continue }
+            if chars[i + 1] == "/" { inLineComment = true; i += 2; continue }
+        }
+        if c == "\"" { inString = true; i += 1; continue }
+
         if c == "{" || c == "(" {
             depth += 1
             i += 1
@@ -784,13 +822,49 @@ private func readPbxScalar(_ chars: [Character], from: Int) -> String? {
 
 /// Extract a paren-delimited array like `packageProductDependencies = (\n  UUID /* X */,\n);`
 /// into a list of uuid tokens. Strips comments and commas.
+///
+/// String and comment state are tracked to avoid matching `key = (` inside a
+/// quoted string, a `/* ... */` block comment, or a `// ...` line comment —
+/// otherwise a commented-out `packageProductDependencies = ( ... )` would
+/// shadow the live one and cause the wrong UUIDs to be reported.
 private func pbxArrayValue(body: String, key: String) -> [String] {
     let chars = Array(body)
     let pattern = Array("\(key) = (")
     var depth = 0
+    var inString = false
+    var inBlockComment = false
+    var inLineComment = false
     var i = 0
     while i < chars.count {
         let c = chars[i]
+
+        if inLineComment {
+            if c == "\n" { inLineComment = false }
+            i += 1
+            continue
+        }
+        if inBlockComment {
+            if c == "*" && i + 1 < chars.count && chars[i + 1] == "/" {
+                inBlockComment = false
+                i += 2
+                continue
+            }
+            i += 1
+            continue
+        }
+        if inString {
+            if c == "\\" && i + 1 < chars.count { i += 2; continue }
+            if c == "\"" { inString = false }
+            i += 1
+            continue
+        }
+
+        if c == "/" && i + 1 < chars.count {
+            if chars[i + 1] == "*" { inBlockComment = true; i += 2; continue }
+            if chars[i + 1] == "/" { inLineComment = true; i += 2; continue }
+        }
+        if c == "\"" { inString = true; i += 1; continue }
+
         if c == "{" {
             depth += 1
             i += 1
@@ -803,12 +877,43 @@ private func pbxArrayValue(body: String, key: String) -> [String] {
         }
         if depth == 0 && matches(chars, at: i, pattern: pattern) {
             let openParen = i + pattern.count - 1
-            // Find matching close paren.
+            // Find matching close paren, again skipping string/comment content
+            // so that a `)` inside a quoted string doesn't terminate the array
+            // prematurely.
             var pdepth = 1
             var j = openParen + 1
+            var jInString = false
+            var jInBlock = false
+            var jInLine = false
             while j < chars.count && pdepth > 0 {
-                if chars[j] == "(" { pdepth += 1 }
-                if chars[j] == ")" { pdepth -= 1 }
+                let cj = chars[j]
+                if jInLine {
+                    if cj == "\n" { jInLine = false }
+                    j += 1
+                    continue
+                }
+                if jInBlock {
+                    if cj == "*" && j + 1 < chars.count && chars[j + 1] == "/" {
+                        jInBlock = false
+                        j += 2
+                        continue
+                    }
+                    j += 1
+                    continue
+                }
+                if jInString {
+                    if cj == "\\" && j + 1 < chars.count { j += 2; continue }
+                    if cj == "\"" { jInString = false }
+                    j += 1
+                    continue
+                }
+                if cj == "/" && j + 1 < chars.count {
+                    if chars[j + 1] == "*" { jInBlock = true; j += 2; continue }
+                    if chars[j + 1] == "/" { jInLine = true; j += 2; continue }
+                }
+                if cj == "\"" { jInString = true; j += 1; continue }
+                if cj == "(" { pdepth += 1 }
+                if cj == ")" { pdepth -= 1 }
                 if pdepth == 0 { break }
                 j += 1
             }

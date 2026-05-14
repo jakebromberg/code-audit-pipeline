@@ -143,6 +143,35 @@ assert_eq "paren fixture: iOS app node present" "1" "$PAREN_APP_COUNT"
 PAREN_EDGE=$(echo "$OUT_PAREN" | jq -r '.edges[] | select(.source=="pbxproj") | "\(.from)->\(.to)"')
 assert_contains "paren fixture: iOS -> Core edge survived" "$PAREN_EDGE" "iOS->Core"
 
+# ---- Test 5: comments/strings inside pbxproj body don't shadow real keys ----
+#
+# Regression: pbxValue and pbxArrayValue used to walk block bodies character by
+# character tracking only brace/paren depth. A `/* note: name = OldName */`
+# block-comment, a `// was: name = X` line-comment, or an `INFOPLIST_KEY_X =
+# "name = StringValue";` quoted-string would each get matched as the
+# `name = ` key — producing garbage target names like
+# `"OldName *\/\n\t\t\tname = iOS"`. A commented-out
+# `/* packageProductDependencies = ( ... ); */` similarly shadowed the real
+# array. The fixture under fixtures/package-graph-comments/ exercises all
+# four shapes in one block.
+
+echo "Test 5: pbxproj body string/comment scanning"
+COMMENTS_FIXTURE="$SCRIPT_DIR/fixtures/package-graph-comments"
+OUT_COMMENTS=$("$BIN" package-graph --root "$COMMENTS_FIXTURE" 2>/dev/null)
+
+# Live target name is `iOS`, not `OldName`, `AnotherOld`, or `StringValue`.
+COMMENTS_APP_NAMES=$(echo "$OUT_COMMENTS" | jq -r '.nodes[] | select(.kind=="app") | .name' | LC_ALL=C sort | tr '\n' ',')
+assert_eq "comments fixture: app node name is iOS" "iOS," "$COMMENTS_APP_NAMES"
+
+# Live array resolves to Core, not the commented-out ZZZZ9999.
+COMMENTS_EDGES=$(echo "$OUT_COMMENTS" | jq -r '.edges[] | select(.source=="pbxproj") | "\(.from)->\(.to)"' | LC_ALL=C sort | tr '\n' ',')
+assert_eq "comments fixture: iOS -> Core (commented-out edge ignored)" "iOS->Core," "$COMMENTS_EDGES"
+
+# No spurious warnings (a shadowed UUID would have logged
+# "unknown product uuid ZZZZ9999").
+WARN_COUNT=$("$BIN" package-graph --root "$COMMENTS_FIXTURE" 2>&1 >/dev/null | grep -c "unknown product uuid" || true)
+assert_eq "comments fixture: no unknown-uuid warnings" "0" "$WARN_COUNT"
+
 # ---- Summary ---------------------------------------------------------------
 
 echo
