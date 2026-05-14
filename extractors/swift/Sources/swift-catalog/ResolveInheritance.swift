@@ -28,8 +28,18 @@ private let maxResolutionIterations = 5
 /// Resolve protocol-inheritance field unions in place across the records list.
 /// Idempotent — running multiple times on the same input produces the same
 /// output. Fixed-point iteration converges quickly in practice (most chains
-/// are 1–2 deep); the iteration cap is the safety net against pathological
-/// or cyclic inheritance graphs that the substrate didn't catch.
+/// are 1–2 deep).
+///
+/// Termination guarantee. The primary terminator is the per-record
+/// `existingNames` dedup set in `appendInheritedFields`: once every
+/// in-catalog parent's declared fields are present on the child, the
+/// per-record helper returns false (no `addedFlat` to merge), `anyChanged`
+/// stays false across the iteration, and the outer loop breaks early. This
+/// holds even for cyclic graphs (`A: B`, `B: A`) because each protocol's
+/// declared-field set is finite. The `maxResolutionIterations` cap is a
+/// belt-and-suspenders bound for unforeseen pathological inputs — under
+/// normal operation the early-exit on `anyChanged == false` fires long
+/// before the cap.
 ///
 /// Order of operations per record per iteration:
 ///   1. Look up each name in `conforms_to[]` against the catalog index.
@@ -57,9 +67,18 @@ func resolveProtocolInheritance(_ records: inout [TypeRecord]) {
         // those are extension records (kind == "extension"), not duplicates of
         // the protocol's interface record. Genuine name-collision protocols
         // (two `protocol Foo` in different files) would be a Swift compile
-        // error in practice, but the substrate scanner doesn't enforce that;
-        // first-occurrence-wins is a safe fallback.
-        if protocolIndexByName[r.name] == nil {
+        // error within a single module, but cross-package scans with --shared
+        // can legitimately encounter two unrelated packages declaring the same
+        // protocol name. First-occurrence-wins is a safe fallback; the warning
+        // below alerts an operator so the collision can be triaged.
+        if let priorIdx = protocolIndexByName[r.name] {
+            let prior = records[priorIdx]
+            logErr(
+                "warning: protocol-inheritance index collision on '\(r.name)' — "
+                + "kept \(prior.package):\(prior.file):\(prior.line), "
+                + "ignored \(r.package):\(r.file):\(r.line)"
+            )
+        } else {
             protocolIndexByName[r.name] = i
         }
     }
@@ -125,8 +144,16 @@ private func appendInheritedFields(
             // contributed to this child via the fields we just pulled in. Add
             // them to the child's resolved-parent list so `inherited_from`
             // reflects the full transitive set rather than just direct
-            // parents. Order preserved: direct parents first, ancestors
-            // accumulate in the iteration order they were resolved.
+            // parents.
+            //
+            // Ordering note. The result interleaves: each direct parent is
+            // appended, then *that parent's* transitive ancestors, then the
+            // next direct parent, etc. For `D: A, B` where A.inheritedFrom =
+            // [A1] and B.inheritedFrom = [B1], D.inheritedFrom becomes
+            // [A, A1, B, B1] — not [A, B, A1, B1]. Downstream consumers that
+            // need a direct-vs-transitive distinction should cross-reference
+            // `conforms_to[]` (direct parents only) rather than relying on
+            // position within `inherited_from`.
             for ancestor in records[parentIdx].inheritedFrom ?? []
             where !newlyResolvedParents.contains(ancestor) {
                 newlyResolvedParents.append(ancestor)

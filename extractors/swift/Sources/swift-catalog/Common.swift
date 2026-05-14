@@ -81,11 +81,17 @@ struct TypeRecord: Encodable {
     /// `interface`).
     var resolvedFrom: String?
 
-    /// V7 §6.3: the list of protocol parent names whose fields were unioned
-    /// into this record by the inheritance-resolution pass. Set on the same
-    /// records that carry `resolved_from: "protocol-inheritance"`. Transitive
-    /// — if `C: B` and `B: A`, then C's `inherited_from` includes both `B`
-    /// and `A` after the fixed-point pass converges.
+    /// V7 §6.3: the list of in-catalog protocol parent names whose declarations
+    /// contributed at least one new field to this record's resolved field set.
+    /// Set on the same records that carry `resolved_from: "protocol-inheritance"`.
+    /// Transitive — if `C: B` and `B: A`, then C's `inherited_from` includes
+    /// both `B` and `A` after the fixed-point pass converges.
+    ///
+    /// "Contributed" is load-bearing: a parent whose declared fields are
+    /// entirely shadowed by the child's same-named declarations does NOT
+    /// appear in `inherited_from` (no field crossed from parent to child).
+    /// For the full set of declared direct parents — including shadowed ones —
+    /// consult `conforms_to[]` instead.
     ///
     /// Names are kept verbatim, matching the `conforms_to` convention.
     /// Inheritance edges that point at protocols outside the scanned roots

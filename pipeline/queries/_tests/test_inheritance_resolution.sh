@@ -56,6 +56,17 @@ assert_eq() {
   fi
 }
 
+echo "=== Fixture scope: total record count ==="
+# Fixture has six declared top-level types (BaseAlpha, ChildBeta,
+# GrandchildGamma, ExternallyConformedDelta, CollidingEpsilon,
+# ProtocolConformingZeta). Any drift here (e.g., a new auto-emitted
+# extension record, or the visitor starting to emit nested types) would
+# silently invalidate the per-protocol assertions below. Catch it here.
+assert_eq "fixture catalog emits exactly 6 records" \
+  "6" \
+  "$(jq 'length' "$WORK/catalog.json")"
+
+echo ""
 echo "=== BaseAlpha: no inheritance, no resolution ==="
 record="$(record_for BaseAlpha)"
 assert_eq "BaseAlpha resolved_from is null/absent" \

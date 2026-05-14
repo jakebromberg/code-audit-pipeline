@@ -126,7 +126,7 @@ A second pass over the type catalog unions parent protocol's `fields[]` / `field
 The pass writes two fields on resolved records:
 
 - `resolved_from: "protocol-inheritance"` — marker. Same field as V5's intersection-type marker; the two markers share the field's namespace but never appear on the same record because their kinds are disjoint (intersections are `type-alias-intersection`, protocols are `interface`).
-- `inherited_from: ["ParentA", "ParentB", ...]` — transitive list of in-catalog protocol parents that contributed fields. Verbatim names (matches `conforms_to`'s convention).
+- `inherited_from: ["ParentA", "ParentB", ...]` — transitive list of in-catalog protocol parents whose declarations contributed at least one new field. Verbatim names (matches `conforms_to`'s convention). A parent whose declared fields are entirely shadowed by the child's same-named declarations does NOT appear here — consult `conforms_to[]` for the unfiltered direct-parent list. Ordering interleaves direct parents with their transitive ancestors in iteration order, so position is not load-bearing; consumers that need to distinguish direct from transitive should cross-reference `conforms_to[]`.
 
 Protocol-only scope. The pass skips a `conforms_to[]` name when the named record isn't `kind == "interface"`, which handles the §6.2 class-vs-protocol caveat conservatively: a class with a parent class in `conforms_to[0]` doesn't get class fields unioned in (the class-inheritance resolution is round-2 scope).
 

@@ -10,6 +10,16 @@
 # An asterisk (*) marks declarations touched during the audit window.
 #
 # cluster_id format:  exact-duplicates:NameA+NameB+...  (sorted, '+' separator)
+#
+# V7 §6.3 note. For Swift extractor output, `shape_sig` on records with
+# `resolved_from == "protocol-inheritance"` is computed over the unioned
+# declared+inherited field set, not the declared-only set. Child protocols
+# that share a common parent will therefore cluster here more aggressively
+# than under V6 — two children with no declared fields but the same parent
+# will exact-duplicate on the parent's inherited shape. This is intentional
+# (downstream queries want the full shape); when reading a cluster, check
+# `resolved_from` to distinguish "declared duplicates" from "shape-equal
+# by-virtue-of-shared-ancestor".
 
 include "_canonical";
 
