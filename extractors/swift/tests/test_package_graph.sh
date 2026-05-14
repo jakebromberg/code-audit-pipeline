@@ -14,6 +14,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTRACTOR_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 FIXTURES="$SCRIPT_DIR/fixtures/package-graph"
 
+# Cumulative cleanup: every temp resource registers itself here and the single
+# EXIT trap walks the list. Using a separate `trap` per resource silently
+# overrides the previous handler, which leaks the earlier resources on failure.
+CLEANUP_PATHS=()
+cleanup() {
+    for p in "${CLEANUP_PATHS[@]+"${CLEANUP_PATHS[@]}"}"; do
+        rm -rf -- "$p"
+    done
+}
+trap cleanup EXIT
+
 cd "$EXTRACTOR_ROOT"
 swift build >/dev/null 2>&1 || swift build  # surface errors if build fails
 
@@ -92,7 +103,7 @@ assert_contains "widget -> Shared/Caching" "$EDGES_PBX" "widget->Shared/Caching"
 
 echo "Test 2: --output writes to file"
 TMPOUT=$(mktemp)
-trap 'rm -f "$TMPOUT"' EXIT
+CLEANUP_PATHS+=("$TMPOUT")
 "$BIN" package-graph --root "$FIXTURES" --output "$TMPOUT" >/dev/null 2>&1
 assert_eq "file written, schema_version=1" "1" "$(jq -r '.schema_version' < "$TMPOUT")"
 
@@ -100,7 +111,7 @@ assert_eq "file written, schema_version=1" "1" "$(jq -r '.schema_version' < "$TM
 
 echo "Test 3: empty tree (no Package.swift, no pbxproj) exits non-zero"
 EMPTY_DIR=$(mktemp -d)
-trap 'rm -rf "$EMPTY_DIR"; rm -f "$TMPOUT"' EXIT
+CLEANUP_PATHS+=("$EMPTY_DIR")
 set +e
 "$BIN" package-graph --root "$EMPTY_DIR" >/dev/null 2>&1
 EXITCODE=$?
@@ -112,6 +123,25 @@ else
     echo "  FAIL: empty tree should exit non-zero, got 0" >&2
     FAIL=$((FAIL+1))
 fi
+
+# ---- Test 4: paren-nested brace in pbxproj is not misclassified -------------
+#
+# Regression: `OTHER_LDFLAGS = ("$(inherited)", { ... }, "-ObjC")` puts a
+# `{...}` dict literal inside a `(...)` array. Without paren-depth tracking
+# the block scanner pops the dict's `}` against the wrong frame and the
+# surrounding PBXNativeTarget can be misclassified. The fixture under
+# fixtures/package-graph-parens/ exercises this exact shape.
+
+echo "Test 4: paren-nested brace in pbxproj parses cleanly"
+PAREN_FIXTURE="$SCRIPT_DIR/fixtures/package-graph-parens"
+OUT_PAREN=$("$BIN" package-graph --root "$PAREN_FIXTURE" 2>/dev/null)
+assert_eq "paren fixture schema_version=1" "1" "$(echo "$OUT_PAREN" | jq -r '.schema_version')"
+
+PAREN_APP_COUNT=$(echo "$OUT_PAREN" | jq '[.nodes[] | select(.kind=="app" and .name=="iOS")] | length')
+assert_eq "paren fixture: iOS app node present" "1" "$PAREN_APP_COUNT"
+
+PAREN_EDGE=$(echo "$OUT_PAREN" | jq -r '.edges[] | select(.source=="pbxproj") | "\(.from)->\(.to)"')
+assert_contains "paren fixture: iOS -> Core edge survived" "$PAREN_EDGE" "iOS->Core"
 
 # ---- Summary ---------------------------------------------------------------
 
