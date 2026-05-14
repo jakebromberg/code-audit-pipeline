@@ -17,8 +17,8 @@ public struct Release: Sendable, Codable {
 
 /// Repository contract for fetching and persisting resolved Release entities.
 public protocol ReleaseRepository: Sendable {
-    func resolve(id: Int) async throws -> Release
-    func list() async throws -> [Release]
-    func cacheKey(for id: Int) -> String
+    var entityKind: String { get }
     var lastSync: Date? { get }
+    func cacheKey(for id: Int) -> String
+    func resolve(id: Int) async throws -> Release
 }

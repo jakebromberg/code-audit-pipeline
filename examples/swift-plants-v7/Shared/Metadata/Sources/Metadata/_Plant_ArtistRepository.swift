@@ -17,8 +17,8 @@ public struct Artist: Sendable, Codable {
 
 /// Repository contract for fetching and persisting resolved Artist entities.
 public protocol ArtistRepository: Sendable {
-    func resolve(id: Int) async throws -> Artist
-    func list() async throws -> [Artist]
-    func cacheKey(for id: Int) -> String
+    var entityKind: String { get }
     var lastSync: Date? { get }
+    func cacheKey(for id: Int) -> String
+    func resolve(id: Int) async throws -> Artist
 }
