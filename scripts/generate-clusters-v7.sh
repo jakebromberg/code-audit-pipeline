@@ -3,9 +3,9 @@
 # generate-clusters-v7.sh — extract catalogs + run V6/V7 queries, write JSONL.
 #
 # Drives the V7 refactor-recommendation experiment's Phase C cluster-generation
-# step (plan §4.3): assembles the type/function/file-hash/package-graph catalogs
-# from the served plant tree, then runs each cluster query in JSONL mode with
-# its canonical args, depositing results under
+# step (plan §4.3): assembles the type/function/file-hash catalogs from the
+# served plant tree, then runs each cluster query in JSONL mode with its
+# canonical args, depositing results under
 #   $OUT_DIR/clusters-s1/  — V6 queries only (S1 condition)
 #   $OUT_DIR/clusters-s2/  — V6 + V7-new queries (S2 condition)
 #
@@ -71,10 +71,11 @@ echo "Extracting function catalog..." >&2
 "$SWIFT_BIN" func --root "$SERVED_TREE" --include-tests \
   --output "$CATALOGS_DIR/function-catalog.json" 2>"$CATALOGS_DIR/func.stderr"
 
-echo "Extracting package graph..." >&2
-"$SWIFT_BIN" package-graph --root "$SERVED_TREE" \
-  --output "$CATALOGS_DIR/package-graph.json" 2>"$CATALOGS_DIR/package-graph.stderr" || \
-  echo "  (package-graph extraction exit non-zero; continuing — query set doesn't depend on it)" >&2
+# Package-graph extraction is intentionally omitted: none of the V6 or V7-new
+# queries driven by this script read package-graph.json. If a future query
+# needs it (e.g., a cross-package-reachability query), re-add the
+# `"$SWIFT_BIN" package-graph` invocation here and wire it into the query
+# call below.
 
 echo "Extracting file hashes..." >&2
 # `--extensions swift` enables the file-hashes script's Swift mode, which
