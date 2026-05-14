@@ -82,13 +82,17 @@ OUT="$WORK/out.txt"
 ERR="$WORK/err.txt"
 
 # Threshold is set to 2 so the manifest's 3-plant count + 2 surfacing + 1 gap = 3 effective → 3 ≥ 2.
+# The `&& EXIT=$? || EXIT=$?` dance preserves the analyzer's exit code under
+# `set -e`; otherwise a non-zero exit would abort the test before the assertion
+# below could report it as a FAIL.
 "$ANALYZER" \
   --manifest "$WORK/manifest.yaml" \
   --clusters-s1 "$WORK/s1/" \
   --clusters-s2 "$WORK/s2/" \
   --threshold 2 \
-  >"$OUT" 2>"$ERR"
-EXIT="$?"
+  >"$OUT" 2>"$ERR" \
+  && EXIT=$? \
+  || EXIT=$?
 
 PASS=0
 FAIL=0
