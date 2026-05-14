@@ -49,6 +49,20 @@ struct TypeRecord: Encodable {
     var shapeSig: String?
     var touchedInWindow: Bool = false
 
+    /// V7 §6.6 context flags (#44). Heuristic booleans the agent weighs to
+    /// distinguish intentional duplication (tests, codegen, sample apps,
+    /// mocks) from genuine refactor candidates. Path-based components live in
+    /// `Walker.swift`; `is_mock` additionally OR's a record-name suffix check
+    /// (`*Mock`, `*Stub`, `*Fake`).
+    ///
+    /// `is_codegen` is a SUPERSET of `generated`. The legacy `generated`
+    /// stays narrow for V6 backwards compat; V7-aware queries should consume
+    /// `is_codegen`.
+    var isTest: Bool = false
+    var isCodegen: Bool = false
+    var isSampleApp: Bool = false
+    var isMock: Bool = false
+
     var generics: String?
     var typeText: String?
     var typeSig: String?
@@ -127,6 +141,15 @@ struct FunctionRecord: Encodable {
     /// `bodyLines` shape so the same Jaccard pipeline can run against the
     /// erased form.
     var bodyLinesErased: [String]
+
+    /// V7 §6.6 context flags (#44). Same shape as `TypeRecord`'s — see the
+    /// docstring there. For function records, `is_mock` checks the
+    /// containing-type name (e.g., `FooMock.bar` → is_mock if `FooMock` ends
+    /// with Mock); free functions fall back to the function name itself.
+    var isTest: Bool = false
+    var isCodegen: Bool = false
+    var isSampleApp: Bool = false
+    var isMock: Bool = false
 }
 
 let catalogJSONEncoder: JSONEncoder = {

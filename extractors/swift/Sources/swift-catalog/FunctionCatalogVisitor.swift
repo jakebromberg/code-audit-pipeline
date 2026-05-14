@@ -173,7 +173,7 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
         let erased = normalizeBody(erasedText)
         let line = converter.location(for: position).line
         let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
-        records.append(FunctionRecord(
+        var newRecord = FunctionRecord(
             name: qualified,
             kind: kind,
             package: file.package,
@@ -190,7 +190,35 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             bodyLines: normalized.lines,
             bodyHashErased: erased.hash,
             bodyLinesErased: erased.lines
-        ))
+        )
+        applyContextFlags(to: &newRecord, qualifiedName: qualified)
+        records.append(newRecord)
+    }
+
+    /// V7 §6.6: propagate WalkedFile's path-derived context flags onto a
+    /// FunctionRecord, with `is_mock` additionally checking the function's
+    /// containing-type name (NOT the function name itself — a method named
+    /// `bar` on type `FooMock` is `is_mock: true` because `FooMock` ends with
+    /// Mock, regardless of `bar`'s spelling). Free functions (no dot in the
+    /// qualified name) get `is_mock` only from the path side.
+    private func applyContextFlags(to record: inout FunctionRecord, qualifiedName: String) {
+        record.isTest = file.isTest
+        record.isCodegen = file.isCodegen
+        record.isSampleApp = file.isSampleApp
+
+        let segments = qualifiedName.split(separator: ".").map(String.init)
+        let nameMockSignal: Bool
+        if segments.count >= 2 {
+            // Strip the last segment (the function name) to get the containing
+            // type — e.g., `Outer.FooMock.bar` → `Outer.FooMock`. Then check
+            // whether the containing-type name (last dot-segment of that)
+            // ends with Mock/Stub/Fake.
+            let containingType = segments.dropLast().joined(separator: ".")
+            nameMockSignal = nameEndsWithMockStubFakeSuffix(containingType)
+        } else {
+            nameMockSignal = false
+        }
+        record.isMock = file.isMockPath || nameMockSignal
     }
 
     private func emitFromAccessorBlock(
@@ -225,7 +253,7 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             let erasedText = eraseTypeIdentifiers(getterBody)
             let erased = normalizeBody(erasedText)
             let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
-            records.append(FunctionRecord(
+            var newRecord = FunctionRecord(
                 name: qualified,
                 kind: kind,
                 package: file.package,
@@ -242,7 +270,9 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
                 bodyLines: normalized.lines,
                 bodyHashErased: erased.hash,
                 bodyLinesErased: erased.lines
-            ))
+            )
+            applyContextFlags(to: &newRecord, qualifiedName: qualified)
+            records.append(newRecord)
         }
     }
 

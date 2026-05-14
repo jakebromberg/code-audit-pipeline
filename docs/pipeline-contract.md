@@ -43,6 +43,14 @@ The type catalog is a single JSON array. Each entry describes one declared type-
 
     "touched_in_window": false,           // true if file is in --touched JSON list
 
+    // V7 §6.6 context flags — heuristics the agent weighs to distinguish
+    // intentional duplication (tests, codegen, sample apps, mocks) from real
+    // refactor candidates. See "Context flags" below.
+    "is_test": false,
+    "is_codegen": false,
+    "is_sample_app": false,
+    "is_mock": false,
+
     // Optional, kind-dependent:
     "generics": "T,U",                    // type-parameter names if generic
     "type_text": "Pick<X, 'a' | 'b'>",   // for non-object type aliases
@@ -165,7 +173,26 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Optional but useful
 
-- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1), `conforms_to` (V7 §6.2), `resolved_from` + `inherited_from` (V7 §6.3 — set on resolved protocols)
+- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1), `conforms_to` (V7 §6.2), `resolved_from` + `inherited_from` (V7 §6.3 — set on resolved protocols), `is_test` + `is_codegen` + `is_sample_app` + `is_mock` (V7 §6.6 context flags — see below)
+
+### V7 §6.6: context flags
+
+Four heuristic booleans on every type-catalog, function-catalog, and file-hashes record. The agent weighs them when discriminating intentional duplication from real refactor opportunities; methodology §8 / §9 penalize recommendations that act on a cluster whose members carry `is_test: true` (or any of the others).
+
+| Flag | Path patterns | Per-record name signal |
+|---|---|---|
+| `is_test` | path segment `Tests/`, `*Testing/`, `__tests__/`; filename `*Tests.swift`, `*.test.*`, `*.spec.*` | none |
+| `is_codegen` | superset of `generated`: `Generated/` segment, `*+Generated.swift`, plus everything `generated` already catches (`/generated/` lowercase, `*.generated.swift`, `*.d.ts`) | none |
+| `is_sample_app` | path segment `Examples/`, `SampleApp/`, `Sample/`, `Demo/`, `Demos/` (case-insensitive) | none |
+| `is_mock` | path segment `Mocks/`, `Stubs/`, or `Fakes/` | record name's last dot-segment ends with `Mock`, `Stub`, or `Fake` (e.g., `Outer.FooMock` matches; for FunctionRecord the check is on the containing-type, not the function name) |
+
+**Path vs name signals are OR-combined.** A `protocol FooMock` declared in `Shared/Foo.swift` gets `is_mock: true` from the name suffix even though the file isn't in a Mocks dir. A struct named `AuthClient` declared in `Tests/Mocks/AuthClient.swift` gets `is_mock: true` from the path even though `AuthClient` doesn't end with Mock.
+
+**`is_codegen` deliberately overlaps with `generated`.** `generated` is the V6 legacy field — V6 queries (`exact-duplicates`, etc.) filter on it. `is_codegen` is the V7-wide replacement and is a strict superset; V7-aware queries should consume `is_codegen` going forward.
+
+**Walker-skip interaction.** When `--include-tests` is NOT set, the walker skips Tests/ directories entirely — `is_test` then never fires in the resulting catalog because no test files are walked. The V7 trial-harness invocation passes `--include-tests` so restraint twins (which live in test-flavored files) appear; in that mode `is_test` is load-bearing.
+
+**File-hashes records** carry only the path-based half of `is_mock` (no record-name to suffix-check). The catalog extractors carry the name-suffix half independently.
 
 ### Intersection-type resolution
 
