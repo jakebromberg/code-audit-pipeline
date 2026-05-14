@@ -151,7 +151,17 @@ private final class TypeIdentifierEraser: SyntaxRewriter {
             mapping[name] = "_T\(counter)"
         }
         let placeholder = mapping[name]!
-        let renamed = node.with(\.name, .identifier(placeholder))
+        // Preserve the original token's leading/trailing trivia so the erased
+        // body keeps the same surrounding whitespace as the source. Without
+        // this, `let a: Int = 1` erases to `let a: _T1= 1` (no space before
+        // `=`) because `Int`'s trailing space lives on the token, not on a
+        // structural separator — and `body_lines_erased` would no longer be
+        // faithful to the documented "same normalization on the erased body."
+        let renamed = node.with(\.name, .identifier(
+            placeholder,
+            leadingTrivia: node.name.leadingTrivia,
+            trailingTrivia: node.name.trailingTrivia
+        ))
         // Recurse into children (e.g., generic-argument clause) so nested
         // identifiers also get placeholders, with first-appearance order
         // counted from the now-renamed outer node.

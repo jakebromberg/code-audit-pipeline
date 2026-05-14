@@ -94,6 +94,33 @@ else
   echo "  ✓ Box1.makeArray.body_lines_erased has no _T2 (single-type body)"
 fi
 
+echo "=== whitespace preserved around erased identifier tokens ==="
+# Regression pin for trivia loss: when an IdentifierTypeSyntax token has
+# leading/trailing whitespace trivia (e.g. `Int = 1` — space between `Int` and
+# `=`), the rewriter must preserve it. Otherwise `let a: Int = 1` erases to
+# `let a: _T1= 1`, and body_lines_erased stops being faithful to "same
+# normalization applied to the erased body."
+#
+# Box1.makeArray body contains `let copy: UIColor = value`, which after
+# normalization (`\s+` collapsed to a single space, trimmed) must yield a line
+# of the form `let copy: _T1 = value` — note the space on both sides of `=`.
+if echo "$lines" | jq -e 'any(.[]; test("_T1 ="))' >/dev/null; then
+  PASS=$((PASS + 1))
+  echo "  ✓ Box1.makeArray.body_lines_erased preserves space before '=' (trivia preserved)"
+else
+  FAIL=$((FAIL + 1))
+  echo "  ✗ Box1.makeArray.body_lines_erased lost whitespace around erased token"
+  echo "     actual: $lines"
+fi
+if echo "$lines" | jq -e 'any(.[]; test("_T1="))' >/dev/null; then
+  FAIL=$((FAIL + 1))
+  echo "  ✗ Box1.makeArray.body_lines_erased contains '_T1=' (trivia loss)"
+  echo "     actual: $lines"
+else
+  PASS=$((PASS + 1))
+  echo "  ✓ Box1.makeArray.body_lines_erased has no '_T1=' substring"
+fi
+
 echo ""
 echo "=== Results ==="
 printf "Passed: %d\n" "$PASS"
