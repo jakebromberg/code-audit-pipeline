@@ -5,4 +5,13 @@
 // flags are emitted independently and downstream consumers want to see both.
 struct AuthClient {
     var token: String
+
+    // Method on a non-Mock-suffixed type inside a Mocks/ path. Function-record
+    // is_mock should fire from PATH (file is in Mocks/) regardless of the
+    // containing-type name. Also is_test:true (file is under Tests/).
+    func authenticate() -> Bool {
+        let attempt = 1
+        let allowed = attempt > 0
+        return allowed
+    }
 }
