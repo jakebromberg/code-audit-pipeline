@@ -8,6 +8,7 @@
 
 import CryptoKit
 import Foundation
+import SwiftSyntax
 
 /// One structured field on a type-catalog record. V7 §6.1: parallel to the
 /// flat `fields: ["name:Type"]` form, so downstream queries can ask
@@ -83,6 +84,17 @@ struct FunctionRecord: Encodable {
     var bodyLength: Int
     var bodyHash: String
     var bodyLines: [String]
+
+    /// V7 §6.4: hash of the normalized body with every `IdentifierTypeSyntax`
+    /// token replaced by `_T1`, `_T2`, ... in order of first appearance in the
+    /// body. Two functions that differ only at type-identifier slots collide
+    /// here while their `bodyHash` values stay distinct.
+    var bodyHashErased: String
+
+    /// V7 §6.4: sorted-unique normalized lines of the type-erased body. Mirrors
+    /// `bodyLines` shape so the same Jaccard pipeline can run against the
+    /// erased form.
+    var bodyLinesErased: [String]
 }
 
 let catalogJSONEncoder: JSONEncoder = {
@@ -119,6 +131,46 @@ func normalizeBody(_ text: String) -> (lines: [String], hash: String, length: In
     let sortedUnique = Array(Set(nonEmpty)).sorted()
     let joined = sortedUnique.joined(separator: "\n")
     return (lines: sortedUnique, hash: sha256Hex(joined), length: joined.count)
+}
+
+/// V7 §6.4. Rewrites a syntax subtree, replacing every `IdentifierTypeSyntax`
+/// token's name with a placeholder `_T1`, `_T2`, ... in order of first
+/// appearance, then returns the resulting source text via `.description`.
+///
+/// Used to erase type identifiers from a function body before normalization,
+/// so two bodies that differ only at type slots normalize to the same string.
+/// The placeholder assignment walks parents before children (depth-first
+/// pre-order), so `Array<UIColor>` erases to `_T1<_T2>` (not `_T2<_T1>`).
+///
+/// Scope: only `IdentifierTypeSyntax` is rewritten. Qualified type forms
+/// (`MemberTypeSyntax`, e.g. `Swift.Int`) have an `IdentifierTypeSyntax`
+/// base node, which gets erased; the trailing member token does not.
+/// Expression-position references (`DeclReferenceExprSyntax` for `UIColor`
+/// in `UIColor.red`) are also not rewritten — the methodology scopes erasure
+/// to type-position identifiers only.
+func eraseTypeIdentifiers<S: SyntaxProtocol>(_ node: S) -> String {
+    let rewriter = TypeIdentifierEraser()
+    let rewritten = rewriter.rewrite(Syntax(node))
+    return rewritten.description
+}
+
+private final class TypeIdentifierEraser: SyntaxRewriter {
+    private var mapping: [String: String] = [:]
+    private var counter: Int = 0
+
+    override func visit(_ node: IdentifierTypeSyntax) -> TypeSyntax {
+        let name = node.name.text
+        if mapping[name] == nil {
+            counter += 1
+            mapping[name] = "_T\(counter)"
+        }
+        let placeholder = mapping[name]!
+        let renamed = node.with(\.name, .identifier(placeholder))
+        // Recurse into children (e.g., generic-argument clause) so nested
+        // identifiers also get placeholders, with first-appearance order
+        // counted from the now-renamed outer node.
+        return super.visit(renamed)
+    }
 }
 
 /// Format a "name:Type" field entry the way the TS extractor does, then sort

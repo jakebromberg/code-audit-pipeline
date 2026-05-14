@@ -73,6 +73,52 @@ function walkDir(root) {
   return out;
 }
 
+// V7 §6.4. Walks the body AST and rewrites every type-position identifier
+// (the leftmost `Identifier` of each `TypeReferenceNode.typeName`) with
+// placeholders `_T1`, `_T2`, ... in order of first appearance. Returns the
+// erased source text. Qualified type names like `Foo.Bar` only erase the head,
+// matching the Swift extractor's IdentifierTypeSyntax-only scope.
+function eraseTypeIdentifiers(bodyNode, sf) {
+  const mapping = new Map();
+  let counter = 0;
+  const edits = []; // { start, end, replacement }
+
+  function walk(node) {
+    if (ts.isTypeReferenceNode(node) && node.typeName) {
+      let head = node.typeName;
+      while (ts.isQualifiedName(head)) head = head.left;
+      if (ts.isIdentifier(head)) {
+        const name = head.text;
+        let placeholder = mapping.get(name);
+        if (placeholder === undefined) {
+          counter += 1;
+          placeholder = `_T${counter}`;
+          mapping.set(name, placeholder);
+        }
+        edits.push({
+          start: head.getStart(sf),
+          end: head.getEnd(),
+          replacement: placeholder,
+        });
+      }
+    }
+    ts.forEachChild(node, walk);
+  }
+  walk(bodyNode);
+
+  // Apply edits back-to-front so each replacement's offsets stay valid against
+  // the unchanged tail of the buffer.
+  edits.sort((a, b) => b.start - a.start);
+  const bodyStart = bodyNode.getStart(sf);
+  let result = bodyNode.getText(sf);
+  for (const e of edits) {
+    const lo = e.start - bodyStart;
+    const hi = e.end - bodyStart;
+    result = result.slice(0, lo) + e.replacement + result.slice(hi);
+  }
+  return result;
+}
+
 // Normalize body text: strip comments, collapse whitespace runs to single spaces,
 // trim each line, drop blank lines. The result is a multi-line string where each
 // line is a meaningful unit. Deterministic across whitespace-only edits.
@@ -137,6 +183,10 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
     const bodyHash = bodyHashOf(normLines);
     const sortedUniqueLines = [...new Set(normLines)].sort();
+    const erasedText = body ? eraseTypeIdentifiers(body, sf) : '';
+    const erasedNormLines = normalizeBody(erasedText);
+    const erasedHash = bodyHashOf(erasedNormLines); // matches body_hash convention
+    const erasedSorted = [...new Set(erasedNormLines)].sort();
     results.push({
       package: pkgName,
       file: relPath,
@@ -152,6 +202,8 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       body_length: normLines.join('\n').length,
       body_hash: bodyHash,
       body_lines: sortedUniqueLines,
+      body_hash_erased: erasedHash,
+      body_lines_erased: erasedSorted,
     });
   }
 
