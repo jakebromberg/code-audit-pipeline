@@ -297,14 +297,16 @@ V7 §6.5 enrichment. Cross-package dependency edges so an agent can name the *co
 {
   "schema_version": "1",
   "nodes": [
-    { "name": "Shared/Core",      "kind": "package", "path": "Shared/Core/Package.swift" },
-    { "name": "Shared/Caching",   "kind": "package", "path": "Shared/Caching/Package.swift" },
-    { "name": "iOS",              "kind": "app",     "path": "WXYC.xcodeproj/project.pbxproj" }
+    { "name": "Shared/Core",      "kind": "package",  "path": "Shared/Core/Package.swift" },
+    { "name": "Shared/Caching",   "kind": "package",  "path": "Shared/Caching/Package.swift" },
+    { "name": "iOS",              "kind": "app",      "path": "WXYC.xcodeproj/project.pbxproj" },
+    { "name": "swift-syntax",     "kind": "external", "path": "https://github.com/swiftlang/swift-syntax.git" }
   ],
   "edges": [
-    { "from": "Shared/Caching", "to": "Shared/Core",      "source": "Package.swift" },
-    { "from": "iOS",            "to": "Shared/Core",      "source": "pbxproj" },
-    { "from": "iOS",            "to": "Shared/Networking","source": "pbxproj" }
+    { "from": "Shared/Caching", "to": "Shared/Core",       "source": "Package.swift" },
+    { "from": "iOS",            "to": "Shared/Core",       "source": "pbxproj" },
+    { "from": "iOS",            "to": "Shared/Networking", "source": "pbxproj" },
+    { "from": "Shared/Core",    "to": "swift-syntax",      "source": "Package.swift" }
   ]
 }
 ```
@@ -317,6 +319,13 @@ Every node has `name`, `kind`, `path`. Names are stable identifiers used as both
 |---|---|---|
 | `package` | A `Package.swift` SwiftPM manifest (Swift) or `package.json` (TypeScript, forward-looking). | One per manifest discovered under `--root`. |
 | `app` | A target inside `*.xcodeproj/project.pbxproj`. | One per `PBXNativeTarget` whose `productType` includes `application` / `app-extension` / `watchapp`, or which has a non-empty `packageProductDependencies` list. |
+| `external` | Out-of-tree dependency. Two sources: `.package(url: "...")` deps declared in any `Package.swift`, or pbxproj `XCSwiftPackageProductDependency` references whose product name doesn't match any in-tree `package` node. | One per unique external name (V7 §6.5 follow-up #54). |
+
+**Why external nodes exist.** The graph is *closed under references* — every `edge.from` and `edge.to` resolves to a node. Before this enrichment landed, a pbxproj reference to (e.g.) `Sentry` would emit an edge with no corresponding node; downstream consumers querying the graph for "is X upstream of Y?" would silently get a false negative because X had no node to traverse to. The `external` kind makes the gap explicit: the agent can see "this dependency exists but isn't in-tree" rather than missing it entirely.
+
+**External node naming.** For `.package(url: "...")` deps, the name follows SwiftPM's default rule: the URL's last path component minus `.git`. So `https://github.com/swiftlang/swift-syntax.git` → `swift-syntax`. A manifest's `.package(url:, name:)` form overrides the default. For dangling pbxproj references, the name is the raw `productName` from the pbxproj — the extractor has no other identifier to disambiguate.
+
+**External node path.** For URL-derived externals, `path` is the declared URL (preserving the `.git` suffix if present). For pbxproj-only externals (no `.package(url:)` declaration found anywhere), `path` is the empty string — the extractor can't recover a URL from a bare product reference.
 
 Nodes are sorted by `name` (ASCII-ordered, capital letters before lowercase) so output is byte-deterministic.
 
@@ -339,7 +348,18 @@ For Xcode `app` nodes, the `name` is the verbatim `PBXNativeTarget.name` (e.g., 
 
 ### Submodule note
 
-Git submodules (e.g., `Shared/Wallpaper` in wxyc-ios-64) have empty working directories until `git submodule update --init --recursive` runs. The extractor emits a stderr warning when it finds a `Package.swift` sitting next to a submodule-pointer `.git` *file* (not directory) with no other content — that's the signature of an uninitialized submodule. The node is still emitted so downstream consumers see the gap; only its outbound edges may be missing.
+Git submodules (e.g., `Shared/Wallpaper` in wxyc-ios-64) have empty working directories until `git submodule update --init --recursive` runs. The extractor warns about uninitialized submodules via two complementary checks:
+
+1. **`.gitmodules`-driven** (V7 §6.5 follow-up #54 S1). At startup, the extractor reads `<root>/.gitmodules` if present, parses each declared submodule's `path = X`, and warns about any path whose directory doesn't exist OR exists but is empty without a `Package.swift`. This catches the most common "fresh clone without `git submodule update`" workflow — the submodule directory may not even exist yet.
+2. **In-package heuristic**. During the manifest walk, the extractor warns when it finds a `Package.swift` sitting next to a submodule-pointer `.git` *file* (not directory) with no other content. This catches the less-common "submodule was initialized but is now bare" state.
+
+In both cases the warning goes to stderr; the JSON is still emitted so downstream consumers see what's there. Only the missing submodule's edges (which the extractor never saw) are absent.
+
+### Cycle detection
+
+V7 §6.5 follow-up #54 S2. After all nodes and edges are assembled, the extractor runs Kahn's algorithm to detect cycles. Any node still carrying a non-zero in-degree after peeling all zero-in-degree nodes is part of at least one cycle. The extractor emits a stderr warning naming the cycle members, comma-joined and sorted. Swift's compiler rejects cyclic module dependencies, so in well-formed real code the warning shouldn't fire — but synthetic fixtures or hand-edited manifests can introduce cycles, and a silent infinite-loop in a downstream consumer is the failure mode the check defends against.
+
+The JSON is emitted regardless; the warning is informational.
 
 ### Schema-version contract
 

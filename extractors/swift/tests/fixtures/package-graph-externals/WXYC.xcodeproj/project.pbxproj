@@ -1,0 +1,39 @@
+// !$*UTF8*$!
+//
+// Fixture for V7 §6.5 follow-up #54 S4 — dangling pbxproj product references.
+// The app target `iOS` references an SPM product (`ExternalOnlyPbx`) that
+// has no corresponding in-tree Package.swift. The extractor must synthesize
+// a `kind: "external"` node for it and route the edge to that node, rather
+// than emitting a dangling edge.
+//
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+		AAAA0001 /* iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBBB0001;
+			buildPhases = (
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iOS;
+			packageProductDependencies = (
+				CCCC0001 /* ExternalOnlyPbx */,
+			);
+			productName = iOS;
+			productReference = DDDD0001;
+			productType = "com.apple.product-type.application";
+		};
+		CCCC0001 /* ExternalOnlyPbx */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EEEE0001;
+			productName = ExternalOnlyPbx;
+		};
+	};
+	rootObject = FFFF0001;
+}

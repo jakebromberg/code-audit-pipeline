@@ -172,6 +172,83 @@ assert_eq "comments fixture: iOS -> Core (commented-out edge ignored)" "iOS->Cor
 WARN_COUNT=$("$BIN" package-graph --root "$COMMENTS_FIXTURE" 2>&1 >/dev/null | grep -c "unknown product uuid" || true)
 assert_eq "comments fixture: no unknown-uuid warnings" "0" "$WARN_COUNT"
 
+# ---- Test 6: external `.package(url:)` deps + dangling pbxproj product ----
+#
+# V7 §6.5 follow-up #54 S3 + S4. The fixture's Shared/Local Package.swift
+# declares two URL-based deps (swift-syntax via .git suffix, plus a name-
+# overridden `bar-package` → `CustomNamed`). The fixture's pbxproj references
+# an SPM product (`ExternalOnlyPbx`) with no matching in-tree package. The
+# extractor must:
+#   - emit `kind: "external"` nodes for swift-syntax, CustomNamed, and
+#     ExternalOnlyPbx (all three names unique)
+#   - keep the graph closed: every edge's `to` resolves to a node in `nodes`
+
+echo "Test 6: external .package(url:) deps + dangling pbxproj product (S3, S4)"
+EXTERNALS_FIXTURE="$SCRIPT_DIR/fixtures/package-graph-externals"
+OUT_EXT=$("$BIN" package-graph --root "$EXTERNALS_FIXTURE" 2>/dev/null)
+
+EXT_NODE_COUNT=$(echo "$OUT_EXT" | jq '[.nodes[] | select(.kind=="external")] | length')
+assert_eq "externals fixture: 3 external nodes emitted" "3" "$EXT_NODE_COUNT"
+
+EXT_NAMES=$(echo "$OUT_EXT" | jq -r '.nodes[] | select(.kind=="external") | .name' | LC_ALL=C sort | tr '\n' ',')
+assert_eq "externals fixture: node names match" "CustomNamed,ExternalOnlyPbx,swift-syntax," "$EXT_NAMES"
+
+# Verify path preservation: swift-syntax keeps its URL (with .git stripped from
+# the NAME but preserved in the path), CustomNamed uses the explicit name with
+# its URL, ExternalOnlyPbx (pbxproj-only) has an empty path.
+SS_PATH=$(echo "$OUT_EXT" | jq -r '.nodes[] | select(.name=="swift-syntax") | .path')
+assert_eq "externals fixture: swift-syntax path = URL" "https://github.com/swiftlang/swift-syntax.git" "$SS_PATH"
+CN_PATH=$(echo "$OUT_EXT" | jq -r '.nodes[] | select(.name=="CustomNamed") | .path')
+assert_eq "externals fixture: CustomNamed path = URL" "https://github.com/example/bar-package" "$CN_PATH"
+EO_PATH=$(echo "$OUT_EXT" | jq -r '.nodes[] | select(.name=="ExternalOnlyPbx") | .path')
+assert_eq "externals fixture: ExternalOnlyPbx (pbxproj-only) has empty path" "" "$EO_PATH"
+
+# Graph closure: every edge's `to` resolves to an emitted node.
+EXT_EDGE_TOS=$(echo "$OUT_EXT" | jq -r '.edges[] | .to' | LC_ALL=C sort -u)
+EXT_NODE_NAMES=$(echo "$OUT_EXT" | jq -r '.nodes[] | .name' | LC_ALL=C sort -u)
+DANGLING=$(comm -23 <(echo "$EXT_EDGE_TOS") <(echo "$EXT_NODE_NAMES") | wc -l | tr -d ' ')
+assert_eq "externals fixture: every edge target resolves to a node (no dangling)" "0" "$DANGLING"
+
+# ---- Test 7: cycle detection (S2) ------------------------------------------
+#
+# V7 §6.5 follow-up #54 S2. Two packages mutually depending on each other
+# form a 2-cycle. Swift's compiler would reject this, but the substrate
+# parses any Swift source and must detect + warn.
+
+echo "Test 7: cycle detection emits warning (S2)"
+CYCLE_FIXTURE="$SCRIPT_DIR/fixtures/package-graph-cycle"
+CYCLE_STDERR=$("$BIN" package-graph --root "$CYCLE_FIXTURE" >/dev/null 2>&1; "$BIN" package-graph --root "$CYCLE_FIXTURE" 2>&1 >/dev/null)
+assert_contains "cycle fixture: stderr names both cycle members" "$CYCLE_STDERR" "Packages/Alpha, Packages/Beta"
+assert_contains "cycle fixture: stderr labels the warning a cycle" "$CYCLE_STDERR" "cycle detected"
+
+# Graph JSON still emits cleanly despite the cycle.
+CYCLE_OUT=$("$BIN" package-graph --root "$CYCLE_FIXTURE" 2>/dev/null)
+assert_eq "cycle fixture: graph still emitted, schema_version=1" "1" "$(echo "$CYCLE_OUT" | jq -r '.schema_version')"
+assert_eq "cycle fixture: 2 nodes" "2" "$(echo "$CYCLE_OUT" | jq '.nodes | length')"
+assert_eq "cycle fixture: 2 edges" "2" "$(echo "$CYCLE_OUT" | jq '.edges | length')"
+
+# ---- Test 8: .gitmodules-driven submodule warning (S1) ---------------------
+#
+# V7 §6.5 follow-up #54 S1. The fixture declares two submodules:
+#   Shared/Wallpaper   → directory doesn't exist (uninitialized state)
+#   Vendor/Initialized → directory exists with its own Package.swift
+# The extractor must warn about the missing one and stay silent on the
+# initialized one.
+
+echo "Test 8: .gitmodules-driven uninitialized-submodule warning (S1)"
+SUBMODULE_FIXTURE="$SCRIPT_DIR/fixtures/package-graph-submodule"
+SUBMODULE_STDERR=$("$BIN" package-graph --root "$SUBMODULE_FIXTURE" 2>&1 >/dev/null)
+assert_contains "submodule fixture: warning names Shared/Wallpaper" "$SUBMODULE_STDERR" "Shared/Wallpaper"
+assert_contains "submodule fixture: warning suggests git submodule update" "$SUBMODULE_STDERR" "git submodule update"
+
+# Must NOT warn about Vendor/Initialized (which has its Package.swift).
+INIT_WARN_COUNT=$(echo "$SUBMODULE_STDERR" | grep -c "Vendor/Initialized" || true)
+assert_eq "submodule fixture: no warning about initialized submodule" "0" "$INIT_WARN_COUNT"
+
+# Total uninitialized-submodule warnings is exactly 1.
+UNINIT_WARN_COUNT=$(echo "$SUBMODULE_STDERR" | grep -c "declared in .gitmodules" || true)
+assert_eq "submodule fixture: exactly one uninitialized-submodule warning" "1" "$UNINIT_WARN_COUNT"
+
 # ---- Summary ---------------------------------------------------------------
 
 echo
