@@ -2,11 +2,12 @@
 
 Every extractor in `extractors/<language>/` emits the same JSON shape so cluster queries don't care which language they're operating on. This is the schema.
 
-The substrate has three catalog kinds today, each in its own JSON file:
+The substrate has four catalog kinds today, each in its own JSON file:
 
 - `type-catalog.json` — type / interface / Zod / Drizzle declarations (shape-of-named-members).
 - `function-catalog.json` — function / method / arrow-function declarations (body-of-named-callable).
 - `file-hashes.json` — file-level content hashes (raw and whitespace-normalized).
+- `package-graph.json` — inter-package dependency edges (V7 §6.5; see [Package graph](#package-graph-package-graphjson) below).
 
 Each section below specifies one. Queries in `pipeline/queries/` consume one specific catalog kind and document which.
 
@@ -237,6 +238,72 @@ The file-hash catalog is a single JSON array. Each entry describes one source fi
 **Skip rules.** Same dir skip-list as the type extractor (`.dotdirs`, `node_modules`, `dist`, `build`, `coverage`, `tests` unless `--include-tests`). Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`).
 
 Used by `pipeline/queries/file-duplicates.jq`, which emits two sections: exact-byte clusters and whitespace-normalized-only clusters (files identical after normalization but not byte-equal).
+
+## Package graph (`package-graph.json`)
+
+V7 §6.5 enrichment. Cross-package dependency edges so an agent can name the *correct* extraction target package (one already upstream of both consumers) rather than recommending an arbitrary "common" package. The graph is a single JSON object, not an array, because two parallel collections (nodes and edges) are the natural representation and re-deriving one from the other on every query would be wasteful.
+
+```jsonc
+{
+  "schema_version": "1",
+  "nodes": [
+    { "name": "Shared/Core",      "kind": "package", "path": "Shared/Core/Package.swift" },
+    { "name": "Shared/Caching",   "kind": "package", "path": "Shared/Caching/Package.swift" },
+    { "name": "iOS",              "kind": "app",     "path": "WXYC.xcodeproj/project.pbxproj" }
+  ],
+  "edges": [
+    { "from": "Shared/Caching", "to": "Shared/Core",      "source": "Package.swift" },
+    { "from": "iOS",            "to": "Shared/Core",      "source": "pbxproj" },
+    { "from": "iOS",            "to": "Shared/Networking","source": "pbxproj" }
+  ]
+}
+```
+
+### Nodes
+
+Every node has `name`, `kind`, `path`. Names are stable identifiers used as both endpoints in `edges` and as join keys against the `package` field on type-catalog / function-catalog records (when the same convention applies — see "Package-name conventions" below).
+
+| `kind` | Source | When emitted |
+|---|---|---|
+| `package` | A `Package.swift` SwiftPM manifest (Swift) or `package.json` (TypeScript, forward-looking). | One per manifest discovered under `--root`. |
+| `app` | A target inside `*.xcodeproj/project.pbxproj`. | One per `PBXNativeTarget` whose `productType` includes `application` / `app-extension` / `watchapp`, or which has a non-empty `packageProductDependencies` list. |
+
+Nodes are sorted by `name` (ASCII-ordered, capital letters before lowercase) so output is byte-deterministic.
+
+### Edges
+
+Every edge has `from`, `to`, `source`. Edges are directed: `from` depends on `to` (i.e., `to` is upstream). The `source` field records which substrate input declared the edge:
+
+| `source` | Origin |
+|---|---|
+| `Package.swift` | `.package(path: "...")` or `.product(name: ..., package: ...)` calls inside a SwiftPM manifest. Parsed via SwiftSyntax. |
+| `pbxproj` | `XCSwiftPackageProductDependency` entries referenced by a `PBXNativeTarget`'s `packageProductDependencies` list. Parsed via brace-counting text scan (the [xcodeproj Ruby gem](https://github.com/CocoaPods/Xcodeproj) and the Python [pbxproj](https://github.com/kronenthaler/mod-pbxproj) library fail on complex projects, per the [wxyc-ios-64 CLAUDE.md](https://github.com/wxyc/wxyc-ios-64). The methodology doc's [§6.5](refactor-recommendation-experiment-methodology.md#enrichment-package-graph) prescribes line-by-line text processing as the fallback.). |
+
+Edges are sorted by `(from, to, source)` so output is byte-deterministic. Edges are deduplicated by the same triple — a target that imports `.product(name: "Core")` from a `.package(path: "../Core")` produces a single edge, not two.
+
+### Package-name conventions
+
+For SwiftPM manifests, a node's `name` is the path of the manifest's containing directory relative to `--root` (e.g., `Shared/Core/Package.swift` → `name: "Shared/Core"`). This intentionally diverges from the type-catalog's `package` field (which uses just the last path segment, `"Core"`); the package-graph keeps the disambiguating prefix because two parallel layouts (`Shared/Core` and `Vendor/Core`) need distinct nodes. Downstream joiners that need to bridge the two conventions should match against the trailing path segment.
+
+For Xcode `app` nodes, the `name` is the verbatim `PBXNativeTarget.name` (e.g., `iOS`, `watchOS`, `widget`). These don't go through the path-prefix transform; an app target isn't path-rooted in the SwiftPM sense.
+
+### Submodule note
+
+Git submodules (e.g., `Shared/Wallpaper` in wxyc-ios-64) have empty working directories until `git submodule update --init --recursive` runs. The extractor emits a stderr warning when it finds a `Package.swift` sitting next to a submodule-pointer `.git` *file* (not directory) with no other content — that's the signature of an uninitialized submodule. The node is still emitted so downstream consumers see the gap; only its outbound edges may be missing.
+
+### Schema-version contract
+
+`schema_version: "1"` marks the schema this document describes. Increment on any breaking change to node/edge shape; consumers should refuse to operate on unrecognized versions.
+
+### Invocation
+
+```
+swift-catalog package-graph --root <path> [--output <path>]
+```
+
+Walks `<root>` recursively for `Package.swift` files (skipping `.git`, `.build`, `.swiftpm`, `node_modules`, `build`, `dist`, `coverage`, `DerivedData`, `Pods`) and for any `*.xcodeproj/project.pbxproj`. Emits the JSON object above to stdout (or `--output <path>`). Summary stats (manifest count, pbxproj count, node/edge totals, parse errors, warnings) go to stderr.
+
+Exit code: `0` if at least one `Package.swift` or `project.pbxproj` was discovered; `1` if neither was found.
 
 ## CLI contract
 
