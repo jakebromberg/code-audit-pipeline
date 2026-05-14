@@ -35,8 +35,8 @@ import SwiftSyntax
 
 struct PackageGraphNode: Encodable {
     var name: String
-    var kind: String   // "package" | "app"
-    var path: String
+    var kind: String   // "package" | "app" | "external"
+    var path: String   // for "external" kind: the URL declared in .package(url:); empty if synthesized from an app-edge fallback
 }
 
 struct PackageGraphEdge: Encodable {
@@ -68,6 +68,26 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
     var pbxprojFiles = 0
     var parseErrors = 0
     var warnings = 0
+
+    // V7 §6.5 follow-up (#54 S3, S4): external-node accumulator. URL-based
+    // `.package(url:)` deps and dangling pbxproj product references both
+    // synthesize `kind: "external"` nodes. We collect them in a dict keyed by
+    // name so that a single URL referenced from multiple manifests, or an
+    // app-edge fallback for a product that's ALSO declared as a URL dep, all
+    // collapse to one node. The dict's value is the URL (or empty string for
+    // app-edge synthesized nodes); the loop preferentially keeps a URL when
+    // both forms emit the same name.
+    var externalNodeURLByName: [String: String] = [:]
+
+    // V7 §6.5 follow-up (#54 S1): walk `.gitmodules` BEFORE the manifest
+    // search so we can warn early about submodule paths that resolve to
+    // empty directories. The original isLikelyUninitializedSubmodule check
+    // never fires for the realistic case (an uninitialized submodule's
+    // directory is empty — no `.git` pointer file, no Package.swift). The
+    // .gitmodules-driven check covers that gap; the in-package heuristic
+    // stays for the rarer case where the .git pointer file exists but the
+    // package contents are absent.
+    warnings += warnAboutUninitializedSubmodules(root: canonicalRoot)
 
     // ---- 1. SwiftPM Package.swift discovery ---------------------------------
 
@@ -109,16 +129,30 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
             let target = packageNameFromRelativeDepPath(depPath, fromManifest: relManifest)
             edges.append(PackageGraphEdge(from: pkgName, to: target, source: "Package.swift"))
         }
+        // V7 §6.5 follow-up (#54 S3): emit external nodes + reachability edges
+        // for `.package(url:)` deps. The graph stays closed under references:
+        // every edge's `to` resolves to a real node, whether in-tree or
+        // external. Conservatively store the URL on the external node; if the
+        // same external is reached via multiple manifests, the last URL wins
+        // (they should all match — SwiftPM resolves by URL identity).
+        for urlDep in visitor.urlDependencies {
+            let externalName = externalPackageNameFromURL(urlDep.url, explicitName: urlDep.name)
+            externalNodeURLByName[externalName] = urlDep.url
+            edges.append(PackageGraphEdge(from: pkgName, to: externalName, source: "Package.swift"))
+        }
         for prod in visitor.productDependencies {
             // `.product(name: "Core", package: "Core")` inside a target's
             // dependencies — the `package:` value names the upstream package.
-            // We resolve that against the manifest's own pathDependencies to
-            // recover the on-disk path-based package name. If we can't resolve,
-            // fall back to the raw product name and emit a warning.
+            // We resolve that against the manifest's own pathDependencies AND
+            // urlDependencies to recover the right edge target. If we can't
+            // resolve to a known dep, fall back to the raw package name (the
+            // closed-graph invariant is preserved either way: a same-name
+            // external node is synthesized below if needed).
             let target = resolveProductPackage(
                 productPackage: prod.packageName,
                 productName: prod.productName,
                 pathDeps: visitor.pathDependencies,
+                urlDeps: visitor.urlDependencies,
                 manifestPath: relManifest
             )
             edges.append(PackageGraphEdge(from: pkgName, to: target, source: "Package.swift"))
@@ -162,13 +196,36 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
                 // matches the *package* name in wxyc-ios-64's Shared/<Pkg> layout.
                 // Emit the edge against the package-name form so downstream joins
                 // against the SwiftPM-derived nodes line up.
-                let to = resolveAppEdgeTarget(productName: productName, packageNodes: sortedPackageNodes)
+                //
+                // V7 §6.5 follow-up (#54 S4): when no in-tree match exists,
+                // resolveAppEdgeTarget previously returned the raw productName,
+                // producing a dangling edge (no node would ever be emitted for it).
+                // It now synthesizes an `external` node via the accumulator below.
+                let (to, isExternal) = resolveAppEdgeTarget(productName: productName, packageNodes: sortedPackageNodes)
+                if isExternal {
+                    // Only set the URL slot if we don't already have one — a
+                    // manifest's `.package(url:)` is the authoritative source.
+                    if externalNodeURLByName[to] == nil {
+                        externalNodeURLByName[to] = ""
+                    }
+                }
                 edges.append(PackageGraphEdge(from: target.name, to: to, source: "pbxproj"))
             }
         }
     }
 
-    // ---- 3. Emit + summary --------------------------------------------------
+    // ---- 3. External-node emission (V7 §6.5 follow-up #54 S3+S4) ------------
+    //
+    // Synthesize `kind: "external"` nodes for every package referenced via
+    // `.package(url:)` in some manifest OR via a pbxproj product reference
+    // that didn't resolve to an in-tree package. The accumulator collapses
+    // duplicates by name; the path slot is the declared URL if known,
+    // otherwise empty.
+    for (extName, urlOrEmpty) in externalNodeURLByName {
+        nodes.append(PackageGraphNode(name: extName, kind: "external", path: urlOrEmpty))
+    }
+
+    // ---- 4. Emit + summary --------------------------------------------------
 
     if packageFiles == 0 && pbxprojFiles == 0 {
         logErr("error: no Package.swift or project.pbxproj found under \(canonicalRoot)")
@@ -200,6 +257,19 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
         return true
     }
 
+    // V7 §6.5 follow-up (#54 S2): cycle detection via Kahn's algorithm.
+    // Swift modules form a DAG by language constraint, but the substrate
+    // doesn't enforce well-formedness — synthetic fixtures or accidentally-
+    // cyclic real packages would otherwise produce a `package-graph.json`
+    // that downstream consumers (e.g., the auto-scorer's upstream-of-all-
+    // consumers check) silently mishandle. Emit a warning per cycle member;
+    // doesn't modify the emitted JSON.
+    let cycleMembers = detectCycles(nodes: dedupedNodes, edges: dedupedEdges)
+    if !cycleMembers.isEmpty {
+        logErr("warning: package-graph cycle detected involving: \(cycleMembers.sorted().joined(separator: ", "))")
+        warnings += 1
+    }
+
     let graph = PackageGraph(
         schemaVersion: "1",
         nodes: dedupedNodes.sorted { $0.name < $1.name },
@@ -219,6 +289,66 @@ func runPackageGraph(root: String, output: String?) -> Int32 {
         return 1
     }
     return 0
+}
+
+// MARK: - Cycle detection (V7 §6.5 follow-up, #54 S2)
+
+/// Detect cycles in the package-graph via Kahn's algorithm. Returns the set
+/// of node names that participate in at least one cycle (empty if the graph
+/// is a DAG, which it should be for well-formed Swift packages).
+///
+/// Algorithm: build the directed adjacency from edges, compute each node's
+/// in-degree, repeatedly remove zero-in-degree nodes (and their outgoing
+/// edges, lowering downstream nodes' in-degree). Any node still remaining
+/// when the worklist drains is unreachable from a topological root —
+/// equivalently, it's part of a cycle.
+///
+/// The function is O(V + E) and never mutates the inputs. It runs once at
+/// the end of extraction; the warning it triggers is informational, not
+/// blocking — the graph JSON is still emitted so downstream consumers can
+/// inspect and decide.
+private func detectCycles(
+    nodes: [PackageGraphNode],
+    edges: [PackageGraphEdge]
+) -> Set<String> {
+    var adjacency: [String: [String]] = [:]
+    var inDegree: [String: Int] = [:]
+
+    // Initialize every node at zero in-degree so a node referenced only as
+    // edge.from (never as edge.to) doesn't get a missing-key fallthrough.
+    for node in nodes {
+        adjacency[node.name] = []
+        inDegree[node.name] = 0
+    }
+
+    for edge in edges {
+        // Skip self-loops in the in-degree count — a self-loop is technically
+        // a cycle but Swift forbids it via the compiler, and a `from == to`
+        // edge would otherwise pin the node at in-degree 1 forever. If a
+        // synthetic fixture ever needs a self-loop test, this branch is the
+        // place to flip the policy.
+        if edge.from == edge.to { continue }
+        adjacency[edge.from, default: []].append(edge.to)
+        inDegree[edge.to, default: 0] += 1
+    }
+
+    var worklist: [String] = inDegree
+        .filter { $0.value == 0 }
+        .map(\.key)
+
+    var processed: Set<String> = []
+    while let next = worklist.popLast() {
+        processed.insert(next)
+        for downstream in adjacency[next] ?? [] {
+            inDegree[downstream, default: 0] -= 1
+            if inDegree[downstream] == 0 {
+                worklist.append(downstream)
+            }
+        }
+    }
+
+    // Anything still in inDegree with a non-zero count is part of a cycle.
+    return Set(inDegree.compactMap { $0.value > 0 ? $0.key : nil })
 }
 
 // MARK: - File discovery
@@ -344,11 +474,14 @@ private func packageNameFromRelativeDepPath(_ depPath: String, fromManifest relM
 /// Best-effort resolution of `.product(name: ..., package: ...)` to the path-
 /// derived package name used in nodes. If the `package:` matches one of the
 /// manifest's own pathDependencies basenames, prefer the path-derived form.
-/// Otherwise fall back to the raw package identifier.
+/// If it matches a URL-derived external-package name, return that. Otherwise
+/// fall back to the raw package identifier (which will get materialized as
+/// an external node by the caller via the same external-node accumulator).
 private func resolveProductPackage(
     productPackage: String,
     productName: String,
     pathDeps: [String],
+    urlDeps: [(url: String, name: String?)],
     manifestPath: String
 ) -> String {
     // Try to find a pathDep whose final component (the directory name) matches
@@ -361,8 +494,20 @@ private func resolveProductPackage(
             return packageNameFromRelativeDepPath(dep, fromManifest: manifestPath)
         }
     }
-    // Fallback: bare package name; downstream consumers will see it as a node
-    // without a `path` if there's no corresponding manifest in the walk.
+    // V7 §6.5 follow-up (#54 S3): also try URL-derived externals. The
+    // product's `package:` argument should match the URL's last-path-component
+    // (minus `.git`) for the default naming, or the `.package(url:, name:)`
+    // override if the manifest set one. If either matches, route the edge
+    // to that external-name node.
+    for urlDep in urlDeps {
+        let extName = externalPackageNameFromURL(urlDep.url, explicitName: urlDep.name)
+        if extName == productPackage || extName == productName {
+            return extName
+        }
+    }
+    // Fallback: bare package name. The caller is expected to materialize an
+    // external node for unresolved references at the top of runPackageGraph,
+    // so the graph stays closed under references.
     return productPackage
 }
 
@@ -370,17 +515,131 @@ private func resolveProductPackage(
 /// `package`-kind node whose name ends with the product name (e.g., the pbxproj
 /// declares `productName = Core` and we already have a `Shared/Core` node from
 /// the Package.swift walk — emit the edge against `Shared/Core`).
-private func resolveAppEdgeTarget(productName: String, packageNodes: [PackageGraphNode]) -> String {
+///
+/// V7 §6.5 follow-up (#54 S4): when no in-tree match exists, the function used
+/// to return the raw productName, producing a dangling edge (no node would ever
+/// be emitted for it). It now signals `isExternal == true` so the caller can
+/// register the name with the external-node accumulator and the graph stays
+/// closed under edge references.
+private func resolveAppEdgeTarget(
+    productName: String,
+    packageNodes: [PackageGraphNode]
+) -> (name: String, isExternal: Bool) {
     for node in packageNodes where node.kind == "package" {
         let parts = node.name.split(separator: "/")
         if parts.last == Substring(productName) {
-            return node.name
+            return (node.name, false)
         }
         if node.name == productName {
-            return node.name
+            return (node.name, false)
         }
     }
-    return productName
+    return (productName, true)
+}
+
+/// Derive an external package's name from its `.package(url:)` URL. SwiftPM's
+/// default rule: last path component, minus `.git` suffix. The manifest can
+/// override with an explicit `.package(url:, name:)` — if `explicitName` is
+/// set, it wins.
+///
+/// Examples:
+///   `https://github.com/swiftlang/swift-syntax.git` → `swift-syntax`
+///   `https://github.com/apple/swift-collections` → `swift-collections`
+///   `https://github.com/foo/bar.git`, name: `BarPackage` → `BarPackage`
+private func externalPackageNameFromURL(_ url: String, explicitName: String?) -> String {
+    if let explicit = explicitName, !explicit.isEmpty { return explicit }
+    var name = String(url.split(separator: "/").last ?? Substring(url))
+    if name.hasSuffix(".git") {
+        name = String(name.dropLast(4))
+    }
+    return name
+}
+
+/// V7 §6.5 follow-up (#54 S1): walk `<root>/.gitmodules` and warn about every
+/// declared submodule path whose directory is empty or missing the expected
+/// `Package.swift`. Returns the warning count so the caller can fold it into
+/// the run's summary.
+///
+/// The methodology §15 Phase C call-out specifically warns about the "fresh
+/// clone without `git submodule update --init`" workflow — silently dropping
+/// the Wallpaper package would skew the per-package recall measurement. This
+/// check fires early enough that the warning shows up well before the manifest
+/// walk runs through whatever DOES exist.
+///
+/// The companion `isLikelyUninitializedSubmodule` heuristic stays for the case
+/// where the submodule WAS initialized but is now bare (the `.git` pointer
+/// file exists alongside an otherwise-empty package dir — happens after
+/// `git submodule deinit` or filesystem mishaps).
+private func warnAboutUninitializedSubmodules(root: String) -> Int {
+    let gitmodulesPath = (root as NSString).appendingPathComponent(".gitmodules")
+    guard let text = try? String(contentsOfFile: gitmodulesPath, encoding: .utf8) else {
+        return 0   // no .gitmodules — not a host repo with submodules, nothing to check
+    }
+
+    let submodulePaths = parseGitmodulesPaths(text: text)
+    var warnings = 0
+    let fm = FileManager.default
+    for relPath in submodulePaths {
+        let absPath = (root as NSString).appendingPathComponent(relPath)
+        var isDir: ObjCBool = false
+        let exists = fm.fileExists(atPath: absPath, isDirectory: &isDir)
+        if !exists {
+            logErr("warning: submodule \(relPath) declared in .gitmodules but directory doesn't exist — run `git submodule update --init --recursive`")
+            warnings += 1
+            continue
+        }
+        if !isDir.boolValue {
+            // A submodule path that's a regular file is degenerate; warn and move on.
+            logErr("warning: submodule \(relPath) declared in .gitmodules but the path is a file, not a directory")
+            warnings += 1
+            continue
+        }
+        // Check whether the submodule has been initialized. The signal we use:
+        // does the directory contain a Package.swift (the usual artifact a
+        // Shared/* submodule carries)? If not, AND the directory is otherwise
+        // empty or contains only dotfiles, treat it as uninitialized.
+        let pkgManifest = (absPath as NSString).appendingPathComponent("Package.swift")
+        if fm.fileExists(atPath: pkgManifest) {
+            continue   // initialized and has the expected manifest
+        }
+        // No Package.swift. Check if the directory is empty (a typical
+        // uninitialized state) or carries other artifacts (a non-SPM submodule).
+        let contents = (try? fm.contentsOfDirectory(atPath: absPath)) ?? []
+        let nonDotEntries = contents.filter { !$0.hasPrefix(".") }
+        if nonDotEntries.isEmpty {
+            logErr("warning: submodule \(relPath) declared in .gitmodules but the directory is empty — run `git submodule update --init --recursive`")
+            warnings += 1
+        }
+        // If non-dot entries exist but no Package.swift, we don't warn — the
+        // submodule is initialized but isn't a SwiftPM package, which is fine.
+    }
+    return warnings
+}
+
+/// Parse `.gitmodules` for declared submodule paths. The format is INI-flavored:
+///
+/// ```
+/// [submodule "Shared/Wallpaper"]
+///     path = Shared/Wallpaper
+///     url = git@github.com:WXYC/wallpaper-ios.git
+/// ```
+///
+/// Returns the `path =` values. We trust the file's structural well-formedness
+/// (it's git-managed and not user-edited in any project where this matters);
+/// the parser is just `grep`-like line scanning.
+private func parseGitmodulesPaths(text: String) -> [String] {
+    var paths: [String] = []
+    for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("path") else { continue }
+        if let eq = trimmed.firstIndex(of: "=") {
+            let value = trimmed[trimmed.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+            if !value.isEmpty {
+                paths.append(value)
+            }
+        }
+    }
+    return paths
 }
 
 /// Heuristic for "submodule isn't initialized." A submodule's working dir is
@@ -392,6 +651,12 @@ private func resolveAppEdgeTarget(productName: String, packageNodes: [PackageGra
 /// warning — synthetic fixtures and minimal packages also lack them. We
 /// require the stronger signal of a `.git` *file* (submodule pointer) sitting
 /// alongside an otherwise-bare Package.swift.
+///
+/// This complements `warnAboutUninitializedSubmodules` (S1 follow-up): that
+/// function reads `.gitmodules` at the root and catches "the submodule has
+/// never been initialized" (empty directory). This one catches "the submodule
+/// WAS initialized but is now bare" (the `.git` pointer file still exists).
+/// Both signals can be useful; they cover different filesystem shapes.
 private func isLikelyUninitializedSubmodule(dir: String) -> Bool {
     let fm = FileManager.default
     let gitPath = (dir as NSString).appendingPathComponent(".git")
@@ -411,13 +676,15 @@ private func isLikelyUninitializedSubmodule(dir: String) -> Bool {
 // MARK: - Package.swift parsing (SwiftSyntax)
 
 /// Collected dependencies from a single Package.swift. The visitor records
-/// `.package(path: "...")` entries (path-based local deps) and per-target
+/// `.package(path: "...")` entries (path-based local deps), `.package(url: ...)`
+/// entries (URL-based external deps, V7 §6.5 follow-up #54 S3), and per-target
 /// `.product(name: ..., package: ...)` references (the actual edges into
-/// targets). The two are emitted separately because path-deps establish
-/// reachability while product-deps establish *which* package a target actually
-/// imports.
+/// targets). All three are emitted separately because path-deps establish
+/// reachability, URL-deps establish external upstreams, and product-deps
+/// establish *which* package a target actually imports.
 private final class PackageManifestVisitor: SyntaxVisitor {
     var pathDependencies: [String] = []
+    var urlDependencies: [(url: String, name: String?)] = []
     var productDependencies: [(productName: String, packageName: String)] = []
 
     init() {
@@ -425,8 +692,9 @@ private final class PackageManifestVisitor: SyntaxVisitor {
     }
 
     override func visit(_ node: FunctionCallExprSyntax) -> SyntaxVisitorContinueKind {
-        // Match `.package(path: "...")` and `.product(name: ..., package: ...)`
-        // by looking at the called-expression's trailing identifier.
+        // Match `.package(path: "...")`, `.package(url: "...", name: "...")`,
+        // and `.product(name: ..., package: ...)` by looking at the called-
+        // expression's trailing identifier.
         guard let memberAccess = node.calledExpression.as(MemberAccessExprSyntax.self) else {
             return .visitChildren
         }
@@ -435,10 +703,14 @@ private final class PackageManifestVisitor: SyntaxVisitor {
         case "package":
             if let path = stringArg(node.arguments, label: "path") {
                 pathDependencies.append(path)
+            } else if let url = stringArg(node.arguments, label: "url") {
+                // SwiftPM allows an explicit `.package(url:, name:)` override of
+                // the name (the default is the URL's last path component minus
+                // `.git`). Capture both so the resolver can match product-dep
+                // `package:` references against either form.
+                let explicitName = stringArg(node.arguments, label: "name")
+                urlDependencies.append((url: url, name: explicitName))
             }
-            // We deliberately skip `.package(url: ...)` for now — V7 §6.5's
-            // wxyc-ios-64 use case is path-only inter-package deps. Adding URL
-            // support is straightforward when needed.
         case "product":
             let name = stringArg(node.arguments, label: "name")
             let pkg = stringArg(node.arguments, label: "package")
