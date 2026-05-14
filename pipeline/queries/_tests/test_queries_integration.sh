@@ -165,8 +165,10 @@ echo "=== default-impl-candidates §6.2 shared-protocol contract ==="
 #     three is exactly {Renderable}.
 #   - NoShare1 / NoShare2: identical `draw` body, but conforms_to lists are
 #     disjoint. The cluster must NOT surface.
-#   - freeFn: same body_hash across two packages, no enclosing type. The
-#     cluster must NOT surface (no type-catalog record to look up).
+#   - freeFnA / freeFnB: same body_hash across two packages, no enclosing
+#     type. Distinct names so `type_of` returns two distinct keys and the
+#     pre-§6.2 distinct-type-count filter passes. The §6.2 join then drops
+#     the cluster (no type-catalog record to look up).
 default_impl_jsonl="$(
   OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
     --argjson min_conformers 2 \
@@ -196,7 +198,7 @@ fi
 distinct=$(echo "$default_impl_jsonl" | jq -r '.distinct_types | sort | join(",")')
 if [[ "$distinct" == "Bar,Baz,Foo" ]]; then
   PASS=$((PASS + 1))
-  printf "  ✓ default-impl-candidates: distinct_types = [Bar,Baz,Foo] (free-function freeFn dropped, NoShare* cluster filtered)\n"
+  printf "  ✓ default-impl-candidates: distinct_types = [Bar,Baz,Foo] (free-function cluster dropped by §6.2 join, NoShare* cluster filtered)\n"
 else
   FAIL=$((FAIL + 1))
   printf "  ✗ default-impl-candidates: distinct_types = [%s], expected [Bar,Baz,Foo]\n" "$distinct"
