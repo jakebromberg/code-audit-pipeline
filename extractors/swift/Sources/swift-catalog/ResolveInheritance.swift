@@ -119,6 +119,18 @@ private func appendInheritedFields(
         }
         if contributed {
             newlyResolvedParents.append(parentName)
+            // Transitive accumulation: if the parent itself was resolved with
+            // ancestors of its own (e.g., `protocol B: A` after iteration 1
+            // has inherited_from=[A]), the parent's ancestors transitively
+            // contributed to this child via the fields we just pulled in. Add
+            // them to the child's resolved-parent list so `inherited_from`
+            // reflects the full transitive set rather than just direct
+            // parents. Order preserved: direct parents first, ancestors
+            // accumulate in the iteration order they were resolved.
+            for ancestor in records[parentIdx].inheritedFrom ?? []
+            where !newlyResolvedParents.contains(ancestor) {
+                newlyResolvedParents.append(ancestor)
+            }
         }
     }
 
