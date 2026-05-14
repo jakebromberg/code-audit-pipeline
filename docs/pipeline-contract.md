@@ -201,6 +201,12 @@ The function catalog is a single JSON array. Each entry describes one declared f
       "const authority = mapRoleToAuthorization(roleToMap);",
       "const token = session.session?.token;",
       "…"
+    ],
+    "body_hash_erased": "<sha256 of normalized body after type-id erasure>",  // V7 §6.4
+    "body_lines_erased": [                       // V7 §6.4: same shape as body_lines, but on the erased body
+      "let copy: _T1 = value",
+      "let pair: [_T1] = [copy, value]",
+      "return pair"
     ]
   }
 ]
@@ -209,6 +215,8 @@ The function catalog is a single JSON array. Each entry describes one declared f
 **Method-name qualification.** For class methods, `name` is `ClassName.methodName`. For methods on anonymous classes, just the method name.
 
 **Body normalization.** Comments (line `//` and block `/* */`) are stripped, internal whitespace runs collapsed to single spaces, each line trimmed, blank lines dropped. `body_hash` is sha256 of `body_lines.join('\n')`. `body_lines` is also de-duplicated and sorted, so it can serve as the input set for Jaccard pairwise comparison without further work.
+
+**Type-identifier erasure (V7 §6.4).** `body_hash_erased` and `body_lines_erased` are the same normalization applied to a version of the body where every type-position identifier has been replaced with `_T1`, `_T2`, ... in order of first appearance in the body. Two function bodies that differ only at type-identifier slots produce identical `body_hash_erased` while their `body_hash` values stay distinct — a generic-parameterization-candidate signal that survives type substitutions. Scope: Swift extractor rewrites `IdentifierTypeSyntax` nodes only (so qualified types like `Foo.Bar` erase only the head, becoming `_T1.Bar`; expression-position references like `UIColor.red` are not erased). TypeScript extractor rewrites the leftmost identifier of each `TypeReferenceNode.typeName` with the same head-only convention for qualified names.
 
 **Skip rules.** Functions with `< --min-body-lines` (default 3) normalized lines are not emitted — one-liners and trivial stubs aren't useful duplication signal. Generated files (`*.d.ts`, `generated/`) are marked `generated: true` like the type catalog.
 

@@ -169,6 +169,8 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
         let bodyText = body.statements.description
         let normalized = normalizeBody(bodyText)
         guard normalized.lines.count >= minBodyLines else { return }
+        let erasedText = eraseTypeIdentifiers(body.statements)
+        let erased = normalizeBody(erasedText)
         let line = converter.location(for: position).line
         let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
         records.append(FunctionRecord(
@@ -185,7 +187,9 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             bodyLineCount: normalized.lines.count,
             bodyLength: normalized.length,
             bodyHash: normalized.hash,
-            bodyLines: normalized.lines
+            bodyLines: normalized.lines,
+            bodyHashErased: erased.hash,
+            bodyLinesErased: erased.lines
         ))
     }
 
@@ -218,6 +222,8 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             let bodyText = getterBody.description
             let normalized = normalizeBody(bodyText)
             guard normalized.lines.count >= minBodyLines else { return }
+            let erasedText = eraseTypeIdentifiers(getterBody)
+            let erased = normalizeBody(erasedText)
             let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
             records.append(FunctionRecord(
                 name: qualified,
@@ -233,7 +239,9 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
                 bodyLineCount: normalized.lines.count,
                 bodyLength: normalized.length,
                 bodyHash: normalized.hash,
-                bodyLines: normalized.lines
+                bodyLines: normalized.lines,
+                bodyHashErased: erased.hash,
+                bodyLinesErased: erased.lines
             ))
         }
     }
