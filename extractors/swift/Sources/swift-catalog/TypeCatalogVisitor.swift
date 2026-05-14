@@ -32,7 +32,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            extending: nil,
+            inheritanceClause: node.inheritanceClause
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -52,7 +53,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            extending: nil,
+            inheritanceClause: node.inheritanceClause
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -72,7 +74,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            extending: nil,
+            inheritanceClause: node.inheritanceClause
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -93,6 +96,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             generics: nil,
             members: node.memberBlock,
             extending: nil,
+            inheritanceClause: node.inheritanceClause,
             includeMethodSignatures: true
         )
         nameStack.append(node.name.text)
@@ -126,7 +130,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: nil,
             members: node.memberBlock,
-            extending: extended
+            extending: extended,
+            inheritanceClause: node.inheritanceClause
         )
         nameStack.append(extended)
         return .visitChildren
@@ -189,6 +194,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         generics: GenericParameterClauseSyntax?,
         members: MemberBlockSyntax,
         extending: String?,
+        inheritanceClause: InheritanceClauseSyntax?,
         includeMethodSignatures: Bool = false
     ) {
         let line = converter.location(for: position).line
@@ -211,6 +217,11 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let ext = extending {
             record.extending = ext
         }
+        // V7 §6.2: always populate conforms_to (empty array for no-conformance
+        // records). This distinguishes "the record genuinely has no conformances"
+        // from "the catalog doesn't know" — typealiases, which never have an
+        // inheritance clause, keep conformsTo nil and the JSON omits the field.
+        record.conformsTo = inheritanceNames(of: inheritanceClause)
         records.append(record)
     }
 
@@ -265,7 +276,31 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let generics = node.genericParameterClause {
             record.generics = generics.parameters.map { $0.name.text }.joined(separator: ",")
         }
+        // V7 §6.2: enum conformances. `enum Status: String, Codable` produces
+        // ["String", "Codable"] — for raw-value enums, the first entry is the
+        // raw-value type rather than a protocol, but the syntactic position is
+        // indistinguishable from a leading protocol, so we emit the full list
+        // unchanged (same caveat as classes carrying a parent-class slot in
+        // their conformsTo[]).
+        record.conformsTo = inheritanceNames(of: node.inheritanceClause)
         records.append(record)
+    }
+
+    /// Extract the names from an inheritance clause. Returns `[]` for an
+    /// inheritance clause that's present but empty (rare), and `[]` for the
+    /// absent-but-applicable case (the record's declaration form admits an
+    /// inheritance clause, but the source doesn't declare one). Returns the
+    /// list of trimmed type-syntax descriptions otherwise — the substrate
+    /// captures NAME-based edges; cross-catalog joins are downstream work.
+    ///
+    /// Names are kept verbatim from source — generic conformances like
+    /// `Equatable` stay as `"Equatable"`, qualified protocol names like
+    /// `Combine.Cancellable` stay qualified, and composed protocols like
+    /// `Foo & Bar` (rare in inheritance clauses but legal) stay as written.
+    /// The downstream consumer decides what to do with non-bare names.
+    private func inheritanceNames(of clause: InheritanceClauseSyntax?) -> [String] {
+        guard let clause else { return [] }
+        return clause.inheritedTypes.map { $0.type.trimmedDescription }
     }
 
     /// Both forms of the field set, returned together so emitShapeBearing can

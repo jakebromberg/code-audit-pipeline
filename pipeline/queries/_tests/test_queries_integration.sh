@@ -122,7 +122,7 @@ assert_jsonl_has_prefix generic-struct-candidates.jq "$TYPES_FIXTURE" "generic-s
 echo ""
 echo "=== Function-catalog query ==="
 assert_jsonl_has_prefix function-duplicates.jq "$FUNCS_FIXTURE" "function-duplicates-" --argjson threshold 0.5
-assert_jsonl_has_prefix default-impl-candidates.jq "$FUNCS_FIXTURE" "default-impl-candidates:" --argjson min_conformers 2
+assert_jsonl_has_prefix default-impl-candidates.jq "$FUNCS_FIXTURE" "default-impl-candidates:" --argjson min_conformers 2 --slurpfile types "$TYPES_FIXTURE"
 assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic-function-candidates:" --argjson threshold 0.5 --argjson max_subs 2
 
 echo ""
@@ -144,7 +144,7 @@ assert_text_has_cid protocol-inheritance-candidates.jq "$TYPES_FIXTURE" --argjso
 assert_text_has_cid pat-candidates.jq "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 assert_text_has_cid generic-struct-candidates.jq "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 assert_text_has_cid function-duplicates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5
-assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2
+assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2 --slurpfile types "$TYPES_FIXTURE"
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
 

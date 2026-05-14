@@ -103,7 +103,7 @@ assert_query_clean generic-struct-candidates.jq "$WORK_DIR/type-catalog.json" --
 echo ""
 echo "=== Function-catalog query ==="
 assert_query_clean function-duplicates.jq "$WORK_DIR/function-catalog.json" --argjson threshold 0.7
-assert_query_clean default-impl-candidates.jq "$WORK_DIR/function-catalog.json" --argjson min_conformers 2
+assert_query_clean default-impl-candidates.jq "$WORK_DIR/function-catalog.json" --argjson min_conformers 2 --slurpfile types "$WORK_DIR/type-catalog.json"
 assert_query_clean generic-function-candidates.jq "$WORK_DIR/function-catalog.json" --argjson threshold 0.7 --argjson max_subs 2
 
 echo ""
