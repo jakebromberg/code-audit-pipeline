@@ -146,8 +146,9 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     override func visit(_ node: TypeAliasDeclSyntax) -> SyntaxVisitorContinueKind {
         let line = converter.location(for: node.positionAfterSkippingLeadingTrivia).line
         let typeText = node.initializer.value.trimmedDescription
+        let qualified = qualify(node.name.text)
         var record = TypeRecord(
-            name: qualify(node.name.text),
+            name: qualified,
             kind: "type-alias-other",
             package: file.package,
             file: file.relativePath,
@@ -162,6 +163,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let generics = node.genericParameterClause {
             record.generics = generics.parameters.map { $0.name.text }.joined(separator: ",")
         }
+        applyContextFlags(to: &record, recordName: qualified)
         records.append(record)
         return .visitChildren
     }
@@ -170,6 +172,19 @@ final class TypeCatalogVisitor: SyntaxVisitor {
 
     private func qualify(_ name: String) -> String {
         nameStack.isEmpty ? name : "\(nameStack.joined(separator: ".")).\(name)"
+    }
+
+    /// V7 §6.6: propagate the WalkedFile's path-derived context flags to a
+    /// TypeRecord, and OR the per-record `is_mock` with a name-suffix check.
+    /// The name-suffix half catches `protocol FooMock { ... }` in a file
+    /// that's not in a Mocks/ directory; the path half catches
+    /// `Mocks/AuthClient.swift` whose record is named `AuthClient`. Both
+    /// signals can fire independently — the agent cross-checks.
+    private func applyContextFlags(to record: inout TypeRecord, recordName: String) {
+        record.isTest = file.isTest
+        record.isCodegen = file.isCodegen
+        record.isSampleApp = file.isSampleApp
+        record.isMock = file.isMockPath || nameEndsWithMockStubFakeSuffix(recordName)
     }
 
     private func isExported(_ modifiers: DeclModifierListSyntax) -> Bool {
@@ -222,6 +237,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         // from "the catalog doesn't know" — typealiases, which never have an
         // inheritance clause, keep conformsTo nil and the JSON omits the field.
         record.conformsTo = inheritanceNames(of: inheritanceClause)
+        applyContextFlags(to: &record, recordName: qualify(simpleName))
         records.append(record)
     }
 
@@ -283,6 +299,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         // unchanged (same caveat as classes carrying a parent-class slot in
         // their conformsTo[]).
         record.conformsTo = inheritanceNames(of: node.inheritanceClause)
+        applyContextFlags(to: &record, recordName: qualify(node.name.text))
         records.append(record)
     }
 

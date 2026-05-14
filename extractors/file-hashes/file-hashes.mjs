@@ -111,6 +111,54 @@ function normalize(buf) {
   return Buffer.from(lines.join('\n'), 'utf8');
 }
 
+// V7 §6.6 context-flag heuristics — mirrors `Walker.swift`'s detection so a
+// cross-extractor join on `package` + `file` sees the same flag values for the
+// same physical file. Each helper takes the relative path (POSIX-separated)
+// and returns a boolean. Path-only signals; `is_mock`'s name-suffix half lives
+// in TypeRecord / FunctionRecord on the catalog side — file-hashes records
+// have no record name to suffix-check, so this is purely directory-shape.
+
+function isTestPath(relPath) {
+  const segments = relPath.split('/');
+  for (const segment of segments) {
+    if (segment === 'Tests') return true;
+    if (segment === '__tests__') return true;
+    if (segment.endsWith('Testing') && segment !== 'Testing') return true;   // Swift `*Testing/` lib-target convention
+  }
+  const fname = segments[segments.length - 1] || '';
+  if (fname.endsWith('Tests.swift')) return true;
+  if (fname.includes('.test.') || fname.includes('.spec.')) return true;
+  return false;
+}
+
+function isCodegenPath(relPath, isGenerated) {
+  if (isGenerated) return true;   // superset of the legacy `generated` flag
+  const segments = relPath.split('/');
+  for (const segment of segments) {
+    if (segment === 'Generated') return true;
+  }
+  const fname = segments[segments.length - 1] || '';
+  if (fname.endsWith('+Generated.swift')) return true;
+  return false;
+}
+
+function isSampleAppPath(relPath) {
+  for (const segment of relPath.split('/')) {
+    const lower = segment.toLowerCase();
+    if (lower === 'examples' || lower === 'example') return true;
+    if (lower === 'sampleapp' || lower === 'sample-app' || lower === 'sample') return true;
+    if (lower === 'demo' || lower === 'demos') return true;
+  }
+  return false;
+}
+
+function isMockPath(relPath) {
+  for (const segment of relPath.split('/')) {
+    if (segment === 'Mocks' || segment === 'Stubs' || segment === 'Fakes') return true;
+  }
+  return false;
+}
+
 function hashFile(filePath, pkgName, pkgRoot) {
   const buf = readFileSync(filePath);
   const norm = normalize(buf);
@@ -121,6 +169,13 @@ function hashFile(filePath, pkgName, pkgRoot) {
     package: pkg,
     file: relPath,
     generated: isGenerated,
+    // V7 §6.6 context flags. file-hashes records have no record name to
+    // suffix-check, so `is_mock` here is purely path-derived. The catalog
+    // extractors carry the name-suffix half independently.
+    is_test: isTestPath(relPath),
+    is_codegen: isCodegenPath(relPath, isGenerated),
+    is_sample_app: isSampleAppPath(relPath),
+    is_mock: isMockPath(relPath),
     size_bytes: buf.length,
     size_normalized: norm.length,
     sha256: sha256(buf),
