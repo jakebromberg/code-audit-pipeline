@@ -118,12 +118,22 @@ if len(text) > 400:
 # JSON-schema match check. The prompt asks for an array of recommendation
 # objects per §1 (one per cluster row). Since we sent a single row, expect
 # an array of length 1.
-m = re.search(r"\[.*\]", text, re.DOTALL)
-if not m:
-    print("FAIL: response does not contain a JSON array", file=sys.stderr)
-    sys.exit(1)
+#
+# Extraction strategy: prefer a ```json fenced block (the dry-run observed
+# Sonnet wrapping its array this way); fall back to first-`[`-through-last-`]`
+# greedy match. The fence-first path is robust against prose-then-array-
+# then-prose wrappings; the fallback handles bare-array responses.
+fenced = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", text, re.DOTALL)
+if fenced:
+    array_text = fenced.group(1)
+else:
+    m = re.search(r"\[.*\]", text, re.DOTALL)
+    if not m:
+        print("FAIL: response does not contain a JSON array", file=sys.stderr)
+        sys.exit(1)
+    array_text = m.group(0)
 try:
-    arr = json.loads(m.group(0))
+    arr = json.loads(array_text)
 except json.JSONDecodeError as e:
     print(f"FAIL: response array is not valid JSON: {e}", file=sys.stderr)
     sys.exit(1)
