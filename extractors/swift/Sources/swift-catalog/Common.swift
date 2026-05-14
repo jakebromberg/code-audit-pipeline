@@ -66,6 +66,32 @@ struct TypeRecord: Encodable {
     /// `conforms_to` as ambiguous (parent class XOR first protocol). The
     /// dedicated class-inheritance enrichment is V7 §6.3 round 2 scope.
     var conformsTo: [String]?
+
+    /// V7 §6.3: marker for catalog entries whose `fields`/`fields_structured`
+    /// have been augmented by a post-pass resolution. Currently the only
+    /// resolution kind on the Swift extractor is `"protocol-inheritance"` —
+    /// child protocols whose parents' fields have been unioned in by
+    /// `resolveProtocolInheritance`. Stays `nil` for records that weren't
+    /// touched by any resolution pass (so the JSON omits the field).
+    ///
+    /// The TypeScript extractor uses `"intersection"` for its own resolution
+    /// pass (V5 intersection-type field union); the two markers share this
+    /// field's namespace but never appear on the same record — the kinds are
+    /// disjoint (intersections are `type-alias-intersection`, protocols are
+    /// `interface`).
+    var resolvedFrom: String?
+
+    /// V7 §6.3: the list of protocol parent names whose fields were unioned
+    /// into this record by the inheritance-resolution pass. Set on the same
+    /// records that carry `resolved_from: "protocol-inheritance"`. Transitive
+    /// — if `C: B` and `B: A`, then C's `inherited_from` includes both `B`
+    /// and `A` after the fixed-point pass converges.
+    ///
+    /// Names are kept verbatim, matching the `conforms_to` convention.
+    /// Inheritance edges that point at protocols outside the scanned roots
+    /// (external SDK protocols like `Codable`) don't contribute to
+    /// `inherited_from` — only in-catalog resolutions appear.
+    var inheritedFrom: [String]?
 }
 
 struct FunctionRecord: Encodable {

@@ -36,6 +36,8 @@ The type catalog is a single JSON array. Each entry describes one declared type-
       { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
     ],
     "conforms_to": ["Codable", "Sendable"], // V7 §6.2: inheritance-clause names; [] for record types with no conformances; omitted on typealiases
+    "resolved_from": "protocol-inheritance", // V7 §6.3 (interface kind only): set when parent fields were unioned in
+    "inherited_from": ["ParentProtocol"],    // V7 §6.3: list of in-catalog protocol parents that contributed fields
     "shape_sig": "album_title:string | null|artist_name:string | null|id:number",  // fields.join("|").lower
 
     "touched_in_window": false,           // true if file is in --touched JSON list
@@ -117,6 +119,25 @@ Name-keyed list of every entry in the record's inheritance clause. For `struct F
 
 **Consumed by:** `pipeline/queries/default-impl-candidates.jq` joins a function-body cluster's distinct types against `conforms_to[]` and filters to clusters whose member types share at least one protocol (the substrate signal for "all conformers can default-impl this method via a common protocol extension"). The query loads the type catalog via `--slurpfile types` alongside the function catalog input — see the query's header comment. The join is name-keyed: same-name records (a struct and its extensions, for example) are grouped and their `conforms_to[]` lists are unioned, so the effective conformance set picks up conformances declared on extensions. Free functions, which have no enclosing type and thus no type-catalog record, are dropped from the cluster set by this filter (their effective `conforms_to[]` is `[]`).
 
+### V7 §6.3: protocol-inheritance resolution
+
+A second pass over the type catalog unions parent protocol's `fields[]` / `fields_structured[]` into child protocol records, so downstream shape queries see the *full* declared-plus-inherited surface rather than just the declared half. Mirrors V5's intersection-type resolution: fixed-point loop, up to 5 iterations to handle transitive chains (`protocol C: B`, `protocol B: A` — C ends up with A's fields after two iterations), bounded recursion as a safety net against cyclic graphs.
+
+The pass writes two fields on resolved records:
+
+- `resolved_from: "protocol-inheritance"` — marker. Same field as V5's intersection-type marker; the two markers share the field's namespace but never appear on the same record because their kinds are disjoint (intersections are `type-alias-intersection`, protocols are `interface`).
+- `inherited_from: ["ParentA", "ParentB", ...]` — transitive list of in-catalog protocol parents that contributed fields. Verbatim names (matches `conforms_to`'s convention).
+
+Protocol-only scope. The pass skips a `conforms_to[]` name when the named record isn't `kind == "interface"`, which handles the §6.2 class-vs-protocol caveat conservatively: a class with a parent class in `conforms_to[0]` doesn't get class fields unioned in (the class-inheritance resolution is round-2 scope).
+
+External SDK protocols like `Codable` or `Sendable` that aren't in the scanned roots stay unresolved — they appear in `conforms_to` but don't contribute to `inherited_from`. The child protocol's `fields[]` reflects only what was unioned from in-catalog parents, plus its own declarations.
+
+Field collisions resolve in favor of the child: if `protocol B: A` and both A and B declare a field named `name: String`, the child's declaration wins (the parent's same-name entry doesn't override).
+
+After resolution, `fields[i]` and `fields_structured[i]` remain in lockstep (sorted by the flat `"name:type"` string) and `shape_sig` is recomputed from the unioned field set.
+
+**Consumed by:** `pipeline/queries/protocol-inheritance-candidates.jq` and `pipeline/queries/subset-pairs.jq`. Both queries become more sensitive to inheritance relationships after the resolution pass — a child protocol with N declared members and M inherited members can now overlap with sibling protocols on member sets that previously appeared only on the parent. The methodology's Cat 2 plants (missing-parent protocol pattern) rely on this richer surface.
+
 ## Kinds
 
 | Kind | Source construct (TypeScript) | Source construct (other languages) |
@@ -143,7 +164,7 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Optional but useful
 
-- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1), `conforms_to` (V7 §6.2)
+- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1), `conforms_to` (V7 §6.2), `resolved_from` + `inherited_from` (V7 §6.3 — set on resolved protocols)
 
 ### Intersection-type resolution
 

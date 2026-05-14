@@ -108,7 +108,15 @@ case "type":
             logErr("parse error in \(file.relativePath): \(error)")
         }
     }
-    logErr("emitted \(allRecords.count) type records (parse errors: \(parseErrors))")
+
+    // V7 §6.3: second-pass resolution. After the visitor emits every record
+    // (so the lookup index is complete), walk protocol records and union
+    // their parents' fields in. Fixed-point loop bounded at 5 iterations;
+    // protocol-only — class inheritance is round-2 scope.
+    resolveProtocolInheritance(&allRecords)
+
+    let resolvedCount = allRecords.filter { $0.resolvedFrom == "protocol-inheritance" }.count
+    logErr("emitted \(allRecords.count) type records (parse errors: \(parseErrors), protocol-inheritance-resolved: \(resolvedCount))")
     do {
         try writeJSON(allRecords, to: args.output)
     } catch {
