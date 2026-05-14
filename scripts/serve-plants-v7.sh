@@ -51,7 +51,11 @@ if [[ -f "$WXYC_ROOT/.gitmodules" ]]; then
       echo "WARNING: submodule '$submodule_path' looks uninitialized at $WXYC_ROOT/$submodule_path" >&2
       echo "         Run: git -C \"$WXYC_ROOT\" submodule update --init --recursive" >&2
     fi
-  done < <(awk -F' = ' '/^[[:space:]]*path[[:space:]]*=/ {print $2}' "$WXYC_ROOT/.gitmodules")
+  # `awk -F' = '` would break on tab-indented or irregularly-spaced
+  # `path=value` lines (git-submodule-add writes `\tpath = value`). Match
+  # the `path = ` prefix with a regex, then strip it — robust to any
+  # whitespace between `path`, `=`, and the value.
+  done < <(awk '/^[[:space:]]*path[[:space:]]*=/ { sub(/^[^=]*=[[:space:]]*/, ""); print }' "$WXYC_ROOT/.gitmodules")
 fi
 
 # --- Clean target ----------------------------------------------------------
@@ -73,7 +77,9 @@ mkdir -p "$TARGET"
 #   .build/         — SwiftPM build artifacts (binaries, .o files)
 #   .swiftpm/       — SwiftPM workspace state
 #   DerivedData/    — Xcode derived data
-#   *.xcuserdata    — per-user IDE state
+#   xcuserdata      — Xcode per-user state directory (matches the literal
+#                     directory name at any depth in the tree)
+#   *.xcuserdatad   — per-user IDE state inside xcuserdata/
 #   .DS_Store       — macOS Finder cruft
 #   node_modules/   — JS package state if any helper script pulled deps
 #   .home/          — local fixture root present in wxyc-ios-64
@@ -94,7 +100,8 @@ rsync -a \
   --exclude='.build' \
   --exclude='.swiftpm' \
   --exclude='DerivedData' \
-  --exclude='*.xcuserdata' \
+  --exclude='xcuserdata' \
+  --exclude='*.xcuserdatad' \
   --exclude='.DS_Store' \
   --exclude='node_modules' \
   --exclude='.home' \
@@ -113,11 +120,18 @@ rsync -a \
 rsync -a "$PLANT_TREE/" "$TARGET/"
 
 # --- Acceptance sanity: no plant-comment leaks -----------------------------
+#
+# `{ grep ... || true; }` because grep exits 1 on "no match", which `set -e`
+# + `pipefail` would otherwise treat as a script-aborting failure. The
+# `head -1 | grep -q .` pattern from a prior revision additionally risked
+# SIGPIPE-induced failures on trees with many matches; capturing the
+# filenames in a variable up front avoids both classes of failure.
 
-if grep -rlE '// Plant|# Plant|// PLANT|# PLANT' "$TARGET" 2>/dev/null | head -1 | grep -q .; then
+leak_files="$( { grep -rlE '// Plant|# Plant|// PLANT|# PLANT' "$TARGET" 2>/dev/null || true; } )"
+if [[ -n "$leak_files" ]]; then
   echo "ERROR: plant-comment leak detected in served tree" >&2
   echo "       Files with leaked comments:" >&2
-  grep -rlE '// Plant|# Plant|// PLANT|# PLANT' "$TARGET" >&2
+  printf "         %s\n" $leak_files >&2
   exit 1
 fi
 
