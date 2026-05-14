@@ -33,8 +33,13 @@ trap "rm -rf $WORK" EXIT
 
 # --include-tests so the Tests/ records appear in the catalog. Without this
 # flag the walker skips test files entirely and the assertions on RegularTests
-# / PathMocked wouldn't have records to check.
-"$SWIFT_BIN" type --root "$FIXTURE_ROOT" --include-tests --output "$WORK/catalog.json" 2>"$WORK/stderr"
+# / PathMocked wouldn't have records to check. Runs both `type` and `func`
+# subcommands so the assertions can cover both visitor paths — the
+# FunctionCatalogVisitor's is_mock check uses the containing-type segment
+# (different from TypeCatalogVisitor's check on the record's own last
+# segment), and the divergent logic needs its own coverage.
+"$SWIFT_BIN" type --root "$FIXTURE_ROOT" --include-tests --output "$WORK/types.json" 2>"$WORK/type-stderr"
+"$SWIFT_BIN" func --root "$FIXTURE_ROOT" --include-tests --output "$WORK/funcs.json" 2>"$WORK/func-stderr"
 
 PASS=0
 FAIL=0
@@ -45,7 +50,17 @@ flag() {
   local name="$1"
   local flag="$2"
   jq --arg n "$name" --arg f "$flag" \
-    '[.[] | select(.name == $n)] | .[0] | .[$f]' "$WORK/catalog.json"
+    '[.[] | select(.name == $n)] | .[0] | .[$f]' "$WORK/types.json"
+}
+
+# `fn_flag NAME FLAG` does the same against the function catalog. Function
+# records' qualified names include containing-type prefix (e.g.,
+# `FooMock.executeQuery`); the helper takes that full qualified name.
+fn_flag() {
+  local name="$1"
+  local flag="$2"
+  jq --arg n "$name" --arg f "$flag" \
+    '[.[] | select(.name == $n)] | .[0] | .[$f]' "$WORK/funcs.json"
 }
 
 assert_eq() {
@@ -72,6 +87,19 @@ assert_flags() {
   assert_eq "$name: is_codegen = $expected_codegen" "$expected_codegen" "$(flag "$name" is_codegen)"
   assert_eq "$name: is_sample_app = $expected_sample" "$expected_sample" "$(flag "$name" is_sample_app)"
   assert_eq "$name: is_mock = $expected_mock"       "$expected_mock"    "$(flag "$name" is_mock)"
+}
+
+# Same shape for function records — uses the function catalog.
+assert_fn_flags() {
+  local name="$1"
+  local expected_test="$2"
+  local expected_codegen="$3"
+  local expected_sample="$4"
+  local expected_mock="$5"
+  assert_eq "fn $name: is_test = $expected_test"       "$expected_test"    "$(fn_flag "$name" is_test)"
+  assert_eq "fn $name: is_codegen = $expected_codegen" "$expected_codegen" "$(fn_flag "$name" is_codegen)"
+  assert_eq "fn $name: is_sample_app = $expected_sample" "$expected_sample" "$(fn_flag "$name" is_sample_app)"
+  assert_eq "fn $name: is_mock = $expected_mock"       "$expected_mock"    "$(fn_flag "$name" is_mock)"
 }
 
 echo "=== Negative control: Sources/Regular/Regular.swift (all flags false) ==="
@@ -108,6 +136,34 @@ echo ""
 echo "=== Examples/SampleApp/SampleView.swift (path is_sample_app) ==="
 # Both 'Examples/' and 'SampleApp/' match; either alone would fire the flag.
 assert_flags SampleView false false true false
+
+echo ""
+echo "=== Function records: containing-type-segment is_mock check ==="
+# Method on `FooMock` (Sources/SuffixMock/NameSuffixed.swift) — is_mock fires
+# from the CONTAINING-TYPE name suffix, not the function name. The file isn't
+# in a Mocks/ directory, so the path signal doesn't contribute. Confirms the
+# FunctionCatalogVisitor's per-record logic strips the function-name segment
+# and checks the containing type, as documented.
+assert_fn_flags "FooMock.executeQuery" false false false true
+assert_fn_flags "FooMock.resetState"   false false false true
+
+# Method on `RegularProvider` in the same file — containing type doesn't end
+# with Mock/Stub/Fake, so is_mock stays false even though the file is
+# physically adjacent to FooMock.
+assert_fn_flags "RegularProvider.providerWork" false false false false
+
+# Free function in Sources/SuffixMock/NameSuffixed.swift — no containing
+# type, name doesn't carry a Mock/Stub/Fake suffix, path isn't Mocks/. All
+# flags false. Confirms free functions don't inherit is_mock from
+# neighbouring mock-suffixed types.
+assert_fn_flags "freeHelperFunction" false false false false
+
+# Method on `AuthClient` in Tests/TestingHelpers/Mocks/PathMocked.swift —
+# is_mock fires from the PATH (Mocks/ segment), is_test from the path
+# (Tests/ segment). Containing type `AuthClient` doesn't end in Mock, so the
+# name signal doesn't contribute — this is the path-only path through the
+# OR-of-signals logic.
+assert_fn_flags "AuthClient.authenticate" true false false true
 
 echo ""
 echo "=== Results ==="
