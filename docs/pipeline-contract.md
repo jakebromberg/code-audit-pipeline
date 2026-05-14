@@ -35,6 +35,7 @@ The type catalog is a single JSON array. Each entry describes one declared type-
       { "name": "artist_name", "type": "string | null", "is_optional": true,  "is_static": false },
       { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
     ],
+    "conforms_to": ["Codable", "Sendable"], // V7 §6.2: inheritance-clause names; [] for record types with no conformances; omitted on typealiases
     "shape_sig": "album_title:string | null|artist_name:string | null|id:number",  // fields.join("|").lower
 
     "touched_in_window": false,           // true if file is in --touched JSON list
@@ -96,6 +97,26 @@ The flat `fields[]` form is preserved unchanged for V6-era queries; new queries 
 ]
 ```
 
+### V7 §6.2: `conforms_to`
+
+Name-keyed list of every entry in the record's inheritance clause. For `struct Foo: Bar, Baz`, this is `["Bar", "Baz"]`. For `protocol B: A`, `["A"]`. For `enum Status: String, Codable`, `["String", "Codable"]` (the raw-value type takes the first position syntactically, indistinguishable from a leading protocol — see caveat below).
+
+| Record kind | `conforms_to` shape |
+|---|---|
+| `interface` (Swift `protocol`) | `[]` if no parents; otherwise the inherited protocol names |
+| `type-alias-object` (`struct` / `class` / `actor`) | `[]` if no inheritance clause; otherwise every inherited-types entry |
+| `type-alias-union` (Swift `enum`) | `[]` if no inheritance clause; otherwise every inherited-types entry (raw-value type + protocols) |
+| `extension` | `[]` unless the extension declares conformance; otherwise the new conformances added by the extension |
+| `type-alias-other` (Swift `typealias`) | omitted from JSON (typealiases have no inheritance clause) |
+
+**Class-vs-protocol caveat.** SwiftSyntax doesn't distinguish "class name" from "protocol name" at the syntax layer. For Swift `class Foo: Bar, Baz`, the first entry of `conforms_to` may be a parent class or a protocol — the substrate can't tell from syntax alone. Downstream consumers that need the class-inheritance edge specifically should treat the first entry of a class's `conforms_to[]` as ambiguous. The dedicated class-inheritance edge enrichment is V7 §6.3 round 2 scope.
+
+**Same caveat applies to raw-value enums.** `enum Status: String, Codable` puts the raw-value type (`String`) in the first position; downstream consumers treating `conforms_to[0]` as a protocol will misclassify.
+
+**Names are kept verbatim.** Qualified protocol names like `Combine.Cancellable` stay qualified. Composed protocols (rare in inheritance clauses but legal) stay as written. The downstream consumer decides what to do with non-bare names.
+
+**Consumed by:** `pipeline/queries/default-impl-candidates.jq` joins a function-body cluster's distinct types against `conforms_to[]` and filters to clusters whose member types share at least one protocol (the substrate signal for "all conformers can default-impl this method via a common protocol extension"). The query loads the type catalog via `--slurpfile types` alongside the function catalog input — see the query's header comment.
+
 ## Kinds
 
 | Kind | Source construct (TypeScript) | Source construct (other languages) |
@@ -122,7 +143,7 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Optional but useful
 
-- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
+- `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1), `conforms_to` (V7 §6.2)
 
 ### Intersection-type resolution
 

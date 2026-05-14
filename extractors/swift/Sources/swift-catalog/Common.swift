@@ -52,6 +52,20 @@ struct TypeRecord: Encodable {
     var typeText: String?
     var typeSig: String?
     var extending: String?
+
+    /// V7 §6.2: protocol-conformance edges (name-keyed). Lists every name in
+    /// this record's inheritance clause. For `struct Foo: Bar, Baz`, this is
+    /// `["Bar", "Baz"]`. For `protocol B: A`, this is `["A"]`. For records
+    /// whose declaration form doesn't admit an inheritance clause (typealiases),
+    /// this stays `nil` (and is omitted from JSON).
+    ///
+    /// For classes, the FIRST entry MAY be a parent class rather than a
+    /// protocol — SwiftSyntax doesn't distinguish "class name" from "protocol
+    /// name" at the syntax layer. Downstream consumers that need the class-
+    /// inheritance edge specifically should treat the first entry of a class's
+    /// `conforms_to` as ambiguous (parent class XOR first protocol). The
+    /// dedicated class-inheritance enrichment is V7 §6.3 round 2 scope.
+    var conformsTo: [String]?
 }
 
 struct FunctionRecord: Encodable {
