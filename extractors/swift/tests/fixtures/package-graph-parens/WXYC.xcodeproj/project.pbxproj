@@ -1,0 +1,58 @@
+// !$*UTF8*$!
+//
+// Regression fixture for the paren-depth tracker in collectPbxBlocks.
+//
+// The XCBuildConfiguration block below puts a brace-delimited dict literal
+// inside a paren-delimited array (`OTHER_LDFLAGS = ("$(inherited)", { ... })`).
+// Before paren tracking was added, the scanner would treat the inner `{` as a
+// new block opening, pop its `}` against the wrong stack frame, and end up
+// misclassifying the surrounding PBXNativeTarget. The expected behavior is
+// that the iOS target's name and packageProductDependencies are still
+// recovered correctly.
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXNativeTarget section */
+		AAAA0001 /* iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA0010 /* Build configuration list for PBXNativeTarget "iOS" */;
+			name = iOS;
+			packageProductDependencies = (
+				BBBB0001 /* Core */,
+			);
+			productName = iOS;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin XCBuildConfiguration section */
+		AAAA0011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					{
+						nested = dictInsideArray;
+						alsoNested = anotherValue;
+					},
+					"-ObjC",
+				);
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BBBB0001 /* Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Core;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = ROOT0001 /* Project object */;
+}
