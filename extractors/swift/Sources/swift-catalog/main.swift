@@ -2,9 +2,13 @@
 //  main.swift
 //  swift-catalog
 //
-//  CLI entry point. Two subcommands: `type` and `func`. Each walks a root directory
-//  (with optional --shared for a second package root), parses Swift files via
-//  SwiftSyntax, and emits JSON conforming to docs/pipeline-contract.md.
+//  CLI entry point. Three subcommands: `type`, `func`, and `package-graph`.
+//  `type` and `func` each walk a root directory (with optional --shared for a
+//  second package root), parse Swift files via SwiftSyntax, and emit JSON
+//  conforming to docs/pipeline-contract.md. `package-graph` walks the root for
+//  Package.swift files (parsed via SwiftSyntax) and project.pbxproj files
+//  (parsed via brace-counting text scan, per V7 §6.5) and emits an
+//  inter-package dependency graph.
 //
 
 import Foundation
@@ -57,18 +61,19 @@ func parseArgs() -> Args? {
 
 func printUsage() {
     let usage = """
-    Usage: swift-catalog <type|func> --root <path> [--shared <path>] [--output <path>] [--include-tests] [--min-body-lines N]
+    Usage: swift-catalog <type|func|package-graph> --root <path> [--shared <path>] [--output <path>] [--include-tests] [--min-body-lines N]
 
     Subcommands:
-      type    Emit type-catalog (struct/class/protocol/enum/extension/typealias/actor).
-      func    Emit function-catalog (func/method/initializer/computed-property).
+      type           Emit type-catalog (struct/class/protocol/enum/extension/typealias/actor).
+      func           Emit function-catalog (func/method/initializer/computed-property).
+      package-graph  Emit inter-package dependency graph (Package.swift + project.pbxproj).
 
     Flags:
       --root            Required. Root of the codebase to scan.
       --shared          Optional. Second package root, walked in addition to --root.
       --output          Optional. Write JSON to this path. Default: stdout.
-      --include-tests   Optional. Don't skip Tests/ directories or *Tests.swift files.
-      --min-body-lines  function-catalog only. Skip functions with fewer normalized body lines. Default 3.
+      --include-tests   type|func only. Don't skip Tests/ directories or *Tests.swift files.
+      --min-body-lines  func only. Skip functions with fewer normalized body lines. Default 3.
     """
     logErr(usage)
 }
@@ -82,6 +87,15 @@ guard let root = args.root else {
     logErr("error: --root is required")
     printUsage()
     exit(2)
+}
+
+// The package-graph subcommand has its own discovery walk (Package.swift +
+// project.pbxproj only) and doesn't share the type/func source-file walk.
+// Dispatch to it directly so the rest of this file doesn't have to special-case
+// the unused source-file list.
+if args.subcommand == "package-graph" {
+    let code = runPackageGraph(root: root, output: args.output)
+    exit(code)
 }
 
 let walkOpts = WalkOptions(extensions: ["swift"], includeTests: args.includeTests)
