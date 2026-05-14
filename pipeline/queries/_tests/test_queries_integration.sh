@@ -19,6 +19,13 @@ TYPES_FIXTURE="$FIXTURES_DIR/types.input.json"
 FUNCS_FIXTURE="$FIXTURES_DIR/functions.input.json"
 FILES_FIXTURE="$FIXTURES_DIR/files.input.json"
 
+# Focused fixture pair for the §6.2 default-impl join. The general types
+# fixture predates `conforms_to` and would always drive default-impl-candidates
+# to zero rows; this pair carries enough conformance metadata to lock in
+# the intersection contract and the same-name-records merge.
+DEFAULT_IMPL_FUNCS_FIXTURE="$FIXTURES_DIR/default-impl-functions.input.json"
+DEFAULT_IMPL_TYPES_FIXTURE="$FIXTURES_DIR/default-impl-types.input.json"
+
 PASS=0
 FAIL=0
 
@@ -147,6 +154,53 @@ assert_text_has_cid function-duplicates.jq "$FUNCS_FIXTURE" --argjson threshold 
 assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2 --slurpfile types "$TYPES_FIXTURE"
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
+
+echo ""
+echo "=== default-impl-candidates §6.2 shared-protocol contract ==="
+
+# The focused fixture pair carries:
+#   - Foo / Bar / Baz: all three have `render` with identical body_hash. Foo
+#     has TWO catalog records (struct + extension) so the same-name merge has
+#     to union their conforms_to. The mathematical intersection across all
+#     three is exactly {Renderable}.
+#   - NoShare1 / NoShare2: identical `draw` body, but conforms_to lists are
+#     disjoint. The cluster must NOT surface.
+#   - freeFn: same body_hash across two packages, no enclosing type. The
+#     cluster must NOT surface (no type-catalog record to look up).
+default_impl_jsonl="$(
+  OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_conformers 2 \
+    --slurpfile types "$DEFAULT_IMPL_TYPES_FIXTURE" \
+    -f "$QUERIES_DIR/default-impl-candidates.jq" \
+    "$DEFAULT_IMPL_FUNCS_FIXTURE"
+)"
+
+default_impl_rows=$(echo "$default_impl_jsonl" | grep -c . || true)
+if [[ "$default_impl_rows" == "1" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ default-impl-candidates: exactly 1 cluster on §6.2 fixture\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ default-impl-candidates: expected 1 cluster, got %d\n%s\n" "$default_impl_rows" "$default_impl_jsonl"
+fi
+
+shared=$(echo "$default_impl_jsonl" | jq -r '.shared_protocols | sort | join(",")')
+if [[ "$shared" == "Renderable" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ default-impl-candidates: shared_protocols = [Renderable] (intersection correct)\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ default-impl-candidates: shared_protocols = [%s], expected [Renderable]\n" "$shared"
+fi
+
+distinct=$(echo "$default_impl_jsonl" | jq -r '.distinct_types | sort | join(",")')
+if [[ "$distinct" == "Bar,Baz,Foo" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ default-impl-candidates: distinct_types = [Bar,Baz,Foo] (free-function freeFn dropped, NoShare* cluster filtered)\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ default-impl-candidates: distinct_types = [%s], expected [Bar,Baz,Foo]\n" "$distinct"
+fi
 
 echo ""
 echo "=== Results ==="

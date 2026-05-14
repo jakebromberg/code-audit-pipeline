@@ -63,12 +63,17 @@ include "_canonical";
 
 # Build a name → conforms_to[] lookup over the slurped type-catalog. Records
 # that don't declare any conformances (or whose `conforms_to` is null for
-# kinds without an inheritance clause, like typealiases) map to []. Same-name
-# collisions across packages collapse to the LAST entry; in practice
-# default-impl-candidates' type_of names are qualified enough that collisions
-# are rare, and an over-tight intersection from a collision just means the
-# cluster doesn't surface (false negative, not false positive).
-($types[0] | map({key: .name, value: (.conforms_to // [])}) | from_entries) as $conforms_index
+# kinds without an inheritance clause, like typealiases) map to []. The Swift
+# idiom of `struct Foo { … }` + `extension Foo: Bar` means the same name
+# routinely owns multiple records — the struct's `conforms_to` is the base
+# clause, the extensions add more. Group by name and union all `conforms_to`
+# arrays so the lookup carries the type's effective conformance set, not just
+# whichever record happened to come last in the catalog. ($types is a
+# 1-element array because of jq's --slurpfile.)
+($types[0]
+ | group_by(.name)
+ | map({key: .[0].name, value: (map(.conforms_to // []) | add | unique)})
+ | from_entries) as $conforms_index
 
 | (. as $all
    | [ $all[]
@@ -91,11 +96,15 @@ include "_canonical";
     # (no enclosing type) miss the lookup → conforms_to = [] → intersection
     # collapses → cluster drops out.
     | ($types_in_cluster | map($conforms_index[.] // [])) as $per_type_conforms
+    # `IN($next[])` is the load-bearing intersection check. The naive form
+    # `select($next | index(.))` looks tempting but `$next | …` rebinds `.` to
+    # the array, so `index(.)` becomes `$next | index($next)` and matches
+    # unconditionally. `IN` reads `.` as the iterated accumulator element.
     | (if ($per_type_conforms | length) == 0
        then []
        else $per_type_conforms[0]
             | reduce ($per_type_conforms[1:][]) as $next ([.[]];
-                [.[] | select($next | index(.))])
+                [.[] | select(IN($next[]))])
        end) as $shared_protocols
     | select(($shared_protocols | length) >= 1)
     | (map(.package) | unique) as $pkgs
