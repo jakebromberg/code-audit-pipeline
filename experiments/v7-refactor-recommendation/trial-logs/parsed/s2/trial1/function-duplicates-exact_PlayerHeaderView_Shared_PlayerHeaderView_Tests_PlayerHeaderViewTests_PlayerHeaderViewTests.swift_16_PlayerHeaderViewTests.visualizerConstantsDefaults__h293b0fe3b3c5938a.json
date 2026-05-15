@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults",
+    "rationale": "Both `PlayerHeaderViewTests.visualizerConstantsDefaults` (line 16 of PlayerHeaderViewTests.swift) and `VisualizerConstantsTests.visualizerConstantsDefaults` (line 305 of VisualizerDataSourceTests.swift) are exact function duplicates residing in the same package (`PlayerHeaderView`) under the same test directory. Despite the `is_test` flag being recorded as `false` in both records, the file paths clearly place them inside a `Tests/PlayerHeaderViewTests/` folder, making them test-support helpers. Extracting the shared method into a single helper type (e.g., `VisualizerConstantsTestHelpers`) within the same test target eliminates the duplication and provides a single source of truth for visualizer-constants default assertions.",
+    "specifics": {
+      "remove_from": [
+        "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift",
+        "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift"
+      ],
+      "target_package": "PlayerHeaderView",
+      "type_name": "VisualizerConstantsTestHelpers"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_Tests_PlayerHeaderViewTests_PlayerHeaderViewTests.swift_16_PlayerHeaderViewTests.visualizerConstantsDefaults__h293b0fe3b3c5938a.json",
+  "row_index": 36,
+  "trial": 1
+}

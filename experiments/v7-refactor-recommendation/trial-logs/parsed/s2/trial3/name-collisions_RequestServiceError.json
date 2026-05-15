@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RequestServiceError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-union\",\n      \"line\": 167,\n      \"name\": \"\",\n      \"package\": \"MusicShareKit\"",
+    "rationale": "The two members in this cluster are both within the same package ('MusicShareKit') but serve structurally distinct roles: one is a 'type-alias-union' definition at line 167 in 'Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift' (the canonical declaration), and the other is an unnamed 'extension' at line 76 in 'Shared/MusicShareKit/Tests/MusicShareKitTests/RequestServiceTests.swift' (a test-file extension, likely adding test helpers or conformances). The name collision signal here reflects the test file extending the production type, which is normal Swift practice. No structural evidence (jaccard, shared_field_count, differing_slots) was surfaced, and both records carry all context flags as false, leaving no actionable duplication to resolve.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_RequestServiceError.json",
+  "row_index": 39,
+  "trial": 3
+}

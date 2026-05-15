@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockURLProtocol",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"file\": \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\" ... \"file\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\" ... \"fields_or_signature\": [] ... \"jaccard\": null",
+    "rationale": "Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), making it impossible to confirm they share meaningful shape or behaviour. They live in separate test files \u2014 `AppServicesTests/AppConfigurationTests.swift` (package: AppServices) and `MetadataTests/PlaycutMetadataServiceHTTPTests.swift` (package: Metadata) \u2014 and the collision is purely nominal. Although neither record carries `is_test: true` in the context flags, both files sit under `Tests/` directories, strongly suggesting they are test-support helpers whose co-incidental naming does not warrant a shared extraction. With no field overlap to ground a refactor recommendation, the conservative choice is no-action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_MockURLProtocol.json",
+  "row_index": 30,
+  "trial": 3
+}

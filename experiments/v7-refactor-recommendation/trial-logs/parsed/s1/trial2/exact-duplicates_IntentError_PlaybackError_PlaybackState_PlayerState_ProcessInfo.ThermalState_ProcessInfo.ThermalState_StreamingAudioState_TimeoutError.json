@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:IntentError+PlaybackError+PlaybackState+PlayerState+ProcessInfo.ThermalState+ProcessInfo.ThermalState+StreamingAudioState+TimeoutError",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"shared_field_count\": 1",
+    "rationale": "The eight members in this cluster span four unrelated packages (Playback, DebugPanel, Wallpaper, Intents) and represent entirely distinct domain concepts: IntentError in Intents/IntentUtilities.swift, PlaybackError/PlaybackState/PlayerState/StreamingAudioState in PlaybackCore and MP3Streamer, TimeoutError in a test file under MP3StreamerTests, and two independent ProcessInfo.ThermalState extensions in DebugPanel and Wallpaper. The structural signal is that all share 'shared_field_count: 1' (empty field lists), meaning the similarity is purely that each declaration has no fields \u2014 not that they encode the same concept. Consolidating these would conflate unrelated domain types across package boundaries with no real benefit. The ProcessInfo.ThermalState duplication between DebugPanel and Wallpaper is the only pair worth a second look, but one lives under Examples/WallpaperSampleApp, making it a sample-app-local convenience extension.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_IntentError_PlaybackError_PlaybackState_PlayerState_ProcessInfo.ThermalState_ProcessInfo.ThermalState_StreamingAudioState_TimeoutError.json",
+  "row_index": 1,
+  "trial": 2
+}

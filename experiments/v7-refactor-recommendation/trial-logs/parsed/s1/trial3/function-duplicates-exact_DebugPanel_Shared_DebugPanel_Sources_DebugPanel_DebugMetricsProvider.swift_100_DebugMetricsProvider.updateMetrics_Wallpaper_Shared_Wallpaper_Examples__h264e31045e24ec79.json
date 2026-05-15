@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.55,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One copy of `DebugMetricsProvider.updateMetrics` lives in the canonical package `DebugPanel` at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100`, while the duplicate lives inside `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131` \u2014 a path that contains `Examples/WallpaperSampleApp`, strongly indicating it is a self-contained sample/demo app that intentionally re-implements a lightweight debug HUD rather than taking a hard dependency on the `DebugPanel` package. Although `is_sample_app` is reported as `false` by the context flags, the file path itself (`Examples/WallpaperSampleApp`) is the canonical signal for a sample-app mirror. Consolidating the two would couple the sample app to `DebugPanel`, which is likely undesirable for a standalone example. No action is warranted until the sample app is confirmed to be a first-class consumer of `DebugPanel`.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_100_DebugMetricsProvider.updateMetrics_Wallpaper_Shared_Wallpaper_Examples__h264e31045e24ec79.json",
+  "row_index": 44,
+  "trial": 3
+}

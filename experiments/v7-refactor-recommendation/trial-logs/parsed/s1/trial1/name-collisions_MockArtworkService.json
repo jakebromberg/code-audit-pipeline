@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockArtworkService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null",
+    "rationale": "Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), making it impossible to confirm they share meaningful shape or behaviour. The files are test files (`ArtworkServiceTests.swift` and `NowPlayingServiceTests.swift`) living under `Tests/` directories in two separate packages (`Artwork` and `AppServices`), and the name collision on `MockArtworkService` is almost certainly a local type alias scoped to each test file independently. With no field overlap to ground a consolidation recommendation, any action would be speculative.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MockArtworkService.json",
+  "row_index": 27,
+  "trial": 1
+}

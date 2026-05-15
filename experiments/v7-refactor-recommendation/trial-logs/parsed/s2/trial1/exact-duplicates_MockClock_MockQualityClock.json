@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"MockQualityClock\", \"package\": \"Wallpaper\" ... \"name\": \"MockClock\", \"package\": \"Caching\"",
+    "rationale": "Both `MockQualityClock` (Wallpaper package, `AdaptiveQualityControllerTests.swift`) and `MockClock` (Caching package, `CacheCoordinatorTests.swift`) are `type-alias-object` declarations living in separate test files across unrelated packages. Although the structural pipeline flags them as exact duplicates with `shared_field_count: 2`, the two aliases serve distinct domain purposes \u2014 one mocks a quality-aware clock for wallpaper adaptive-quality logic, the other mocks a generic cache-coordination clock \u2014 making their structural coincidence incidental rather than a sign of unintended duplication. Consolidating them into a shared target would couple two otherwise independent packages (`Wallpaper` and `Caching`) for no meaningful reuse gain, and the differing names already signal intentional domain separation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 1
+}

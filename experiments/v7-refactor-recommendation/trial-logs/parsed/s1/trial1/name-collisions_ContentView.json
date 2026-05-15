@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ContentView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"package\": \"WXUI\" ... \"package\": \"MusicShareKit\" ... \"package\": \"app:WXYC TV\"",
+    "rationale": "All three records are `type-alias-object` entries named `ContentView` with empty `fields_or_signature` lists, spanning three unrelated packages (`WXUI`, `MusicShareKit`, `app:WXYC TV`) and three distinct files (`WXUISampleApp.swift`, `RequestSentHUD.swift`, `ContentView.swift`). `ContentView` is the conventional SwiftUI root-view name; its appearance in independent targets is a naming convention artifact, not a structural duplication that warrants consolidation. The structural evidence block confirms no shared fields, no Jaccard score, and no shared ancestor, meaning there is no shared shape to extract. Merging or renaming these would break each module's independent SwiftUI entry-point convention without any code-reuse benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_ContentView.json",
+  "row_index": 10,
+  "trial": 1
+}

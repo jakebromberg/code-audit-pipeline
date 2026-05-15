@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\" ... \"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\"",
+    "rationale": "Both `MockQualityClock` (Wallpaper package, `AdaptiveQualityControllerTests.swift`) and `MockClock` (Caching package, `CacheCoordinatorTests.swift`) are `type-alias-object` declarations living inside test files, despite `is_test` being reported as false. Their structural similarity (shared_field_count: 2, both empty `fields_or_signature`) is almost certainly coincidental: they alias a clock type for unrelated domain tests \u2014 adaptive quality control vs. cache coordination \u2014 in separate packages with no declared shared ancestor. Consolidating them would couple two independent packages (Wallpaper and Caching) for no meaningful reuse gain, and the differing names (`MockQualityClock` vs. `MockClock`) already signal intentional domain-specific naming.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 2
+}

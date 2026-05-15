@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package. The names differ only in direction ('Previous' vs 'Next'), strongly suggesting the bodies share the same theme-cycling logic with a single sign or index-offset difference. Collapsing them into one parameterised helper eliminates the near-duplicate and makes future theme-navigation changes a single-site edit. Neither method carries any context flags (not test, codegen, mock, or sample-app), so no intentional-duplication exemption applies.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method, e.g. `navigateTheme(direction: ThemeNavigationDirection)` where `ThemeNavigationDirection` is a two-case enum (`.previous`, `.next`), or alternatively `navigateTheme(offset: Int)` where the caller passes `-1` or `+1`. The two public entry points can then become one-line forwarding calls or be replaced entirely at call sites.",
+      "why_no_category_fits": "The two methods are not separate types, protocols, or structs, so extract-to-common, protocol-inheritance, generic-parameterization, and subclass-lift do not apply. They live in the same file and class, so extension-consolidation is not the right frame. The near-duplicate body logic (Jaccard 0.75) is best collapsed by introducing a direction parameter \u2014 a classic 'parameterise by variation' refactor \u2014 which does not map cleanly to any of the named structural categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 2
+}

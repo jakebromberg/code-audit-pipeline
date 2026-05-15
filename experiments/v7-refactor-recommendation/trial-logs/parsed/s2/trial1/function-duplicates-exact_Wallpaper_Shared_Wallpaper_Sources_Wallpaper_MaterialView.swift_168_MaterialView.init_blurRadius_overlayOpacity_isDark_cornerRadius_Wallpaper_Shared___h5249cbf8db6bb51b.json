@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+    "rationale": "The cluster surfaces two exact-duplicate initializers \u2014 both named `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` \u2014 residing in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 35 and 168, within the `Wallpaper` package. Neither record carries any test, codegen, mock, or sample-app flag, so intentional duplication is unlikely. Swift does not permit two initializers with identical signatures in the same type unless they are in separate extensions with distinct availability or platform guards; if no such guards exist, this is a latent compiler error or dead code. The duplicate at line 168 should be removed (or the two bodies reconciled) to eliminate ambiguity and reduce maintenance surface.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` is genuinely declared twice within `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (at lines 35 and 168). If so, delete the duplicate definition \u2014 retaining only the canonical one (preferably the one at line 35, which appears earlier and is likely the primary declaration). If the two declarations differ in body despite sharing the same signature, reconcile them into a single initializer, extracting any divergent logic into a private helper method within the same file.",
+      "why_no_category_fits": "Both records live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) and the same package (`Wallpaper`), so 'extract-to-common' is inapplicable. There is no protocol, subclass hierarchy, generic opportunity, or macro pattern involved \u2014 this is a straightforward intra-file duplicate initializer that should simply be removed or reconciled. None of the structured refactor categories cleanly describe 'delete one of two identical declarations in the same file'."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 1
+}

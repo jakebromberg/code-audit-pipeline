@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.68,
+    "evidence_quote": "ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel",
+    "rationale": "Two computed properties in the same `Wallpaper` package \u2014 `ProcessInfo.ThermalState.description` in the sample-app's `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in `PerformanceControls.swift` (line 152) \u2014 share near-identical logic (Jaccard 0.75) for converting a `ProcessInfo.ThermalState` value to a human-readable string. The canonical home for this logic is a single `extension ProcessInfo.ThermalState` in the production `Wallpaper` source tree (e.g., a new file under `Shared/Wallpaper/Sources/Wallpaper/DebugUI/`), which both the sample app and `PerformanceControls` can then consume. Because one member carries `is_sample_app: true`, the duplication is partly explained by the sample app copying production logic, but the production copy in `PerformanceControls.swift` is itself a local helper rather than a proper extension, so consolidation is still warranted.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Examples_WallpaperSampleApp_Sources_DebugHUD.swift_237_ProcessInfo.ThermalState.description_Wallpaper_Shared_Wallpaper_Sour__hcb4e7a0d5a1c7e67.json",
+  "row_index": 107,
+  "trial": 1
+}

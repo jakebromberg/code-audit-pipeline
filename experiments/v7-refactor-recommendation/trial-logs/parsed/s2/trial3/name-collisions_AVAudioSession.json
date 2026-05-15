@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AVAudioSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"Playback\" ... \"package\": \"PartyHorn\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both cluster members are unnamed extensions (name is empty string) on what the cluster_id implies is AVAudioSession \u2014 a system framework type \u2014 appearing in two separate packages: 'Playback' (AudioSessionProtocol.swift:35) and 'PartyHorn' (SoundPlayer.swift:22). Extensions on the same system type in different packages are a normal Swift pattern for adding package-local conformances or convenience helpers; there is no structural evidence (jaccard, shared_field_count, and differing_slots are all null) to suggest the bodies are duplicated or that consolidation is safe. Merging them would couple two otherwise independent packages without demonstrated benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_AVAudioSession.json",
+  "row_index": 15,
+  "trial": 3
+}

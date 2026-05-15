@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "iTunesArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+    "rationale": "All four members are exact duplicates of the `data` method, each nested inside a per-test-class `SequentialMockSession` inner type: `iTunesArtworkServiceTests.SequentialMockSession.data` (line 88), `LastFMArtworkServiceTests.SequentialMockSession.data` (line 215), `DiscogsArtworkServiceTests.SequentialMockSession.data` (lines 321 and 367), all within `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` in the `Artwork` package. The pattern indicates that each test class has independently copy-pasted an identical `SequentialMockSession` helper. A single top-level (or file-scope) `SequentialMockSession` type should be extracted within the same test file (or a dedicated `TestHelpers` file in the `Artwork` test target), and all four per-class copies should be removed in favour of the shared one. Note: despite the file path containing `Tests/`, all four records carry `is_test: false`, which may be a pipeline classification gap \u2014 the recommendation is made on structural grounds.",
+    "specifics": {
+      "extract-to-common": {
+        "remove_from": [
+          "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift"
+        ],
+        "target_package": "Artwork",
+        "type_name": "SequentialMockSession"
+      }
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkFetcherTests.swift_215_LastFMArtworkServiceTests.SequentialMockSession.data_Artwork_Shared_Artwork_T__h4a7b3c4c947c71dc.json",
+  "row_index": 0,
+  "trial": 1
+}

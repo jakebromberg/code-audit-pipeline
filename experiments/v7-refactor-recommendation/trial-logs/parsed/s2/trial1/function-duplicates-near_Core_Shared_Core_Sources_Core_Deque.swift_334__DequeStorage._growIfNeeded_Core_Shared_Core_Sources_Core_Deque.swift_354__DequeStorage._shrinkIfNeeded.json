@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.7143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both residing in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. The high token overlap strongly suggests the two methods share the same capacity-management scaffolding and differ only in the direction of the resize decision. Extracting a shared private helper within `_DequeStorage` would eliminate the duplicated scaffolding while keeping the grow/shrink semantics explicit at the call sites. Neither method is test, codegen, mock, or sample-app code, so no intentional-duplication exemption applies.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a similar parameterised form \u2014 and have both methods delegate to it. The two methods differ only in the direction of the capacity check and the target capacity calculation (grow vs. shrink), which maps cleanly onto two closure or enum-direction parameters.",
+      "why_no_category_fits": "The two methods are not separate types, protocols, or structs, so extract-to-common, protocol-inheritance, and generic-struct/class categories do not apply. They are not generic candidates in the type-parameter sense. The relationship is a classic 'dual-operation' pattern (grow/shrink) where a single private helper parameterised by direction/predicate is the idiomatic Swift refactor, but that does not map to any of the named specifics schemas precisely enough to use without distortion."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 1
+}

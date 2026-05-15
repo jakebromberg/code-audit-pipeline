@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second member lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' \u2014 a path that contains 'Examples/WallpaperSampleApp', strongly indicating it is a local, sample-app-scoped copy of the initializer rather than a canonical definition. The canonical definition resides in the 'DebugPanel' package at 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift'. Although neither record carries is_sample_app=true in its context flags, the file path evidence makes the sample-app nature of the second copy clear. Attempting to unify them by removing the copy in DebugHUD.swift and importing the DebugPanel package into WallpaperSampleApp would introduce a cross-package dependency from a sample/example target into a production framework, which is typically undesirable. Until the WallpaperSampleApp target is confirmed to already depend on DebugPanel, the safest recommendation is no-action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_41_DebugMetricsProvider.init_Wallpaper_Shared_Wallpaper_Examples_Wallpaper__ha04514c3757c29af.json",
+  "row_index": 40,
+  "trial": 1
+}

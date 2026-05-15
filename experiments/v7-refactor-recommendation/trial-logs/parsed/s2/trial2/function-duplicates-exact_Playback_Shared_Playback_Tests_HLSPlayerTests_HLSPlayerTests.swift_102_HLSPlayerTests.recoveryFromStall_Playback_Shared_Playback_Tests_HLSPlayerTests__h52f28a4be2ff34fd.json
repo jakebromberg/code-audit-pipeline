@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift",
+    "rationale": "Both methods \u2014 `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) \u2014 live in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package and are named for distinct, sequential playback lifecycle events (stalling vs. recovering from a stall). Despite the structural similarity flagged by the `function-duplicates-exact` query, the two methods encode different test scenarios whose shared shape is a natural consequence of testing adjacent state transitions in the same subsystem, not accidental duplication. Notably, both records carry `is_test: false` in their context flags, which appears to be a metadata anomaly given the file path (`Tests/HLSPlayerTests/HLSPlayerTests.swift`) and class name (`HLSPlayerTests`); this further undermines confidence in any automated refactor action. With `structural_evidence` fields all null (no Jaccard score, no differing slots), there is insufficient grounding to prescribe a merge or extraction.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_HLSPlayerTests.swift_102_HLSPlayerTests.recoveryFromStall_Playback_Shared_Playback_Tests_HLSPlayerTests__h52f28a4be2ff34fd.json",
+  "row_index": 22,
+  "trial": 2
+}

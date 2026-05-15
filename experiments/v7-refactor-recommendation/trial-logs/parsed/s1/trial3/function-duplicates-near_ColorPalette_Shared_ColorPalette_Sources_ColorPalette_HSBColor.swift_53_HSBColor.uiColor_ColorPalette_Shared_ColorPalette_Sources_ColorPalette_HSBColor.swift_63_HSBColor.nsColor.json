@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The cluster reports a Jaccard similarity of 0.7142857142857143 between `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`, both in the `ColorPalette` package. Both are computed properties with no differing slots recorded, meaning the bodies are structurally near-identical. The only meaningful difference is the platform color type they return (`UIColor` vs `NSColor`). Extracting the shared HSB component arithmetic into a private helper eliminates the ~71% duplicated logic while preserving both properties as distinct, platform-appropriate API members.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIKit: Bool) -> <PlatformColor>` or a shared `func colorComponents() -> (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that encapsulates the shared HSB-to-platform-color conversion logic. `HSBColor.uiColor` and `HSBColor.nsColor` would each call this helper, differing only in which platform type they construct (`UIColor` vs `NSColor`). Both properties remain in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`; only the duplicated body is extracted.",
+      "why_no_category_fits": "The two properties (`uiColor` and `nsColor`) are intentionally distinct platform-specific APIs that must coexist \u2014 they cannot be collapsed into a single generic type or replaced by a protocol. The duplication is in their shared conversion arithmetic, not in their type identity. None of the named categories (extract-to-common, generic-parameterization, protocol-inheritance, etc.) cleanly model a 'extract shared private helper body' refactor within a single file for two properties that must remain separate public API surface."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 3
+}

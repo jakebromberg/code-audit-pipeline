@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:View",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"WXUI\" ... \"package\": \"Wallpaper\" ... \"package\": \"PartyHorn\" ... \"package\": \"PlayerHeaderView\" ... \"package\": \"MusicShareKit\" ... \"package\": \"app:iOS\"",
+    "rationale": "All 15 members are unnamed extensions (name: \"\") on SwiftUI's `View` type, spread across 7 distinct packages (WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, app:iOS) and covering unrelated domain concerns such as glass-effect compatibility, overlay sheets, blend modes, gesture handling, HUD presentation, and status-bar styling. The structural signal is purely that each file happens to extend `View`; there is no shared field list (fields_or_signature is empty for all), no shared ancestor, and no Jaccard similarity score \u2014 the pipeline flagged these solely on the name-collision of the unnamed extension target. Extending `View` in the file where a component lives is idiomatic SwiftUI practice and these extensions encode entirely unrelated domain concepts whose coincidence is structural only.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_View.json",
+  "row_index": 0,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/HLSPlayer/Protocol/HLSAVPlayerProtocol.swift:20:HLSAVPlayerProtocol+Playback:Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift:34:AudioEnginePlayerProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "shared_field_count: 0",
+    "rationale": "The structural evidence shows a Jaccard similarity of null and shared_field_count of 0, meaning the two protocols share no common members. `HLSAVPlayerProtocol` (line 20, HLSPlayer module) exposes HLS/AVPlayer-specific members such as `seekableTimeRanges:[NSValue]`, `seek:(to time: CMTime) async -> Bool`, and `rate:Float`, while `AudioEnginePlayerProtocol` (line 34, MP3Streamer module) exposes audio-engine-specific members such as `installRenderTap:()`, `scheduleBuffer:(_ buffer: AVAudioPCMBuffer)`, and `eventStream:AsyncStream<AudioPlayerEvent>`. The only superficial overlap is the presence of a `pause:()` and `play:()` verb in both, but their signatures differ (`play:()` vs `play:() throws`) and the surrounding contracts are entirely distinct \u2014 one is an HLS video/audio stream player backed by AVPlayer, the other is a low-level PCM audio engine. Introducing a shared parent protocol would create a false abstraction coupling two unrelated playback subsystems within the same `Playback` package.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_HLSPlayer_Protocol_HLSAVPlayerProtocol.swift_20_HLSAVPlayerProtocol_Playback_Shared_Playback_Sources_MP3Stream__hedd03a80ba7f644c.json",
+  "row_index": 15,
+  "trial": 2
+}

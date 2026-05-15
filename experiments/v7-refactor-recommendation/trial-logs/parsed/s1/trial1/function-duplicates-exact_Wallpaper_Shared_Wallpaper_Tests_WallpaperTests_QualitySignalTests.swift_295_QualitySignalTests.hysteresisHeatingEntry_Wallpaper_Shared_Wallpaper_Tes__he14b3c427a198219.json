@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+    "rationale": "Both methods \u2014 `QualitySignalTests.hysteresisHeatingEntry` (line 295) and `QualitySignalTests.hysteresisHeatingExit` (line 312) \u2014 live in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` within the `Wallpaper` package. Despite the `is_test` flag being reported as `false`, the file path (`Tests/WallpaperTests/`) and the enclosing type name (`QualitySignalTests`) make it clear these are test helper or test case methods. More importantly, the two methods encode semantically opposite domain events \u2014 hysteresis *entry* versus hysteresis *exit* \u2014 so their structural similarity is a natural consequence of testing symmetric state transitions, not accidental duplication. Merging or abstracting them would obscure the distinct test intent of each method.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_QualitySignalTests.swift_295_QualitySignalTests.hysteresisHeatingEntry_Wallpaper_Shared_Wallpaper_Tes__he14b3c427a198219.json",
+  "row_index": 16,
+  "trial": 1
+}

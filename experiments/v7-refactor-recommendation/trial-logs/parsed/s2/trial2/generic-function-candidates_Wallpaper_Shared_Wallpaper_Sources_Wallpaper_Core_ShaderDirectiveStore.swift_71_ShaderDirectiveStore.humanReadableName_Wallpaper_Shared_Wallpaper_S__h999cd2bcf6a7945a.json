@@ -1,0 +1,27 @@
+{
+  "cluster_id": "generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.62,
+    "evidence_quote": "ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName",
+    "rationale": "Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) in the `Wallpaper` package implement a method with the same name and a high structural similarity (Jaccard 0.8), yet they live in distinct types \u2014 one in `Core/ShaderDirectiveStore.swift` and one in `DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift`. Introducing a `HumanReadableNamed` protocol with a `humanReadableName` requirement in the `Wallpaper` package's `Core` layer would unify the contract, allow call-sites to accept any `HumanReadableNamed` value without caring about the concrete type, and make the shared intent explicit. A default implementation could also be provided via a protocol extension if the bodies are sufficiently similar, reducing further duplication. Neither record is test, codegen, mock, or sample-app code, so there is no reason to treat this as intentional divergence.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [],
+      "new_protocol": "HumanReadableNamed",
+      "replaces": [
+        "ShaderDirectiveStore.humanReadableName",
+        "ShaderDirectiveControlsDisclosure.humanReadableName"
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_ShaderDirectiveStore.swift_71_ShaderDirectiveStore.humanReadableName_Wallpaper_Shared_Wallpaper_S__h999cd2bcf6a7945a.json",
+  "row_index": 7,
+  "trial": 2
+}

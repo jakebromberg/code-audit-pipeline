@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 60 ... \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both records share the name `MaterialView.body`, are `computed-property` kind, reside in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, and carry a Jaccard similarity of 0.8333, indicating near-identical implementations 132 lines apart. A single SwiftUI `View` conformance cannot legally have two `body` properties on the same type without an extension, so the cluster signals either two same-named `View` structs in one file or a redundant second declaration. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, ruling out intentional duplication. The correct action depends on a file-level audit that the cluster data alone cannot resolve, making none of the standard refactor categories a precise fit.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is actually two distinct SwiftUI `View` structs (both named `MaterialView`) defined in the same file \u2014 one with its `body` starting at line 60 and another at line 192. If so, rename or merge the two types. If they are the same type with two `body` computed-property declarations (which Swift does not permit in a single type without extensions), the second declaration at line 192 is dead code and should be deleted. The surviving `body` should be refactored to extract any shared sub-view logic into private helper `@ViewBuilder` functions or sub-`View` structs within the same file, eliminating the near-duplication (Jaccard 0.83) without requiring cross-file changes.",
+      "why_no_category_fits": "The two members are both named `MaterialView.body` and live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192. This is not a cross-file extraction problem (`extract-to-common`), not a protocol/inheritance issue, and not a generic-parameterization opportunity. The root cause is ambiguous from the cluster alone: either there are two same-named types in one file (a naming/structural bug) or one type has a duplicate `body` declaration (dead code). Neither maps cleanly to any named category; the correct first step is a structural audit of the file before any mechanical refactor."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 3
+}

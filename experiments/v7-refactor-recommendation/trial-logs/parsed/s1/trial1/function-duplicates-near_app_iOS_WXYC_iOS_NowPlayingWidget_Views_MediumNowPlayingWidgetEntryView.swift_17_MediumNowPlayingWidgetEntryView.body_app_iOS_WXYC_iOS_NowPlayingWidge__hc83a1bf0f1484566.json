@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The two `body` computed properties \u2014 `SmallNowPlayingWidgetEntryView.body` (line 17 of SmallNowPlayingWidgetEntryView.swift) and `MediumNowPlayingWidgetEntryView.body` (line 17 of MediumNowPlayingWidgetEntryView.swift) \u2014 share a Jaccard similarity of 0.714, indicating substantial structural overlap in their SwiftUI view hierarchies. Both live in the same package (`app:iOS`) and the same `NowPlayingWidget/Views/` directory, so no cross-package dependency changes are required. The most idiomatic Swift/SwiftUI approach is to extract a shared `NowPlayingWidgetEntryView` that accepts a `WidgetFamily` (or equivalent size parameter) and branches internally, eliminating the near-duplicate `body` implementations. Neither record is test, codegen, mock, or sample-app code, so the duplication is not intentional by policy.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift",
+        "WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "NowPlayingWidgetEntryView"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MPNowPlayingInfoCenter",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name is empty string) on `MPNowPlayingInfoCenter` living in two distinct layers: one in `Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift` (package `Playback`) and one in `WXYC/iOS/NowPlayingInfoCenterManager.swift` (package `app:iOS`). The structural evidence carries no Jaccard score, no shared field count, and no differing slots, meaning the pipeline detected only a name collision on the extended type rather than any shared shape or content. Extensions on the same system type (`MPNowPlayingInfoCenter`) in a framework layer vs. an app layer are a normal layered-architecture pattern and are almost certainly serving different purposes (protocol conformance declaration vs. app-level convenience). No consolidation is warranted without evidence of actual duplicated members.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_MPNowPlayingInfoCenter.json",
+  "row_index": 25,
+  "trial": 2
+}

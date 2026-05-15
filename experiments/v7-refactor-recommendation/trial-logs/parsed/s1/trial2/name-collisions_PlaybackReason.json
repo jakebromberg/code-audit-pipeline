@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"file\": \"Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift\", \"kind\": \"type-alias-object\" ... \"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift\", \"kind\": \"extension\" ... \"file\": \"WXYC/iOS/PlaybackReason+App.swift\", \"kind\": \"extension\"",
+    "rationale": "The cluster surfaces one canonical type-alias declaration in 'Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift' (package: Playback) plus three extensions spread across 'Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift' (package: PlayerHeaderView) and 'WXYC/iOS/PlaybackReason+App.swift' (package: app:iOS). This is the standard Swift pattern of defining a type in a core package and adding context-specific extensions in downstream packages; the extensions are intentionally separate because each package adds its own domain-specific behaviour without coupling the core to UI or app-layer concerns. No fields_or_signature data is present to suggest the extensions duplicate each other's content, and the naming convention ('PlaybackReason+PlayerHeaderView', 'PlaybackReason+App') explicitly signals purposeful, scoped augmentation rather than accidental duplication. Consolidating these extensions would introduce unwanted cross-package dependencies.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 2
+}

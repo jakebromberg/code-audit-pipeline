@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "WXYCGradient.wxycBackgroundDark\n    \"file\": \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n    \"WXYCBackground.wxycBackgroundDark\"\n    \"file\": \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\"",
+    "rationale": "Both `WXYCBackground.wxycBackgroundDark` (BackgroundGradient.swift:30) and `WXYCGradient.wxycBackgroundDark` (WXYCGradient.swift:31) are exact-duplicate computed properties living in the same package (WXUI). Neither is test, codegen, mock, nor sample-app code. The duplication is almost certainly accidental \u2014 the same gradient value was defined independently on two different types. The cleanest Swift resolution is to extract the shared value into a single location within WXUI (e.g., a dedicated `WXYCColors` or `WXYCGradients` namespace, or a protocol extension shared by both types) and remove the redundant definitions from both files.",
+    "specifics": {
+      "remove_from": [
+        "Shared/WXUI/Sources/WXUI/BackgroundGradient.swift",
+        "Shared/WXUI/Sources/WXUI/WXYCGradient.swift"
+      ],
+      "target_package": "WXUI",
+      "type_name": "wxycBackgroundDark"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_WXUI_Shared_WXUI_Sources_WXUI_BackgroundGradient.swift_30_WXYCBackground.wxycBackgroundDark_WXUI_Shared_WXUI_Sources_WXUI_WXYCGradient.swift_31_WXYCGradient.wxycBackgroundDark.json",
+  "row_index": 8,
+  "trial": 1
+}

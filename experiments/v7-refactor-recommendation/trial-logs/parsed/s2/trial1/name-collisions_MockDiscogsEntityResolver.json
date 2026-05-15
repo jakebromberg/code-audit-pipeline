@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"\n\"file\": \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n\"kind\": \"type-alias-object\"",
+    "rationale": "Two separate packages \u2014 'Metadata' and 'app:iOS' \u2014 each define a type-alias named 'MockDiscogsEntityResolver' (at line 29 in 'Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' and line 25 in 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift' respectively). Because both are type-alias-objects with empty field lists and both relate to Discogs entity resolution, the alias in the app:iOS test target is almost certainly a copy of the one already present in the Metadata package's test support. Consolidating the canonical definition in the Metadata package and having the app:iOS test target import it eliminates the name collision and keeps the mock in the package that owns the Discogs domain types. Neither record carries is_test=true in its context flags, but both live under test file paths, so the duplication is accidental rather than intentional fixture isolation.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_MockDiscogsEntityResolver.json",
+  "row_index": 28,
+  "trial": 1
+}

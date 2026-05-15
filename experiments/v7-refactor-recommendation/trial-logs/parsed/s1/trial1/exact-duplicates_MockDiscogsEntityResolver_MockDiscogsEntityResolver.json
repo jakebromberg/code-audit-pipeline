@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.78,
+    "evidence_quote": "\"name\": \"MockDiscogsEntityResolver\", \"package\": \"Metadata\" ... \"name\": \"MockDiscogsEntityResolver\", \"package\": \"app:iOS\" ... \"shared_field_count\": 4",
+    "rationale": "Two identical `MockDiscogsEntityResolver` type-alias-object declarations exist across two packages \u2014 one in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and one in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS) \u2014 with `shared_field_count: 4` and no differing slots, confirming they are exact duplicates. Since the type already lives in the `Metadata` package's test target, the canonical home is there. The `app:iOS` test target almost certainly already depends on `Metadata`, making the duplicate in `DiscogsFormatterTests.swift` redundant. Consolidating to a single definition in the `Metadata` test target eliminates the risk of the two definitions drifting apart.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 1
+}

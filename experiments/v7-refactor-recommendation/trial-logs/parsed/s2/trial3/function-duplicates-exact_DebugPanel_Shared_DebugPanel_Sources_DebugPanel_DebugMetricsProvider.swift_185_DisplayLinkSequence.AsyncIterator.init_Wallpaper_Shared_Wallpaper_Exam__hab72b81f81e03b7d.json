@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+    "rationale": "Two exact-duplicate `DisplayLinkSequence.AsyncIterator.init` initializers exist independently in `DebugPanel` (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185) and `Wallpaper` (Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209). Neither record is marked is_test, is_codegen, is_mock, or is_sample_app, so this is live production code duplicated across packages. The `DebugPanel` package is the more natural canonical home because `DisplayLinkSequence` is already defined there; the `Wallpaper` package's `DebugHUD.swift` copy should be removed and replaced with an import of `DebugPanel`. Note that the `DebugHUD.swift` file lives under an `Examples/WallpaperSampleApp` path, which slightly reduces urgency, but the context flag `is_sample_app` is explicitly `false`, so it is treated as production code per the cluster data.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "DisplayLinkSequence"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_185_DisplayLinkSequence.AsyncIterator.init_Wallpaper_Shared_Wallpaper_Exam__hab72b81f81e03b7d.json",
+  "row_index": 38,
+  "trial": 3
+}

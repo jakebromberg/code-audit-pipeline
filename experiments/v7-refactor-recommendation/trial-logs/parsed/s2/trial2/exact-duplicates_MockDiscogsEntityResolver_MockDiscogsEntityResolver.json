@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 4",
+    "rationale": "Two identical `MockDiscogsEntityResolver` type-alias-object declarations exist in separate packages \u2014 one in `Metadata` (Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:29) and one in `app:iOS` (WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:25) \u2014 with `shared_field_count: 4` and no differing slots, confirming they are exact duplicates. Since the canonical home for Discogs-related types is the `Metadata` package (which is already shared), the single authoritative definition should live there. The `app:iOS` copy should be removed and replaced with an import of the `Metadata` test support module. Neither record carries `is_codegen`, `is_mock`, or `is_sample_app` flags, so this is not intentional duplication.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 2
+}

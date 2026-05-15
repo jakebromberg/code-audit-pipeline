@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:SheetDraggingKey+ThemePickerActiveKey+UITestingModeKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All three types \u2014 `SheetDraggingKey` in `WXUI/OverlaySheet.swift`, `ThemePickerActiveKey` in `Wallpaper/ThemePickerState.swift`, and `UITestingModeKey` also in `Wallpaper/ThemePickerState.swift` \u2014 are `type-alias-object` declarations with empty `fields_or_signature`. The structural similarity (shared_field_count: 1, all fields empty) reflects the fact that SwiftUI `EnvironmentKey` sentinel types are idiomatically zero-member types by design; each one encodes a distinct, unrelated environment key concept (sheet dragging state, theme picker activation, and UI testing mode). Merging or extracting them would conflate unrelated domain concerns and provide no reduction in complexity. The coincidence is purely structural, not semantic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_SheetDraggingKey_ThemePickerActiveKey_UITestingModeKey.json",
+  "row_index": 20,
+  "trial": 1
+}

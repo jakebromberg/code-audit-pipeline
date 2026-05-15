@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\"",
+    "rationale": "Both `MetadataMockWebSession` and `EntityResolverMockWebSession` are type-alias objects defined inside test files (`PlaycutMetadataServiceCachingTests.swift` at line 79 and `DiscogsAPIEntityResolverCachingTests.swift` at line 72, both in the `Metadata` package under `Tests/MetadataTests/`). Although `is_test` is reported as `false` by the context flags, the file paths unambiguously place both declarations inside a test target. The structural duplication (shared_field_count: 2, identical shape) is consistent with two test-local mock aliases that happen to wrap the same underlying type for different test suites. Merging them into a single shared alias would couple two otherwise independent test files and obscure the intent of each test suite.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 1
+}

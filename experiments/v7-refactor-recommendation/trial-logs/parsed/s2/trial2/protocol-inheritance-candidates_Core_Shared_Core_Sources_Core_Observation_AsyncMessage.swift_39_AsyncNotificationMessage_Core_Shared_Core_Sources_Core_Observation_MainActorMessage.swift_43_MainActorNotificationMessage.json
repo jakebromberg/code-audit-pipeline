@@ -1,0 +1,30 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.82,
+    "evidence_quote": "makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n        \"name:Notification.Name",
+    "rationale": "Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) share two identical member declarations \u2014 `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name` \u2014 and differ only in the `makeMessage` factory: the async variant uses `sending Notification` while the main-actor variant uses plain `Notification`. Introducing a common parent protocol `NotificationMessage` in the Core package to hold the two shared members eliminates the duplication and makes the relationship between the two dispatch-context-specific protocols explicit. Both protocols live in the same package (`Core`) and carry no test, codegen, or sample-app flags, so extraction is safe. The sole differing slot (`makeMessage`) stays in each child protocol, preserving the concurrency-contract distinction.",
+    "specifics": {
+      "children": [
+        "AsyncNotificationMessage",
+        "MainActorNotificationMessage"
+      ],
+      "moved_members": [
+        "makeNotification:(_ message: Self, object: Subject?) -> Notification",
+        "name:Notification.Name"
+      ],
+      "parent": "NotificationMessage",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_39_AsyncNotificationMessage_Core_Shared_Core_Sources_Core_Observation_MainActorMessage.swift_43_MainActorNotificationMessage.json",
+  "row_index": 9,
+  "trial": 2
+}

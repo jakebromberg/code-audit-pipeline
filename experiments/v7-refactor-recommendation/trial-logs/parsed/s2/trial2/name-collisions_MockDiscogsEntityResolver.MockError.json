@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver.MockError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"type-alias-union\", \"fields_or_signature\": [], \"differing_slots\": null, \"jaccard\": null",
+    "rationale": "Both members are unnamed `type-alias-union` declarations (name is empty string) residing in test files \u2014 one in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and one in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Despite the cluster_id referencing `MockDiscogsEntityResolver.MockError`, the actual records carry no name, no fields, and no structural evidence (all Jaccard/shared-field metrics are null), making it impossible to ground a meaningful refactor recommendation. The two declarations live in separate test packages testing distinct formatters/parsers, so any shape similarity is coincidental rather than a sign of unintended duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 29,
+  "trial": 2
+}

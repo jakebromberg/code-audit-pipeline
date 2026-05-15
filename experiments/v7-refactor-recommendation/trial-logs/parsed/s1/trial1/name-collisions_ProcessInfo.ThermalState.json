@@ -1,0 +1,26 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.52,
+    "evidence_quote": "\"file\": \"Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift\"\n\"file\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n\"file\": \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\"",
+    "rationale": "Three separate extension declarations on `ProcessInfo.ThermalState` exist across two packages \u2014 `DebugPanel` (DebugMetricsProvider.swift:212) and `Wallpaper` (DebugHUD.swift:236 and QualitySignal.swift:230). Because `DebugPanel` already has one such extension and its purpose (debug metrics) is the most natural home for thermal-state utilities, the two `Wallpaper`-package extensions should be consolidated there or into a shared utility target that both packages can depend on, eliminating the name collision and the risk of divergent implementations. The `WallpaperSampleApp` copy in particular is in an Examples path and is the least authoritative of the three.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 1
+}

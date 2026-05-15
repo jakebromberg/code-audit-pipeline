@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:AccentBrightnessKey+AccentHueKey+AccentSaturationKey+LCDActiveBrightnessKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "macro-synthesis",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 1",
+    "rationale": "All four types \u2014 AccentHueKey, AccentSaturationKey, AccentBrightnessKey, and LCDActiveBrightnessKey \u2014 are structurally identical SwiftUI EnvironmentKey boilerplate types living in the same file (AccentColorEnvironment.swift, package PlayerHeaderView) with shared_field_count of 1 and no differing slots. The only variation between them is their name and the associated default value/type, which are exactly the parameters a Swift macro could accept. A single `@EnvironmentKey` attached macro would synthesize the conformance body, eliminating all four hand-written types and making future additions a one-liner.",
+    "specifics": {
+      "applies_to": [
+        "struct"
+      ],
+      "macro_name": "@EnvironmentKey",
+      "population_size_evidence": "4 type-alias-object records (AccentHueKey, AccentSaturationKey, AccentBrightnessKey, LCDActiveBrightnessKey) all in AccentColorEnvironment.swift with shared_field_count: 1",
+      "synthesizes": "A SwiftUI EnvironmentKey-conforming struct with a default `defaultValue` property, eliminating the need to hand-write each boilerplate key type. Each invocation would expand to a struct conforming to EnvironmentKey with a caller-supplied default value and type.",
+      "use_swift_builtin": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_AccentBrightnessKey_AccentHueKey_AccentSaturationKey_LCDActiveBrightnessKey.json",
+  "row_index": 7,
+  "trial": 2
+}

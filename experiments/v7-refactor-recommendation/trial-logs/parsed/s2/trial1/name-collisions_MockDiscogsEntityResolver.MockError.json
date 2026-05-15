@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver.MockError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"differing_slots\": null,\n        \"jaccard\": null,\n        \"shared_ancestor\": null,\n        \"shared_field_count\": null",
+    "rationale": "Both members are `type-alias-union` declarations with empty `fields_or_signature` lists, and the cluster carries no structural evidence (jaccard, shared_field_count, shared_ancestor, and differing_slots are all null). The two files \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS) \u2014 are in separate test suites testing distinct formatters/parsers, so any name collision on a nested `MockError` type is almost certainly coincidental rather than a shared abstraction worth extracting. Additionally, neither record carries `is_test=true` in the context flags as recorded, yet both live under `Tests/` paths, suggesting a data-quality quirk; the test-path evidence alone is sufficient to treat this as a local test helper in each suite. No shared ancestor or Jaccard similarity was computed, providing no positive evidence for a refactor.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 29,
+  "trial": 1
+}

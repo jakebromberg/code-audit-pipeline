@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "iTunesArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+    "rationale": "All four members are exact duplicates of the `data` method, each nested inside a per-test-class `SequentialMockSession` inner type: `iTunesArtworkServiceTests.SequentialMockSession.data` (line 88), `LastFMArtworkServiceTests.SequentialMockSession.data` (line 215), `DiscogsArtworkServiceTests.SequentialMockSession.data` (lines 321 and 367), all within `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` in the `Artwork` package. The duplication is structural rather than intentional: each test class has independently copy-pasted an identical `SequentialMockSession` helper. A single top-level (or file-scope) `SequentialMockSession` type in the same test file (or a shared test-support file within the `Artwork` package) would eliminate all four copies and be reused by every service test class. Note: although the file path contains `Tests/`, the `is_test` flag is `false` on all records, so the test-fixture no-action rule does not apply.",
+    "specifics": {
+      "extract-to-common": {
+        "remove_from": [
+          "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift"
+        ],
+        "target_package": "Artwork",
+        "type_name": "SequentialMockSession"
+      }
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkFetcherTests.swift_215_LastFMArtworkServiceTests.SequentialMockSession.data_Artwork_Shared_Artwork_T__h4a7b3c4c947c71dc.json",
+  "row_index": 0,
+  "trial": 1
+}

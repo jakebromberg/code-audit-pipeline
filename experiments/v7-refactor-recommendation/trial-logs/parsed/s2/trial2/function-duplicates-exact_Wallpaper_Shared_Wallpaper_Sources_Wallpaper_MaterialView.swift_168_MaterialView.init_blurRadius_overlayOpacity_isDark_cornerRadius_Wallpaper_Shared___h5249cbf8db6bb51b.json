@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)\" at line 35 \u2026 \"MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)\" at line 168 \u2026 both in \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"",
+    "rationale": "The cluster surfaces two exact-duplicate initializers \u2014 both named `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` \u2014 residing in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 35 and 168, within the same `Wallpaper` package. Neither record carries any test, codegen, mock, or sample-app flag, so intentional duplication is unlikely. Having two identical initializer signatures in one file will either cause a compile-time 'invalid redeclaration' error (if they are truly identical) or silently shadow one another inside `#if` blocks, both of which are defects that warrant immediate cleanup.",
+    "specifics": {
+      "proposed_action": "Investigate whether the two definitions of `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` at lines 35 and 168 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent a true duplicate (e.g., a copy-paste accident, a stale overload left after a refactor, or a conditional-compilation block that accidentally duplicated the signature). Once confirmed, delete the redundant definition \u2014 most likely the one at line 168 \u2014 leaving only the canonical initializer at line 35. If both exist inside separate `#if` branches, consolidate them into a single implementation that handles the conditional logic internally.",
+      "why_no_category_fits": "Both records live in the exact same file (`MaterialView.swift`) and the exact same package (`Wallpaper`), so 'extract-to-common' does not apply. There is only one type involved, so 'protocol-inheritance', 'pat-introduction', 'generic-parameterization', and 'subclass-lift' do not apply. The duplication is within a single type's own file, making 'extension-consolidation' a poor fit. The correct action is simply to remove the duplicate definition, which is a straightforward deletion rather than any of the named structural refactoring categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 2
+}

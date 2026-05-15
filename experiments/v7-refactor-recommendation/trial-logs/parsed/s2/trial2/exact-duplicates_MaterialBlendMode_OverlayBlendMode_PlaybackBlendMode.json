@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"shared_field_count\": 16",
+    "rationale": "All three members \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` declarations in the same package (`Wallpaper`) with identical structure (`shared_field_count: 16`, `differing_slots: null`), meaning they are exact duplicates sharing all 16 union cases. None carry test, codegen, mock, or sample-app flags, so the duplication is unintentional. The idiomatic Swift fix is to define a single canonical `BlendMode` type-alias-union in the `Wallpaper` package (e.g., in a new `BlendMode.swift` under `Shared/Wallpaper/Sources/Wallpaper/Core/`) and replace the three site-specific aliases with `typealias PlaybackBlendMode = BlendMode`, `typealias MaterialBlendMode = BlendMode`, and `typealias OverlayBlendMode = BlendMode` \u2014 or remove the aliases entirely if call sites can be migrated to `BlendMode` directly. This eliminates the risk of the three definitions drifting apart as new blend-mode cases are added.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "BlendMode"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MaterialBlendMode_OverlayBlendMode_PlaybackBlendMode.json",
+  "row_index": 17,
+  "trial": 2
+}

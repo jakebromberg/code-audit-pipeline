@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:MaterialView+MaterialView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"kind\": \"type-alias-object\", \"line\": 20 ... \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"kind\": \"type-alias-object\", \"line\": 162",
+    "rationale": "Both `MaterialView` records are `type-alias-object` declarations residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 20 and 162 respectively. A type alias with the same name declared twice in the same file will either cause a compile-time redeclaration error or silently shadow the first definition, neither of which is intentional. The `shared_field_count: 5` with `differing_slots: null` confirms the two aliases are structurally identical. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, ruling out intentional duplication patterns.",
+    "specifics": {
+      "proposed_action": "Investigate why two `MaterialView` type-alias declarations exist in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 20 and 162) within the `Wallpaper` package. One of the two declarations is almost certainly a copy-paste accident or a stale leftover from a refactor. Remove the redundant declaration, keeping whichever one is the canonical definition (likely line 20, as it appears first). If both aliases resolve to different underlying types, rename one to disambiguate.",
+      "why_no_category_fits": "Both records are in the exact same file and package \u2014 this is not a cross-file or cross-package duplication scenario that any of the structural refactor categories (extract-to-common, protocol-inheritance, generic-parameterization, etc.) address. The correct fix is simply to delete the duplicate declaration within the single file, which is a straightforward editorial cleanup rather than an architectural refactor."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MaterialView_MaterialView.json",
+  "row_index": 29,
+  "trial": 2
+}

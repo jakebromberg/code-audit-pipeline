@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both members are named `cachedFetch`, reside in the identical file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92), belong to the `Caching` package, and carry no test/codegen/mock/sample-app flags, making this production code worth addressing. The Jaccard score of 0.70 indicates substantial but imperfect overlap, suggesting a shared core with a small diverging section rather than a clean overload pair. Because `fields_or_signature` is empty for both records, the exact parameter difference is not visible in the cluster data, so a definitive generic-parameterization or default-parameter recommendation cannot be grounded without inspecting the source. The safest actionable step is a targeted code review of the two bodies to extract any shared logic into a private helper or collapse them via a defaulted parameter.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is limited to a small number of call-site parameters (e.g., a cache policy, expiry duration, or key strategy), unify them into a single generic or defaulted-parameter function, removing the near-duplicate body. If the two overloads are genuinely distinct entry points that merely share structural shape, add a brief comment explaining the intentional split so future analysis tools can suppress the signal.",
+      "why_no_category_fits": "Both functions live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), so 'extract-to-common' (cross-package extraction) does not apply. The cluster reports a Jaccard similarity of 0.70 \u2014 high but not identical \u2014 and `fields_or_signature` is empty for both members, meaning the pipeline did not surface concrete parameter lists. Without visible signatures it is impossible to confirm that a single generic parameterization or a default-implementation pattern is the right fix; the correct action depends on whether the difference is in parameter types, effect specifiers (async/throws), or logic branches. 'generic-parameterization' is therefore listed as the alternative rather than the primary recommendation."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 1
+}

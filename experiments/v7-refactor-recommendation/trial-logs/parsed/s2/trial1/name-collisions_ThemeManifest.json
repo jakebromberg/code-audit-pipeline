@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ThemeManifest",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"structural_evidence\": {\"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null}",
+    "rationale": "All three members belong to the same package ('Wallpaper') and the cluster's structural_evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, meaning the pipeline found no substantive field or method overlap to act on. The cluster surfaces a type-alias-object at ThemeManifest.swift:15, an extension on it at ThemeManifest.swift:579 (both canonical source locations), and a separate extension inside MockThemeRegistry.swift:49 in the test tree \u2014 a perfectly normal Swift pattern of defining a type and extending it in tests. The name-collision signal here is structural noise from the unnamed extension records sharing the 'ThemeManifest' namespace rather than a genuine duplication problem. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_ThemeManifest.json",
+  "row_index": 14,
+  "trial": 1
+}

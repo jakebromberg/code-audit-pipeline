@@ -1,0 +1,26 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift\"\n\"file\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n\"file\": \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\"",
+    "rationale": "Three separate packages \u2014 DebugPanel and Wallpaper (twice, once in a sample-app path and once in production throttling code) \u2014 each define an unnamed extension on ProcessInfo.ThermalState at lines 212, 236, and 230 respectively. Because all three context-flag sets are false (not test, not codegen, not mock, not sample-app flagged), these are live production extensions that shadow one another. The canonical home is DebugPanel, which already owns the first copy; the two Wallpaper copies should be deleted and Wallpaper should import DebugPanel (or a shared utility package) to consume the single extension. If a circular-dependency concern prevents Wallpaper from importing DebugPanel, the extension should instead be lifted into a shared lower-level package that both already depend on.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 3
+}

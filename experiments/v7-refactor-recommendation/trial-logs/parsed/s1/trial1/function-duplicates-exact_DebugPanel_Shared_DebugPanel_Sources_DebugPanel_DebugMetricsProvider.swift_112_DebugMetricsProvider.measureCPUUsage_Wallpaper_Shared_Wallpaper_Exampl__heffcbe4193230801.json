@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+    "rationale": "The method `DebugMetricsProvider.measureCPUUsage` is duplicated exactly between `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (line 112, package `DebugPanel`) and `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (line 141, package `Wallpaper`). The canonical home is already the `DebugPanel` package, which owns the `DebugMetricsProvider` type by name. The `Wallpaper` package's `DebugHUD.swift` should be updated to import `DebugPanel` and call the existing implementation rather than re-declaring it. Neither record carries `is_test`, `is_codegen`, or `is_mock` flags, so this is live production duplication with no intentional-specialization justification.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "DebugMetricsProvider"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_112_DebugMetricsProvider.measureCPUUsage_Wallpaper_Shared_Wallpaper_Exampl__heffcbe4193230801.json",
+  "row_index": 9,
+  "trial": 1
+}

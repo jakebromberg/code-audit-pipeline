@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 2, \"differing_slots\": [{\"a\": [\"artwork:Image?\"], \"b\": [\"artwork:UIImage?\"]}]",
+    "rationale": "Both `NowPlayingItem` (AppServices package, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (app:iOS package, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` kinds sharing two fields \u2014 `playcut:Playcut` identically, and `artwork` differing only in image type (`Image?` vs `UIImage?`). This is a textbook PAT opportunity: the shared structure can be captured in a protocol `PlaycutRepresentable` with an `associatedtype ArtworkImage` covering the platform-specific image type, while the `playcut: Playcut` requirement is concrete and shared. This avoids duplicating the structural contract across the framework boundary between `AppServices` and the iOS app target.",
+    "specifics": {
+      "associated_type": "ArtworkImage",
+      "constraints": [],
+      "new_protocol": "PlaycutRepresentable",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial1/pat-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 7,
+  "trial": 1
+}

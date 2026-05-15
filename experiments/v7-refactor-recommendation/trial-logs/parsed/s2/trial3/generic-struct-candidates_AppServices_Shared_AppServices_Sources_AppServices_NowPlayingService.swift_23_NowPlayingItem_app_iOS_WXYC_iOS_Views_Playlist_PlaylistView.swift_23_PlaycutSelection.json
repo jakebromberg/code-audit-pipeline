@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-struct-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": [ { \"a\": [ \"artwork:Image?\" ], \"b\": [ \"artwork:UIImage?\" ] } ], \"shared_field_count\": 2",
+    "rationale": "Both `NowPlayingItem` (AppServices, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (app:iOS, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` structs with an identical two-field shape \u2014 `playcut:Playcut` plus an optional artwork image \u2014 differing only in the concrete image type (`Image?` vs `UIImage?`). Parameterising the artwork slot as `ArtworkImage` (e.g., `struct PlaycutItem<ArtworkImage> { var artwork: ArtworkImage?; var playcut: Playcut }`) unifies both use-sites: `AppServices` would use `PlaycutItem<Image>` and the iOS app layer would use `PlaycutItem<UIImage>`. The `structural_evidence` block confirms exactly one differing slot and two shared fields, making this a textbook single-type-parameter generalisation. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication exemption.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "PlaycutItem",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "ArtworkImage"
+        }
+      ]
+    }
+  },
+  "query": "generic-struct-candidates",
+  "raw_response_path": "raw/s2/trial3/generic-struct-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 2,
+  "trial": 3
+}

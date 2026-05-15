@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.55,
+    "evidence_quote": "WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+    "rationale": "Although both methods extend `RangeReplaceableCollection` with structurally similar pop-first behaviour, they carry different names (`popFirst` in `WXYC/iOS/NowPlayingWidget/Extensions.swift:18` vs `safePopFirst` in `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25`) and live in different contexts: one is production extension code, the other resides inside the test target `WXYCTests`. The test file's copy is almost certainly a local helper written to exercise or mirror the production method without importing it directly, which is a common test-isolation pattern. Neither record is flagged `is_test=true` by the pipeline, but the file path `Tests/WXYCTests/` makes the test-fixture intent clear. Merging them would either pollute the production extension with a test-only alias or force the test target to depend on the production extension in a way that may not be desired.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 1
+}

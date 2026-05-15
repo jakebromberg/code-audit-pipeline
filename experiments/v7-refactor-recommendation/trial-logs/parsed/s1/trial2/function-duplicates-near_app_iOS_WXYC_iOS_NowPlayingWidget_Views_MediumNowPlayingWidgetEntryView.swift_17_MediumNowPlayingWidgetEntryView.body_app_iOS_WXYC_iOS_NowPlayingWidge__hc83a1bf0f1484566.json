@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `SmallNowPlayingWidgetEntryView.body` (line 17 in SmallNowPlayingWidgetEntryView.swift) and `MediumNowPlayingWidgetEntryView.body` (line 17 in MediumNowPlayingWidgetEntryView.swift) are near-duplicate computed properties with a Jaccard similarity of 0.714, indicating substantial shared SwiftUI view logic. The only meaningful difference is likely the widget family/size, which can be parameterised via a `widgetFamily` or `containerBackground` environment value or an explicit initialiser argument rather than duplicated across two separate view types. Extracting a shared `NowPlayingWidgetEntryView` within the same `app:iOS` package and having the two existing entry-view types either become thin wrappers or be removed entirely would eliminate the duplication while preserving size-specific layout tweaks through conditional branching on a single injected parameter.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift",
+        "WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "NowPlayingWidgetEntryView"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 2
+}

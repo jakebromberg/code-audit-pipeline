@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+    "rationale": "Both members are exact duplicates of `MockDiscogsEntityResolver.resolveRelease`: one lives in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and the other in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because `Metadata` is already a shared package and the app target depends on it, the canonical mock should be defined once in the `Metadata` test support layer and imported by the app-layer tests. Consolidating here eliminates the risk of the two copies drifting apart as the `DiscogsEntityResolver` protocol evolves. Note that both records carry `is_test: false` in their context flags, which is likely a pipeline mis-classification given the file paths (`Tests/\u2026`); the recommendation stands regardless, as the duplication is real.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_45_MockDiscogsEntityResolver.resolveRelease_app_iOS_WXYC_iOS_Tests_WXYCTe__h956b25383b3a0cf1.json",
+  "row_index": 21,
+  "trial": 1
+}

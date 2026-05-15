@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+    "rationale": "Both `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) are computed properties in the same file (`Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`) within the `ColorPalette` package, with a Jaccard similarity of 0.71, indicating substantial shared body logic (likely the same HSB component extraction). They cannot be merged into one property because they target different platform color types. Extracting a private `colorComponents()` or `makeBaseColor()` helper eliminates the duplicated conversion arithmetic while preserving the two distinct public-facing properties. No context flags (test, codegen, mock, sample-app) suggest the duplication is intentional.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIColor: Bool) -> AnyObject` or, more idiomatically, a shared `func colorComponents() -> (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that encapsulates the shared HSB-to-color conversion logic. Both `uiColor` and `nsColor` computed properties would then delegate to this helper, each wrapping the result in the platform-appropriate type (`UIColor` vs `NSColor`). The helper should live in the same file, `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`, immediately above the two properties.",
+      "why_no_category_fits": "The two properties (`HSBColor.uiColor` at line 53 and `HSBColor.nsColor` at line 63) are near-duplicates (Jaccard 0.71) that must remain as two distinct computed properties because they return platform-specific types (`UIColor` and `NSColor`). They cannot be collapsed into a single generic function without a type-erased or conditional-compilation wrapper, and they are not candidates for protocol-inheritance, subclass-lift, or extract-to-common because they already live in the same file and package. The most idiomatic Swift remedy is a private shared helper \u2014 a pattern that does not map cleanly to any of the named refactor categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 3
+}

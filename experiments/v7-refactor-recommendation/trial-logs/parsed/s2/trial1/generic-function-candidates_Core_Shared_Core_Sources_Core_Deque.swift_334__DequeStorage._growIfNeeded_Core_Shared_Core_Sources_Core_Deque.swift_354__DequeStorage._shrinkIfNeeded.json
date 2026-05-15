@@ -1,0 +1,21 @@
+{
+  "cluster_id": "generic-function-candidates:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "Although `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` share a high structural similarity (Jaccard 0.714), they encode semantically opposite and complementary capacity-management operations on a deque's backing storage. Growing and shrinking are intentionally distinct control paths with different triggering conditions and resize factors; collapsing them into a single generic function parameterised on direction would obscure intent, likely require a direction enum or boolean flag, and make the hot-path logic harder to optimise independently. The cluster provides no field/signature detail (`fields_or_signature: []`) that would confirm a safe unification, and the names themselves (`_grow` vs `_shrink`) signal deliberate asymmetry.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-function-candidates_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 23,
+  "trial": 1
+}

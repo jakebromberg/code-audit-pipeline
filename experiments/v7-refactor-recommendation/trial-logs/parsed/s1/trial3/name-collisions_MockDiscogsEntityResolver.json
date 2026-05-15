@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"\n    ...\n    \"file\": \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"",
+    "rationale": "Two separate packages \u2014 'Metadata' (at Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:29) and 'app:iOS' (at WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:25) \u2014 each independently define a type-alias-object named MockDiscogsEntityResolver. Because the Metadata package is already the canonical home for Discogs-related domain logic and the app:iOS package depends on it, the shared mock should live in Metadata's test support layer (e.g., a TestSupport or TestHelpers target within the Metadata package) so that both test suites can import a single definition. The duplicate in DiscogsFormatterTests.swift should then be removed and replaced with an import of the shared mock.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_MockDiscogsEntityResolver.json",
+  "row_index": 28,
+  "trial": 3
+}

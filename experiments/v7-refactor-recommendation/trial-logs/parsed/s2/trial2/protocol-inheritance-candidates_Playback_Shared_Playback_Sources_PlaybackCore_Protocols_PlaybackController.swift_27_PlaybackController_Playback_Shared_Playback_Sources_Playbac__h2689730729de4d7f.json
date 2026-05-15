@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27:PlaybackController+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 0",
+    "rationale": "Although `PlaybackController` and `TimeShiftablePlayer` share four members (`installRenderTap:()`, `removeRenderTap:()`, `isPlaying:Bool`, `makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>`), the structural evidence explicitly reports `shared_field_count: 0` and `jaccard: null`, indicating the pipeline itself found no meaningful overlap. More importantly, the two protocols encode distinct domain responsibilities: `PlaybackController` models high-level playback control with `PlaybackState`, `PlaybackReason`-parameterised `play`/`stop`/`toggle`, and a loading indicator, while `TimeShiftablePlayer` models a lower-level, time-shiftable audio player with `seek`, `seekToLive`, `secondsBehindLive`, `maxLookbackSeconds`, and multiple async event/state streams typed to `PlayerState` and `AudioPlayerInternalEvent`. Forcing a parent protocol would either over-constrain `PlaybackController` with time-shift concerns or under-specify `TimeShiftablePlayer`'s richer contract. The four overlapping method names (`installRenderTap`, `removeRenderTap`, `makeAudioBufferStream`, `isPlaying`) appear to be shared infrastructure that both protocols happen to require, not evidence of a true subtype relationship.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_PlaybackCore_Protocols_PlaybackController.swift_27_PlaybackController_Playback_Shared_Playback_Sources_Playbac__h2689730729de4d7f.json",
+  "row_index": 2,
+  "trial": 2
+}

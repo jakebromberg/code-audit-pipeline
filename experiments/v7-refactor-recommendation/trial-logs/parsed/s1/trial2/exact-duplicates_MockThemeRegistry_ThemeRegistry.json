@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockThemeRegistry+ThemeRegistry",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift",
+    "rationale": "Both `MockThemeRegistry` (in `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift`) and `ThemeRegistry` (in `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeRegistry.swift`) are `type-alias-object` kinds with no fields listed and `shared_field_count: 3`, yet they serve structurally distinct roles: one is a test mock living under the `Tests/` path and the other is the production type in `Sources/`. Despite the pipeline flagging both `is_mock: false` and `is_test: false`, the file path `Tests/WallpaperTests/Mocks/` makes the test-support intent unambiguous. The structural overlap is a consequence of `MockThemeRegistry` aliasing or mirroring `ThemeRegistry` for test isolation purposes, which is intentional and expected in this pattern. Collapsing or extracting these would undermine the test-double boundary.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MockThemeRegistry_ThemeRegistry.json",
+  "row_index": 42,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift\", \"kind\": \"extension\"",
+    "rationale": "The cluster surfaces one canonical type-alias declaration in `Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift` (package `Playback`) plus three extensions spread across `PlaybackCore`, `PlayerHeaderView`, and `app:iOS`. This is the standard Swift pattern of defining a type once and extending it in each consuming module to add domain-specific conformances or helpers \u2014 exactly what files named `PlaybackReason+PlayerHeaderView.swift` and `PlaybackReason+App.swift` signal. No fields or signatures are reported (`fields_or_signature: []`), so there is no evidence of duplicated logic. Collapsing these extensions would violate module boundaries and couple unrelated packages. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 3
+}

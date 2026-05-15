@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+    "rationale": "Both `DisplayLinkSequence.AsyncIterator.init` initializers are flagged as exact function duplicates across two separate packages: `DebugPanel` (in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185`) and `Wallpaper` (in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209`). The `DebugPanel` package already owns a canonical copy of this type, making it the natural home for the shared implementation. The copy in `DebugHUD.swift` appears to be a local re-implementation for the sample/debug HUD context; it should be removed and replaced with an import of the `DebugPanel` package's definition. Neither record is marked `is_test`, `is_codegen`, or `is_mock`, so there is no intentional-duplication flag to justify keeping both.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "DisplayLinkSequence"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_185_DisplayLinkSequence.AsyncIterator.init_Wallpaper_Shared_Wallpaper_Exam__hab72b81f81e03b7d.json",
+  "row_index": 38,
+  "trial": 1
+}

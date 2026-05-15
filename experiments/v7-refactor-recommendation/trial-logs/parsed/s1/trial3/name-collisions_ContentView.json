@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ContentView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All three records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning they are local `ContentView` type aliases \u2014 a SwiftUI idiom where each module or app target aliases its own root view under the conventional name `ContentView`. The three sites span unrelated packages (`WXUI`, `MusicShareKit`, `app:WXYC TV`) and unrelated files (`WXUISampleApp.swift`, `RequestSentHUD.swift`, `ContentView.swift`), indicating the name collision is purely coincidental and each alias resolves to a different underlying type. Merging or extracting these would conflate unrelated domain concepts and break each package's independent view hierarchy.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_ContentView.json",
+  "row_index": 10,
+  "trial": 3
+}

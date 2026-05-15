@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+    "rationale": "Both members are exact duplicates of `DebugMetricsProvider.measureCPUUsage`: one lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112`, and the other is a copy embedded in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141` inside the `Wallpaper` package. The authoritative implementation already exists in `DebugPanel`, so the `Wallpaper` copy should be deleted and `DebugHUD.swift` should instead import and call the `DebugPanel` version. Neither record is flagged as test, codegen, mock, or sample-app, so this is live production duplication that warrants consolidation.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "DebugMetricsProvider"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_112_DebugMetricsProvider.measureCPUUsage_Wallpaper_Shared_Wallpaper_Exampl__heffcbe4193230801.json",
+  "row_index": 9,
+  "trial": 2
+}

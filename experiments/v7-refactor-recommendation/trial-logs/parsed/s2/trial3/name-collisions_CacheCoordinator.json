@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:CacheCoordinator",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"structural_evidence\": { \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null }",
+    "rationale": "The cluster surfaces two unnamed extensions in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (lines 21 and 117, package `Artwork`) alongside a `type-alias-object` in `Shared/Caching/Sources/Caching/CacheCoordinator.swift` (line 53, package `Caching`). All three records have empty `fields_or_signature` lists and empty `name` fields, so there is no substantive shared shape or interface to consolidate. The two packages (`Artwork` vs. `Caching`) serve distinct domain concerns, and the structural evidence fields (`jaccard`, `shared_field_count`, `shared_ancestor`, `differing_slots`) are all null, providing no positive evidence of meaningful duplication. The collision appears to be a naming artefact of the query rather than a genuine structural overlap warranting refactoring.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_CacheCoordinator.json",
+  "row_index": 9,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+    "rationale": "Both methods \u2014 `QualitySignalTests.hysteresisHeatingEntry` (line 295) and `QualitySignalTests.hysteresisHeatingExit` (line 312) \u2014 live in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` within the `Wallpaper` package. Despite the `is_test` flag being recorded as `false` by the pipeline, the file path (`WallpaperTests/QualitySignalTests.swift`) and the enclosing type name (`QualitySignalTests`) make it clear these are test methods. More importantly, the two methods represent semantically opposite test scenarios \u2014 heating *entry* and heating *exit* \u2014 which are intentionally distinct test cases for hysteresis boundary conditions; their structural similarity is a natural consequence of testing symmetric state transitions, not accidental duplication. Merging or extracting them would obscure the distinct intent of each test case.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_QualitySignalTests.swift_295_QualitySignalTests.hysteresisHeatingEntry_Wallpaper_Shared_Wallpaper_Tes__he14b3c427a198219.json",
+  "row_index": 16,
+  "trial": 2
+}

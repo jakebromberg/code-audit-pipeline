@@ -1,0 +1,27 @@
+{
+  "cluster_id": "default-impl-candidates:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.62,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "Three distinct types \u2014 `HSBColor` (ColorPalette package, line 31), `HSBOffset` (Wallpaper package, line 198), and `AccentColor` (Wallpaper package, line 62) \u2014 all expose an identical `init(hue:saturation:brightness:)` initializer signature. The pipeline has flagged these as `default-impl-candidates`, indicating their initializer bodies are structurally equivalent. The idiomatic Swift resolution is to introduce a protocol (e.g., `HSBInitializable`) with a default implementation of `init(hue:saturation:brightness:)` in a protocol extension, housed in the `ColorPalette` package since `HSBColor` already lives there and the `Wallpaper` package can depend on it. Conforming types that add no specialisation can then delete their bespoke implementations.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift"
+      ],
+      "method": "init(hue: Double, saturation: Double, brightness: Double)",
+      "protocol": "HSBInitializable",
+      "target_location": "Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"
+    }
+  },
+  "query": "default-impl-candidates",
+  "raw_response_path": "raw/s2/trial1/default-impl-candidates_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wall__h7c7c3da0e01e674f.json",
+  "row_index": 5,
+  "trial": 1
+}

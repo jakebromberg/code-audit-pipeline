@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:113:ReviewRequestServiceTests.shouldNotRequestIfAlreadyRequested+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:90:ReviewRequestServiceTests.shouldRequestReviewAtThreshold",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records in this cluster have `is_test: true` and reside in the same test file `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `shouldRequestReviewAtThreshold` (line 90) and `shouldNotRequestIfAlreadyRequested` (line 113) \u2014 are distinct test cases that exercise complementary, opposing behaviours of the review-request logic (threshold met vs. already requested). A Jaccard similarity of ~0.82 is expected for test methods that share setup boilerplate but assert different outcomes; collapsing them would destroy the independent failure signal each test provides.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_AppServices_Shared_AppServices_Tests_AppServicesTests_ReviewRequestServiceTests.swift_113_ReviewRequestServiceTests.shouldNotRequestIfAlreadyRequested__hf4b6407df084105d.json",
+  "row_index": 65,
+  "trial": 1
+}

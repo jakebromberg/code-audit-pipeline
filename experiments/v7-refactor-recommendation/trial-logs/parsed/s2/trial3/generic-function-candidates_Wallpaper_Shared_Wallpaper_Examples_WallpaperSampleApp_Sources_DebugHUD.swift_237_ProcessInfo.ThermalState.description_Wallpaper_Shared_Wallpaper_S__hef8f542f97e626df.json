@@ -1,0 +1,26 @@
+{
+  "cluster_id": "generic-function-candidates:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"ProcessInfo.ThermalState.description\" ... \"name\": \"PerformanceControls.thermalStateLabel\" ... \"jaccard\": 0.75",
+    "rationale": "Both `ProcessInfo.ThermalState.description` (in the sample-app `DebugHUD.swift` at line 237) and `PerformanceControls.thermalStateLabel` (in the production `PerformanceControls.swift` at line 152) are computed properties in the same `Wallpaper` package that almost certainly map a `ProcessInfo.ThermalState` value to a human-readable string, evidenced by a Jaccard similarity of 0.75. Rather than duplicating this mapping in both a sample-app file and a production DebugUI file, the canonical description logic should live in a single extension on `ProcessInfo.ThermalState` inside the `Wallpaper` package (e.g., in a `DebugUI` support file), and both call sites should reference it. The sample-app member having `is_sample_app: true` while the other has `is_sample_app: false` confirms these are two independent reimplementations of the same concept rather than an intentional divergence.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial3/generic-function-candidates_Wallpaper_Shared_Wallpaper_Examples_WallpaperSampleApp_Sources_DebugHUD.swift_237_ProcessInfo.ThermalState.description_Wallpaper_Shared_Wallpaper_S__hef8f542f97e626df.json",
+  "row_index": 18,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayer",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"kind\": \"type-alias-object\"\n      \"file\": \"Shared/Playback/Sources/RadioPlayer/Player/RadioPlayer.swift\"",
+    "rationale": "The two members in this cluster are structurally distinct constructs within the same package ('Playback'): one is a `type-alias-object` declared in `RadioPlayer.swift` at line 19, and the other is an `extension` declared in `RadioPlayer+AudioPlayerProtocol.swift` at line 17. In Swift it is idiomatic and expected for a type and its protocol-conformance extensions to share the same base name \u2014 the extension file is explicitly named with the `+AudioPlayerProtocol` suffix following Swift conventions. Both records carry all context flags as false, and all structural evidence fields (jaccard, shared_field_count, differing_slots, shared_ancestor) are null, providing no evidence of unintended duplication. No refactoring action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_RadioPlayer.json",
+  "row_index": 37,
+  "trial": 3
+}

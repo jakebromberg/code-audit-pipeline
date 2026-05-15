@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:QualityTrend+ThermalDirection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"QualityTrend\" ... \"name\": \"ThermalDirection\" ... \"shared_field_count\": 3 ... \"kind\": \"type-alias-union\"",
+    "rationale": "Both `QualityTrend` and `ThermalDirection` are `type-alias-union` declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`) within the `Wallpaper` package, and they share 3 fields structurally. However, their names encode distinct domain concepts \u2014 `QualityTrend` describes a direction of change in rendering/stream quality, while `ThermalDirection` describes thermal state movement \u2014 whose structural coincidence (both being small union type-aliases with 3 cases) is almost certainly incidental to the domain model rather than a sign of unintended duplication. No `fields_or_signature` entries are provided to confirm the cases are semantically equivalent, and merging or abstracting them would conflate unrelated domain vocabulary. The `differing_slots` and `jaccard` fields are both null, offering no additional evidence of true duplication beyond the shared case count.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_QualityTrend_ThermalDirection.json",
+  "row_index": 33,
+  "trial": 2
+}

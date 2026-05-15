@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:DiscogsMarkupParser.ResolvedToken+ResolvedBioToken",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 9, \"differing_slots\": null",
+    "rationale": "Both `DiscogsMarkupParser.ResolvedToken` (line 89, `DiscogsMarkupParser.swift`) and `ResolvedBioToken` (line 20, `ResolvedBioToken.swift`) are `type-alias-union` kinds in the same `Metadata` package with `shared_field_count: 9` and `differing_slots: null`, indicating they are exact duplicates of the same union type. Having two names for the same type alias in the same package creates confusion about which name is authoritative and forces consumers to pick arbitrarily. Because both are already in `Metadata` and neither is codegen, test, or sample-app code, the fix is purely a within-package alias consolidation rather than any structural extraction or protocol work.",
+    "specifics": {
+      "proposed_action": "Determine which of the two type aliases is the canonical definition and delete the other, updating all call sites to use the surviving name. The most likely outcome is that `ResolvedBioToken` (declared at the top level in `Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift`) becomes the single source of truth, and `DiscogsMarkupParser.ResolvedToken` (a nested type alias inside `DiscogsMarkupParser` at line 89 of `DiscogsMarkupParser.swift`) is replaced with a `typealias ResolvedToken = ResolvedBioToken` or removed entirely, leaving all consumers referencing `ResolvedBioToken` directly. Both live in the same `Metadata` package, so no cross-package coordination is required.",
+      "why_no_category_fits": "Both records are `type-alias-union` kinds with 9 shared fields and no differing slots (Jaccard/differing_slots are null), meaning they are structurally identical aliases for the same underlying union type within the same package. The appropriate fix is a simple deduplication/rename \u2014 one alias should be deleted and the other retained \u2014 which does not map cleanly to extract-to-common (they are already co-located), protocol-inheritance, generic-parameterization, or any other structural-refactor category. It is a straightforward alias consolidation."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_DiscogsMarkupParser.ResolvedToken_ResolvedBioToken.json",
+  "row_index": 25,
+  "trial": 2
+}

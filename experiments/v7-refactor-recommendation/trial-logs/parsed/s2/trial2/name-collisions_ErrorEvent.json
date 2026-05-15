@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ErrorEvent",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": null,\n            \"jaccard\": null,\n            \"shared_ancestor\": null,\n            \"shared_field_count\": null",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the cluster surface is purely a name collision on `ErrorEvent` across two separate packages (`Playback` and `Analytics`). Without shared structural evidence (all `structural_evidence` fields are null \u2014 no Jaccard score, no shared ancestor, no shared field count), there is no basis to conclude these aliases refer to the same underlying type or serve the same domain concept. A type alias named `ErrorEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` (line 203) is plausibly aliasing a playback-domain error, while the one in `Shared/Analytics/Sources/Analytics/Events/ErrorEvents.swift` (line 18) likely aliases a generic analytics error event \u2014 coincidental naming across domain boundaries. Merging or extracting them without evidence of structural overlap risks conflating unrelated domain concepts.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_ErrorEvent.json",
+  "row_index": 24,
+  "trial": 2
+}

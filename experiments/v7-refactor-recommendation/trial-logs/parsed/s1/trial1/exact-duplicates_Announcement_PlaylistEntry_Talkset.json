@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"file\": \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\"",
+    "rationale": "All three members live in the same `Playlist` package and share exactly 4 fields (`shared_field_count: 4`), yet two of them (`Announcement` in `_Plant_Announcement.swift:13` and `Talkset` in `PlaylistEntry.swift:90`) are `type-alias-object` kinds while `PlaylistEntry` at `PlaylistEntry.swift:22` is an `interface`. The `_Plant_`-prefixed filename is a strong signal of scaffolding or generated code that may not have been cleaned up. Before any structural refactor can be prescribed, it must be determined whether the aliases are truly interchangeable with `PlaylistEntry` (warranting alias removal) or represent distinct domain concepts (warranting a shared protocol). No standard category cleanly covers this alias-vs-interface ambiguity within a single package.",
+    "specifics": {
+      "proposed_action": "Investigate whether `Announcement` (a `type-alias-object` at `_Plant_Announcement.swift:13`) and `Talkset` (a `type-alias-object` at `PlaylistEntry.swift:90`) are both type aliases pointing to `PlaylistEntry` (the `interface` at `PlaylistEntry.swift:22`). If so, consolidate call-sites to use `PlaylistEntry` directly, or \u2014 if the domain distinction is meaningful \u2014 introduce a dedicated protocol (e.g., `PlaylistItem`) with the 4 shared fields as requirements, and make `Announcement`, `PlaylistEntry`, and `Talkset` distinct conforming types rather than aliases. Either way, the `_Plant_`-prefixed file name suggests a scaffolding/plant artifact that should be cleaned up or renamed to match Swift module conventions.",
+      "why_no_category_fits": "The three members share 4 fields (`shared_field_count: 4`) but two of them are `type-alias-object` kinds pointing at (or mirroring) the `interface` `PlaylistEntry`. This is neither a straightforward extract-to-common (they are already in the same `Playlist` package) nor a pure protocol-inheritance case without knowing what the aliases resolve to. The right action depends on whether the aliases are truly identical to `PlaylistEntry` (collapse them) or represent semantically distinct playlist-entry subtypes (introduce a protocol). The `_Plant_` naming convention also signals a possible code-generation or scaffolding artifact that warrants investigation before any structural change."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 1
+}

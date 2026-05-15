@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\", \"package\": \"Metadata\"",
+    "rationale": "Two `type-alias-object` declarations named `MockDiscogsEntityResolver` exist independently in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS). Both have all context flags false, meaning neither is generated, mocked, or a sample-app artifact \u2014 they are hand-written test helpers that have drifted into duplication. Because the canonical home for Discogs-related metadata logic is already the `Metadata` package, the shared alias should live there (in a test-support target) and be imported by the app-layer test, eliminating the divergence risk.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MockDiscogsEntityResolver.json",
+  "row_index": 28,
+  "trial": 1
+}

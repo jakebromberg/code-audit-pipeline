@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockURLProtocol",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"jaccard\": null, ... \"shared_field_count\": null",
+    "rationale": "Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), so there is no substantive shape overlap to act on. The two files \u2014 `AppServicesTests/AppConfigurationTests.swift` in the `AppServices` package and `MetadataTests/PlaycutMetadataServiceHTTPTests.swift` in the `Metadata` package \u2014 live in separate test targets and share only the name `MockURLProtocol`, which is an extremely common test-helper name for URLProtocol subclasses in iOS codebases. Without field or method evidence that the two aliases resolve to the same underlying type, the collision is coincidental. Consolidating them would risk coupling two independent test packages for no structural gain.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MockURLProtocol.json",
+  "row_index": 30,
+  "trial": 1
+}

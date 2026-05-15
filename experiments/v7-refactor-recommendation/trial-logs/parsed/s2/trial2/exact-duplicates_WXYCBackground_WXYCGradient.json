@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:WXYCBackground+WXYCGradient",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "\"name\": \"WXYCGradient\" ... \"kind\": \"type-alias-object\" ... \"name\": \"WXYCBackground\" ... \"kind\": \"type-alias-object\" ... \"shared_field_count\": 2",
+    "rationale": "Both `WXYCGradient` (in `WXYCGradient.swift`, line 14) and `WXYCBackground` (in `BackgroundGradient.swift`, line 13) are `type-alias-object` declarations in the same `WXUI` package with no fields listed (`fields_or_signature: []`). The structural signal is that they share 2 fields, but because both are type aliases with empty field lists, the overlap is purely structural coincidence \u2014 the two names encode distinct semantic concepts (a gradient vs. a background) that likely alias different underlying types. Neither record is test, codegen, mock, or sample-app code, but there is insufficient evidence in the cluster row to confirm they alias the same underlying type, and collapsing two intentionally named aliases would destroy call-site clarity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_WXYCBackground_WXYCGradient.json",
+  "row_index": 51,
+  "trial": 2
+}

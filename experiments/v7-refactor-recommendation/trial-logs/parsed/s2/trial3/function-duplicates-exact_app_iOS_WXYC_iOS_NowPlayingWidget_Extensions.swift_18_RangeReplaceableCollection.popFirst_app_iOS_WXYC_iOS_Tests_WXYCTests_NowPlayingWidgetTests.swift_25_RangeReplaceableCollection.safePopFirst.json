@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift\"\n\"name\": \"RangeReplaceableCollection.safePopFirst\"\n\"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"\n\"name\": \"RangeReplaceableCollection.popFirst\"",
+    "rationale": "Although both methods extend `RangeReplaceableCollection` with structurally similar pop-first behaviour, they carry different names (`popFirst` in `WXYC/iOS/NowPlayingWidget/Extensions.swift:18` vs `safePopFirst` in `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25`) and live in different contexts: one is production extension code, the other resides inside the test target `WXYCTests`. The test file's copy is most likely a local helper written to exercise or mirror the production method without importing it directly, which is a common and intentional pattern in Swift test targets. No shared fields or signature slots are reported (`shared_field_count: null`, `differing_slots: null`), so the structural match is superficial. Consolidating them would either expose test-only helpers into production code or force the production extension to depend on the test target, both of which are undesirable.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 3
+}

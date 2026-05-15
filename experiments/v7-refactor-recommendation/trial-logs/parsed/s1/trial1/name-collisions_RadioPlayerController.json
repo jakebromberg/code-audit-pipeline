@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayerController",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"line\": 23 ... \"kind\": \"extension\", \"line\": 286 ... \"file\": \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\"",
+    "rationale": "All three members share the name 'RadioPlayerController' but represent structurally distinct declarations within the same package ('Playback'): a type-alias-object at line 23 of 'RadioPlayerController.swift', an extension on that type at line 286 of the same file, and a separate extension in the test file 'RadioPlayerControllerTests.swift' at line 63. A type alias plus extensions on it in the same file, and a test-file extension, is the normal Swift pattern for organizing a type's conformances and test helpers \u2014 there is no duplication to eliminate. The structural_evidence fields (jaccard, shared_field_count, differing_slots) are all null, confirming no field-level overlap was detected.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_RadioPlayerController.json",
+  "row_index": 13,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "\"name\": \"MainActorNotificationMessageSequence\" ... \"file\": \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\" ... \"name\": \"AsyncNotificationMessageSequence\" ... \"file\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\"",
+    "rationale": "Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with empty `fields_or_signature` arrays. Despite sharing structural shape (shared_field_count: 3, likely referring to the underlying aliased type's shape rather than declared members), they encode semantically distinct concepts: one is scoped to `@MainActor` message delivery and the other to generic async message sequencing. Collapsing or deduplicating them would conflate actor-isolation semantics with general async semantics, which is a meaningful distinction in Swift concurrency. No context flags (is_test, is_codegen, is_mock, is_sample_app) suggest an accidental duplication scenario.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_AsyncNotificationMessageSequence_MainActorNotificationMessageSequence.json",
+  "row_index": 31,
+  "trial": 1
+}

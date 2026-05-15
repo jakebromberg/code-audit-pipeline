@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The cluster reports a Jaccard similarity of 0.7142857142857143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. A grow/shrink pair on a storage type is a well-known mirror pattern: the two methods almost certainly share capacity-threshold arithmetic and buffer-reallocation logic, differing only in the direction of the resize. Introducing a shared private helper removes the duplicated body while preserving the two semantically distinct call sites. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, so this is live production code where the duplication carries real maintenance risk.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural logic of `_growIfNeeded` (line 334) and `_shrinkIfNeeded` (line 354) in `_DequeStorage` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private `_resize(_:)` \u2014 within `Shared/Core/Sources/Core/Deque.swift`. The two methods would then delegate to this helper, differing only in the predicate/direction of the capacity check. This eliminates the ~71% structural overlap without collapsing the two distinct public-facing entry points.",
+      "why_no_category_fits": "Neither `generic-parameterization` nor `extract-to-common` fits precisely: both methods already live in the same file and same type (`_DequeStorage`), so there is nothing to move across packages or files. The overlap is a classic 'grow/shrink mirror' pattern where a shared private helper parameterised on the resize direction is the idiomatic Swift fix, but that pattern maps most naturally to 'other' because the named categories address cross-file/cross-package duplication or protocol-shape duplication rather than intra-type method mirroring."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 3
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:MaterialView+MaterialView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"kind\": \"type-alias-object\", \"line\": 20, \"name\": \"MaterialView\"",
+    "rationale": "The cluster surfaces two `type-alias-object` records both named `MaterialView` in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 20 and 162) within the `Wallpaper` package. Neither record carries any context flags (is_test, is_codegen, is_sample_app, is_mock are all false), ruling out intentional duplication. Having two type-alias declarations with the same name in the same file is either a copy-paste error or a stale leftover from a refactor; Swift itself would reject two identical type aliases in the same scope, suggesting they may alias different types and one needs renaming. The `shared_field_count: 5` with `differing_slots: null` indicates the structural shapes are identical, reinforcing that one is superfluous.",
+    "specifics": {
+      "proposed_action": "Investigate why two `type-alias-object` declarations named `MaterialView` exist in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 20 and 162) within the `Wallpaper` package. One of the two declarations is almost certainly redundant and should be deleted. If they alias different underlying types, one should be renamed to avoid ambiguity; if they are identical aliases, the duplicate at line 162 should be removed, leaving only the declaration at line 20.",
+      "why_no_category_fits": "Both records live in the exact same file and package, so 'extract-to-common' does not apply. They are type aliases, not protocols, classes, or functions, so 'protocol-inheritance', 'subclass-lift', 'generic-parameterization', 'default-implementation', and 'macro-synthesis' are all inapplicable. The fix is simply deleting or renaming one of the two declarations within the same file \u2014 a cleanup action that none of the named categories capture precisely."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MaterialView_MaterialView.json",
+  "row_index": 29,
+  "trial": 1
+}

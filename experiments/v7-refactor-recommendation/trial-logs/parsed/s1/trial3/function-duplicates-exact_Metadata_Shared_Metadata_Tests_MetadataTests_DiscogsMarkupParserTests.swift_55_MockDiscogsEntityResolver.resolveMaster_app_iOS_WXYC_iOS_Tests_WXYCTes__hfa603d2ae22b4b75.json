@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+    "rationale": "The method `MockDiscogsEntityResolver.resolveMaster` appears as an exact duplicate in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Both records carry `is_mock: false` and `is_test: false` per the context flags (suggesting the mock type is defined inline in test files but not flagged as a test helper), and the method signatures are identical (`fields_or_signature: []`). The canonical home for this mock should be the `Metadata` package, since `MockDiscogsEntityResolver` is clearly a test double for a `Metadata`-layer protocol (`DiscogsEntityResolver`), and the `app:iOS` package already depends on `Metadata`. Consolidating the mock into a shared test-support target within `Metadata` (e.g., `Shared/Metadata/Tests/MetadataTests/TestSupport/MockDiscogsEntityResolver.swift`) eliminates the duplication and ensures both test suites stay in sync when the resolver protocol evolves.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_55_MockDiscogsEntityResolver.resolveMaster_app_iOS_WXYC_iOS_Tests_WXYCTes__hfa603d2ae22b4b75.json",
+  "row_index": 24,
+  "trial": 3
+}

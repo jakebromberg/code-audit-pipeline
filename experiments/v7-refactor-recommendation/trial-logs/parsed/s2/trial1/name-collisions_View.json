@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:View",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... packages: WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, app:iOS ... \"fields_or_signature\": [] ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "All 15 members are unnamed extensions (name: \"\") on SwiftUI's `View` type, spread across 7 distinct packages (WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, app:iOS) and covering unrelated domain concerns such as glass-effect compatibility, overlay sheets, blend modes, gesture handling, HUD presentation, and status-bar styling. The structural signal is purely that Swift idiom requires `extension View` to attach view modifiers and helper methods \u2014 this is a language-level pattern, not a design smell. No shared fields or methods are reported (`fields_or_signature: []`, `shared_field_count: null`, `jaccard: null`), so there is no concrete member overlap to consolidate. Collapsing these extensions would conflate unrelated domains and break package boundaries.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_View.json",
+  "row_index": 0,
+  "trial": 1
+}

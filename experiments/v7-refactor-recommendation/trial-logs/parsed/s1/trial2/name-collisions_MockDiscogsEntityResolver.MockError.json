@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver.MockError",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\" ... \"jaccard\": null ... \"shared_field_count\": null ... \"fields_or_signature\": []",
+    "rationale": "Both members are `type-alias-union` kinds with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, differing_slots, and shared_ancestor are all null), meaning the pipeline has no content-level signal to act on \u2014 only a name collision. The two declarations live in separate test files (`Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` in package `Metadata` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` in package `app:iOS`), each scoped to its own test module, so the name overlap is a coincidence of local nested-type naming conventions rather than a structural duplication worth consolidating. Neither record carries `is_test=true` in the context flags (likely a pipeline tagging gap given the file paths), but the file paths themselves confirm these are test-only declarations. Merging or extracting them would provide no reuse benefit and would couple two otherwise independent test modules.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 29,
+  "trial": 2
+}

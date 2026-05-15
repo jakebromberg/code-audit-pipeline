@@ -1,0 +1,30 @@
+{
+  "cluster_id": "exact-duplicates:AppleMusicService+BandcampService+SoundCloudService+SpotifyService+YouTubeMusicService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"shared_field_count\": 1, \"differing_slots\": null",
+    "rationale": "All five members \u2014 `AppleMusicService`, `BandcampService`, `SoundCloudService`, `SpotifyService`, and `YouTubeMusicService` \u2014 are `type-alias-object` declarations in the same package (`MusicShareKit`) with identical structural shape (`shared_field_count: 1`, `differing_slots: null`), none of which are test, codegen, mock, or sample-app artifacts. Because they are type aliases that share the same underlying shape, the idiomatic Swift approach is to introduce a unifying `MusicService` protocol (potentially a PAT if service-specific configuration types differ) that each concrete service type conforms to, eliminating the structural duplication while preserving distinct nominal identities for each streaming platform. This also opens the door to writing generic algorithms over any `MusicService` conformer rather than duplicating logic per-service.",
+    "specifics": {
+      "associated_type": "Configuration",
+      "constraints": [],
+      "new_protocol": "MusicService",
+      "replaces": [
+        "AppleMusicService",
+        "BandcampService",
+        "SoundCloudService",
+        "SpotifyService",
+        "YouTubeMusicService"
+      ]
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_AppleMusicService_BandcampService_SoundCloudService_SpotifyService_YouTubeMusicService.json",
+  "row_index": 4,
+  "trial": 3
+}

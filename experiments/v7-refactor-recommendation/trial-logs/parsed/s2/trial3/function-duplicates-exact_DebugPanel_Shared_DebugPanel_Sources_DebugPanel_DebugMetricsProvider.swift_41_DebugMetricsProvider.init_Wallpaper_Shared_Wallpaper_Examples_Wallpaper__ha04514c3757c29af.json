@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second member resides at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', whose path explicitly contains 'Examples/WallpaperSampleApp/' \u2014 a sample-app subtree. The pipeline's is_sample_app flag is false, but the literal path segment 'WallpaperSampleApp' is controlling evidence that this is a local debug convenience initializer written for the sample app, not a production duplicate. The canonical implementation already exists in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel); the sample app copy is an intentional, isolated mirror that avoids adding a hard DebugPanel dependency to the Wallpaper example target. Merging or extracting would either force an unwanted dependency edge into the sample app or destabilize the DebugPanel package boundary.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_41_DebugMetricsProvider.init_Wallpaper_Shared_Wallpaper_Examples_Wallpaper__ha04514c3757c29af.json",
+  "row_index": 40,
+  "trial": 3
+}

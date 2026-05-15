@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One copy of `DisplayLinkSequence.AsyncIterator.init` lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: DebugPanel) and the other in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: Wallpaper). The Wallpaper copy resides under an `Examples/WallpaperSampleApp` path, which is a sample-app context even though `is_sample_app` is not flagged true \u2014 the path itself is strong evidence of an isolated demo target. Both packages independently need a `CADisplayLink`-backed async iterator for their own debug/HUD tooling; the structural coincidence of an empty-signature initializer is trivially explained by the fact that `AsyncIteratorProtocol` conformances commonly have a no-argument `init`. Consolidating them would create a cross-package dependency between DebugPanel and Wallpaper (or require a third shared target) for what is effectively boilerplate, yielding no meaningful reduction in complexity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_185_DisplayLinkSequence.AsyncIterator.init_Wallpaper_Shared_Wallpaper_Exam__hab72b81f81e03b7d.json",
+  "row_index": 38,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MPNowPlayingInfoCenter",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"jaccard\": null, ... \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name is empty string in both cases) on what is presumably the system type `MPNowPlayingInfoCenter`, living in structurally unrelated locations: `Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift` in the `Playback` package and `WXYC/iOS/NowPlayingInfoCenterManager.swift` in the `app:iOS` package. The cluster carries no Jaccard score, no shared field count, and no shared ancestor \u2014 the structural evidence object is entirely null. With zero field/method overlap surfaced and two different packages extending the same Apple framework type for their own local purposes, the coincidence is purely nominal (both extend the same system class) rather than a sign of duplicated logic that should be consolidated.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_MPNowPlayingInfoCenter.json",
+  "row_index": 25,
+  "trial": 3
+}

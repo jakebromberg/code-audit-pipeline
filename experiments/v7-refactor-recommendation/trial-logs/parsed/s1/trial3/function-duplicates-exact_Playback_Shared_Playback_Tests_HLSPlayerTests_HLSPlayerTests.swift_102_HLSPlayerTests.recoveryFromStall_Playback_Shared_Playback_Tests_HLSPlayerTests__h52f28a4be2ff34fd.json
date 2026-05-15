@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "HLSPlayerTests.stallFromPlaying+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90",
+    "rationale": "Both methods \u2014 `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) \u2014 live in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package and are named for distinct, sequential playback lifecycle events (stalling vs. recovering from a stall). Despite the structural signal of exact function-duplicate shape, the two methods encode different test scenarios whose structural similarity is incidental to the domain they cover. Notably, both records carry `is_test: false` in their context flags, which is likely a metadata gap given the file path clearly sits under a `Tests/` directory; this ambiguity further reduces confidence in any refactor action. No grounded evidence in the cluster row supports merging or extracting shared logic without risking loss of test-scenario fidelity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_HLSPlayerTests.swift_102_HLSPlayerTests.recoveryFromStall_Playback_Shared_Playback_Tests_HLSPlayerTests__h52f28a4be2ff34fd.json",
+  "row_index": 22,
+  "trial": 3
+}

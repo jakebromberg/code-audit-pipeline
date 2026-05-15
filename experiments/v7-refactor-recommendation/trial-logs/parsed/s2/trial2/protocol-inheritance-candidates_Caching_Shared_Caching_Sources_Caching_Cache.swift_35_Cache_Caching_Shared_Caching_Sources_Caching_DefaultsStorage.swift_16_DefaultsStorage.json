@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Caching:Shared/Caching/Sources/Caching/Cache.swift:35:Cache+Caching:Shared/Caching/Sources/Caching/DefaultsStorage.swift:16:DefaultsStorage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"shared_field_count\": 0",
+    "rationale": "The structural evidence explicitly shows `shared_field_count: 0` and `jaccard: null`, meaning the two protocols share zero overlapping members. `DefaultsStorage` models a key-value defaults store with typed accessors (`bool(forKey:)`, `integer(forKey:)`, `string(forKey:)`, etc.), while `Cache` models a binary data cache with metadata management (`data(for:)`, `metadata(for:)`, `allMetadata()`, `totalSize()`). These are distinct storage abstractions with no common interface surface; the pipeline flagged them as protocol-inheritance candidates solely because both are `interface` kinds in the same `Caching` package, not because of any shared contract. Introducing a parent protocol would be a vacuous abstraction with no moved members.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Caching_Shared_Caching_Sources_Caching_Cache.swift_35_Cache_Caching_Shared_Caching_Sources_Caching_DefaultsStorage.swift_16_DefaultsStorage.json",
+  "row_index": 13,
+  "trial": 2
+}

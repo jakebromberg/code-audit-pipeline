@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:URL",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both members are unnamed extensions (name: \"\") on presumably different types within the same `Playlist` package \u2014 one in `PlaylistDataSourceV2.swift` and one in `PlaylistEntry.swift`. The cluster carries no structural evidence (jaccard, shared_field_count, differing_slots, and shared_ancestor are all null), and the fields_or_signature arrays are empty for both records. Without knowing which type each extension extends, the only observable signal is that both happen to import or extend `URL` at line 15 of their respective files, which is coincidental given how common `URL` usage is in Swift networking/playlist code. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_URL.json",
+  "row_index": 44,
+  "trial": 2
+}

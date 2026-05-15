@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-union\", \"shared_field_count\": 4",
+    "rationale": "All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift:34`, `Breakpoint.CodingKeys` in `PlaylistEntry.swift:72`, and `Talkset.CodingKeys` in `PlaylistEntry.swift:111` \u2014 are flagged as `kind: type-alias-union` exact duplicates with `shared_field_count: 4` and no differing slots, meaning their bodies are structurally identical. All three reside in the same `Playlist` package with no test, codegen, mock, or sample-app flags, so the duplication is not intentional by policy. Because Swift's `Codable` machinery requires a type literally named `CodingKeys` nested inside each conforming type, a bare `extract-to-common` would silently break synthesis; the correct idiom is to extract the shared enum body and re-expose it via `typealias CodingKeys = PlaylistEntryCodingKeys` in each parent type.",
+    "specifics": {
+      "proposed_action": "Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (e.g., `PlaylistEntryCodingKeys`) in the `Playlist` package \u2014 ideally in a new file such as `Shared/Playlist/Sources/Playlist/PlaylistEntryCodingKeys.swift` \u2014 and replace each nested `CodingKeys` type-alias-union with a `typealias CodingKeys = PlaylistEntryCodingKeys` inside each respective type (`Announcement`, `Breakpoint`, `Talkset`). This preserves `Codable` conformance (which requires a nested `CodingKeys` name) while eliminating the duplicated enum body.",
+      "why_no_category_fits": "The cluster involves three nested `CodingKeys` enums that are exact duplicates (shared_field_count=4, kind=type-alias-union) across `Announcement`, `Breakpoint`, and `Talkset` in the `Playlist` package. 'extract-to-common' does not cleanly fit because the Swift `Codable` synthesis protocol requires the name `CodingKeys` to be nested inside each conforming type; a plain extraction without re-aliasing would break synthesis. The correct fix is a combination of extraction plus `typealias` re-introduction, which is a hybrid pattern not captured by any single named category."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 2
+}

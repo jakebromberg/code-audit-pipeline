@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.82,
+    "evidence_quote": "GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+    "rationale": "The two methods `GenericFetcher.fetchInt` and `GenericFetcher.fetchString` in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` (lines 14 and 24) share a Jaccard similarity of 0.75, strongly suggesting they differ only in their concrete return/parameter type. The `_Plant_` prefix on the file name is a conventional pipeline marker indicating this file was planted specifically as a generic-function candidate. Collapsing both into a single generic `fetch<T>` method on `GenericFetcher` eliminates the type-specific variants while preserving all call-site semantics. Both records are production code (all context flags false), so there is no test-fixture or codegen reason to keep them separate.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "fetch",
+      "replaces": [
+        "GenericFetcher.fetchInt",
+        "GenericFetcher.fetchString"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-function-candidates_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_14_GenericFetcher.fetchInt_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_24_GenericFetcher.fetchString.json",
+  "row_index": 19,
+  "trial": 1
+}

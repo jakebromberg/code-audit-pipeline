@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockAudioSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.2,
+    "evidence_quote": "\"file\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\"",
+    "rationale": "All four members are `type-alias-object` declarations with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, and shared_ancestor are all null). The cluster_id signals a name-collision query rather than a semantic-duplication query. Three of the four records live under `Tests/` paths (`RadioPlayerControllerTests.swift`, `PlaybackTestUtilities/Mocks/MockAudioSession.swift` \u00d72, `SoundPlayerTests.swift`), and the context flags \u2014 notably `is_mock: false` and `is_test: false` \u2014 appear to be mis-classified by the pipeline rather than reflecting true production code, given the file paths clearly sit inside test/mock directories. Without field or method evidence to confirm shared shape, the name collision alone is insufficient to justify a refactor; the coincidence of the name `MockAudioSession` across two separate packages (`Playback` and `PartyHorn`) is expected for independently authored test doubles.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MockAudioSession.json",
+  "row_index": 4,
+  "trial": 1
+}

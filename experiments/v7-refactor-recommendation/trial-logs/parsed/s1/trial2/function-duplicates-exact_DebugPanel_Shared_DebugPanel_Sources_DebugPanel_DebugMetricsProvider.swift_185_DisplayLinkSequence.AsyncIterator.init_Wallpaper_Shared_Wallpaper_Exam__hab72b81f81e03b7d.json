@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "Although both records share the exact name `DisplayLinkSequence.AsyncIterator.init` and neither is flagged as test, codegen, or mock, the second copy lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 a path whose `Examples/WallpaperSampleApp` segment strongly indicates a standalone sample/example target even though `is_sample_app` is reported as false. The first copy lives in the production `DebugPanel` package at `DebugMetricsProvider.swift`. The `fields_or_signature` arrays are both empty, so there is no structural evidence (Jaccard, shared fields, or differing slots) to confirm the bodies are truly identical rather than merely sharing a type name. Without body-level evidence it is safer to treat this as a coincidental structural match between a production utility and a sample-app debug overlay, and to avoid a refactor that could couple the `Wallpaper` example target to the `DebugPanel` production package.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_185_DisplayLinkSequence.AsyncIterator.init_Wallpaper_Shared_Wallpaper_Exam__hab72b81f81e03b7d.json",
+  "row_index": 38,
+  "trial": 2
+}

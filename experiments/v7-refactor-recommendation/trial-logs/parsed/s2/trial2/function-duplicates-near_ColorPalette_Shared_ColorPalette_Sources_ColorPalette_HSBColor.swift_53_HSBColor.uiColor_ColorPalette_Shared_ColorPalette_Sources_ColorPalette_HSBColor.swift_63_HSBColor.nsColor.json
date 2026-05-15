@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) live in the same file `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` within the `ColorPalette` package and share a Jaccard similarity of 0.714, indicating the bulk of their implementation is identical. The only meaningful difference is the target platform type (`UIColor` vs `NSColor`). Extracting the shared HSB-component assembly into a private helper and delegating from both properties would eliminate the near-duplicate body while preserving the platform-specific public API surface. Neither property is test, codegen, mock, or sample-app code, so the duplication is a genuine maintenance liability.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIKit: Bool) -> AnyObject` or a shared `Color` value via SwiftUI/cross-platform abstraction) that encapsulates the shared HSB-to-color conversion logic, then have both `uiColor` and `nsColor` delegate to it. Alternatively, if the project targets both UIKit and AppKit, consider a `#if canImport(UIKit) / #if canImport(AppKit)` conditional compilation block that exposes a single `platformColor` computed property, eliminating the need for two near-identical properties entirely.",
+      "why_no_category_fits": "The two members (`HSBColor.uiColor` at line 53 and `HSBColor.nsColor` at line 63) are computed properties on the same type in the same file, not separate types or protocols. The duplication is a platform-bridging pattern (UIKit vs AppKit) rather than a type-hierarchy or protocol-conformance concern, so none of the structured categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) cleanly describe the fix. The right action is either a shared private helper or a conditional-compilation alias, which is a within-file refactor not captured by any schema."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 2
+}

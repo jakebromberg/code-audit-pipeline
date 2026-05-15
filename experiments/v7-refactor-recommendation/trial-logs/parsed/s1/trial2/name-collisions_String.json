@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:String",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.55,
+    "evidence_quote": "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift\nShared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift\nShared/Analytics/Sources/Analytics/AnalyticsEvent.swift",
+    "rationale": "Four separate `extension` declarations on `String` are spread across three distinct packages (`Playlist`, `AnalyticsMacros`, `Analytics`) with no shared fields or signatures surfaced, indicating each package has independently grown ad-hoc `String` helpers. The cluster's `name-collisions` query type flags that these extensions share the same extended type name across package boundaries, creating a risk of shadowing or naming conflicts at link/import time. Where the helpers are genuinely cross-cutting (e.g., HTML decoding used by both `Playlist` and `Analytics`), they should be lifted into a shared foundation package and the per-package extensions removed. Extensions that are truly package-local (e.g., the macro plugin helper in `AnalyticsMacros`) may remain in place but should be scoped with `internal` or `fileprivate` to prevent accidental shadowing.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+        "Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift",
+        "Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift",
+        "Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift"
+      ],
+      "target_type": "String"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_String.json",
+  "row_index": 6,
+  "trial": 2
+}

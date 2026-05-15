@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/PlayerHeaderViewApp/PlayerHeaderViewApp.swift:15:PlayerHeaderViewApp.body+WXUI:Shared/WXUI/Examples/WXUISampleApp/Sources/WXUISampleApp.swift:15:WXUISampleApp.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/WXUI/Examples/WXUISampleApp/Sources/WXUISampleApp.swift",
+    "rationale": "Both participating records are entry-point `body` computed properties for standalone SwiftUI preview/sample applications (`WXUISampleApp` in `Shared/WXUI/Examples/WXUISampleApp/Sources/WXUISampleApp.swift` and `PlayerHeaderViewApp` in `Shared/PlayerHeaderView/PlayerHeaderViewApp/PlayerHeaderViewApp.swift`). Although `is_sample_app` is reported as `false` in the context flags, the file paths place both files squarely inside per-package app-runner directories (`Examples/WXUISampleApp` and `PlayerHeaderViewApp`), which are canonical sample/preview harness locations in this repo. A trivial `var body: some Scene` that launches a single-window app is structurally identical across every SwiftUI app entry point by design; the coincidence is architectural boilerplate, not accidental duplication. Extracting or sharing this property would couple two otherwise independent packages for no meaningful gain.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_PlayerHeaderViewApp_PlayerHeaderViewApp.swift_15_PlayerHeaderViewApp.body_WXUI_Shared_WXUI_Examples_WXUISamp__h3aa78106149ecdf0.json",
+  "row_index": 41,
+  "trial": 1
+}

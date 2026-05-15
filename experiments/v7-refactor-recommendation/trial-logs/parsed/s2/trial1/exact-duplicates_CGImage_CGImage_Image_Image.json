@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:CGImage+CGImage+Image+Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift",
+    "rationale": "Two separate `extension Image` declarations appear in the same file `ImageCompatability.swift` at lines 19 and 88 within the `Core` package; these should be merged into a single extension block. Separately, two `extension CGImage` declarations appear in `ArtworkServiceTests.swift` at lines 61 and 91 within the `Artwork` package and should likewise be consolidated. None of the four records carry test, codegen, mock, or sample-app flags that would make the split intentional. The `shared_field_count: 1` suggests at least one member is duplicated across the split extensions, reinforcing the case for consolidation.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift (line 19)",
+        "Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift (line 88)"
+      ],
+      "target_type": "Image"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_CGImage_CGImage_Image_Image.json",
+  "row_index": 11,
+  "trial": 1
+}

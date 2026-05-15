@@ -1,0 +1,21 @@
+{
+  "cluster_id": "default-impl-candidates:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "All three types \u2014 `HSBColor` (package `ColorPalette`, `HSBColor.swift:31`), `HSBOffset` (`ThemeColors.swift:198`), and `AccentColor` (`ThemeColors.swift:62`) \u2014 share the initializer signature `init(hue:saturation:brightness:)` purely because they all model HSB-space quantities, but they encode distinct domain concepts: a concrete color value, a relative color offset/delta, and a themed accent color. The structural evidence row reports `shared_field_count: 0` and all differing-slot fields as null, meaning the pipeline has no body-level or field-level evidence that the implementations are identical \u2014 only the signature matches. Introducing a protocol with a default `init` across two separate packages (`ColorPalette` and `Wallpaper`) for types with different semantics would create an artificial coupling with no practical reuse benefit. When the coincidence is purely nominal and the domain concepts diverge, the idiomatic Swift answer is to leave each type's initializer as its own explicit, self-documenting member.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "default-impl-candidates",
+  "raw_response_path": "raw/s2/trial2/default-impl-candidates_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wall__h7c7c3da0e01e674f.json",
+  "row_index": 5,
+  "trial": 2
+}

@@ -1,0 +1,32 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both functions are named `cachedFetch`, live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) within the `Caching` package, and share a Jaccard similarity of 0.70 \u2014 indicating substantial structural overlap with only moderate divergence. Because they are near-duplicates rather than exact duplicates, the most likely cause is that one overload was copy-pasted from the other and then lightly specialised. The idiomatic Swift resolution is to unify them into a single generic function parameterised over the differing type(s), eliminating the redundant body while preserving both call sites. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication exemption.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "cachedFetch",
+      "replaces": [
+        "cachedFetch (line 45, Shared/Caching/Sources/Caching/CachedFetch.swift)",
+        "cachedFetch (line 92, Shared/Caching/Sources/Caching/CachedFetch.swift)"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 2
+}

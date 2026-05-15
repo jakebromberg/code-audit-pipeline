@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"file\": \"Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift\" ... \"kind\": \"extension\" ... \"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift\" ... \"file\": \"WXYC/iOS/PlaybackReason+App.swift\"",
+    "rationale": "The cluster surfaces one canonical type-alias declaration in `Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift` (package `Playback`) plus three separate extension declarations spread across `Playback`, `PlayerHeaderView`, and `app:iOS`. This is the standard Swift pattern of defining a type once and extending it in each consuming module to add module-specific conformances or helpers (e.g., `PlaybackReason+PlayerHeaderView.swift`, `PlaybackReason+App.swift`). The structural signal is a name-collision query with no shared fields (`shared_field_count: null`, `jaccard: null`), meaning the pipeline found the same name in multiple files but has no evidence of duplicated logic. No context flags indicate test, codegen, mock, or sample-app status, so all records are production code intentionally organized this way.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 2
+}

@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage",
+    "rationale": "Both members are exact duplicates of `DebugMetricsProvider.measureMemoryUsage`: one lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148`, and the other is a verbatim copy embedded in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175` inside the `Wallpaper` package. The authoritative implementation already exists in `DebugPanel`, so the `Wallpaper` copy should be deleted and the `WallpaperSampleApp` target should instead import and call the `DebugPanel` version. Neither record carries `is_test`, `is_codegen`, or `is_mock` flags, so this is live production/sample code duplication that warrants consolidation.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "DebugMetricsProvider"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_148_DebugMetricsProvider.measureMemoryUsage_Wallpaper_Shared_Wallpaper_Exa__h4d6f1f1683826193.json",
+  "row_index": 15,
+  "trial": 3
+}
