@@ -264,6 +264,23 @@ class SubstrateHelpedAnalyzeTests(unittest.TestCase):
         out2 = json.dumps(substrate_helped.analyze(self._twelve_recs()), sort_keys=True)
         self.assertEqual(out1, out2)
 
+    def test_custom_aggregate_pass_fraction_threads_to_explanation(self):
+        # 1/2 shared queries pass. With default strict-majority threshold (0.5),
+        # 1/2 = 0.5 is NOT > 0.5 → fail. Loosen to 0.4 → 0.5 > 0.4 → pass.
+        # The bug we're guarding against: the explanation string was hardcoded
+        # to the module-level default and could disagree with signature_pass.
+        out_pass = substrate_helped.analyze(
+            self._twelve_recs(), aggregate_pass_fraction=0.4
+        )
+        self.assertTrue(out_pass["aggregate"]["signature_pass"])
+        self.assertIn("substrate helped", out_pass["aggregate"]["explanation"])
+
+        out_fail = substrate_helped.analyze(
+            self._twelve_recs(), aggregate_pass_fraction=0.6
+        )
+        self.assertFalse(out_fail["aggregate"]["signature_pass"])
+        self.assertIn("stop-the-line", out_fail["aggregate"]["explanation"])
+
 
 # ─── plant_recall_extended ────────────────────────────────────────────────
 

@@ -217,12 +217,15 @@ def analyze(
     n_recs_total = len(records)
     n_parse_errors = sum(1 for r in records if r.get("parse_error"))
 
+    pass_fraction = (n_passed / len(shared)) if shared else 0.0
     aggregate = {
         "n_shared_queries": len(shared),
         "n_passed": n_passed,
-        "pass_fraction": (n_passed / len(shared)) if shared else 0.0,
-        "signature_pass": (n_passed / len(shared) if shared else 0.0) > aggregate_pass_fraction,
-        "explanation": _aggregate_explanation(n_passed, len(shared)),
+        "pass_fraction": pass_fraction,
+        "signature_pass": pass_fraction > aggregate_pass_fraction,
+        "explanation": _aggregate_explanation(
+            n_passed, len(shared), aggregate_pass_fraction
+        ),
     }
 
     return {
@@ -242,11 +245,15 @@ def analyze(
     }
 
 
-def _aggregate_explanation(n_passed: int, n_shared: int) -> str:
+def _aggregate_explanation(
+    n_passed: int,
+    n_shared: int,
+    aggregate_pass_fraction: float = DEFAULT_AGGREGATE_PASS_FRACTION,
+) -> str:
     if n_shared == 0:
         return "no shared queries (cannot run S1-vs-S2 §14.1 check)"
     frac = n_passed / n_shared
-    if frac > DEFAULT_AGGREGATE_PASS_FRACTION:
+    if frac > aggregate_pass_fraction:
         return (
             f"{n_passed}/{n_shared} shared queries show S2−S1 substrate effect; "
             "substrate helped per §14.1."
