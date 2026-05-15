@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no grounded field-level or method-level evidence to act on. The only concrete signal is a Jaccard similarity of 0.75 between `ShaderArgumentValue` in `ParameterStore.swift:282` and `ParameterValue` in `ThemeManifest.swift:512`. Without member lists it is impossible to determine whether the shared shape reflects a genuine abstraction opportunity or merely a coincidental structural overlap between a shader-argument value type and a theme-manifest parameter value type \u2014 two plausibly distinct domain concepts within the same `Wallpaper` package. Per the decision rules, when evidence is insufficient to ground an action recommendation, 'no-action' with reason_class 'coincidental' is the correct output.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75, \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that `ShaderArgumentValue` (ParameterStore.swift:282) and `ParameterValue` (ThemeManifest.swift:512) share the same cases or fields \u2014 consistent with the 0.75 Jaccard score \u2014 a single unified `ParameterValue` type could be extracted within the existing `Wallpaper` package, eliminating the near-duplicate. This alternative should only be pursued once the member lists are available to verify the overlap is not coincidental.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MtFNeHaa9RpGRJqKuwoJ8E",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2122,
+    "output_tokens": 643,
+    "service_tier": "standard"
+  }
+}

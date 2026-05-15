@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195:DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both `DisplayLinkSequence.AsyncIterator.next` methods are flagged as exact function duplicates across two packages: `DebugPanel` (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195) and `Wallpaper` (Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219). Neither record carries any context flags (is_test, is_codegen, is_sample_app, is_mock are all false), so this is not intentional test or codegen duplication. The `DebugPanel` package is the more appropriate canonical home since it already hosts the production implementation in `DebugMetricsProvider.swift`, and the `Wallpaper` copy lives in an `Examples/WallpaperSampleApp` path that should consume a shared utility rather than re-implement it. Extracting `DisplayLinkSequence` (and its `AsyncIterator.next` implementation) into `DebugPanel` \u2014 or a lower-level shared utilities package if one exists \u2014 and having `DebugHUD.swift` import it would eliminate the duplication.\",\n    \"evidence_quote\": \"DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"The second copy resides under `Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which is an examples/sample-app path. If the sample app is intentionally self-contained and cannot take a dependency on `DebugPanel`, the duplication may be acceptable as a sample-app mirror. However, since `is_sample_app` is explicitly false on that record, the pipeline does not classify it as a sample app, making extract-to-common the stronger recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CuVriP8vnzFs1WstqaM9jE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 729,
+    "service_tier": "standard"
+  }
+}

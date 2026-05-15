@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:ProcessInfo.ThermalState\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\"\n      ]\n    },\n    \"rationale\": \"Three separate extension declarations on `ProcessInfo.ThermalState` exist across two packages \u2014 `DebugPanel` (DebugMetricsProvider.swift:212) and `Wallpaper` (DebugHUD.swift:236 and QualitySignal.swift:230). Because `DebugPanel` already has one such extension and its purpose (debug metrics) is the most natural home for thermal-state utilities, the two `Wallpaper`-package extensions should be consolidated there or into a shared utility target that both packages can depend on, eliminating the name collision and the risk of divergent implementations. The `WallpaperSampleApp` copy in particular is in an Examples path and is the least authoritative of the three.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift\\\"\\n\\\"file\\\": \\\"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\\\"\\n\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because `fields_or_signature` is empty for all three records, the actual members of each extension are unknown. If the three extensions add entirely different computed properties or methods to `ProcessInfo.ThermalState` (e.g., one adds display strings, another adds throttling thresholds, a third adds debug descriptions), the collision is purely nominal and each extension is intentionally scoped to its own package's concerns, making consolidation unnecessary.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01C27tMi3xN4Lq3UrDypYnux",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2445,
+    "output_tokens": 592,
+    "service_tier": "standard"
+  }
+}

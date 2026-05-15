@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DebugMetricsProvider\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both members are exact duplicates of `DebugMetricsProvider.measureCPUUsage`: one lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112`, and the other is a copy embedded in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141` inside the `Wallpaper` package. The authoritative implementation already exists in `DebugPanel`, so the `Wallpaper` copy should be deleted and `DebugHUD.swift` should instead import and call the `DebugPanel` version. Neither record is flagged as test, codegen, mock, or sample-app, so this is live production duplication that warrants consolidation.\",\n    \"evidence_quote\": \"DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Although the file path contains `Examples/WallpaperSampleApp`, the `is_sample_app` context flag is explicitly `false` for that record, so the sample-app-mirror exemption does not strictly apply; however, the path heuristic suggests the copy may be intentional for a self-contained demo, in which case no action would be warranted.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01V3fR3retBStAEKCGcgGhk8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2437,
+    "output_tokens": 631,
+    "service_tier": "standard"
+  }
+}

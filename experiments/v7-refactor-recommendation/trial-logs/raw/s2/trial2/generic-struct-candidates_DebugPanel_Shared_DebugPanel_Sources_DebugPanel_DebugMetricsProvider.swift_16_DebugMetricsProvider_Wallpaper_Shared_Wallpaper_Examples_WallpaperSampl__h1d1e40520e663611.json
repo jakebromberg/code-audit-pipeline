@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:16:DebugMetricsProvider+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:63:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, line 63) carries `is_sample_app: true`, placing it squarely in a sample/example application. The near-identical `DebugMetricsProvider` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` is the canonical implementation in the `DebugPanel` package, while the copy in `WallpaperSampleApp` is a self-contained stand-in that avoids a hard dependency from the sample app on the `DebugPanel` package. The sole structural difference \u2014 `metalDevice:MTLDevice?` vs `metalDevice:(any MTLDevice)?` \u2014 is a minor existential-syntax variant consistent with independent, loosely-maintained sample code rather than a shared abstraction. Consolidating the sample-app copy into the `DebugPanel` package would couple the example target to a production package unnecessarily.\",\n    \"evidence_quote\": \"is_sample_app\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is ever promoted to a first-class integration test or the sample app is allowed to depend on `DebugPanel`, the copy in `DebugHUD.swift` (12 of 12 fields shared, differing only in existential syntax for `metalDevice`) should be deleted and the canonical `DebugMetricsProvider` from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` imported instead, eliminating the drift risk.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016TcXxCXGfJmuUTytRxvFpE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2739,
+    "output_tokens": 645,
+    "service_tier": "standard"
+  }
+}

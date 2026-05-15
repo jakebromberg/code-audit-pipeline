@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockDiscogsEntityResolver\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Two `type-alias-object` declarations named `MockDiscogsEntityResolver` exist independently in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because both are type aliases (likely aliasing the same underlying mock or stub type related to Discogs entity resolution), the `app:iOS` test file is almost certainly duplicating something already defined in the `Metadata` package's test infrastructure. The canonical home should be the `Metadata` package since that is where the domain concept lives; the `app:iOS` test can then import and reuse it, eliminating the duplication. Neither record carries `is_codegen`, `is_mock`, or `is_sample_app` flags, so this is not intentional infrastructure duplication.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\"\\n\\\"file\\\": \\\"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both records have `is_test=false` as reported by the pipeline (likely a tagging gap given the file paths end in `Tests`), and the `fields_or_signature` arrays are empty, meaning there is no field-level evidence that the two aliases resolve to the same underlying type. If they alias different concrete types that happen to share a name, consolidation would be incorrect and no-action is safer.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MLDWV7m9iU63a5xzYWaL79",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 560,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both `DisplayLinkSequence.AsyncIterator.init` initializers are flagged as exact function duplicates across two separate packages: `DebugPanel` (in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185`) and `Wallpaper` (in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209`). The `DebugPanel` package already owns a canonical copy of this type, making it the natural home for the shared implementation. The copy in `DebugHUD.swift` appears to be a local re-implementation for the sample/debug HUD context; it should be removed and replaced with an import of the `DebugPanel` package's definition. Neither record is marked `is_test`, `is_codegen`, or `is_mock`, so there is no intentional-duplication flag to justify keeping both.\",\n    \"evidence_quote\": \"DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"The `DebugHUD.swift` file lives under `Examples/WallpaperSampleApp`, which is a sample/example target. If the `Wallpaper` package intentionally avoids a dependency on `DebugPanel` to keep its dependency graph clean, the duplication may be acceptable as a self-contained debug utility in the sample app, warranting no-action on dependency-graph grounds.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EYrBH2WSB5Apev3N8DNL5H",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 653,
+    "service_tier": "standard"
+  }
+}

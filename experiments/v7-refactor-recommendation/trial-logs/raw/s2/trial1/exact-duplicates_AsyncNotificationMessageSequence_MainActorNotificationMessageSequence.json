@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with empty `fields_or_signature` arrays. Despite sharing structural shape (shared_field_count: 3, likely referring to the underlying aliased type's shape rather than declared members), they carry semantically distinct names: one is explicitly scoped to `@MainActor` dispatch, the other is a general async sequence alias. Collapsing them would conflate actor-isolation semantics with general async semantics, which is a meaningful distinction in Swift concurrency. Neither record carries any test, codegen, mock, or sample-app flags, but the domain concepts they encode are intentionally separate.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"kind\\\": \\\"type-alias-object\\\"\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Add a documentation comment to each type alias in `MainActorMessage.swift` and `AsyncMessage.swift` explicitly calling out the actor-isolation distinction, so future readers do not mistake the structural similarity for accidental duplication.\",\n        \"why_no_category_fits\": \"The two aliases are intentionally distinct by actor context; the only improvement available is clarifying documentation rather than any structural refactor.\"\n      },\n      \"rationale\": \"Because the structural similarity is real (same underlying aliased shape, same package, same kind), a lightweight documentation-only change in both files would prevent future confusion without altering semantics.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BoBodsp7U5XLi5WPHKia1D",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2324,
+    "output_tokens": 496,
+    "service_tier": "standard"
+  }
+}

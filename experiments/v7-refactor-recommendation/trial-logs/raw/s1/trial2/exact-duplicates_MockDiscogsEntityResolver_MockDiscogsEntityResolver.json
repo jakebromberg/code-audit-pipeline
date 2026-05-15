@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Two identical `MockDiscogsEntityResolver` type-alias-object declarations exist across two packages: one in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and one in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). The structural evidence confirms 4 shared fields and the query type is `exact-duplicates`, meaning the definitions are byte-for-byte equivalent. Since the mock is already present in the `Metadata` package's test target \u2014 which is the package that owns the `DiscogsEntityResolver` abstraction \u2014 the canonical home is there. The `app:iOS` test target should import and reuse the definition from `Metadata` rather than redeclaring it, eliminating the maintenance risk of the two copies diverging.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MockDiscogsEntityResolver\\\", \\\"package\\\": \\\"Metadata\\\" ... \\\"name\\\": \\\"MockDiscogsEntityResolver\\\", \\\"package\\\": \\\"app:iOS\\\" ... \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both context-flag sets have `is_mock: false` and `is_test: false` set (likely a tagging gap for test-helper types), so if the two mocks are intentionally kept local to each test target to avoid cross-target test dependencies, leaving them in place is defensible. However, given the exact structural match and the shared domain concept (`DiscogsEntityResolver`), consolidation is the stronger recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012q2tfxwU75cx3TXxPynbc8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2335,
+    "output_tokens": 549,
+    "service_tier": "standard"
+  }
+}

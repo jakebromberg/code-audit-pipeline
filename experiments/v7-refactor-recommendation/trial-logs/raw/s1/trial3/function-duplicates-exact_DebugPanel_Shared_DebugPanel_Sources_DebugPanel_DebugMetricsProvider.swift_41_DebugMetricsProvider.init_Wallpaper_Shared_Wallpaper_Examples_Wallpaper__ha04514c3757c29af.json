@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The second member lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' \u2014 a path that contains 'Examples/WallpaperSampleApp', strongly indicating it is a sample-app usage of DebugMetricsProvider rather than a canonical definition. The first member is the authoritative initializer in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). Because the sample-app file is almost certainly calling or re-wrapping the same initializer for demonstration purposes, the structural duplication is incidental to that context boundary. No fields_or_signature data is available to confirm a meaningful shared body worth extracting, so a refactor cannot be grounded in evidence.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample-app copy is a full duplicate definition rather than a call site, the canonical initializer should live exclusively in the DebugPanel package and the Wallpaper sample app should import and reuse it. However, without fields_or_signature evidence confirming a duplicated body this cannot be asserted with confidence.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MDHfgaxd2C8sdrUoQyGbC4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2419,
+    "output_tokens": 565,
+    "service_tier": "standard"
+  }
+}

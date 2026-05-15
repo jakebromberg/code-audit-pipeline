@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DebugHUD\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two `DebugHUD` type-alias-object records lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits squarely under an `Examples/WallpaperSampleApp` path \u2014 a sample-app context. The other lives in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` as the canonical definition in the `DebugPanel` package. The sample-app copy is almost certainly a local convenience alias introduced to avoid adding a formal dependency on `DebugPanel` from the example target, making the duplication intentional by design. No structural evidence (Jaccard, shared fields, differing slots) was surfaced to suggest the two are semantically coupled beyond the name.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugHUD\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample app is ever promoted to a first-class consumer of `DebugPanel`, the alias in `WallpaperSampleApp` should be deleted and the target should import `DebugHUD` directly from `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift`, eliminating the name collision entirely.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013UJvm1bwGgMi6NAnHXq53H",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2318,
+    "output_tokens": 495,
+    "service_tier": "standard"
+  }
+}

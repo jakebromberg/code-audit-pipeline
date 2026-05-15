@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        {\n          \"name\": \"Key\",\n          \"constraint\": \"Hashable\"\n        }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift:13`) and `IntCache` (in `_Plant_IntCache.swift:13`) within the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[K: CacheEntry]` \u2014 differing only in the key type of `storage` (`String` vs `Int`). The structural evidence confirms exactly one differing slot (`storage:[String: CacheEntry]` vs `storage:[Int: CacheEntry]`), making this a textbook candidate for a single generic struct parameterized over `Key: Hashable`. Replacing both with `Cache<Key: Hashable>` eliminates the duplication entirely while preserving all existing semantics, and type aliases `typealias StringCache = Cache<String>` / `typealias IntCache = Cache<Int>` can be provided for backward compatibility if needed.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"The `_Plant_` prefix on both file names (`_Plant_StringCache.swift`, `_Plant_IntCache.swift`) may indicate these are code-generated scaffolding files whose duplication is intentional and managed by a generation tool; if so, modifying them by hand would be overridden on the next generation pass and the action should be deferred to the generator template instead.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01C9cd6o9ZWXwea9uo8iNTnT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2500,
+    "output_tokens": 595,
+    "service_tier": "standard"
+  }
+}

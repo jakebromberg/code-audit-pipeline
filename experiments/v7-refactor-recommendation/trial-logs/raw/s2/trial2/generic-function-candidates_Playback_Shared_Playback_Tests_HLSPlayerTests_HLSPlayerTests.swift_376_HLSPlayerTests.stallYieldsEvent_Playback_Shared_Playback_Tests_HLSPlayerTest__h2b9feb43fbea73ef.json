@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:376:HLSPlayerTests.stallYieldsEvent+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:402:HLSPlayerTests.recoveryYieldsEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `HLSPlayerTests.stallYieldsEvent` (line 376) and `HLSPlayerTests.recoveryYieldsEvent` (line 402) \u2014 reside in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` and both carry `is_test: true`. Although the Jaccard similarity of 0.778 suggests structural overlap that could theoretically be collapsed into a shared generic helper, test methods that verify distinct behavioral scenarios (stall vs. recovery) are intentionally kept separate for readability, failure isolation, and test-name expressiveness. Merging them into a generic parameterized function would obscure which scenario failed and reduce the diagnostic value of the test suite.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"assertEventYielded\",\n        \"replaces\": [\n          \"HLSPlayerTests.stallYieldsEvent\",\n          \"HLSPlayerTests.recoveryYieldsEvent\"\n        ]\n      },\n      \"rationale\": \"Given the high Jaccard similarity (0.778) between the two test methods in the same file, a private helper function `assertEventYielded(scenario:)` parameterised over the differing inputs could reduce duplication while keeping the two public test entry-points as thin call-sites. This is only worth pursuing if the shared body is substantial and the differing slots are few and clearly enumerable.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0184wYxVezidSsG7jgLKpNWE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2416,
+    "output_tokens": 543,
+    "service_tier": "standard"
+  }
+}

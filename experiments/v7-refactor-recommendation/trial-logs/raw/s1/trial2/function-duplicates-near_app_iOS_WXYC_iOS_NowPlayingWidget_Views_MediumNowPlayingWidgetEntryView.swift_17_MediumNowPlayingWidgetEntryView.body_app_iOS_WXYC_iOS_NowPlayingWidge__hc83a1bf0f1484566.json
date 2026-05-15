@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"NowPlayingWidgetEntryView\",\n      \"remove_from\": [\n        \"WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift\",\n        \"WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `SmallNowPlayingWidgetEntryView.body` (line 17 in SmallNowPlayingWidgetEntryView.swift) and `MediumNowPlayingWidgetEntryView.body` (line 17 in MediumNowPlayingWidgetEntryView.swift) are near-duplicate computed properties with a Jaccard similarity of 0.714, indicating substantial shared SwiftUI view logic. The only meaningful difference is likely the widget family/size, which can be parameterised via a `widgetFamily` or `containerBackground` environment value or an explicit initialiser argument rather than duplicated across two separate view types. Extracting a shared `NowPlayingWidgetEntryView` within the same `app:iOS` package and having the two existing entry-view types either become thin wrappers or be removed entirely would eliminate the duplication while preserving size-specific layout tweaks through conditional branching on a single injected parameter.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Content\", \"constraint\": \"View\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\n          \"SmallNowPlayingWidgetEntryView\",\n          \"MediumNowPlayingWidgetEntryView\"\n        ]\n      },\n      \"rationale\": \"If the two `body` implementations differ only in a nested sub-view or layout container, a generic struct parameterised over a `Content: View` associated type could unify them without losing type safety, letting each call site supply its size-specific content slot while sharing the surrounding chrome defined in the common `body`.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VvFP9dbTvWxe46XfCDrvRn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2456,
+    "output_tokens": 718,
+    "service_tier": "standard"
+  }
+}

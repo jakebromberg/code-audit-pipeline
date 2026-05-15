@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveMaster` appears identically in two test files across two packages: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the `Metadata` package is the natural home for Discogs-related domain logic and its mock helpers, the canonical `MockDiscogsEntityResolver` (including `resolveMaster`) should live in a shared test-support target within the `Metadata` package. The `app:iOS` test file can then import that shared mock, eliminating the duplicate. Both records carry `is_test: false` and `is_mock: false` per the cluster flags, but the file paths and type name prefix `Mock` make the test-helper nature clear, and the `Metadata` package already hosts the parallel declaration.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `DiscogsMarkupParserTests` and `DiscogsFormatterTests` exercise sufficiently different contracts and the mock implementations are expected to diverge over time (e.g., different stub return values per test suite), keeping them co-located with their respective test files is defensible. The cluster provides no field/signature detail (`fields_or_signature: []`) to confirm the bodies are truly identical beyond the name, so duplication may be superficial.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018nFARepYwV6svrRQmPdWGe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 650,
+    "service_tier": "standard"
+  }
+}

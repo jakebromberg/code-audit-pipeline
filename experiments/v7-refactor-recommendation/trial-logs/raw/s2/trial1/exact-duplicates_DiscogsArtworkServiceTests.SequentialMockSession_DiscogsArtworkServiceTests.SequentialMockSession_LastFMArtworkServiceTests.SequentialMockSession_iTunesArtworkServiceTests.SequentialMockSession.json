@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four members are `type-alias-object` declarations named `SequentialMockSession`, each nested inside a different test class (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests` \u00d7 2) but all living in the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package. The structural evidence confirms `shared_field_count: 1` with no differing slots, meaning the aliases are structurally identical. Consolidating them into a single top-level `SequentialMockSession` type-alias (or concrete type) at the file or package scope eliminates the four redundant nested declarations and makes the shared helper immediately reusable by all three service test classes without repetition. Note that although the context flags report `is_test: false`, the file path (`Tests/ArtworkTests/`) and the enclosing class names (all suffixed `Tests`) make clear this is test-support code, so the extraction target should remain within the test target of the `Artwork` package.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Because all four declarations reside in a test file (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and serve as local mock helpers scoped to individual test classes, one could argue the nesting is intentional for readability isolation. However, the exact structural duplication (including a literal duplicate at lines 317 and 363 for `DiscogsArtworkServiceTests.SequentialMockSession`) makes even the test-fixture justification weak, so extraction is preferred.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01T4kLb2A2mfzW1n7isHBozp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2688,
+    "output_tokens": 643,
+    "service_tier": "standard"
+  }
+}

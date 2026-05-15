@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row contains an empty `members` array, providing no field lists, method signatures, or context flags to ground a concrete refactor recommendation. The only available evidence is the file paths (`Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift` and `WXYC/iOS/Views/Root/SiriTipView.swift`) and a Jaccard similarity of 0.75. While the structural similarity is notable, `ThemeTipView` lives in the `Wallpaper` shared package and concerns theme/wallpaper picking UI, whereas `SiriTipView` lives in the iOS app target and concerns Siri integration \u2014 these are distinct domain concepts whose structural resemblance is likely coincidental (both are probably small tip/hint SwiftUI views with similar shape). Without member-level evidence it is unsafe to prescribe a specific extraction or protocol.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms the two views share the same layout/styling logic (Jaccard 0.75 suggests significant overlap), a generic or parameterised `TipView` could be extracted to the `Wallpaper` shared package or a dedicated UI-components package, with `ThemeTipView` and `SiriTipView` becoming thin wrappers. This should only be pursued once the `members` data is available to verify the overlapping fields and methods.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Bf99T8YXkedpTTqtk2nAuR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2131,
+    "output_tokens": 659,
+    "service_tier": "standard"
+  }
+}

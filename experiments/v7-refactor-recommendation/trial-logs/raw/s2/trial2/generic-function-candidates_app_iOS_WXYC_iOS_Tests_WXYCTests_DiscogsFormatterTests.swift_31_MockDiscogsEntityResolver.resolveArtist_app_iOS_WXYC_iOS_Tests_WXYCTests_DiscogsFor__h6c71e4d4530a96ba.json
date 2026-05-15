@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `MockDiscogsEntityResolver.resolveArtist` (line 31) and `MockDiscogsEntityResolver.resolveRelease` (line 41) \u2014 reside in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` within the `app:iOS` package, and both carry `is_test: true`. Per the intentional-duplication rule, all-test clusters are presumed to be test fixtures whose structural similarity is a natural consequence of mocking a multi-method protocol rather than an actionable redundancy. Although the Jaccard similarity of 0.71 is notable, the `fields_or_signature` arrays are empty for both members, meaning there is insufficient evidence to safely parameterise or merge these methods without risking test-coverage loss.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"Entity\", \"constraint\": null }\n        ],\n        \"new_name\": \"resolveEntity\",\n        \"replaces\": [\"MockDiscogsEntityResolver.resolveArtist\", \"MockDiscogsEntityResolver.resolveRelease\"]\n      },\n      \"rationale\": \"If the two methods share identical bodies (suggested by the 0.71 Jaccard score and zero differing slots reported), a single generic `resolveEntity<Entity>` helper inside the mock could replace both, reducing duplication in the test file `DiscogsFormatterTests.swift`. However, without visible signatures or body evidence this cannot be confirmed, so it remains a lower-confidence alternative.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ej3SRA6V8xFze82feB1GzZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2420,
+    "output_tokens": 568,
+    "service_tier": "standard"
+  }
+}

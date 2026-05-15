@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"WXUI\",\n      \"type_name\": \"wxycBackgroundDark\",\n      \"remove_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundDark` (BackgroundGradient.swift:30) and `WXYCGradient.wxycBackgroundDark` (WXYCGradient.swift:31) are exact-duplicate computed properties living in the same package (WXUI). Because the implementations are identical and neither record carries any test, codegen, mock, or sample-app flag, the duplication is unintentional. The cleanest Swift resolution is to extract the shared computed property into a single location \u2014 either a protocol with a default implementation or a free extension on a shared type \u2014 within the WXUI package, then remove the duplicate definitions from both files.\",\n    \"evidence_quote\": \"WXYCGradient.wxycBackgroundDark\\n    \\\"file\\\": \\\"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\\\"\\n    \\\"WXYCBackground.wxycBackgroundDark\\\"\\n    \\\"file\\\": \\\"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"WXYCBackgroundStyle\",\n        \"method\": \"var wxycBackgroundDark: <ReturnType> { get }\",\n        \"target_location\": \"Shared/WXUI/Sources/WXUI/WXYCBackgroundStyle.swift\",\n        \"conformers_simplified\": [\n          \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n          \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n        ]\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` are intended to remain distinct types that both expose `wxycBackgroundDark`, introducing a protocol `WXYCBackgroundStyle` with a default implementation of `wxycBackgroundDark` in a protocol extension would eliminate the duplication while preserving each type's identity. Both types would simply conform to the protocol and inherit the default body.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U987sqn8KnGBQVcTQQzjQy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2415,
+    "output_tokens": 752,
+    "service_tier": "standard"
+  }
+}

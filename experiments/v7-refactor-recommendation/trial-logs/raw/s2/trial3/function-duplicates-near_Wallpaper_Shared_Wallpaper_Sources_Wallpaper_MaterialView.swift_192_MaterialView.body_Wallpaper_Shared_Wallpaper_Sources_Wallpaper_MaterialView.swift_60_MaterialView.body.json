@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is actually two distinct SwiftUI `View` structs (both named `MaterialView`) defined in the same file \u2014 one with its `body` starting at line 60 and another at line 192. If so, rename or merge the two types. If they are the same type with two `body` computed-property declarations (which Swift does not permit in a single type without extensions), the second declaration at line 192 is dead code and should be deleted. The surviving `body` should be refactored to extract any shared sub-view logic into private helper `@ViewBuilder` functions or sub-`View` structs within the same file, eliminating the near-duplication (Jaccard 0.83) without requiring cross-file changes.\",\n      \"why_no_category_fits\": \"The two members are both named `MaterialView.body` and live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192. This is not a cross-file extraction problem (`extract-to-common`), not a protocol/inheritance issue, and not a generic-parameterization opportunity. The root cause is ambiguous from the cluster alone: either there are two same-named types in one file (a naming/structural bug) or one type has a duplicate `body` declaration (dead code). Neither maps cleanly to any named category; the correct first step is a structural audit of the file before any mechanical refactor.\"\n    },\n    \"rationale\": \"Both records share the name `MaterialView.body`, are `computed-property` kind, reside in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, and carry a Jaccard similarity of 0.8333, indicating near-identical implementations 132 lines apart. A single SwiftUI `View` conformance cannot legally have two `body` properties on the same type without an extension, so the cluster signals either two same-named `View` structs in one file or a redundant second declaration. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, ruling out intentional duplication. The correct action depends on a file-level audit that the cluster data alone cannot resolve, making none of the standard refactor categories a precise fit.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the second `body` at line 192 lives in an extension on `MaterialView` (a legal Swift pattern), the two near-identical implementations should be consolidated into a single `body` declaration, extracting the differing ~17% of logic into a private helper, and removing the extension's `body` override entirely.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Arw6hna3jiJgTRWqnnjUVx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 946,
+    "service_tier": "standard"
+  }
+}

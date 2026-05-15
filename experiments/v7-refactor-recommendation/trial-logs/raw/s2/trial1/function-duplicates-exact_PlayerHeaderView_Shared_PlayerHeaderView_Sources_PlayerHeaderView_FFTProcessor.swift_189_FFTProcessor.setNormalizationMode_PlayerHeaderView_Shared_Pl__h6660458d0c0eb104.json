@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NormalizationModeConfigurable\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\n        \"RMSProcessor.setNormalizationMode\",\n        \"FFTProcessor.setNormalizationMode\",\n        \"AverageProcessor.setNormalizationMode\"\n      ]\n    },\n    \"rationale\": \"All three methods \u2014 `RMSProcessor.setNormalizationMode` (line 61), `FFTProcessor.setNormalizationMode` (line 189), and `AverageProcessor.setNormalizationMode` (line 60) \u2014 are flagged as exact function duplicates within the same `PlayerHeaderView` package. Because the body is identical across three distinct processor types that share no declared common ancestor visible in this cluster, the cleanest Swift-idiomatic fix is to introduce a protocol `NormalizationModeConfigurable` with a `setNormalizationMode` requirement and provide a single default implementation in a protocol extension, eliminating the three redundant copies. None of the records carry test, codegen, mock, or sample-app flags, so there is no intentional-duplication exemption. The `_Plant_` prefix on `_Plant_AverageProcessor.swift` may indicate a work-in-progress or generated scaffold, but `is_codegen` is explicitly `false`, so it is treated as production code.\",\n    \"evidence_quote\": \"RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"NormalizationModeConfigurable\",\n        \"method\": \"setNormalizationMode\",\n        \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/NormalizationModeConfigurable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n        ]\n      },\n      \"rationale\": \"If a protocol already exists or is introduced separately, a protocol extension default implementation for `setNormalizationMode` in a new file `NormalizationModeConfigurable.swift` within the `PlayerHeaderView` package achieves the same deduplication without requiring the three conformers to change their type declarations beyond adding the conformance annotation.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HFGYFEDqsSpmg5LAdkyJ6k",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2568,
+    "output_tokens": 850,
+    "service_tier": "standard"
+  }
+}

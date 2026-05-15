@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both `DisplayLinkSequence.AsyncIterator.init` initializers are flagged as exact function duplicates across two separate packages: `DebugPanel` (in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185`) and `Wallpaper` (in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209`). Neither record carries `is_test`, `is_codegen`, `is_sample_app`, or `is_mock` flags \u2014 notably, despite the file residing under `Examples/WallpaperSampleApp/`, the `is_sample_app` flag is explicitly `false`, so the sample-app-mirror exemption does not apply. The canonical home for this type is already `DebugPanel`, which owns the non-example copy; the `Wallpaper` package's `DebugHUD.swift` should import and reuse it from there rather than redeclaring it. Consolidating into `DebugPanel` eliminates the drift risk between two independently maintained copies of the same async iterator initializer.\",\n    \"evidence_quote\": \"DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Although `is_sample_app` is false, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` strongly suggests this is a debug overlay embedded in a sample/example app. If the `WallpaperSampleApp` target is intentionally self-contained and cannot take a dependency on `DebugPanel`, the duplication may be an acceptable copy-paste for isolation purposes, warranting no-action on practical grounds.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017UFGhH8uhqKWBQmdGiKf2e",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 719,
+    "service_tier": "standard"
+  }
+}

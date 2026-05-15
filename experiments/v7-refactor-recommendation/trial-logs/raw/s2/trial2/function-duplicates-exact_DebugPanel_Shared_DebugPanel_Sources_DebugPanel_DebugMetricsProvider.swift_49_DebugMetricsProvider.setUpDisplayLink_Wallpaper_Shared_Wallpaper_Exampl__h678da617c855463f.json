@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.setUpDisplayLink` lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49`, while the duplicate resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88` \u2014 a path that contains the `Examples/WallpaperSampleApp` segment, which is a sample-app context. Sample-app targets routinely inline or copy debug/HUD utilities to remain self-contained and avoid pulling in framework targets as hard dependencies. Although neither record carries `is_sample_app=true` in its context flags, the file path unambiguously places the second copy inside an Examples sample application, satisfying the sample-app-mirror rule. Consolidating the two would couple the sample app to the `DebugPanel` package, which is likely undesirable.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is ever allowed to depend on `DebugPanel`, the duplicate `setUpDisplayLink` implementation in `DebugHUD.swift` should be deleted and the sample app should import and reuse `DebugMetricsProvider` from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` directly, eliminating the exact-duplicate maintenance burden.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RxSWVmUudneSqCyWobFZhy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2429,
+    "output_tokens": 643,
+    "service_tier": "standard"
+  }
+}

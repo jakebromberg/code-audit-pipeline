@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two near-duplicate functions \u2014 `encodeCGImageAsHEIF` in the `Artwork` package (`Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75`) and `Image.heifData` in the `Core` package (`Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107`) \u2014 with a Jaccard similarity of 0.706, indicating substantial shared logic for HEIF image encoding. Since `Core` already hosts `Image.heifData` as a method on an image type, the canonical implementation should live there. The `Artwork` package almost certainly already depends on `Core`, so `CachingArtworkFetcher` can call `Image.heifData` directly, eliminating the standalone `encodeCGImageAsHEIF` function. Neither record is test, codegen, mock, or sample-app code, so consolidation is appropriate.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Expose `encodeCGImageAsHEIF` as a free function in `Core` (rather than as a method on `Image`) and have both `Core` and `Artwork` call it, if the CGImage-based API surface is preferred over the `Image`-typed one.\",\n        \"why_no_category_fits\": \"If the two functions differ in their input type (CGImage vs. Image) rather than purely in logic, a straight extract-to-common may require a small adapter layer; a free generic helper in Core bridging both types would be more accurate but doesn't map cleanly to any single named category.\"\n      },\n      \"rationale\": \"If `encodeCGImageAsHEIF` operates on a raw `CGImage` while `Image.heifData` operates on a higher-level `Image` wrapper, the duplication is at the algorithmic level only and the right fix is a single internal helper in `Core` that both call, rather than deleting one outright.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01YGKYnvaAQXSQ2i3H4nLv3o",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 687,
+    "service_tier": "standard"
+  }
+}

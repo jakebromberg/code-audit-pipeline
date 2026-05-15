@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"NotificationMessageIteratorBase\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n      ]\n    },\n    \"rationale\": \"The two initializers `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 of AsyncMessage.swift) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 of MainActorMessage.swift) share an identical parameter label signature and a Jaccard similarity of 0.857, indicating near-identical bodies. Both live in the same package (`Core`) under `Shared/Core/Sources/Core/Observation/`, so no cross-package dependency is introduced. The shared initialisation logic \u2014 setting up a notification center subscription with a subject and an `onSubscribed` callback \u2014 should be extracted into a shared internal base type or a free generic helper function within the `Core` package's `Observation` module, eliminating the duplication while allowing `MainActorNotificationMessageSequence.AsyncIterator` to retain its `@MainActor` isolation annotation as a thin wrapper.\",\n    \"evidence_quote\": \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Delivery\", \"constraint\": \"NotificationDeliveryStrategy or similar marker protocol\" }\n        ],\n        \"new_name\": \"NotificationMessageIterator\",\n        \"replaces\": [\n          \"AsyncNotificationMessageSequence.AsyncIterator\",\n          \"MainActorNotificationMessageSequence.AsyncIterator\"\n        ]\n      },\n      \"rationale\": \"Because the only meaningful difference between the two iterators appears to be the actor-isolation context (main actor vs. unconfined), a single generic struct parameterised over a delivery-strategy type could unify both, with a `@MainActor`-constrained specialisation for the main-actor variant. This is more idiomatic Swift 5.9+ but requires introducing a new protocol constraint that is not yet visible in the cluster data, making it slightly more speculative than a straightforward extraction.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01655z3L7RmQ1KNpcs64edYy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2434,
+    "output_tokens": 785,
+    "service_tier": "standard"
+  }
+}

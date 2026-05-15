@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is only in parameter types or calling conventions, consider collapsing them into a single generic function (e.g., `cachedFetch<T>`) with appropriate type constraints. If the divergence is in caching strategy or async/sync behaviour, document the distinction explicitly with inline comments so future readers understand why two near-identical functions must coexist.\",\n      \"why_no_category_fits\": \"Both functions live in the same file and package (`Caching` / `Shared/Caching/Sources/Caching/CachedFetch.swift`), so 'extract-to-common' does not apply \u2014 there is no cross-package duplication to resolve. The Jaccard similarity of 0.7 indicates meaningful but not total overlap; without the actual signatures (fields_or_signature is empty for both members) it is impossible to confirm that a single generic parameterization would be type-safe. The cluster is therefore best described as a candidate for an internal private-helper extraction or a generic consolidation, neither of which maps cleanly to the named categories without risking hallucination about the actual parameter types.\"\n    },\n    \"rationale\": \"The pipeline reports two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92, package `Caching`) with a Jaccard similarity of 0.7 \u2014 high enough to flag near-duplication but low enough that a mechanical merge is not safe without inspecting the bodies. Neither record carries test, codegen, mock, or sample-app flags, so intentional duplication is unlikely. Because both functions are in the same file and package, the appropriate fix is an intra-file refactor (shared private helper or generic consolidation) rather than a cross-package extraction.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Codable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two overloads differ only in the concrete type they fetch and cache, a single generic `cachedFetch<T: Codable>` in `Shared/Caching/Sources/Caching/CachedFetch.swift` would eliminate the duplication entirely. This is the most idiomatic Swift resolution for near-duplicate functions that vary only by concrete type, but it requires confirming the actual parameter signatures before committing.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Bu2nizaMEEGqYvNUTCgTyn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2375,
+    "output_tokens": 836,
+    "service_tier": "standard"
+  }
+}

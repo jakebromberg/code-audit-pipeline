@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DisplayLinkSequence.AsyncIterator+DisplayLinkSequence.AsyncIterator\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' in the Wallpaper package, which sits under an Examples/SampleApp path. The type-alias-object 'DisplayLinkSequence.AsyncIterator' in that file is almost certainly a local copy introduced to support the sample app's debug HUD without taking a hard dependency on the DebugPanel package. The duplication is therefore structural but intentional: the sample app mirror rule applies. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DisplayLinkSequence.AsyncIterator\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp ever graduates beyond a throw-away example and the Wallpaper package gains a real dependency on DebugPanel, the copy in DebugHUD.swift should be deleted and the canonical definition in DebugPanel/DebugMetricsProvider.swift reused. This is only worth pursuing if the sample-app boundary is intentionally dissolved.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013JeFcS4z7EjY3jUBF7Lz3z",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2355,
+    "output_tokens": 463,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"NormalizationModeConfigurable\",\n      \"method\": \"setNormalizationMode(_:)\",\n      \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/NormalizationModeConfigurable.swift\",\n      \"conformers_simplified\": [\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline classifies this cluster as `function-duplicates-exact`, meaning `RMSProcessor.setNormalizationMode` (line 61), `FFTProcessor.setNormalizationMode` (line 189), and `AverageProcessor.setNormalizationMode` (line 60) are byte-for-byte identical across three production types in the same `PlayerHeaderView` package. None of the records carry any test, codegen, mock, or sample-app flags, so the duplication is unintentional. The idiomatic Swift remedy is to introduce a protocol (e.g., `NormalizationModeConfigurable`) in the same package, provide the shared body as a protocol extension default implementation, and delete the three redundant per-type copies. All three conformers already live in `Shared/PlayerHeaderView/Sources/PlayerHeaderView/`, so no cross-package dependency changes are required.\",\n    \"evidence_quote\": \"function-duplicates-exact \u2026 RMSProcessor.setNormalizationMode \u2026 FFTProcessor.setNormalizationMode \u2026 AverageProcessor.setNormalizationMode\",\n    \"alternative\": {\n      \"category\": \"subclass-lift\",\n      \"specifics\": {\n        \"base_class\": \"BaseProcessor\",\n        \"method\": \"setNormalizationMode(_:)\",\n        \"subclasses\": [\"RMSProcessor\", \"FFTProcessor\", \"AverageProcessor\"],\n        \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/BaseProcessor.swift\"\n      },\n      \"rationale\": \"If `RMSProcessor`, `FFTProcessor`, and `AverageProcessor` are already classes (or can be refactored to classes), lifting `setNormalizationMode` into a shared `BaseProcessor` base class is an alternative. However, a protocol + default implementation is preferred in Swift because it avoids forcing a class hierarchy on types that may be structs or actors, and it is more composable.\"\n    },\n    \"confidence\": 0.87\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VYsw8CM84BJoKa96DSC8iy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2568,
+    "output_tokens": 784,
+    "service_tier": "standard"
+  }
+}

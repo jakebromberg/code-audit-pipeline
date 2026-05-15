@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both records share the exact name `DisplayLinkSequence.AsyncIterator.init` and neither is flagged as test, codegen, or mock, the second copy lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 a path whose `Examples/WallpaperSampleApp` segment strongly indicates a standalone sample/example target even though `is_sample_app` is reported as false. The first copy lives in the production `DebugPanel` package at `DebugMetricsProvider.swift`. The `fields_or_signature` arrays are both empty, so there is no structural evidence (Jaccard, shared fields, or differing slots) to confirm the bodies are truly identical rather than merely sharing a type name. Without body-level evidence it is safer to treat this as a coincidental structural match between a production utility and a sample-app debug overlay, and to avoid a refactor that could couple the `Wallpaper` example target to the `DebugPanel` production package.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DisplayLinkSequence\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If a body-level diff confirms the two `DisplayLinkSequence.AsyncIterator.init` implementations are truly identical, the canonical copy should be kept in `DebugPanel` (where it already exists in `DebugMetricsProvider.swift`) and the `DebugHUD.swift` copy removed, with `WallpaperSampleApp` importing `DebugPanel` instead. This would be the appropriate action only after verifying the sample-app copy is not intentionally simplified or diverged.\"\n    },\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017kMmKhddJEi9hJscuMaShg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 664,
+    "service_tier": "standard"
+  }
+}

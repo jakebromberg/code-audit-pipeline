@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"BlendMode\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"All three members \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` declarations in the same package (`Wallpaper`) with identical structure (`shared_field_count: 16`, `differing_slots: null`), meaning they are exact duplicates sharing all 16 union cases. Because they live in the same package and none carry test, codegen, mock, or sample-app flags, there is no intentional-duplication justification. The correct fix is to define a single canonical `BlendMode` type-alias-union in a new or existing shared file within `Shared/Wallpaper/Sources/Wallpaper/Core/` and replace all three declarations with `typealias PlaybackBlendMode = BlendMode`, `typealias MaterialBlendMode = BlendMode`, and `typealias OverlayBlendMode = BlendMode` (or remove the per-domain aliases entirely if call sites can be migrated). This eliminates the risk of the three definitions drifting apart as new blend modes are added.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 16\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` are intentionally kept separate so that each domain can evolve its supported blend modes independently (e.g., playback may later drop modes unavailable at runtime), keeping them as distinct type aliases is defensible. However, the `differing_slots: null` and `shared_field_count: 16` evidence strongly suggests no divergence has occurred yet, making this alternative lower-confidence.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QFoMtv6Q21RDGdESysCfxx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2486,
+    "output_tokens": 632,
+    "service_tier": "standard"
+  }
+}

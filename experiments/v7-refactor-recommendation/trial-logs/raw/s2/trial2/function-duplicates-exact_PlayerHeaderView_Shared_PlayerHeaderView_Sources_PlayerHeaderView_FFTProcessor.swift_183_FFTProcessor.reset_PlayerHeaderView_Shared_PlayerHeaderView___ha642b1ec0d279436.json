@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:183:FFTProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:55:RMSProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:54:AverageProcessor.reset\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"AudioProcessor\",\n      \"method\": \"reset()\",\n      \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor.swift\",\n      \"conformers_simplified\": [\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n      ]\n    },\n    \"rationale\": \"Three distinct processor types \u2014 `RMSProcessor` (line 55), `FFTProcessor` (line 183), and `AverageProcessor` (line 54) \u2014 all within the `PlayerHeaderView` package share an exactly duplicated `reset` method body. Because the cluster is flagged `query: function-duplicates-exact` with no differing slots, the implementations are byte-for-byte identical. The idiomatic Swift resolution is to introduce a shared protocol (e.g., `AudioProcessor`) in the same package and provide a `protocol extension` default implementation of `reset()`, eliminating the three redundant copies. None of the records carry `is_test`, `is_codegen`, `is_mock`, or `is_sample_app` flags, so no intentional-duplication exemption applies.\",\n    \"evidence_quote\": \"\\\"query\\\": \\\"function-duplicates-exact\\\"\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"AudioProcessor\",\n        \"associated_type\": \"Configuration\",\n        \"constraints\": [],\n        \"replaces\": [\"RMSProcessor.reset\", \"FFTProcessor.reset\", \"AverageProcessor.reset\"]\n      },\n      \"rationale\": \"If the three processor types diverge further in future (e.g., each needing a distinct associated configuration type), introducing a PAT `AudioProcessor` with an `associatedtype Configuration` would be more extensible than a plain protocol with a default implementation. However, given only `reset()` is currently duplicated and no associated-type evidence exists in the cluster, a simple default-implementation protocol is the more conservative and idiomatic choice today.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011HpHcJXvH7souwFtAhHcPH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2538,
+    "output_tokens": 680,
+    "service_tier": "standard"
+  }
+}

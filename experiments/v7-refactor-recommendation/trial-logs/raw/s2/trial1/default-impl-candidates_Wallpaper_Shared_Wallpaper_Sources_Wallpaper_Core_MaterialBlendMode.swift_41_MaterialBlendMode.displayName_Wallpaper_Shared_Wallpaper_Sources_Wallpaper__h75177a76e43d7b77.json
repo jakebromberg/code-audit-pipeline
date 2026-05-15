@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendModeDisplayable\",\n      \"method\": \"var displayName: String { get }\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"Three distinct blend-mode enums in the same package (`Wallpaper`) \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 each independently implement a `displayName` property at the same line offset (line 41), which is the canonical signal for a default-implementation candidate. Because all three types live under `Shared/Wallpaper/Sources/Wallpaper/Core/`, a shared protocol (e.g., `BlendModeDisplayable`) with a protocol extension providing the default `displayName` implementation can eliminate the triplication. The new protocol file should be placed in the same `Core` directory so all three conformers can adopt it without introducing a new dependency edge.\",\n    \"evidence_quote\": \"MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"BlendModeDisplayable\",\n        \"associated_type\": \"RawValue\",\n        \"constraints\": [\"RawRepresentable\", \"CustomStringConvertible\"],\n        \"replaces\": [\"MaterialBlendMode.displayName\", \"PlaybackBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n      },\n      \"rationale\": \"If the three `displayName` implementations derive their value from the enum's raw value or case name in a uniform way, a PAT with an `associatedtype RawValue` constrained to `RawRepresentable` could provide a fully generic default implementation, making the protocol reusable for future blend-mode types beyond the current three.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DvRH5j7KZYAy6vnomQMGJ2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2172,
+    "output_tokens": 812,
+    "service_tier": "standard"
+  }
+}

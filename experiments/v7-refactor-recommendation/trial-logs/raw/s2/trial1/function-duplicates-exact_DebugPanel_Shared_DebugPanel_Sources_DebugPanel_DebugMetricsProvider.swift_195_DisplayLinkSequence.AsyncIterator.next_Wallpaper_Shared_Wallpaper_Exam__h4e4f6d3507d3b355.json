@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195:DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"The method `DisplayLinkSequence.AsyncIterator.next` is an exact duplicate across two packages: `DebugPanel` (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195) and `Wallpaper` (Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219). Neither record carries `is_test`, `is_codegen`, `is_mock`, or `is_sample_app` flags that would justify intentional duplication. The `DebugPanel` package is the more appropriate canonical home because it already owns the primary definition and is a shared utility package; the `Wallpaper` copy in `DebugHUD.swift` should be removed and replaced with an import of `DebugPanel`. This eliminates the risk of the two implementations diverging silently.\",\n    \"evidence_quote\": \"DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Although the file path contains 'Examples/WallpaperSampleApp', the `is_sample_app` context flag is explicitly `false` for that record, so the sample-app-mirror exemption does not strictly apply. However, if the `DebugHUD.swift` file is in practice only used as a lightweight standalone debug overlay for the sample app and adding a full `DebugPanel` dependency would be undesirable, leaving the copy in place with a comment referencing the canonical source is a defensible low-cost alternative.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013X1CKM1gERjmZwp7WZxXmL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 668,
+    "service_tier": "standard"
+  }
+}

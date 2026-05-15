@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two protocols `AsyncNotificationMessage` (production, `is_test=false`) and `MockNotificationMessage` (test fixture, `is_test=true`) serve structurally similar but intentionally distinct roles: the production protocol in `Shared/Core/Sources/Core/Observation/AsyncMessage.swift` defines the real notification-message contract, while `MockNotificationMessage` in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` is a test-support plant/mock that deliberately mirrors that shape. The single differing slot \u2014 `makeMessage:(_ notification: sending Notification) -> Self?` vs `makeMessage:(_ notification: Notification) -> Self?` \u2014 indicates the test version uses the `sending` ownership annotation, which is a meaningful semantic divergence appropriate for a test double. Collapsing these into a shared PAT hierarchy would couple production and test infrastructure unnecessarily and risk leaking test-only concurrency semantics into the production protocol.\",\n    \"evidence_quote\": \"makeMessage:(_ notification: sending Notification) -> Self?\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Jq34nHMgz8wTRsPbNtS5eu",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2504,
+    "output_tokens": 378,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift:72:EntityResolverMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true: `iTunesArtworkServiceTests.SequentialMockSession` in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and `EntityResolverMockWebSession` in `Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift`. Although they share the `requestedURLs:[URL]` field and a broadly similar shape, the differing `responses` slot (`[Data]` vs `[String: Data]`) reflects genuinely different stubbing contracts required by their respective test scenarios. Merging them into a generic struct would couple two unrelated test packages (Artwork and Metadata) and add complexity with no production benefit. Per the decision rules, all-test clusters are intentional duplication.\",\n    \"evidence_quote\": \"is_test: true ... requestedURLs:[URL] ... responses:[Data] ... responses:[String: Data]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"ResponseStore\", \"constraint\": null }\n        ],\n        \"new_name\": \"SequentialMockSession\",\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"EntityResolverMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned, a generic `SequentialMockSession<ResponseStore>` parameterised over the `responses` storage type (`[Data]` vs `[String: Data]`) would eliminate the structural duplication. However, this would require a cross-package test-helper dependency between Artwork and Metadata, which is likely undesirable, so this remains a lower-priority alternative.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QhKnHnUdkGHfuqm2ZKGGQ5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 619,
+    "service_tier": "standard"
+  }
+}

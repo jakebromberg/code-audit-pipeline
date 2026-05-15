@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit the two `Image.heifData` method definitions at lines 28 and 107 of `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They share a Jaccard similarity of 0.75, suggesting they are near-duplicates within the same file. Determine whether they are platform-conditional variants (e.g., `#if os(macOS)` / `#if os(iOS)`) or simply redundant. If they are platform guards, add a clarifying comment and leave them in place. If they are genuinely redundant, consolidate into a single `Image.heifData` implementation, extracting any differing logic into a private helper or a platform-conditional branch within the single method body.\",\n      \"why_no_category_fits\": \"Both records live in the exact same file (`ImageCompatability.swift`) and the same package (`Core`), so 'extract-to-common' does not apply. There is no protocol, subclass, or generic relationship implied. The most likely scenario is either a platform-conditional split (intentional) or an accidental duplication within one file \u2014 neither of which maps cleanly to the named categories. The appropriate action depends on inspecting the conditional compilation context around lines 28 and 107, which is not fully visible in the cluster row.\"\n    },\n    \"rationale\": \"Both members are named `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` within the `Core` package, at lines 28 and 107 respectively, with a Jaccard similarity of 0.75. Their co-location in a file named `ImageCompatability.swift` strongly suggests they exist to handle platform compatibility (e.g., macOS vs. iOS HEIF encoding APIs), which would make the duplication intentional but still worth documenting. If they are not guarded by distinct `#if` branches, one definition is dead code and should be removed.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\"\\n\\\"line\\\": 28\\n\\\"name\\\": \\\"Image.heifData\\\"\\n...\\n\\\"line\\\": 107\\n\\\"name\\\": \\\"Image.heifData\\\"\\n\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"intentional-specialization\"\n      },\n      \"rationale\": \"If the two `Image.heifData` definitions at lines 28 and 107 are each wrapped in distinct `#if os(...)` or `#available(...)` conditional compilation blocks \u2014 a common pattern in a file explicitly named `ImageCompatability.swift` \u2014 the near-duplication is intentional platform specialization and no merge is warranted.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JXYNW3JY3mDpeSRPm1smRC",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2363,
+    "output_tokens": 787,
+    "service_tier": "standard"
+  }
+}

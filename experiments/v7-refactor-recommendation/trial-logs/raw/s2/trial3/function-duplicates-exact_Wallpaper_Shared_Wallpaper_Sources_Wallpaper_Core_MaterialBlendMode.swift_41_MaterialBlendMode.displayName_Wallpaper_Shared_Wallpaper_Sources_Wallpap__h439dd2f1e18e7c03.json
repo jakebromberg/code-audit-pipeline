@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"BlendModeDisplayable\",\n      \"associated_type\": null,\n      \"constraints\": [\"RawRepresentable\", \"CaseIterable\"],\n      \"replaces\": [\"MaterialBlendMode.displayName\", \"PlaybackBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n    },\n    \"rationale\": \"All three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently defines an identical `displayName` computed property at line 41 of their respective files. Introducing a `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension (e.g., in a new `BlendModeDisplayable.swift` within `Shared/Wallpaper/Sources/Wallpaper/Core/`) would eliminate all three duplicate bodies. Because the property body is structurally exact across all three conformers, the default implementation can be provided unconditionally, and each enum need only declare conformance. This is the idiomatic Swift approach for sharing computed properties across unrelated enum types that share a common semantic contract.\",\n    \"evidence_quote\": \"PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a full PAT feels heavyweight for a single property, the same outcome can be achieved by declaring `BlendModeDisplayable` as a plain protocol with a `var displayName: String { get }` requirement and providing the shared body in a `protocol extension` \u2014 effectively the `default-implementation` pattern. The three conformer files would then delete their local `displayName` bodies and simply declare `: BlendModeDisplayable`. This is slightly less expressive than a PAT but equally valid given no associated-type variance is needed here.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019WcHkQqrJYE4Tpitc1Bi35",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2600,
+    "output_tokens": 880,
+    "service_tier": "standard"
+  }
+}

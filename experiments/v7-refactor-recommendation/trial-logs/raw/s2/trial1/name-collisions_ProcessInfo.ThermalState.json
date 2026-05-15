@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:ProcessInfo.ThermalState\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\"\n      ]\n    },\n    \"rationale\": \"Three separate packages \u2014 DebugPanel and Wallpaper (twice, once in a sample-app file and once in production throttling code) \u2014 each declare an unnamed extension on ProcessInfo.ThermalState at lines 212, 236, and 230 respectively. Because the DebugPanel package already has a dedicated extension in DebugMetricsProvider.swift and is the most semantically appropriate home for thermal-state utilities, the two Wallpaper-side extensions should be removed and their consumers should import DebugPanel (or a shared utility target) instead. If a DebugPanel dependency is architecturally undesirable for the Wallpaper package, a thin shared utility package should be introduced to host the single canonical extension.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift\\\"\\n\\\"file\\\": \\\"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\\\"\\n\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because the fields_or_signature arrays are all empty, the cluster provides no evidence about what members each extension actually declares. If the three extensions add entirely different computed properties or conformances to ProcessInfo.ThermalState (e.g., one adds a display string, another adds a throttling threshold, another adds a debug color), their co-location in the same type is coincidental and consolidation would couple unrelated concerns.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019Ljjq8g749WJD1TU4s9Ttd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2445,
+    "output_tokens": 583,
+    "service_tier": "standard"
+  }
+}

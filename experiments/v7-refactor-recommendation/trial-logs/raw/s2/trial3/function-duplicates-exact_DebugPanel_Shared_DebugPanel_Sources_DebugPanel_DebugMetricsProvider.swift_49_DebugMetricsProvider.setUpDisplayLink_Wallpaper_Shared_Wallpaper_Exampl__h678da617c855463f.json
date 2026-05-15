@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second member lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits inside an Examples/WallpaperSampleApp directory \u2014 a clear sample-app context even though the pipeline did not set is_sample_app=true on that record. The canonical implementation already exists in the dedicated 'DebugPanel' package at 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49'. The WallpaperSampleApp copy is almost certainly a local convenience duplicate introduced so the sample app can run standalone without a full dependency on the DebugPanel package. Consolidating it would couple the sample app to the production package, which is typically undesirable for example targets.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is willing to take a dependency on the DebugPanel package, the duplicate 'setUpDisplayLink' method in DebugHUD.swift could be deleted and the sample app could import and reuse 'DebugMetricsProvider' directly from 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift', eliminating the exact-duplicate entirely.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018DzRcQRhZ9bPfHtJkreMNo",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2429,
+    "output_tokens": 600,
+    "service_tier": "standard"
+  }
+}

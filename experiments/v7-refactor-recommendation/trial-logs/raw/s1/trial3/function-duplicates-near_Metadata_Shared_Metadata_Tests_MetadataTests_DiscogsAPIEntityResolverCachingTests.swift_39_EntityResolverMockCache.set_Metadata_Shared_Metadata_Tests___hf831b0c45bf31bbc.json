@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift:39:EntityResolverMockCache.set+Metadata:Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift:40:PlaycutMetadataMockCache.set\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry is_test=true and reside in test files under Shared/Metadata/Tests/MetadataTests/. The two methods \u2014 EntityResolverMockCache.set (DiscogsAPIEntityResolverCachingTests.swift:39) and PlaycutMetadataMockCache.set (PlaycutMetadataServiceCachingTests.swift:40) \u2014 are mock cache implementations scoped to distinct test suites testing different subsystems (Discogs entity resolution vs. Playcut metadata). Although the Jaccard similarity is 0.7, the structural resemblance is expected for any simple cache-stub `set` method and does not indicate unintentional duplication. Consolidating test fixtures across unrelated test classes would couple independent test suites and reduce clarity.\",\n    \"evidence_quote\": \"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017ASoZC4LZ7mdsoVazLTnAG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2421,
+    "output_tokens": 368,
+    "service_tier": "standard"
+  }
+}

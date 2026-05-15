@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' \u2014 a path that sits squarely inside an Examples/SampleApp subtree. The canonical copy resides in 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' (package: DebugPanel), while the duplicate in the Wallpaper package's sample app is almost certainly a self-contained demonstration copy that was intentionally inlined to keep the sample app free-standing. Extracting it would couple the sample app to the DebugPanel library, which is likely an undesired dependency. The context flags for both records show is_sample_app=false at the record level, but the file path 'WallpaperSampleApp' is unambiguous evidence of a sample-app context.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"MetricRow\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever allowed to take a dependency on DebugPanel, the duplicate MetricRow.body computed property at line 52 of DebugHUD.swift in the Wallpaper package could be deleted and the type imported from Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift instead, eliminating the exact duplication.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018kLcncLDoBwvJAtsHJmAYs",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2401,
+    "output_tokens": 593,
+    "service_tier": "standard"
+  }
+}

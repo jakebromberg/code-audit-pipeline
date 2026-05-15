@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no grounded field-level evidence to act on. One participant lives under `AnalyticsTesting` (a test/mock support target, as signalled by the `MockStructuredAnalytics` prefix and the `Testing` path segment), while the other is a production type in `PlaybackCore`; the high Jaccard score of 0.875 is plausible for a mock proxy that intentionally mirrors its subject. Without member lists it is impossible to distinguish a refactorable structural overlap from an intentional mock-mirror relationship, so the safer ruling is no-action.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Analytics\",\n        \"type_name\": \"CPUSessionEvent\",\n        \"remove_from\": [\n          \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift\",\n          \"Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift\"\n        ]\n      },\n      \"rationale\": \"If the `members` list were populated and confirmed that `CPUSessionEventProxy` and `CPUSessionEvent` share the same stored properties (Jaccard 0.875 suggests near-identical shape), a canonical `CPUSessionEvent` value type could be extracted into the `Analytics` package so that `PlaybackCore` imports it directly and `MockStructuredAnalytics` wraps or type-aliases it rather than duplicating its shape.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01V58rkwivo7WYen5oWETkHm",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2135,
+    "output_tokens": 598,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MetricRow+MetricRow\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two `MetricRow` type-alias-object declarations lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under an `Examples/WallpaperSampleApp` path \u2014 a clear sample-app context. The other lives in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` in the `DebugPanel` package. The sample-app copy is almost certainly a local convenience replica intentionally kept self-contained so the example target does not need to import `DebugPanel` as a dependency. Consolidating it would couple the sample app to the production debug panel package, which is typically undesirable for standalone examples.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"MetricRow\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample app is ever allowed to depend on `DebugPanel`, the duplicate in `WallpaperSampleApp/Sources/DebugHUD.swift` could be deleted and the canonical definition in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` reused, eliminating the duplication entirely.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HFpEwWaM3d2v17TGvcLRzC",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2329,
+    "output_tokens": 480,
+    "service_tier": "standard"
+  }
+}

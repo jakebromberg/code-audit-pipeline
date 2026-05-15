@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `ThemeTipView` (in `Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift`, line 18) and `SiriTipView` (in `WXYC/iOS/Views/Root/SiriTipView.swift`, line 21), indicating substantial structural overlap across two packages. Because `ThemeTipView` already lives in the `Shared/Wallpaper` package \u2014 which is a shared library target \u2014 it is the natural home for a unified, parameterised `TipView` type that both consumers can adopt. Extracting the common shape into `Shared/Wallpaper` avoids cross-package duplication and gives the iOS app target a single, maintained source of truth. The 0.25 divergence (differing slots not enumerated) can be handled via initialiser parameters or a small configuration type rather than separate view types.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"TipViewRepresentable\",\n        \"associated_type\": \"Configuration\",\n        \"constraints\": [],\n        \"replaces\": [\"ThemeTipView\", \"SiriTipView\"]\n      },\n      \"rationale\": \"If the two views must remain separate types for domain-clarity reasons (theme selection vs. Siri suggestion), a `TipViewRepresentable` protocol with an associated `Configuration` type could unify the shared 75 % of structure while allowing each concrete type to supply its own configuration. This is lighter-weight than a full extraction but still eliminates the structural duplication surfaced by the 0.75 Jaccard score.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012BTr3BxEV6gwk6swUKD4CB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2131,
+    "output_tokens": 724,
+    "service_tier": "standard"
+  }
+}

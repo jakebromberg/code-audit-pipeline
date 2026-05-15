@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveArtist` is duplicated exactly across two test files in different packages: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although both context flags show `is_test: false` (likely a pipeline mis-classification given the file paths ending in `Tests/`), the mock type `MockDiscogsEntityResolver` is clearly test-support infrastructure. Since the `Metadata` package is the natural home for Discogs-related abstractions and the `app:iOS` package presumably already depends on `Metadata`, the canonical definition should live in a test-support target within `Metadata` (e.g., `Shared/Metadata/Tests/MetadataTests/`) and be imported by `WXYCTests`, eliminating the copy in `DiscogsFormatterTests.swift`.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both occurrences reside in files whose paths contain `Tests/` (e.g., `MetadataTests/DiscogsMarkupParserTests.swift` and `WXYCTests/DiscogsFormatterTests.swift`), suggesting these are parallel test fixtures that may be intentionally isolated per test target to avoid cross-target test dependencies. If the build system does not allow sharing test-support code between `Metadata` and `app:iOS` test targets, keeping the duplication is acceptable.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01E5GjYTbfS8xR5EHn1w9AcJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2413,
+    "output_tokens": 694,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        {\n          \"name\": \"ArtworkImage\",\n          \"constraint\": null\n        }\n      ],\n      \"new_name\": \"PlaycutItem\",\n      \"replaces\": [\"NowPlayingItem\", \"PlaycutSelection\"]\n    },\n    \"rationale\": \"Both `NowPlayingItem` (AppServices, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (app:iOS, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` structs with an identical two-field shape \u2014 `artwork` and `playcut:Playcut` \u2014 differing only in the concrete image type (`Image?` vs `UIImage?`). This is a textbook generic-parameterization opportunity: a single generic struct `PlaycutItem<ArtworkImage>` with fields `artwork: ArtworkImage?` and `playcut: Playcut` would unify both, with `AppServices` instantiating `PlaycutItem<Image>` and the iOS app instantiating `PlaycutItem<UIImage>`. The `shared_field_count: 2` and the single `differing_slots` entry confirm the structural near-identity. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication exemption.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [ { \\\"a\\\": [ \\\"artwork:Image?\\\" ], \\\"b\\\": [ \\\"artwork:UIImage?\\\" ] } ]\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"AppServices\",\n        \"type_name\": \"PlaycutItem\",\n        \"remove_from\": [\n          \"Shared/AppServices/Sources/AppServices/NowPlayingService.swift\",\n          \"WXYC/iOS/Views/Playlist/PlaylistView.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a generic parameter is considered over-engineering for a two-field struct, an alternative is to canonicalise on a single concrete type in the `AppServices` package (which the iOS app already depends on) using whichever image type is appropriate at the shared boundary (likely a platform-agnostic representation or a typealias), and delete the duplicate `PlaycutSelection` from `PlaylistView.swift`. This avoids a generic but requires agreeing on one image type across the boundary.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Dv1Qzqb2gdVK75zYegyV6E",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2452,
+    "output_tokens": 734,
+    "service_tier": "standard"
+  }
+}

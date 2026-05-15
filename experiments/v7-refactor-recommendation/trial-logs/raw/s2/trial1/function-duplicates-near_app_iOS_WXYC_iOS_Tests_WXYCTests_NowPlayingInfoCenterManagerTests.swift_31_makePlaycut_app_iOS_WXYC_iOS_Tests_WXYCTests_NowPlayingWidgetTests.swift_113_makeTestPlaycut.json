@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift:31:makePlaycut+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:113:makeTestPlaycut\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true. The functions `makePlaycut` (NowPlayingInfoCenterManagerTests.swift:31) and `makeTestPlaycut` (NowPlayingWidgetTests.swift:113) are test-fixture factory helpers living in separate test files within the app:iOS package. While the Jaccard similarity of 0.818 suggests near-duplication, test helper functions are commonly duplicated across test files to keep each test suite self-contained and to allow independent evolution without coupling test suites to a shared fixture. No production code is affected.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"app:iOS\",\n        \"type_name\": \"PlaycutTestFixtures\",\n        \"remove_from\": [\n          \"WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two test suites continue to diverge and the factory logic grows more complex, extracting a shared `PlaycutTestFixtures` helper into a test-support file within app:iOS would eliminate the near-duplicate (Jaccard 0.818) and provide a single place to maintain Playcut construction logic for all WXYCTests.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014bLHn5vkXjHg5uzb27dzsT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2398,
+    "output_tokens": 506,
+    "service_tier": "standard"
+  }
+}

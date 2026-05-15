@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockDiscogsEntityResolver\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Two separate packages \u2014 'Metadata' (at Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:29) and 'app:iOS' (at WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:25) \u2014 each independently define a type-alias-object named MockDiscogsEntityResolver. Because the Metadata package is already the canonical home for Discogs-related domain logic and the app:iOS package depends on it, the shared mock should live in Metadata's test support layer (e.g., a TestSupport or TestHelpers target within the Metadata package) so that both test suites can import a single definition. The duplicate in DiscogsFormatterTests.swift should then be removed and replaced with an import of the shared mock.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\"\\n    ...\\n    \\\"file\\\": \\\"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both records carry is_test=false in their context_flags (the pipeline did not tag them as test fixtures despite residing in test file paths), and fields_or_signature is empty for both, so it is possible the two type aliases resolve to different underlying types serving unrelated purposes. If the aliases diverge in their actual target types, the name collision is coincidental and no consolidation is warranted.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NmjhMMhPuzMs7B9pEBcH7c",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 531,
+    "service_tier": "standard"
+  }
+}

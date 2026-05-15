@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package. Despite sharing 3 structural slots, they carry semantically distinct names: one is explicitly scoped to `@MainActor` dispatch, the other is a general async notification sequence. Collapsing them would conflate actor-isolation semantics with unconstrained async semantics, which is a meaningful runtime distinction in Swift concurrency. No fields or signatures are listed, so there is insufficient evidence to assert the underlying aliased types are identical rather than merely structurally similar.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"shared_field_count\\\": 3\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"If investigation confirms both type aliases resolve to the same underlying generic type (e.g., `AsyncStream<SomeMessage>`), introduce a single canonical typealias in `AsyncMessage.swift` and re-export a `@MainActor`-annotated wrapper or `typealias MainActorNotificationMessageSequence = AsyncNotificationMessageSequence` in `MainActorMessage.swift` to preserve the actor-scoped name without duplicating the definition.\",\n        \"why_no_category_fits\": \"The cluster provides no signature or aliased-type evidence to confirm the underlying types are identical; acting on structural shape alone risks merging intentionally distinct actor-isolation boundaries.\"\n      },\n      \"rationale\": \"If the aliased types are confirmed identical, a one-line re-export typealias in `MainActorMessage.swift` pointing to `AsyncNotificationMessageSequence` would eliminate the duplication while preserving the `@MainActor`-scoped name for call-site clarity.\"\n    },\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AovCvPP3ZhoSZ1nxF48JVj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2324,
+    "output_tokens": 554,
+    "service_tier": "standard"
+  }
+}

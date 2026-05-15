@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the duplication is intentional or actionable.\n\nKey observations:\n- One member lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a proper library source file.\n- The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample/example app context, even though `is_sample_app` is flagged `false` by the pipeline.\n- The file path `Examples/WallpaperSampleApp/Sources/DebugHUD.swift` strongly indicates this is a sample/example application that has copy-pasted or re-implemented `DebugMetricsProvider.init` locally rather than importing the canonical `DebugPanel` package.\n- The `is_sample_app` flag being `false` appears to be a pipeline mis-classification given the `Examples/WallpaperSampleApp` path segment \u2014 the structural evidence (path) overrides the flag per the decision rules.\n- No fields or signature details are provided (`fields_or_signature: []`), so no deeper structural grounding is possible beyond the path and name evidence.\n\nThe correct action is to note this as a sample-app mirror and recommend no-action, while noting in the rationale that the `WallpaperSampleApp` should ideally import `DebugPanel` instead of duplicating the initializer.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second occurrence of `DebugMetricsProvider.init` resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, whose path contains the `Examples/WallpaperSampleApp` segment \u2014 a clear sample-application context \u2014 even though the pipeline's `is_sample_app` flag is `false` (likely a mis-classification). The canonical definition lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`). Sample apps routinely inline debug utilities to remain self-contained, making this duplication intentional by convention. No structural evidence (differing slots, Jaccard, shared ancestor) was surfaced to suggest the two implementations have diverged in a way that warrants a shared abstraction.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is ever promoted beyond a throwaway example, the duplicate `DebugMetricsProvider.init` in `DebugHUD.swift` should be deleted and the file should instead import the `DebugPanel` package, consuming the canonical initializer at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41`.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011uP6TSkh9nExPZcjKfBW4v",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2419,
+    "output_tokens": 978,
+    "service_tier": "standard"
+  }
+}

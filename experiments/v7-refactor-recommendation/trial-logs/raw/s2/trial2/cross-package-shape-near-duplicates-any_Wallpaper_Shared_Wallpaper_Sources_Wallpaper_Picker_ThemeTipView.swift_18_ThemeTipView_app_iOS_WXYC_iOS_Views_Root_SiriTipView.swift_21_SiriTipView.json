@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries empty `members` and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no concrete field or method evidence to ground a refactor recommendation. The only available signal is a Jaccard similarity of 0.75 between `ThemeTipView` (in `Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18`) and `SiriTipView` (in `WXYC/iOS/Views/Root/SiriTipView.swift:21`). These two types serve distinct domain purposes \u2014 one is a wallpaper/theme picker tip and the other is a Siri integration tip \u2014 so their structural resemblance is most plausibly coincidental (both are likely small tip/hint UI views that happen to share a similar SwiftUI shape). Without member-level evidence it would be speculative to prescribe an extraction or protocol.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms the two views share the same layout/init parameters (Jaccard 0.75 suggests meaningful overlap), a generic or parameterised `TipView` could be extracted to a shared UI package and specialised via configuration rather than subclassing. This would be worth revisiting once the `members` array is populated.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014kgys8ViKUCz8e6tEE1Tok",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2131,
+    "output_tokens": 646,
+    "service_tier": "standard"
+  }
+}

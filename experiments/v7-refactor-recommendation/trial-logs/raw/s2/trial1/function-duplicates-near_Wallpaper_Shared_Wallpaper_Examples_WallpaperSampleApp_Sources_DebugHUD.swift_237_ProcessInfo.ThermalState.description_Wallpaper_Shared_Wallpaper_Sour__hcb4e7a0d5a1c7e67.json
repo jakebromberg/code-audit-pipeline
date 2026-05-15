@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Two near-duplicate computed properties (Jaccard 0.75) both convert `ProcessInfo.ThermalState` to a human-readable string: `ProcessInfo.ThermalState.description` in the sample-app `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in the production `PerformanceControls.swift` (line 152). Because `ProcessInfo.ThermalState` is the shared subject, the canonical fix is a single extension on `ProcessInfo.ThermalState` (e.g., a `var description: String` or `var label: String`) placed in the production `Wallpaper` package, which both the sample app and `PerformanceControls` can then consume. This eliminates the divergence risk where the two string representations drift independently.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"ProcessInfo.ThermalState.description\\\" ... \\\"name\\\": \\\"PerformanceControls.thermalStateLabel\\\" ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"The first record carries `is_sample_app: true`, which under the intentional-duplication rules is a candidate for 'sample-app-mirror'. If the sample app's debug HUD is intentionally self-contained and not expected to track production changes, leaving the duplication in place is acceptable. However, because the production file also lives in a DebugUI path and the Jaccard similarity is high (0.75), consolidation is the stronger recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014LhVjRDs26KNGUw7HUyLbw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 673,
+    "service_tier": "standard"
+  }
+}

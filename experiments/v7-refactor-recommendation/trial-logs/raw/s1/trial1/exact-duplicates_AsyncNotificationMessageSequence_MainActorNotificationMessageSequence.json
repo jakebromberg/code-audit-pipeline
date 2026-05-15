@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with empty `fields_or_signature` arrays. Despite sharing structural shape (shared_field_count: 3, likely referring to the underlying aliased type's shape rather than declared members), they encode semantically distinct concepts: one is scoped to `@MainActor` message delivery and the other to generic async message sequencing. Collapsing or deduplicating them would conflate actor-isolation semantics with general async semantics, which is a meaningful distinction in Swift concurrency. No context flags (is_test, is_codegen, is_mock, is_sample_app) suggest an accidental duplication scenario.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"file\\\": \\\"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"file\\\": \\\"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"If investigation confirms that `MainActorNotificationMessageSequence` is strictly a `@MainActor`-constrained specialisation of `AsyncNotificationMessageSequence`, consider defining `MainActorNotificationMessageSequence` as a `typealias` of `AsyncNotificationMessageSequence` with an explicit `@MainActor` annotation or wrapper, rather than maintaining two independent alias declarations in `Core`.\",\n        \"why_no_category_fits\": \"The relationship is between two type aliases rather than between concrete types, protocols, or functions, so none of the standard refactor categories (extract-to-common, generic-parameterization, protocol-inheritance, etc.) map cleanly onto the situation.\"\n      },\n      \"rationale\": \"Both aliases live in the same `Core` package and the structural evidence reports shared_field_count: 3, suggesting they alias structurally identical underlying types. If the only difference is actor isolation, a single canonical alias plus a `@MainActor`-constrained variant would reduce drift risk while preserving the semantic distinction.\"\n    },\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01G1cbJSYoa7hjYrdvEkgAHR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2324,
+    "output_tokens": 639,
+    "service_tier": "standard"
+  }
+}

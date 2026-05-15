@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package. Although the structural pipeline reports `shared_field_count: 3` and flags them as exact duplicates, type aliases by definition carry no stored fields of their own \u2014 the shared count reflects the shape of their underlying aliased types, not duplicated logic. The two aliases almost certainly resolve to different concrete generic specialisations (one pinned to `@MainActor`, the other a plain async sequence), making the structural similarity intentional and domain-meaningful rather than accidental redundancy. Collapsing them would erase a semantically important actor-isolation distinction that the separate file names (`MainActorMessage.swift` vs `AsyncMessage.swift`) already signal.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\" ... \\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"shared_field_count\\\": 3\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HrRC2JynQZxCmxNrSgNStL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2324,
+    "output_tokens": 362,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Two computed properties in the same `Wallpaper` package \u2014 `ProcessInfo.ThermalState.description` in the sample-app's `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in `PerformanceControls.swift` (line 152) \u2014 share near-identical logic for converting a `ProcessInfo.ThermalState` value to a human-readable string (Jaccard 0.75). The canonical home for this logic is a single extension on `ProcessInfo.ThermalState` placed in the main `Wallpaper` source tree (e.g., `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThermalState+Description.swift`), which both the production `PerformanceControls` and the sample-app `DebugHUD` can then consume. Because one participant is `is_sample_app: true` and the other is production code, the duplication is not intentional mirroring \u2014 the sample app is simply re-implementing something the library should already expose.\",\n    \"evidence_quote\": \"ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"One record has `is_sample_app: true`, which under the intentional-duplication rules could justify no-action if the sample app is deliberately self-contained and not expected to import internal debug utilities from the main Wallpaper source tree. However, both files live in the same `Wallpaper` package and the Jaccard similarity of 0.75 suggests the duplication is accidental rather than deliberate isolation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011UPSif24DvPnpCg8m5RVio",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 747,
+    "service_tier": "standard"
+  }
+}

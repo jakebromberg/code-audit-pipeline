@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"protocol-inheritance\",\n    \"specifics\": {\n      \"parent\": \"ContainerProtocol\",\n      \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n      \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n      \"reuse_existing_swift_protocol\": false\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` (in `_Plant_ShowContainer.swift:19`) and `TrackContainerProtocol` (in `_Plant_TrackContainer.swift:19`) share three identical members \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 differing only in the `item` slot (`item:Show` vs `item:Track`). Introducing a parent protocol `ContainerProtocol` with an `associatedtype Item` (or simply the three shared concrete members) and having both child protocols inherit from it would eliminate the repeated declarations. Both protocols live in the same package (`Playback`) and the same source root (`Shared/Playback/Sources/PlaybackCore`), so the new parent protocol can be placed there without introducing any new dependency edges. Neither record carries any test, codegen, mock, or sample-app flag, confirming this is production protocol surface worth consolidating.\",\n    \"evidence_quote\": \"\\\"isStale:Bool\\\", \\\"lastRefreshedAt:Date?\\\", \\\"pageToken:String?\\\"\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"ContainerProtocol\",\n        \"associated_type\": \"Item\",\n        \"constraints\": [],\n        \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n      },\n      \"rationale\": \"Instead of a plain parent protocol with concrete shared members, a PAT with `associatedtype Item` would also absorb the differing `item:Show` / `item:Track` slot, fully unifying both protocols into a single generic `ContainerProtocol<Item>`. This is slightly more invasive (all call sites must become generic over `Item`) but eliminates both child protocols entirely rather than just reducing their bodies.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NyPEBzfrphoQau37rn6tk7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2456,
+    "output_tokens": 644,
+    "service_tier": "standard"
+  }
+}

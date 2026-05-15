@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockURLProtocol\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), making it impossible to confirm they share meaningful shape or behaviour. They live in separate test files \u2014 `AppServicesTests/AppConfigurationTests.swift` (package: AppServices) and `MetadataTests/PlaycutMetadataServiceHTTPTests.swift` (package: Metadata) \u2014 and the collision is purely nominal. Although neither record carries `is_test: true` in the context flags, both files sit under `Tests/` directories, strongly suggesting they are test-support helpers whose co-incidental naming does not warrant a shared extraction. With no field overlap to ground a refactor recommendation, the conservative choice is no-action.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\\\" ... \\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\\\" ... \\\"fields_or_signature\\\": [] ... \\\"jaccard\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"AppServices\",\n        \"type_name\": \"MockURLProtocol\",\n        \"remove_from\": [\n          \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a future audit confirms both type-aliases resolve to the same underlying URLProtocol subclass, extracting a single shared `MockURLProtocol` into a common test-support target (e.g., a `TestSupport` library within AppServices or a dedicated shared test helper package) would eliminate the name collision and allow both test suites to import one definition. However, the current cluster row provides no field or signature evidence to justify this action today.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KprgJCXJQWMD5FEq1mTLRA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2309,
+    "output_tokens": 569,
+    "service_tier": "standard"
+  }
+}

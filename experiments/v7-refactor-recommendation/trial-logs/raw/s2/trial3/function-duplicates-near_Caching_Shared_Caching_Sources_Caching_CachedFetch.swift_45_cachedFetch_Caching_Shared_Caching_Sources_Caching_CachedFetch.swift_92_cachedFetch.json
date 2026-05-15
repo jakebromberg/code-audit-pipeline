@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they can be unified into a single generic or defaulted-parameter function. If the differing behaviour is purely in one or two parameters (e.g., a cache policy, expiry duration, or key strategy), introduce a single `cachedFetch` with default-argument values for those parameters and delete the redundant overload. If the two overloads differ in their async/throwing surface or in the type of the fetched value, apply generic parameterization (a type parameter `T` constrained to whatever the return type requires) so that one implementation covers both call sites.\",\n      \"why_no_category_fits\": \"The cluster reports two near-duplicate functions (Jaccard 0.7) that live in the same file and same package \u2014 not across packages \u2014 so 'extract-to-common' does not apply. The signatures are not provided (`fields_or_signature` is empty for both), so it is impossible to confirm that a protocol default-implementation or PAT introduction is the right shape. The most defensible first step is a manual inspection followed by either parameter-defaulting or generic parameterization, neither of which maps cleanly to a single named category given the missing signature evidence.\"\n    },\n    \"rationale\": \"Both members are named `cachedFetch`, reside in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), and share a Jaccard similarity of 0.7 \u2014 high enough to flag meaningful duplication but not identical. Because `fields_or_signature` is empty for both records, the exact parameter differences cannot be determined from the cluster data alone, making it unsafe to prescribe a specific refactor category (generic-parameterization vs. default-implementation vs. simple overload collapse) without first reading the source. No context flags (test, codegen, mock, sample-app) are set, so the duplication is not intentional by policy. The recommended action is a targeted inspection followed by the most appropriate consolidation once the signatures are known.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Decodable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two overloads differ only in the concrete return type they decode or cache (a common pattern in caching utilities), a single generic `cachedFetch<T: Decodable>` in `Shared/Caching/Sources/Caching/CachedFetch.swift` would eliminate the near-duplication while preserving type safety. This is the most idiomatic Swift consolidation when overloads share body logic but differ in their concrete type.\"\n    },\n    \"confidence\": 0.45\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GKntUfoVt7t1ayx3GpH1cB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2375,
+    "output_tokens": 865,
+    "service_tier": "standard"
+  }
+}

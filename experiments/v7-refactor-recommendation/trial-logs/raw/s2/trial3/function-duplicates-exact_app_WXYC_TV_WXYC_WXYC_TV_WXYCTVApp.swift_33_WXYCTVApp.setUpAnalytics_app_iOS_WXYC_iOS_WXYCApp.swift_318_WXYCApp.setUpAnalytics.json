@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:33:WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"setUpAnalytics\",\n      \"remove_from\": [\n        \"WXYC/WXYC TV/WXYCTVApp.swift\",\n        \"WXYC/iOS/WXYCApp.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCTVApp.setUpAnalytics` (line 33 in `WXYC/WXYC TV/WXYCTVApp.swift`) and `WXYCApp.setUpAnalytics` (line 318 in `WXYC/iOS/WXYCApp.swift`) are flagged as exact function duplicates across two distinct app targets (`app:WXYC TV` and `app:iOS`). Neither record carries any test, codegen, mock, or sample-app flags, so the duplication is not intentional by policy. The identical body should be extracted into a shared module (e.g., a `AnalyticsSetup` free function or a shared `AppDelegate`-style helper in a common framework package that both targets already depend on), and each app entry-point should call the shared implementation. Because no shared package name is surfaced in the cluster row, the iOS target (`app:iOS`) is nominated as the interim host pending confirmation of the actual shared dependency graph.\",\n    \"evidence_quote\": \"WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Define a free function `setUpAnalytics()` in a new or existing shared Swift package (e.g., `WXYCCore`) and have both `WXYCTVApp` and `WXYCApp` call it from their respective entry points, removing the per-app method bodies entirely.\",\n        \"why_no_category_fits\": \"The `extract-to-common` category assumes a known target package; if no shared package currently exists between `app:WXYC TV` and `app:iOS`, the correct action is to create one, which is better described as a structural reorganisation rather than a simple extraction.\"\n      },\n      \"rationale\": \"If `app:iOS` does not already serve as a dependency of `app:WXYC TV`, extracting into it would introduce a circular or inappropriate dependency. In that case, a dedicated shared package (e.g., `WXYCCore`) should be created to host the analytics bootstrap logic, making the extraction clean and dependency-safe.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Gd6G952V9oSQkyFqaKuand",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2399,
+    "output_tokens": 772,
+    "service_tier": "standard"
+  }
+}

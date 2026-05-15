@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Introduce a single private helper method in `WXYCApp` (e.g., `navigateTheme(by offset: Int)` or `navigateTheme(direction: ThemeDirection)`) that encapsulates the shared navigation logic. Replace the bodies of `navigateToPreviousTheme` (line 465) and `navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` with calls to this helper, passing `-1`/`.previous` and `+1`/`.next` respectively. The two public-facing methods can remain as thin wrappers to preserve call-site clarity.\",\n      \"why_no_category_fits\": \"The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of near-duplicate instance methods on the same class (`WXYCApp`) in the same file. None of the structural categories (extract-to-common, protocol-inheritance, generic-parameterization, subclass-lift, etc.) cleanly describe the idiomatic Swift fix, which is simply to unify the duplicated body into a shared private helper and keep the two named entry points as one-liners. A Jaccard similarity of 0.75 confirms substantial shared logic worth consolidating, but the right mechanism is a private helper, not any of the named refactor categories.\"\n    },\n    \"rationale\": \"Both `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file (`WXYC/iOS/WXYCApp.swift`) and share a Jaccard similarity of 0.75, indicating that roughly three-quarters of their implementation is identical. The only meaningful difference is the direction of navigation (previous vs. next), which is a single parameter. Extracting a private `navigateTheme(by:)` helper eliminates the duplication while keeping the two semantically named public methods intact for readability at call sites.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"navigateTheme(by:)\",\n        \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n      },\n      \"rationale\": \"If the direction can be expressed as a simple `Int` offset or a local enum, a single non-generic but parameterised function `navigateTheme(by offset: Int)` replaces both methods entirely. This is slightly more aggressive than the primary recommendation because it removes the two named entry points, which may reduce readability at call sites.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0146TTti42Sb2Nu2UnEhpKnU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2387,
+    "output_tokens": 797,
+    "service_tier": "standard"
+  }
+}

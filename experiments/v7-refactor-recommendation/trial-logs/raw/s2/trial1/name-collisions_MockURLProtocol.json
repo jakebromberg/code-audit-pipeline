@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockURLProtocol\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), making it impossible to confirm they share meaningful shape or behaviour. The two files \u2014 `AppServicesTests/AppConfigurationTests.swift` in the `AppServices` package and `MetadataTests/PlaycutMetadataServiceHTTPTests.swift` in the `Metadata` package \u2014 live in separate test targets and likely define their own local `MockURLProtocol` type aliases independently to satisfy each test's own networking needs. The collision is purely nominal; no field overlap or structural signal supports a merge. All context flags (`is_test`, `is_mock`, `is_codegen`, `is_sample_app`) are reported as `false`, which is likely a pipeline artefact for test-support files, but the file paths unambiguously place both records inside `Tests/` directories. Consolidating them would couple two otherwise independent test packages without any demonstrated benefit.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\\\" ... \\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\\\" ... \\\"jaccard\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"AppServices\",\n        \"type_name\": \"MockURLProtocol\",\n        \"remove_from\": [\n          \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a future audit reveals that both type aliases resolve to the same concrete `URLProtocol` subclass with identical implementation, extracting a shared `MockURLProtocol` into a common test-support library (e.g., a `TestSupport` target inside `AppServices` or a dedicated `NetworkTestSupport` package) would eliminate the duplication. This is only worth pursuing once the actual implementations are confirmed to be identical, which the current cluster row does not establish.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Qk7rrsK33KXsMiDkM3Bfu4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2309,
+    "output_tokens": 626,
+    "service_tier": "standard"
+  }
+}

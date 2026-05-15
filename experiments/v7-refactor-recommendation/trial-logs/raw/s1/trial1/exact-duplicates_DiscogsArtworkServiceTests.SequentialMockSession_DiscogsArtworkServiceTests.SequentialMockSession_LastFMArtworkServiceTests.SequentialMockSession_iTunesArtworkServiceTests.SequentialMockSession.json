@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four members are `type-alias-object` declarations named `SequentialMockSession`, each nested inside a different test class (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests` \u00d7 2) but all living in the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package. The structural evidence confirms `shared_field_count: 1` with no differing slots, meaning the aliases are structurally identical. Consolidating them into a single top-level `SequentialMockSession` type alias (or concrete type) at the file or module scope within the same test target eliminates the four-way redundancy while remaining accessible to all three test classes. Note that although `is_test` is reported as `false` by the pipeline, the file path (`Tests/ArtworkTests/`) and the naming convention (`\u2026Tests.SequentialMockSession`) strongly indicate test-support code; the recommendation still holds because the duplication is mechanical and the fix is low-risk.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Despite `is_test` being reported as `false`, all four records reside under `Shared/Artwork/Tests/ArtworkTests/` and carry `\u2026Tests` class prefixes, suggesting the pipeline mis-classified them. If the aliases are intentionally scoped per test class for isolation or future divergence, leaving them in place is acceptable.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XtgNn6BiXeodw8qM6TdxZ7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2688,
+    "output_tokens": 625,
+    "service_tier": "standard"
+  }
+}

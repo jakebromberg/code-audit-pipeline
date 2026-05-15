@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for all structural sub-fields (`differing_slots`, `shared_ancestor`, `shared_field_count`), so there is no grounded evidence about the actual fields, methods, or context flags of `ShaderArgumentValue` (ParameterStore.swift:282) and `ParameterValue` (ThemeManifest.swift:512). The only concrete signal is a Jaccard similarity of 0.75, which is suggestive but insufficient on its own to mandate a refactor without knowing which members are shared and which diverge. The two names also encode distinct domain concepts \u2014 a GPU shader argument value versus a theme manifest parameter value \u2014 whose structural overlap may be purely coincidental. Without member-level evidence to ground a specific action, the safer choice is no-action.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75, \\\"differing_slots\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that the 0.75 Jaccard overlap reflects genuinely shared cases or fields (e.g., numeric, color, boolean variants common to both shader arguments and theme parameters), a single canonical `ParameterValue` type extracted within the `Wallpaper` package would eliminate the duplication. Both files already reside in `Shared/Wallpaper/Sources/Wallpaper/Core/`, so no cross-package dependency changes would be required. This alternative should be revisited once the `members` array is populated by the pipeline.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014x9FbGRyWBuJSw4AuSMev7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2122,
+    "output_tokens": 631,
+    "service_tier": "standard"
+  }
+}

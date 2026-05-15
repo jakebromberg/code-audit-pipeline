@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and null values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, providing no grounded field-level or method-level evidence to support a concrete refactor. The only available signal is a Jaccard similarity of 0.75 between `AccentColorControls` (AccentColorControls.swift:16) and `MaterialControls` (MaterialControls.swift:15) in the Wallpaper package's DebugUI/ThemeDebugOverlay layer. Without member lists it is impossible to determine which members are shared versus divergent, so any specific refactor recommendation would require hallucinated evidence. Both types reside in a DebugUI overlay path, suggesting they are intentionally parallel UI controls for distinct theme dimensions (accent color vs. material), making their structural similarity likely coincidental to their separate domain roles.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75, \\\"differing_slots\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ThemeDebugControl\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift\"\n        ]\n      },\n      \"rationale\": \"If member lists were available and confirmed that the 0.75 Jaccard overlap reflects genuinely shared UI scaffolding (layout, bindings, preview infrastructure) between AccentColorControls and MaterialControls, extracting a common base type or protocol into the same Wallpaper package's DebugUI layer would eliminate the duplication while keeping each control's domain-specific logic separate. This remains speculative without member evidence.\"\n    },\n    \"confidence\": 0.1\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015b1KLxhRq4tkHGi9DPZA5J",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2141,
+    "output_tokens": 652,
+    "service_tier": "standard"
+  }
+}

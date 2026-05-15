@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the duplication is intentional or actionable.\n\nKey observations:\n1. One copy lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a proper library source file.\n2. The second copy lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample/example app context, even though `is_sample_app` is flagged `false` by the pipeline.\n3. The path segment `Examples/WallpaperSampleApp` is strong structural evidence that this is a sample application embedding its own copy of debug infrastructure rather than depending on the `DebugPanel` package \u2014 a common pattern when sample apps want to remain self-contained or avoid a dependency edge.\n4. Both `is_sample_app` flags are `false`, but the file path directly contradicts that flag for the Wallpaper member; the path-based evidence is more reliable here.\n\nThe `WallpaperSampleApp` copy is almost certainly a local convenience copy kept intentionally self-contained inside the example app, making this a sample-app-mirror situation.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:57:DebugMetricsProvider.setUpTimers+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:96:DebugMetricsProvider.setUpTimers\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.setUpTimers` resides in the canonical library location `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: DebugPanel), while the duplicate lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: Wallpaper). The `Examples/WallpaperSampleApp/` path segment is strong evidence that the second copy is embedded inside a sample application, which commonly duplicates debug/HUD utilities to remain self-contained and avoid introducing a hard dependency on the `DebugPanel` package. Collapsing this duplication would couple the sample app to `DebugPanel`, which is likely an undesirable dependency edge for an illustrative example target. The pipeline's `is_sample_app=false` flag appears to be a mis-classification contradicted by the file path itself.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is intended to demonstrate real integration rather than remain dependency-free, the duplicate `setUpTimers` implementation in `DebugHUD.swift` should be deleted and the sample app should import and reuse `DebugMetricsProvider` directly from the `DebugPanel` package, eliminating the exact-duplicate method body.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TgSrPAm3mH7zAtxuXgkuQz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2429,
+    "output_tokens": 936,
+    "service_tier": "standard"
+  }
+}

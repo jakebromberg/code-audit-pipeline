@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ProcessInfo.ThermalState.description` (in the sample-app `DebugHUD.swift` at line 237) and `PerformanceControls.thermalStateLabel` (in the production `PerformanceControls.swift` at line 152) are computed properties in the same `Wallpaper` package that independently convert a `ProcessInfo.ThermalState` value to a human-readable string, as evidenced by a Jaccard similarity of 0.75. The canonical fix is to add a single `extension ProcessInfo.ThermalState` with a `description: String` computed property in a shared file within `Shared/Wallpaper/Sources/Wallpaper/` (e.g., a new `ThermalStateExtensions.swift`), then delete the duplicate implementations in both files. Because one participant is `is_sample_app: true` and the other is production code, this is not purely coincidental duplication \u2014 the sample app is consuming the same domain concept and should reuse the shared extension rather than re-implement it.\",\n    \"evidence_quote\": \"ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"One of the two records has `is_sample_app: true` (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`), which under the intentional-duplication rules could justify treating the sample-app copy as an intentional standalone mirror. However, because both records live in the same `Wallpaper` package and the production copy is not a public-API type, consolidation is the stronger recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ghfnm6aaXxmUQG7VaPki9r",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2449,
+    "output_tokens": 748,
+    "service_tier": "standard"
+  }
+}

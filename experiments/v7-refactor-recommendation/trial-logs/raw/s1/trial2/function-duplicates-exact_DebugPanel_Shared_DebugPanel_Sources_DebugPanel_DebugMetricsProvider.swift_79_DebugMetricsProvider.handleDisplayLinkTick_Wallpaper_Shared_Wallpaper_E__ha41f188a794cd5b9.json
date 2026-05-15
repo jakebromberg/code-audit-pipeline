@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the duplication is intentional or actionable.\n\nKey observations:\n- One member lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a proper library source file.\n- The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample/example app context, even though `is_sample_app` is flagged `false` by the pipeline.\n- The method name is identical: `DebugMetricsProvider.handleDisplayLinkTick` in both cases, suggesting the `Wallpaper` sample app copy-pasted or re-implemented the same debug metrics logic locally rather than depending on the `DebugPanel` package.\n- The canonical implementation already exists in `DebugPanel`; the `WallpaperSampleApp` copy is the one that should be removed in favour of a dependency on `DebugPanel`.\n\nThe path `Examples/WallpaperSampleApp/` strongly indicates a sample-app mirror, and the right fix is to have the sample app import `DebugPanel` instead of duplicating the method. However, since the canonical copy exists and the action is a real consolidation opportunity (not merely \"leave it\"), I'll recommend `extract-to-common` (the canonical home already exists in `DebugPanel`) with a note about the sample-app path.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The duplicate in the Wallpaper package lives under 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', a path that sits inside an Examples/SampleApp subtree. This strongly indicates the method was copied locally for the sample app's self-contained debug HUD rather than as a production duplication. The canonical implementation already exists in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). While the ideal long-term state is for WallpaperSampleApp to import DebugPanel directly, the duplication is consistent with the sample-app-mirror pattern and does not warrant a production refactor at this time.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If WallpaperSampleApp is ever given a dependency on the DebugPanel package, the locally duplicated 'DebugMetricsProvider.handleDisplayLinkTick' at line 113 of DebugHUD.swift should be deleted and the call site updated to use the canonical implementation already present at line 79 of Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AQCR9xrBmFosaDk9zFWsL9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2437,
+    "output_tokens": 971,
+    "service_tier": "standard"
+  }
+}

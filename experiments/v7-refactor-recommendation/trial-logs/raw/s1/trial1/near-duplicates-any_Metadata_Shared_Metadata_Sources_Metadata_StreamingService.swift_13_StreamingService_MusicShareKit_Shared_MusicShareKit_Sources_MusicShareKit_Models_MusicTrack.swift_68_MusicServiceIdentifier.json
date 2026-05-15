@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, meaning no concrete field or method evidence is available to ground a refactor recommendation. The only signal is a Jaccard similarity of 0.8333 between `StreamingService` in `Shared/Metadata/Sources/Metadata/StreamingService.swift:13` and `MusicServiceIdentifier` in `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68`, but without member lists it is impossible to determine whether the shared shape reflects a genuine abstraction opportunity or merely a coincidental structural resemblance between two distinct domain concepts (a streaming-service descriptor vs. a music-service identifier). Recommending extraction or protocol unification without member evidence risks conflating unrelated domain types.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"differing_slots\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Metadata\",\n        \"type_name\": \"StreamingServiceIdentifier\",\n        \"remove_from\": [\n          \"Shared/Metadata/Sources/Metadata/StreamingService.swift\",\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n        ]\n      },\n      \"rationale\": \"If a follow-up inspection of the two types confirms that `StreamingService` and `MusicServiceIdentifier` share the same fields (Jaccard 0.83 strongly suggests this), a single canonical type in `Shared/Metadata` \u2014 which `MusicShareKit` already appears to neighbour \u2014 would eliminate the near-duplication. This should only be pursued once member lists are confirmed to be semantically equivalent.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019yS4kT6S5suKhaMR7ZDd19",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2117,
+    "output_tokens": 586,
+    "service_tier": "standard"
+  }
+}

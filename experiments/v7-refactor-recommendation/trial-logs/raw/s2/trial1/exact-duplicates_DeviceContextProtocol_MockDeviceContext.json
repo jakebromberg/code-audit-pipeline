@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DeviceContextProtocol+MockDeviceContext\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two members serve fundamentally different roles: `DeviceContextProtocol` in `Shared/Wallpaper/Sources/Wallpaper/Throttling/DeviceContext.swift` is the production protocol definition, while `MockDeviceContext` in `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift` is a test-support type alias that conforms to (or mirrors) that protocol for testing purposes. Although both share 4 fields and live in the same `Wallpaper` package, the structural similarity is expected and intentional \u2014 a mock or type-alias object must replicate the shape of the protocol it stands in for. Merging or extracting them would conflate the public API contract with its test double. Notably, despite residing under a `Tests/\u2026/Mocks/` path, the pipeline has flagged `is_test=false` and `is_mock=false` on both records, which suggests a metadata gap rather than a genuine duplication problem.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GEfSyq3n39foqwn8VvYdWq",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2334,
+    "output_tokens": 368,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and provides no field lists, method signatures, context flags, or kind metadata beyond the two type names (`ShaderArgumentValue` at `ParameterStore.swift:282` and `ParameterValue` at `ThemeManifest.swift:512`) and a Jaccard similarity of 0.75. Without concrete member-level evidence it is impossible to determine whether the structural overlap is domain-meaningful (e.g., both represent typed shader/theme parameter variants) or purely coincidental. The names themselves suggest distinct domain roles \u2014 one is a GPU shader argument value, the other a theme manifest parameter value \u2014 which is consistent with intentional specialization rather than accidental duplication. Given the decision rule to prefer `no-action` when evidence cannot be grounded, no refactor is recommended.\",\n    \"evidence_quote\": \"ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"AnyParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that the 75% Jaccard overlap reflects genuinely shared cases or fields (e.g., both encode typed scalar/color/vector variants), a unified `AnyParameterValue` enum or struct could be extracted within the same `Wallpaper` package, with `ShaderArgumentValue` and `ParameterValue` becoming typealiases or thin wrappers. This would be appropriate only once the `members` array is populated and the shared slots are verified.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EoB5fVknTYqrJuYMcdbHGc",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2122,
+    "output_tokens": 619,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MetadataRepository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ArtistRepository\", \"ReleaseRepository\"]\n    },\n    \"rationale\": \"Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of `resolve:(id: Int) async throws -> <Entity>`. This is a textbook PAT opportunity: introducing a `MetadataRepository` protocol with `associatedtype Entity` and a `resolve:(id: Int) async throws -> Entity` requirement unifies the two interfaces without loss of type safety. The `shared_field_count: 4` with exactly one differing slot confirms the structural fit. Both files are production code (all context flags false), so there is no intentional-duplication reason to avoid the refactor.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"MetadataRepository\",\n        \"method\": \"cacheKey(for id: Int) -> String\",\n        \"target_location\": \"Shared/Metadata/Sources/Metadata/MetadataRepository.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift\",\n          \"Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift\"\n        ]\n      },\n      \"rationale\": \"Once the PAT is introduced, `cacheKey`, `entityKind`, and `lastSync` are strong candidates for default implementations in a protocol extension, since they are identical across both conformers. This is a natural follow-on step but is secondary to first establishing the PAT itself.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RGbyZpk26CGAgygGt69L4F",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 578,
+    "service_tier": "standard"
+  }
+}

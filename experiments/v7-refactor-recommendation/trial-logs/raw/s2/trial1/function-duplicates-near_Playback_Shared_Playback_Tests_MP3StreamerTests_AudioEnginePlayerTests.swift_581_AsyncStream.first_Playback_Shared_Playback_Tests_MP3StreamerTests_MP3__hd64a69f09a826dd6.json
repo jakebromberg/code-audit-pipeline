@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:581:AsyncStream.first+Playback:Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift:446:AsyncStream.first\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have `is_test: true` and reside under `Shared/Playback/Tests/MP3StreamerTests/` \u2014 specifically `AudioEnginePlayerTests.swift` (line 581) and `MP3StreamDecoderTests.swift` (line 446). The near-duplicate `AsyncStream.first` helper is a test-only utility pattern that appears in two separate test files within the same test target. While the high Jaccard similarity (0.9167) suggests a shared extraction into a test helper file could reduce duplication, the decision rules require a `no-action` recommendation when all records are test fixtures. Per the rules, intentional test-fixture duplication takes precedence over a low-risk refactor.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playback\",\n        \"type_name\": \"AsyncStream.first\",\n        \"remove_from\": [\n          \"Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift\",\n          \"Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift\"\n        ]\n      },\n      \"rationale\": \"The Jaccard similarity of 0.9167 between the two `AsyncStream.first` implementations in `MP3StreamDecoderTests.swift` (line 446) and `AudioEnginePlayerTests.swift` (line 581) is high enough to warrant extracting a shared test helper into a common test support file within the `Playback` package's test target (e.g., `Shared/Playback/Tests/MP3StreamerTests/TestHelpers.swift`), reducing maintenance burden across both test files.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UsAe7YdBo2ocjGyoHD97iJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2392,
+    "output_tokens": 575,
+    "service_tier": "standard"
+  }
+}

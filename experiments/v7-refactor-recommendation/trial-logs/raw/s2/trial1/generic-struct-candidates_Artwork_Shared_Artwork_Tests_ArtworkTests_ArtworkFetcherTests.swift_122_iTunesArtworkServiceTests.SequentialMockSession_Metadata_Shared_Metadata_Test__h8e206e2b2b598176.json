@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift:72:EntityResolverMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have `is_test: true` \u2014 `iTunesArtworkServiceTests.SequentialMockSession` in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and `EntityResolverMockWebSession` in `Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift`. Although they share the `requestedURLs:[URL]` field and a broadly similar shape, the `responses` field differs meaningfully (`[Data]` vs `[String: Data]`), reflecting genuinely different stubbing contracts for their respective test subjects. Extracting a generic shared mock into production or shared-test infrastructure would couple two unrelated test packages (Artwork and Metadata) and obscure the intent of each fixture. The structural overlap is coincidental within the test-fixture context, and the decision rules direct a no-action recommendation when all records are test-only.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"ResponseStore\", \"constraint\": null }\n        ],\n        \"new_name\": \"SequentialMockSession\",\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"EntityResolverMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists (or is introduced) that both Artwork and Metadata test targets depend on, a single generic `SequentialMockSession<ResponseStore>` parameterised over the response-store type (`[Data]` vs `[String: Data]`) would eliminate the duplication. The differing slot `responses:[Data]` / `responses:[String: Data]` maps cleanly to a single type parameter, and `requestedURLs:[URL]` is already shared. This is only worth pursuing if a common test-support target is established, which is not evidenced in the cluster row.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013oRTZ73ESj6DiDcu3wA5U1",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 665,
+    "service_tier": "standard"
+  }
+}

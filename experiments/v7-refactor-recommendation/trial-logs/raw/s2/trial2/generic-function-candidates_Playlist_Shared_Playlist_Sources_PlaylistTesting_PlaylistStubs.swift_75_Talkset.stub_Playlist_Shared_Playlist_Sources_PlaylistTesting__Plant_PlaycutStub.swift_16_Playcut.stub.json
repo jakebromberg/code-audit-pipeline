@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Playlist:Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift:75:Talkset.stub+Playlist:Shared/Playlist/Sources/PlaylistTesting/_Plant_PlaycutStub.swift:16:Playcut.stub\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `Playcut.stub` in `_Plant_PlaycutStub.swift` and `Talkset.stub` in `PlaylistStubs.swift` \u2014 carry `is_test: true` and reside in the `PlaylistTesting` source group of the `Playlist` package. Stub factory methods are intentionally per-type fixtures; even if their structural shape is similar (Jaccard 0.71), each stub constructs a distinct domain model (`Playcut` vs. `Talkset`) and collapsing them into a single generic function would obscure intent and couple unrelated test helpers. The `fields_or_signature` arrays are both empty, so there is insufficient evidence to determine a safe generic signature without hallucinating details.\",\n    \"evidence_quote\": \"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": null }\n        ],\n        \"new_name\": \"stub\",\n        \"replaces\": [\"Playcut.stub\", \"Talkset.stub\"]\n      },\n      \"rationale\": \"If both `Playcut.stub` and `Talkset.stub` share a common factory pattern (suggested by Jaccard 0.71), a single generic `stub<T>() -> T` helper in `PlaylistTesting` could reduce boilerplate. However, without concrete signature details (`fields_or_signature` is empty for both records), the constraint on `T` cannot be grounded in evidence, making this alternative low-confidence.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01StPT5upLxhZYXoBQ8SyTNb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2382,
+    "output_tokens": 535,
+    "service_tier": "standard"
+  }
+}

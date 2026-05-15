@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"NotificationMessageIteratorBase\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n      ]\n    },\n    \"rationale\": \"The two initializers `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 of AsyncMessage.swift) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 of MainActorMessage.swift) share an identical parameter label signature and a Jaccard similarity of 0.857, indicating near-identical bodies. Both live in the same `Core` package under `Shared/Core/Sources/Core/Observation/`, so no cross-package dependency is introduced. The shared initialisation logic (center, subject, onSubscribed) should be extracted into a common base type or a shared private helper within the `Core` package \u2014 for example a generic or protocol-typed `NotificationMessageIteratorBase` struct \u2014 so that `AsyncNotificationMessageSequence.AsyncIterator` and `MainActorNotificationMessageSequence.AsyncIterator` delegate to it, eliminating the near-duplicate body. Neither record carries any test, codegen, mock, or sample-app flag, confirming this is production code where deduplication is appropriate.\",\n    \"evidence_quote\": \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"NotificationMessageIterating\",\n        \"method\": \"init(center:subject:onSubscribed:)\",\n        \"target_location\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"If `AsyncNotificationMessageSequence.AsyncIterator` and `MainActorNotificationMessageSequence.AsyncIterator` already conform (or can be made to conform) to a shared protocol `NotificationMessageIterating`, a protocol extension default implementation of `init(center:subject:onSubscribed:)` in the `Core` package would eliminate the duplication without introducing a new concrete base type. This is slightly less idiomatic for initializers in Swift (protocol extensions cannot provide designated initialisers for structs), making the extract-to-common approach the stronger primary recommendation.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015vYeCWHUzotZCFhxagUurF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2434,
+    "output_tokens": 823,
+    "service_tier": "standard"
+  }
+}

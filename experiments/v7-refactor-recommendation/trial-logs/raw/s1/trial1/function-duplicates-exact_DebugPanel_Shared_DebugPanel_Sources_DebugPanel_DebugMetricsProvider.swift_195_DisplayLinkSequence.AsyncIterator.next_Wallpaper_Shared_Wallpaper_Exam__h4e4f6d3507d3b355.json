@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195:DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both `DisplayLinkSequence.AsyncIterator.next` implementations are flagged as exact function duplicates across two packages: `DebugPanel` (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195) and `Wallpaper` (Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219). Neither record carries `is_test`, `is_codegen`, `is_mock`, or `is_sample_app` flags that would indicate intentional duplication. The `DebugPanel` package is the more natural canonical home because it already owns the authoritative `DebugMetricsProvider` context where display-link timing is a core concern; the `Wallpaper` copy in `DebugHUD.swift` should be removed and replaced with an import of the shared type. Consolidating here eliminates a maintenance hazard where a bug fix or CADisplayLink API change would need to be applied in two places.\",\n    \"evidence_quote\": \"DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract `DisplayLinkSequence` (including its `AsyncIterator` and `next` method) into a dedicated, lightweight shared package (e.g., `Shared/DisplayLink`) that both `DebugPanel` and `Wallpaper` can depend on, avoiding a direct cross-package dependency between two otherwise unrelated feature packages.\",\n        \"why_no_category_fits\": \"The primary recommendation places the canonical copy in `DebugPanel`, but if `Wallpaper` should not depend on `DebugPanel` for architectural reasons, a neutral third package is preferable. This is still essentially an extract-to-common action, but the target package does not yet exist in the catalog, so it cannot be named as a real package from the cluster row.\"\n      },\n      \"rationale\": \"If introducing a `Wallpaper \u2192 DebugPanel` dependency is undesirable (debug tooling depending on a UI feature package, or vice-versa), a new thin `DisplayLink` or `CoreAnimation` utility package would be the cleaner extraction point, keeping both feature packages free of mutual dependencies.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014U2oAgEDQ5bb1SriSYJWuT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 811,
+    "service_tier": "standard"
+  }
+}

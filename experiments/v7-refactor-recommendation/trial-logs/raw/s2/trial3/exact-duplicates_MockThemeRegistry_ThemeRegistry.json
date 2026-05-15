@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockThemeRegistry+ThemeRegistry\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockThemeRegistry` (in `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift`) and `ThemeRegistry` (in `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeRegistry.swift`) are `type-alias-object` kinds with identical structural shape (3 shared fields, no differing slots), but they serve distinct roles: `ThemeRegistry` is the production type-alias in the `Wallpaper` package's core source, while `MockThemeRegistry` is a test-support alias living under the `Tests/WallpaperTests/Mocks/` path. Despite the pipeline reporting `is_test=false` and `is_mock=false` on both records, the file path `Mocks/MockThemeRegistry.swift` under `Tests/` unambiguously identifies the second member as a test-fixture mock. The structural coincidence arises because a mock type-alias intentionally mirrors the production type it stands in for; collapsing them would conflate test infrastructure with production code.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TAr1n61PEDiU5Bxuyxs8h6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2330,
+    "output_tokens": 377,
+    "service_tier": "standard"
+  }
+}

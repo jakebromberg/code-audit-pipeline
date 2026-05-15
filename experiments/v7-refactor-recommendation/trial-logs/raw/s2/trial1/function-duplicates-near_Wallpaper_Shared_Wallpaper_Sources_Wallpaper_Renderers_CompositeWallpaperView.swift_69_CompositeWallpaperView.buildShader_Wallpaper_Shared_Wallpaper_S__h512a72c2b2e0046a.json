@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift:69:CompositeWallpaperView.buildShader+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift:48:StitchableWallpaperView.buildShader\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"WallpaperView\",\n      \"method\": \"buildShader()\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Renderers/WallpaperView.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `StitchableWallpaperView.buildShader` (line 48) and `CompositeWallpaperView.buildShader` (line 69) live in the same `Wallpaper` package and exhibit a Jaccard similarity of 0.875, indicating the two implementations are nearly identical. The most idiomatic Swift resolution is to introduce a shared protocol (e.g., `WallpaperView`) that both renderer types conform to, and provide a default implementation of `buildShader()` in a protocol extension, eliminating the near-duplicate bodies in both files. Neither record carries any test, codegen, mock, or sample-app flag, so there is no reason to treat the duplication as intentional.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.875\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"WallpaperShaderBuilder\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared protocol is too heavyweight, the shared logic in `buildShader` could instead be extracted into a standalone helper type or free function `WallpaperShaderBuilder` within the same `Wallpaper` package, and both `StitchableWallpaperView` and `CompositeWallpaperView` would delegate to it. This avoids introducing a new protocol abstraction while still removing the near-duplicate code.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011NncG3iG6BmprfD93itsmq",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 730,
+    "service_tier": "standard"
+  }
+}

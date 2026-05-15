@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver.MockError\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The type `MockDiscogsEntityResolver.MockError` is declared identically (same name, same kind `type-alias-union`, same `shared_field_count` of 2, zero differing slots) in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the `Metadata` package is the natural home for Discogs-related mock infrastructure and the `app:iOS` package already depends on it (it tests Discogs formatting), the canonical definition should live in the `Metadata` test target and the `app:iOS` copy should be removed. Note that although the context flags do not mark these records as `is_test=true`, both files reside under `Tests/` paths, so this is test-support code; consolidating it reduces drift risk without affecting production targets.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\" ... \\\"file\\\": \\\"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\\\" ... \\\"shared_field_count\\\": 2 ... \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because the context flags on both records show `is_test=false` (despite the files living under `Tests/` directories), the pipeline may have mis-classified these as production types. If `MockDiscogsEntityResolver.MockError` is intentionally scoped to each test module to avoid cross-module test dependencies, leaving the duplication in place is acceptable and the coincidental reason class applies.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01X399xNFg1KmEVRjt19Za6N",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2347,
+    "output_tokens": 606,
+    "service_tier": "standard"
+  }
+}

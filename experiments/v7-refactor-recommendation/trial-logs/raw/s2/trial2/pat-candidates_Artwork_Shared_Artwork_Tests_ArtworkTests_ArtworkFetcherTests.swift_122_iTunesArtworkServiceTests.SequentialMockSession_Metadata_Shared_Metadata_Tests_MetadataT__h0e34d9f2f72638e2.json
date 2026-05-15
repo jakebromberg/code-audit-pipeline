@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift:72:EntityResolverMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true: 'iTunesArtworkServiceTests.SequentialMockSession' in Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift and 'EntityResolverMockWebSession' in Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift. Although they share the 'requestedURLs:[URL]' field and a broadly similar mock-session shape, the differing_slots reveal a meaningful semantic divergence \u2014 one uses 'responses:[Data]' (sequential array) while the other uses 'responses:[String: Data]' (keyed dictionary), reflecting genuinely different stubbing strategies for their respective test scenarios. Extracting a PAT across test-only, package-private fixtures would add cross-package test infrastructure complexity with no production benefit.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"MockWebSession\",\n        \"associated_type\": \"ResponseStore\",\n        \"constraints\": [],\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"EntityResolverMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned, a PAT 'MockWebSession' with an associatedtype 'ResponseStore' could unify the shared 'requestedURLs:[URL]' field while letting each conformer specialise its response storage ([Data] vs [String: Data]). However, this is only worth pursuing if the mock pattern grows to three or more packages; at two test-only sites the overhead outweighs the benefit.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01L5YrMmeBVXKMfYbKtvZgYe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2508,
+    "output_tokens": 586,
+    "service_tier": "standard"
+  }
+}

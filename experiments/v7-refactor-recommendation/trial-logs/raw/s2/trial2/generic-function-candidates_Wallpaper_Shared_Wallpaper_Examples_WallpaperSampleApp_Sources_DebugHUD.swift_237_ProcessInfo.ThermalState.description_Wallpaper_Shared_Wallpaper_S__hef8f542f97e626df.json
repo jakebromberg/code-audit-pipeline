@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ProcessInfo.ThermalState.description` (in the sample-app `DebugHUD.swift` at line 237) and `PerformanceControls.thermalStateLabel` (in the production `PerformanceControls.swift` at line 152) are computed properties in the same `Wallpaper` package that almost certainly map a `ProcessInfo.ThermalState` value to a human-readable string, evidenced by a Jaccard similarity of 0.75. Because one record is `is_sample_app: true` and the other is production code, the duplication is not purely intentional \u2014 the sample app is mirroring logic that already exists (or should exist) in the main library. The cleanest fix is to add a single `extension ProcessInfo.ThermalState` with a `description` (or `displayLabel`) computed property inside the `Wallpaper` package's shared sources (e.g., a new file `Shared/Wallpaper/Sources/Wallpaper/Extensions/ThermalState+Description.swift`), then have both call sites reference that single implementation.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"ProcessInfo.ThermalState.description\\\" ... \\\"is_sample_app\\\": true ... \\\"name\\\": \\\"PerformanceControls.thermalStateLabel\\\" ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"One record has `is_sample_app: true`, which under the intentional-duplication rules suggests the sample app may deliberately carry its own copy of debug utilities to remain self-contained and not depend on internal library APIs. If the `PerformanceControls` property is considered an internal implementation detail not suitable for export, keeping the sample app's copy separate is defensible.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019SZEsnxLq5FuoNRjiVMjSy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2449,
+    "output_tokens": 725,
+    "service_tier": "standard"
+  }
+}

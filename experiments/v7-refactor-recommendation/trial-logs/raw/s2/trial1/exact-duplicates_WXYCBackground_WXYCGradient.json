@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:WXYCBackground+WXYCGradient\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `WXYCGradient` (WXYCGradient.swift, line 14) and `WXYCBackground` (BackgroundGradient.swift, line 13) are `type-alias-object` declarations in the same `WXUI` package with no fields or signatures surfaced (`fields_or_signature: []`). Although the structural signal reports `shared_field_count: 2`, the differing names suggest they alias the same underlying type for semantically distinct purposes \u2014 one names a gradient asset, the other names a background concept. Without evidence that the aliased target is identical and that the two names are interchangeable in the domain, collapsing them risks conflating distinct UI concepts. Neither record carries any test, codegen, mock, or sample-app flag, but the coincidence appears structural rather than actionable.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"WXYCGradient\\\" ... \\\"kind\\\": \\\"type-alias-object\\\" ... \\\"name\\\": \\\"WXYCBackground\\\" ... \\\"kind\\\": \\\"type-alias-object\\\" ... \\\"fields_or_signature\\\": []\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"WXUI\",\n        \"type_name\": \"WXYCGradient\",\n        \"remove_from\": [\n          \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\"\n        ]\n      },\n      \"rationale\": \"If investigation confirms both type aliases resolve to the exact same underlying type and `WXYCBackground` is merely a legacy or redundant alias, `WXYCBackground` in BackgroundGradient.swift could be removed and all call sites migrated to `WXYCGradient` in WXYCGradient.swift, both already within the `WXUI` package. This is only warranted once the aliased targets are confirmed identical.\"\n    },\n    \"confidence\": 0.3\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01K5GLhtSudRFeNQWz9spcW6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2332,
+    "output_tokens": 547,
+    "service_tier": "standard"
+  }
+}

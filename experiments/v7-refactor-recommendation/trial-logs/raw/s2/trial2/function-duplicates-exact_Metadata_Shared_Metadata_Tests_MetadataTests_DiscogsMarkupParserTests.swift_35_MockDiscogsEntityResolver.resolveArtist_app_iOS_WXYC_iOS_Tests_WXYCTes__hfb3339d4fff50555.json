@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although neither record carries is_test=true in its context_flags, both files are located under test directories ('Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' and 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift') and the type name 'MockDiscogsEntityResolver' strongly indicates these are test-support mock implementations. The two mocks live in separate packages ('Metadata' and 'app:iOS') and serve distinct test suites (DiscogsMarkupParserTests vs. DiscogsFormatterTests), so their co-location in a shared helper would couple otherwise independent test targets. The structural evidence provides no differing_slots, jaccard, or shared_ancestor data to further ground a consolidation recommendation, making any action speculative.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two mock implementations are truly identical and the app:iOS test target already depends on the Metadata package, the mock could be extracted into a shared test-support module within the Metadata package, eliminating the duplication. However, this would introduce a test-support dependency from app:iOS tests into the Metadata package's test infrastructure, which may not be desirable.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Putz5KMfE5zn8HgXtZxqmV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2413,
+    "output_tokens": 580,
+    "service_tier": "standard"
+  }
+}

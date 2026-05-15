@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"T\", \"constraint\": null }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\"GenericFetcher.fetchInt\", \"GenericFetcher.fetchString\"]\n    },\n    \"rationale\": \"The pipeline has flagged `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` as generic-function candidates with a Jaccard similarity of 0.75, indicating the two methods share nearly identical structure and differ only in their concrete return/parameter type. The `_Plant_` prefix in the filename is a conventional scaffold marker suggesting these stubs were planted specifically to illustrate this refactor opportunity. Collapsing both into a single generic `fetch<T>` method on `GenericFetcher` eliminates the type-specific duplication and makes the type open to any future concrete type without further method proliferation. Both records are production code (all context flags false), so there is no test-fixture or codegen reason to preserve the duplication.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because `fields_or_signature` is empty for both members, the exact parameter and return types are not visible in the cluster row. If `fetchInt` and `fetchString` carry meaningfully different semantics or constraints beyond their type (e.g., different cache key strategies), the structural similarity may be coincidental and a generic unification could over-abstract. In that case no action is warranted until the full signatures are inspected.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Xj2DW8zM4hhci5dToDrZJG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2397,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

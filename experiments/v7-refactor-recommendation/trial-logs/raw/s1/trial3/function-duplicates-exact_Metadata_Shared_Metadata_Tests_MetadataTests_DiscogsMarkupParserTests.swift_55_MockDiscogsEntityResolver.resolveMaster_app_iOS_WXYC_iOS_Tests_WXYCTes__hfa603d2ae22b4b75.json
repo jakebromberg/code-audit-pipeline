@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveMaster` appears as an exact duplicate in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Both records carry `is_mock: false` and `is_test: false` per the context flags (suggesting the mock type is defined inline in test files but not flagged as a test helper), and the method signatures are identical (`fields_or_signature: []`). The canonical home for this mock should be the `Metadata` package, since `MockDiscogsEntityResolver` is clearly a test double for a `Metadata`-layer protocol (`DiscogsEntityResolver`), and the `app:iOS` package already depends on `Metadata`. Consolidating the mock into a shared test-support target within `Metadata` (e.g., `Shared/Metadata/Tests/MetadataTests/TestSupport/MockDiscogsEntityResolver.swift`) eliminates the duplication and ensures both test suites stay in sync when the resolver protocol evolves.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both context-flag objects report `is_test: false` and `is_mock: false`, which is unusual for a type named `MockDiscogsEntityResolver` living inside test files. If the pipeline's flag detection is unreliable for inline mock types, the duplication may be intentional test-local scaffolding in two unrelated test suites, making no-action defensible until the flags can be verified.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XEanC9SdTpxVXGou2uXRed",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 696,
+    "service_tier": "standard"
+  }
+}

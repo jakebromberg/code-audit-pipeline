@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both members are nested types named `MockDiscogsEntityResolver.MockError` defined inside test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the `is_test` context flag is reported as `false`, the file paths unambiguously place both declarations inside `Tests/` directories, strongly indicating they are test-support types. The duplication is almost certainly intentional: each test file defines its own local mock error type scoped to its own test context, and consolidating them would introduce a cross-package test dependency with no production benefit. The `shared_field_count: 2` with no `differing_slots` confirms structural identity, but structural identity alone does not justify merging isolated test helpers.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver.MockError\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two test suites are expected to grow and share more mock infrastructure around `DiscogsEntityResolver`, extracting a shared `MockDiscogsEntityResolver` (including `MockError`) into a dedicated test-support target within the `Metadata` package would reduce drift. However, this only makes sense if `app:iOS` tests already depend on `Metadata` test utilities, which cannot be confirmed from the cluster row alone.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012qWhQTNwK66gGQPphH9Rvg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2347,
+    "output_tokens": 568,
+    "service_tier": "standard"
+  }
+}

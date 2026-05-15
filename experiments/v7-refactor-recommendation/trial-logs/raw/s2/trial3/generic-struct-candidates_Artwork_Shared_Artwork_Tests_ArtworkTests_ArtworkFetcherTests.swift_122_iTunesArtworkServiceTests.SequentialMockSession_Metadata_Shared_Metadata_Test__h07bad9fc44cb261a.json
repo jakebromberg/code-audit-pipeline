@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/MetadataTests/PlaycutMetadataServiceCachingTests.swift:79:MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true \u2014 iTunesArtworkServiceTests.SequentialMockSession in Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift and MetadataMockWebSession in Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift are test-only mock session types. Although they share the requestedURLs:[URL] field, their responses fields differ structurally ([Data] vs [String: Data]), reflecting genuinely different stubbing contracts required by their respective test suites. Extracting a generic shared mock would couple two independent test packages and risk making test helpers harder to read and maintain in isolation.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Response\", \"constraint\": null }\n        ],\n        \"new_name\": \"SequentialMockSession\",\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"MetadataMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned, a generic SequentialMockSession<Response> parameterised on the response collection type could unify both types: the Artwork target would instantiate it as SequentialMockSession<[Data]> and the Metadata target as SequentialMockSession<[String: Data]>. However, this is only worthwhile if the two test packages already share a common test-support dependency, which cannot be confirmed from the cluster row alone.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01C93c2YvWc2D1rGDqYTnhgt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2508,
+    "output_tokens": 582,
+    "service_tier": "standard"
+  }
+}

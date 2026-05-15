@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the cross-package shape near-duplicate signal between `StreamingService` in `Shared/Metadata` and `MusicServiceIdentifier` in `Shared/MusicShareKit`.\n\nKey observations:\n- High Jaccard similarity of 0.8333 (83%) between the two types\n- Both are in `Shared/` packages, suggesting they are library/framework targets (not test, codegen, or sample app)\n- `StreamingService` lives at `Shared/Metadata/Sources/Metadata/StreamingService.swift:13`\n- `MusicServiceIdentifier` lives at `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68`\n- The names differ but the structural shapes are nearly identical \u2014 both appear to model the concept of a music/streaming service identity\n- The `members` array is empty, so I cannot inspect field lists directly; however, the Jaccard score and the naming context strongly suggest these encode the same domain concept (a streaming service identifier) duplicated across two packages\n- Since both are in `Shared/` packages and the names are semantically related (not coincidentally similar), this is a genuine deduplication opportunity rather than intentional specialization\n- The most idiomatic Swift resolution is to extract the canonical type to one package and have the other depend on it, or introduce a protocol that both conform to\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Shared/Metadata\",\n      \"type_name\": \"StreamingService\",\n      \"remove_from\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68), indicating these two types share nearly identical structure while encoding the same domain concept \u2014 a streaming/music service identifier. Both reside in `Shared/` packages, so neither is a test fixture, codegen artifact, or sample-app mirror. `Shared/Metadata` is the more semantically appropriate home for a canonical `StreamingService` type; `Shared/MusicShareKit` should import `Shared/Metadata` and use `StreamingService` directly, eliminating `MusicServiceIdentifier` as a near-duplicate.\",\n    \"evidence_quote\": \"Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"StreamingServiceIdentifiable\",\n        \"associated_type\": \"ServiceID\",\n        \"constraints\": [\"Hashable\", \"Codable\"],\n        \"replaces\": [\"StreamingService\", \"MusicServiceIdentifier\"]\n      },\n      \"rationale\": \"If `StreamingService` and `MusicServiceIdentifier` must remain separate types for package-boundary or API-stability reasons, introducing a protocol `StreamingServiceIdentifiable` with an associated `ServiceID` type would unify the 83%-overlapping shape behind a shared contract, letting both packages conform without a hard dependency between them.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013ffET6LMT5wX61Dhei4iFa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2129,
+    "output_tokens": 949,
+    "service_tier": "standard"
+  }
+}

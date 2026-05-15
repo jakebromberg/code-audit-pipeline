@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:33:WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:WXYC TV\",\n      \"type_name\": \"setUpAnalytics\",\n      \"remove_from\": [\n        \"WXYC/WXYC TV/WXYCTVApp.swift\",\n        \"WXYC/iOS/WXYCApp.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster identifies an exact function duplicate: `WXYCTVApp.setUpAnalytics` at line 33 in `WXYC/WXYC TV/WXYCTVApp.swift` and `WXYCApp.setUpAnalytics` at line 318 in `WXYC/iOS/WXYCApp.swift` share identical structure (query type is `function-duplicates-exact`, no differing slots). Neither record carries any test, codegen, mock, or sample-app flags, so the duplication is not intentional by policy. The most idiomatic Swift remedy is to extract the shared implementation into a free function or a shared type in a common module that both `app:WXYC TV` and `app:iOS` already depend on, then call it from each app entry point. Because the cluster does not expose a pre-existing shared framework package name, the safest concrete target is a new or existing shared analytics setup helper; if a shared framework target (e.g., a `Core` or `Shared` module) exists in the dependency graph of both apps, that is the preferred landing spot.\",\n    \"evidence_quote\": \"WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Define a free top-level function `setUpAnalytics()` in a new file `WXYC/Shared/Analytics+Setup.swift` and have both `WXYCTVApp` and `WXYCApp` call it from their respective `init` or scene-phase hooks, without moving either app struct.\",\n        \"why_no_category_fits\": \"If no shared module target exists and creating one is out of scope, a simple shared Swift file compiled into both targets achieves deduplication without a full extract-to-common package restructure. This does not cleanly map to any of the named categories because it is a file-level sharing strategy rather than a protocol, generic, or subclass pattern.\"\n      },\n      \"rationale\": \"When a dedicated shared framework target is unavailable or the build graph cannot be changed, a single shared source file compiled into both app targets eliminates the duplication with minimal structural change, at the cost of weaker encapsulation.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01S5uNdShWV5WkWPdrvWpHar",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2399,
+    "output_tokens": 791,
+    "service_tier": "standard"
+  }
+}

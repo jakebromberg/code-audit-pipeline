@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"Cache\",\n      \"associated_type\": \"Key\",\n      \"constraints\": [\"Hashable\"],\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift:13`) and `IntCache` (in `_Plant_IntCache.swift:13`) share four fields identically \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[K: CacheEntry]` \u2014 differing only in the key type of `storage` (`String` vs `Int`). This is a textbook PAT candidate: the sole structural difference is a single type slot that varies across otherwise identical types. Introducing a generic protocol `Cache` with `associatedtype Key: Hashable` and a concrete generic struct `Cache<Key: Hashable>` (or a protocol-backed design) eliminates the duplication while preserving full type safety for both `String`- and `Int`-keyed use sites. Both records are production code (`is_test=false`, `is_codegen=false`, `is_mock=false`) in the same `Caching` package, so consolidation carries no cross-package risk.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n        ],\n        \"new_name\": \"Cache\",\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"Rather than introducing a protocol, a single generic struct `Cache<Key: Hashable>` in `Shared/Caching/Sources/Caching/Cache.swift` directly replaces both `StringCache` and `IntCache` with `Cache<String>` and `Cache<Int>` type aliases respectively. This is simpler if no polymorphic protocol conformance is needed across the codebase, and the shared fields `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?` map cleanly onto a single concrete definition.\"\n    },\n    \"confidence\": 0.91\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0182rnEgDzrMmnmoUjPjKYzP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2496,
+    "output_tokens": 676,
+    "service_tier": "standard"
+  }
+}

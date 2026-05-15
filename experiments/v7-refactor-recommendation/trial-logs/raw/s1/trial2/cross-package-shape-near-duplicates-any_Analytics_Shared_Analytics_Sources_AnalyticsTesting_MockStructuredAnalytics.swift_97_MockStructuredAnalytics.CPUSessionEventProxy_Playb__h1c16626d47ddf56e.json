@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, meaning no concrete field or method evidence is available to ground a refactor recommendation. One participant lives under `AnalyticsTesting` (a test/mock support target) while the other is a production type in `PlaybackCore`; the structural similarity (Jaccard 0.875) is plausible given that both model CPU-session analytics events, but without member-level evidence the overlap may be coincidental shape rather than true duplication. Additionally, `MockStructuredAnalytics.CPUSessionEventProxy+Playback` is clearly a test-support proxy type, making any extraction across the `Analytics`/`Playback` package boundary risky without confirmed field parity.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Analytics\",\n        \"type_name\": \"CPUSessionEvent\",\n        \"remove_from\": [\n          \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift\",\n          \"Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms the two types share the same fields (Jaccard 0.875 is suggestive), a single canonical `CPUSessionEvent` in the `Analytics` package could be reused by `PlaybackCore`, eliminating the near-duplicate. The mock proxy in `AnalyticsTesting` could then wrap the shared type rather than redefining its shape.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Rk3cgytXBbA7Y1XQea3464",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2135,
+    "output_tokens": 601,
+    "service_tier": "standard"
+  }
+}

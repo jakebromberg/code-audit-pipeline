@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"NotificationMessageIteratorBase\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 of AsyncMessage.swift) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 of MainActorMessage.swift) share an identical parameter label signature `(center:subject:onSubscribed:)` and a Jaccard similarity of 0.857, indicating near-identical initializer bodies. Both live in the same `Core` package under `Shared/Core/Sources/Core/Observation/`, so no cross-package boundary is crossed. The sole meaningful difference is the `@MainActor` isolation of the `MainActorNotificationMessageSequence` variant; the shared initialization logic (subscribing to a notification center with a subject and a subscription callback) can be extracted into a shared generic or base initializer within the same package, with each concrete `AsyncIterator` delegating to it. Neither record carries any test, codegen, mock, or sample-app flag, confirming this is production logic eligible for consolidation.\",\n    \"evidence_quote\": \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Isolation\", \"constraint\": \"Actor\" }\n        ],\n        \"new_name\": \"NotificationMessageSequence\",\n        \"replaces\": [\n          \"AsyncNotificationMessageSequence\",\n          \"MainActorNotificationMessageSequence\"\n        ]\n      },\n      \"rationale\": \"Swift 5.10+ typed-isolation generics (or a simple `isolation` parameter on the initializer) could unify both sequence types into a single `NotificationMessageSequence<Isolation: Actor>` whose `AsyncIterator.init(center:subject:onSubscribed:)` is written once, with `MainActor`-isolated callers passing `isolation: MainActor.shared`. This avoids a separate base type but requires a Swift version that supports typed actor isolation parameters.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EcipMMVsA8BBsChrnGNTth",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2434,
+    "output_tokens": 794,
+    "service_tier": "standard"
+  }
+}
