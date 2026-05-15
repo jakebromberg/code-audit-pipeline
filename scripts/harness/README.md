@@ -55,6 +55,7 @@ scripts/phase-d-harness.py --condition s2 --trial 1 \
 | `--out <dir>` | `experiments/v7-refactor-recommendation/trial-logs/` | Telemetry root. |
 | `--queries q1,q2,...` | (all) | Restrict to these query names. |
 | `--max-rows N` | 0 (no cap) | Smoke-run aid. |
+| `--budget-usd USD` | `$3.50` | Per-(condition, trial) $-budget envelope. Default matches plan §6.3's 150-rec scoping. All-rows production runs need ~$12 to clear S2's ~525 rows at the §5.3 dry-run cost/rec. |
 | `--no-pause` | off | On signature-check fire, log only and continue. |
 | `--dry-run` | off | Skip API calls; just normalize, render, report. |
 
@@ -120,8 +121,10 @@ To force a re-run of a specific row: delete its telemetry file (and optionally i
 | Gate | Threshold | Behavior |
 |---|---|---|
 | Per-rec token cap | 50,000 combined input+output | **Post-hoc labeling**, not preventative — evaluated after the call returns. Crossings get `error_class: "trial-overrun"` for downstream filtering; the cost still counts. Continue with next row. |
-| Per-condition $-alert | 80% of $3.50 | Log a warning, continue. Fires once per condition state. |
-| Per-condition $-halt | 100% of $3.50 | Stop the loop after writing the current row's telemetry. Subsequent rows are not processed. The in-flight row's cost is always counted. |
+| Per-(condition, trial) $-alert | 80% of `--budget-usd` | Log a warning, continue. Fires once per state. |
+| Per-(condition, trial) $-halt | 100% of `--budget-usd` | Stop the loop after writing the current row's telemetry. Subsequent rows are not processed. The in-flight row's cost is always counted. |
+
+Default `--budget-usd` is **$3.50** — plan §6.3's reference value, scoped for a 150-rec run. **All-rows production runs need ~$12** to clear S2's ~525 rows at the §5.3 dry-run cost/rec ($0.01785). The total six-invocation cap at `--budget-usd 12` is ~$72, well under plan §6.3's $120 hard-cap acceptance threshold.
 
 Pricing comes from `reproducibility.yaml > execution.api_pricing_snapshot` ($3.00 input + $15.00 output per million tokens for Sonnet 4.6).
 
