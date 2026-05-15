@@ -57,7 +57,9 @@ Per-parsed-rec schema:
     "confidence": 0.82
   },
   "parse_error": null,
-  "extraction_notes": []
+  "extraction_notes": {
+    "parser_version": "1.0"
+  }
 }
 ```
 
@@ -67,7 +69,7 @@ Per-parsed-rec schema:
 
 - `parse_responses.py` is idempotent: re-running over a populated cache no-ops on already-parsed rows.
 - 2905/2907 rows parse to a recommendation dict; the 2 `json-parse-error` rows write a `parse_error: true` stub.
-- The §3 normalized cluster row's `cluster_id` round-trips: every parsed file's `cluster_id` matches the telemetry record's `cluster_id` (asserted by a unit test).
+- `cluster_id` round-trips against telemetry: every parsed file's `cluster_id` matches the corresponding telemetry record's `cluster_id` field verbatim, asserted by a unit test. (Issue #5 — substrate-emitted `cluster_id` — is the upstream prerequisite per parent plan §1.1; the defensive fuzzy matcher fallback applies if issue #5 hasn't landed at E1 kickoff.)
 - Unit tests at `experiments/v7-refactor-recommendation/test_parse_responses.py`, co-located with the parser (matching the project's `test_validator.py` precedent for experiment-scoped tests; the `pipeline/queries/_tests/` directory is reserved for harness and substrate tests):
   - fence extraction with and without language tag
   - well-formed single-element array → success
