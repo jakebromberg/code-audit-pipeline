@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from harness import api, extract, gates, telemetry  # noqa: E402
+from harness import prompt  # noqa: E402
 from harness.checks import (  # noqa: E402
     check_batching_variance,
     check_substrate_helped,
@@ -116,6 +117,52 @@ class TestCostGates(unittest.TestCase):
         self.assertTrue(s.is_halted)
 
 
+class TestNormalizer(unittest.TestCase):
+    """Regression coverage: function-duplicates.jsonl contains both
+    `function-duplicates-exact` (list-shaped) and `function-duplicates-near`
+    (pair-shaped) rows. The §6.3 production run surfaced that the near rows
+    were taking the `normalizer-unsupported` exit, losing ~25% of the
+    function-duplicates signal across all 6 trials."""
+
+    def test_function_duplicates_exact_list_shape(self):
+        row = {
+            "cluster_id": "function-duplicates-exact:Foo+Bar+Baz",
+            "query": "function-duplicates-exact",
+            "decls": [
+                {"name": "f", "kind": "method", "package": "p",
+                 "file": "x.swift", "line": 10, "body_lines": ["a()", "b()"]},
+                {"name": "g", "kind": "method", "package": "p",
+                 "file": "y.swift", "line": 20, "body_lines": ["a()", "b()"]},
+            ],
+        }
+        out = prompt.normalize_row(row)
+        self.assertEqual(out["query"], "function-duplicates-exact")
+        self.assertEqual(len(out["members"]), 2)
+
+    def test_function_duplicates_near_pair_shape(self):
+        row = {
+            "cluster_id": "function-duplicates-near:Foo+Bar",
+            "query": "function-duplicates-near",
+            "jacc": 0.85,
+            "a": {"name": "f", "kind": "method", "package": "pkgA",
+                  "file": "a.swift", "line": 10, "fields": ["a()", "b()"]},
+            "b": {"name": "g", "kind": "method", "package": "pkgB",
+                  "file": "b.swift", "line": 20, "fields": ["a()", "c()"]},
+            "intersection": ["a()"],
+            "union": ["a()", "b()", "c()"],
+        }
+        out = prompt.normalize_row(row)
+        self.assertEqual(out["query"], "function-duplicates-near")
+        self.assertEqual(len(out["members"]), 2)
+        self.assertEqual(out["members"][0]["name"], "f")
+        self.assertEqual(out["members"][1]["name"], "g")
+        # `jacc` is the extractor's field name for jaccard similarity on
+        # function-duplicates-near; downstream prompt callers compare across
+        # queries via `structural_evidence.jaccard`, so the normalizer must
+        # surface it under that canonical key.
+        self.assertAlmostEqual(out["structural_evidence"]["jaccard"], 0.85)
+
+
 class TestSignatureChecks(unittest.TestCase):
     def test_should_run_midrun_at_quarter_mark(self):
         # 100 rows, 25% = row 25
@@ -165,6 +212,36 @@ class TestTelemetry(unittest.TestCase):
         self.assertEqual(telemetry.sanitize_cluster_id(""), "EMPTY")
         self.assertEqual(telemetry.sanitize_cluster_id("///"), "EMPTY")
 
+    def test_sanitize_long_id_truncated_under_fs_limit(self):
+        # Real-world: cross-package shape-near-duplicate cluster ids splice two
+        # full file-path:line:type-name triples and routinely cross macOS's
+        # 255-byte filename limit (PATH_MAX-derived). Sanitize must cap them.
+        long_id = "x" * 400
+        out = telemetry.sanitize_cluster_id(long_id)
+        # Filename including ".json" suffix plus tempfile prefix ".tmp-XXXXXXXX"
+        # (13 chars) must fit in 255 bytes; 195 stem keeps total ≤ 213.
+        self.assertLessEqual(len(out), 195)
+
+    def test_sanitize_long_distinct_inputs_remain_distinct(self):
+        a = "cross-package-shape-near-duplicates-any:" + "A" * 300
+        b = "cross-package-shape-near-duplicates-any:" + "B" * 300
+        self.assertNotEqual(
+            telemetry.sanitize_cluster_id(a),
+            telemetry.sanitize_cluster_id(b),
+        )
+
+    def test_sanitize_existing_long_stem_preserved(self):
+        # Backward compat: the longest stems written before the truncation fix
+        # were ~206 chars. Re-sanitizing those ids must return the same stem so
+        # resume detection doesn't re-do completed rows.
+        prior_safe = "cross-package-shadows-any:" + "Foo." * 45  # ~206 char stem
+        out1 = telemetry.sanitize_cluster_id(prior_safe)
+        out2 = telemetry.sanitize_cluster_id(prior_safe)
+        self.assertEqual(out1, out2)
+        # And under the 220-char no-truncation threshold:
+        self.assertLessEqual(len(out1), 220)
+        self.assertNotIn("__h", out1)  # hash-suffix only appears on truncation
+
     def test_write_and_list_completed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -198,7 +275,14 @@ class TestTelemetry(unittest.TestCase):
 
 
 class MockTransport:
-    """Records every call and returns the next canned response in `responses`."""
+    """Records every call and returns the next canned response in `responses`.
+
+    An entry of the form `(EXC, exc_instance)` raises `exc_instance` instead
+    of returning — this simulates a transport-layer failure (timeout, DNS,
+    connection reset) the way the real urllib transport surfaces it.
+    """
+
+    EXC = object()  # sentinel marking an exception entry
 
     def __init__(self, responses: list[tuple[int, dict]]):
         self.responses = list(responses)
@@ -206,7 +290,10 @@ class MockTransport:
 
     def __call__(self, url: str, headers: dict, body: bytes) -> tuple[int, bytes]:
         self.calls.append((url, dict(headers), body))
-        status, payload = self.responses.pop(0)
+        entry = self.responses.pop(0)
+        if entry[0] is self.EXC:
+            raise entry[1]
+        status, payload = entry
         return status, json.dumps(payload).encode("utf-8")
 
 
@@ -266,6 +353,49 @@ class TestApiTransport(unittest.TestCase):
             {"type": "text", "text": "world"},
         ]}
         self.assertEqual(api.extract_text(body), "hello world")
+
+    def test_retries_on_transport_timeout_then_succeeds(self):
+        # Regression: an unhandled TimeoutError from `urlopen(..., timeout=N)`
+        # crashed the harness mid-run. The retry loop must treat transport-level
+        # failures the same as 5xx — retry with backoff.
+        ok_body = {"id": "ok", "model": "claude-sonnet-4-6",
+                   "content": [{"type": "text", "text": "[]"}],
+                   "usage": {"input_tokens": 1, "output_tokens": 1}}
+        transport = MockTransport([
+            (MockTransport.EXC, TimeoutError("read timed out")),
+            (200, ok_body),
+        ])
+        resp = api.call_messages(
+            api.build_payload("hi"),
+            api_key="sk-test",
+            transport=transport,
+            retries=2,
+            backoff_base_s=0.001,
+        )
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(len(transport.calls), 2)
+
+    def test_transport_error_exhausted_returns_status_zero(self):
+        # When all retries fail at the transport layer, return a sentinel
+        # status=0 ApiResponse rather than raising — the harness logs the
+        # row as `api-status-0` and continues; one network blip shouldn't
+        # abort a 444-row run.
+        transport = MockTransport([
+            (MockTransport.EXC, TimeoutError("t1")),
+            (MockTransport.EXC, TimeoutError("t2")),
+            (MockTransport.EXC, TimeoutError("t3")),
+        ])
+        resp = api.call_messages(
+            api.build_payload("hi"),
+            api_key="sk-test",
+            transport=transport,
+            retries=2,
+            backoff_base_s=0.001,
+        )
+        self.assertEqual(resp.status, 0)
+        self.assertEqual(len(transport.calls), 3)  # initial + 2 retries
+        # Body carries the failure repr so post-mortem analysis can find it:
+        self.assertIn("error", resp.body)
 
 
 class TestEndToEndOneRowWithMockedTransport(unittest.TestCase):

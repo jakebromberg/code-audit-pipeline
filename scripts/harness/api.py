@@ -80,8 +80,11 @@ def call_messages(
 ) -> ApiResponse:
     """POST to `/v1/messages`, returning ApiResponse with measured latency.
 
-    Retries on HTTP 429 / 5xx with exponential backoff (2s, 4s, 8s, ...).
-    Transport is injectable for tests.
+    Retries on HTTP 429 / 5xx and transport-layer exceptions (TimeoutError,
+    URLError, OSError) with exponential backoff (2s, 4s, 8s, ...). After
+    exhausting retries, returns status=0 with a synthetic error body so a
+    single network blip is recorded as `api-status-0` telemetry rather than
+    aborting the whole trial. Transport is injectable for tests.
     """
     transport = transport or _urllib_transport
     headers = {
@@ -96,7 +99,18 @@ def call_messages(
     last_latency_ms = 0
     for attempt in range(retries + 1):
         start_ns = time.monotonic_ns()
-        status, raw = transport(ANTHROPIC_MESSAGES_URL, headers, body)
+        try:
+            status, raw = transport(ANTHROPIC_MESSAGES_URL, headers, body)
+        except (TimeoutError, urllib.error.URLError, OSError) as e:
+            last_latency_ms = (time.monotonic_ns() - start_ns) // 1_000_000
+            last_status = 0
+            last_bytes = json.dumps(
+                {"error": "transport-error", "exception": repr(e)}
+            ).encode("utf-8")
+            if attempt == retries:
+                break
+            time.sleep(backoff_base_s * (2 ** attempt))
+            continue
         last_latency_ms = (time.monotonic_ns() - start_ns) // 1_000_000
         last_status = status
         last_bytes = raw
