@@ -104,13 +104,35 @@ pre_registration:
 # `api_pricing_snapshot` and `trial_date_range` after Phase D completes.
 execution:
   # Per §8 decision #2: latest Claude Sonnet 4.6 tier with date-pinned suffix.
-  # The §5.3 dry-run sent model=claude-sonnet-4-6 and the API returned the
-  # bare id verbatim — methodology §10 requires a date-pinned suffix to avoid
-  # silent drift. Pre-Phase-D action: resolve the canonical date-pinned id
-  # (e.g., claude-sonnet-4-6-20260101) and update primary_pinned_at below.
+  #
+  # On 2026-05-14 the Anthropic public models endpoint (/v1/models) exposed
+  # only the bare alias `claude-sonnet-4-6` for the 4.6 tier; the comparable
+  # 4.5 and 4 tiers expose `claude-sonnet-4-5-20250929` and
+  # `claude-sonnet-4-20250514` respectively. Nine candidate date suffixes
+  # spanning 2025-08-01 through 2026-04-01 were probed against /v1/messages
+  # and all returned HTTP 404 — i.e., no date-pinned 4.6 variant is published
+  # for this tier as of the date below. The bare alias is therefore the only
+  # available identifier and is what the experiment pins to.
+  #
+  # Methodology §10's "no silent drift" requirement is enforced by:
+  #   1. anthropic-version header (`api_version` below) — the API-shape pin.
+  #   2. `primary_pinned_at` records the date the pin decision was made; the
+  #      experiment runs against whatever `claude-sonnet-4-6` resolved to
+  #      between that date and `trial_date_range.end`.
+  #   3. Every Phase D telemetry record captures the `model` field returned
+  #      by /v1/messages for that recommendation, so a mid-experiment alias
+  #      retarget by Anthropic would be visible post-hoc as a divergence in
+  #      the captured ids.
+  #
+  # If Anthropic publishes a date-pinned 4.6 variant before Phase D starts,
+  # repoint `primary` to that id, set `primary_pinned_at` to the publish
+  # date, and re-run the §5.3 dry-run to refresh `dry_run_reference` below.
+  api_version: "2023-06-01"
   model_versions:
     primary: claude-sonnet-4-6
-    primary_pinned_at: TBD-pre-phase-d
+    primary_pinned_at: "2026-05-14"
+    primary_pin_source: /v1/models on 2026-05-14 — only bare alias surfaced for 4.6 tier
+    response_model_capture_field: model  # per-rec field in /v1/messages response to record alongside telemetry
   model_parameters:
     temperature: 0.0
     max_tokens: 4096
