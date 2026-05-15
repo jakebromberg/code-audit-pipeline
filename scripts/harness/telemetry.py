@@ -34,12 +34,16 @@ _UNSAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 # 255 bytes. Atomic-write uses tempfile.NamedTemporaryFile with prefix
 # `.tmp-XXXXXXXX` (13 chars) + suffix `.json` (5 chars) = 18 chars of
 # scaffolding, so the sanitized stem must stay below 237 to be safely
-# rename-able. We pick 195 to leave a comfortable margin and to keep
-# `_SAFE_STEM_LIMIT > 206` (the longest stem written before this cap was
-# introduced) so already-completed telemetry files retain their original
-# stems — resume detection stays valid across this fix.
+# rename-able. Two thresholds:
+#   * `_SAFE_STEM_LIMIT = 220` — the trigger above which we truncate. Chosen
+#     to be > 206 (the longest stem written before this cap was introduced)
+#     so already-completed telemetry files round-trip to themselves and
+#     resume detection stays valid across this fix.
+#   * `_TRUNCATED_PREFIX_LEN = 175` — readable-prefix length retained on
+#     truncation. Truncated stems are exactly 175 + 3 ("__h") + 16 (hex
+#     digest) = 194 chars, leaving a 43-byte margin below the 237 ceiling.
 _SAFE_STEM_LIMIT = 220
-_TRUNCATED_PREFIX_LEN = 175  # leaves room for "__h" + 16-hex-char digest = 19
+_TRUNCATED_PREFIX_LEN = 175  # 175 + len("__h") + 16-hex-digest = 194-char stem
 
 
 def sanitize_cluster_id(cluster_id: str) -> str:
