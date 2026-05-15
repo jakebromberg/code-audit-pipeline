@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift:34:AudioEnginePlayerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "shared_field_count: 0",
+    "rationale": "Although both `AudioEnginePlayerProtocol` and `TimeShiftablePlayer` live in the same `Playback` package and share a handful of method names (`installRenderTap`, `removeRenderTap`, `isPlaying`, `stop`, `play`), the structural evidence confirms zero shared fields (`shared_field_count: 0`) and a null Jaccard similarity. More importantly, the two protocols encode fundamentally different domain contracts: `AudioEnginePlayerProtocol` is a low-level AVAudioEngine buffer-scheduling interface (exposing `scheduleBuffer`, `scheduleBuffers`, `makeRenderTapStream`, `volume`, `eventStream:AsyncStream<AudioPlayerEvent>`), while `TimeShiftablePlayer` is a higher-level time-shifting playback contract (exposing `seek`, `seekToLive`, `secondsBehindLive`, `maxLookbackSeconds`, `isAtLiveEdge`, `stateStream`, `timePositionStream`, `eventStream:AsyncStream<AudioPlayerInternalEvent>`). Forcing a parent protocol would either over-constrain `AudioEnginePlayerProtocol` with time-shift semantics it does not own, or produce a nearly-empty base protocol that adds no value. The overlapping method names (`play`, `stop`, `installRenderTap`, `removeRenderTap`) reflect shared audio-engine mechanics but diverge in signature (e.g., `play:() throws` vs `play:()`), making a common parent unsafe without signature reconciliation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial1/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_MP3Streamer_Playback_AudioEnginePlayerProtocol.swift_34_AudioEnginePlayerProtocol_Playback_Shared_Playback_Sou__h3e86dc34c9800bf9.json",
+  "row_index": 4,
+  "trial": 1
+}

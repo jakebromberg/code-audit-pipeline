@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 4",
+    "rationale": "Two identical `MockDiscogsEntityResolver` type-alias-objects (both with `shared_field_count: 4` and no differing slots) exist in separate packages: one in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and one in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the mock is already defined in the `Metadata` package \u2014 which is the natural home for anything related to Discogs entity resolution \u2014 the `app:iOS` copy should be removed and the test in `DiscogsFormatterTests.swift` should import and reuse the one from `Metadata`. This eliminates the exact duplication while keeping the canonical definition close to the domain it mocks.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 1
+}

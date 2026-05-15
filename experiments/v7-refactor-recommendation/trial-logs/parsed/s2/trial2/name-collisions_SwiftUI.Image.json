@@ -1,0 +1,26 @@
+{
+  "cluster_id": "name-collisions:SwiftUI.Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.52,
+    "evidence_quote": "\"file\": \"WXYC/WatchXYC/PlayerPage.swift\"\n      \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "Two unnamed `extension` declarations on `SwiftUI.Image` exist in separate packages (`app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:190` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:27`). Because both are non-test, non-codegen, non-mock production code and the cluster signal is `name-collisions`, the extensions likely add overlapping or identical convenience members to `SwiftUI.Image`. Consolidating them into a single shared extension \u2014 ideally in a shared utilities target both packages already depend on, or at minimum in one canonical file \u2014 would eliminate the risk of divergence. However, since no shared package is visible in the cluster row, the least-disruptive landing zone is the existing `app:iOS` extensions file, with the WatchXYC copy removed and replaced by a dependency or copy-free reference.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "Image"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_SwiftUI.Image.json",
+  "row_index": 41,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "\"name\": \"RangeReplaceableCollection.safePopFirst\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift\" ... \"name\": \"RangeReplaceableCollection.popFirst\" ... \"fields_or_signature\": [] ... \"jaccard\": null",
+    "rationale": "Although both methods extend `RangeReplaceableCollection` with what appears to be a pop-first operation, the names differ (`popFirst` in `WXYC/iOS/NowPlayingWidget/Extensions.swift:18` vs. `safePopFirst` in `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25`), suggesting they may encode subtly different semantics (e.g., a force-unwrapping variant vs. an Optional-returning safe variant). The cluster provides no field or signature evidence (`fields_or_signature: []`, `jaccard: null`) to confirm the bodies are truly identical, so the structural match is unconfirmed. Additionally, the test-file copy in `NowPlayingWidgetTests.swift` may be a local test helper that intentionally shadows or wraps the production extension rather than duplicating it. Without signature-level evidence, collapsing them risks a silent behavioral change, so no-action is the safer recommendation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 2
+}

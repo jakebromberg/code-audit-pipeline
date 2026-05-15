@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MetricRow",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One of the two `MetricRow` type-alias-object records lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under an `Examples/WallpaperSampleApp` path \u2014 a clear sample-app context. The other lives in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` as part of the `DebugPanel` package. Because one member is a sample-app copy, the collision is expected: the sample app is mirroring or locally re-declaring a debug utility rather than importing the real package, which is a common pattern for self-contained example targets. No structural evidence (Jaccard, shared fields, shared ancestor) was provided to suggest meaningful overlap warranting consolidation.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MetricRow.json",
+  "row_index": 26,
+  "trial": 1
+}

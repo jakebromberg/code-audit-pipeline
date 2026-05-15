@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:HLSRateDidChangeMessage+PlayerRateDidChangeMessage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"PlayerRateDidChangeMessage\", \"file\": \"Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift\" ... \"name\": \"HLSRateDidChangeMessage\", \"file\": \"Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift\"",
+    "rationale": "Both `PlayerRateDidChangeMessage` (in `RadioPlayer/Messages/RadioPlayerMessages.swift`) and `HLSRateDidChangeMessage` (in `HLSPlayer/Messages/HLSPlayerMessages.swift`) are `type-alias-object` declarations with empty `fields_or_signature`, meaning they are likely empty-struct or typealias message tokens. Although they share the same structural shape and both live in the `Playback` package, they represent distinct domain events emitted by two different player subsystems (the generic `RadioPlayer` and the `HLSPlayer`). Merging or aliasing them would conflate two semantically separate message types that consumers may need to distinguish independently. With no differing slots and a `shared_field_count` of 2 (the two members themselves), the structural overlap is entirely coincidental to their zero-field shape rather than evidence of redundant logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_HLSRateDidChangeMessage_PlayerRateDidChangeMessage.json",
+  "row_index": 45,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:HLSRateDidChangeMessage+PlayerRateDidChangeMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"PlayerRateDidChangeMessage\", \"file\": \"Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift\" ... \"name\": \"HLSRateDidChangeMessage\", \"file\": \"Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift\"",
+    "rationale": "Both `PlayerRateDidChangeMessage` (in `RadioPlayer/Messages/RadioPlayerMessages.swift`) and `HLSRateDidChangeMessage` (in `HLSPlayer/Messages/HLSPlayerMessages.swift`) are `type-alias-object` declarations with empty `fields_or_signature`, meaning their structural identity is trivially identical \u2014 they are empty type aliases. Despite living in the same `Playback` package, they serve distinct domain roles: one represents a rate-change event in the HLS player subsystem and the other in the Radio player subsystem. Merging or aliasing them to a single canonical name would conflate two separate message channels that consumers likely need to distinguish at the type level. With `shared_field_count: 2` and `differing_slots: null`, the only shared structure is the empty body, which is coincidental rather than meaningful duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_HLSRateDidChangeMessage_PlayerRateDidChangeMessage.json",
+  "row_index": 45,
+  "trial": 2
+}

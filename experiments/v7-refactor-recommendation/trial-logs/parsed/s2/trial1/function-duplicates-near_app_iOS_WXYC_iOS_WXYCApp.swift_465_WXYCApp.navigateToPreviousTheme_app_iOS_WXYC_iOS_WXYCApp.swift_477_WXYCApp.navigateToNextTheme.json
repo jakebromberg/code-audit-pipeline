@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "Both `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file (`WXYC/iOS/WXYCApp.swift`) and share a Jaccard similarity of 0.75, indicating that roughly three-quarters of their implementation is identical. The only meaningful difference is the direction of navigation (previous vs. next), which is a single parameter. Extracting a private `navigateTheme(by:)` helper eliminates the duplication while keeping the two semantically named public methods intact for readability at call sites.",
+    "specifics": {
+      "proposed_action": "Introduce a single private helper method in `WXYCApp` (e.g., `navigateTheme(by offset: Int)` or `navigateTheme(direction: ThemeDirection)`) that encapsulates the shared navigation logic. Replace the bodies of `navigateToPreviousTheme` (line 465) and `navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` with calls to this helper, passing `-1`/`.previous` and `+1`/`.next` respectively. The two public-facing methods can remain as thin wrappers to preserve call-site clarity.",
+      "why_no_category_fits": "The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of near-duplicate instance methods on the same class (`WXYCApp`) in the same file. None of the structural categories (extract-to-common, protocol-inheritance, generic-parameterization, subclass-lift, etc.) cleanly describe the idiomatic Swift fix, which is simply to unify the duplicated body into a shared private helper and keep the two named entry points as one-liners. A Jaccard similarity of 0.75 confirms substantial shared logic worth consolidating, but the right mechanism is a private helper, not any of the named refactor categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 1
+}

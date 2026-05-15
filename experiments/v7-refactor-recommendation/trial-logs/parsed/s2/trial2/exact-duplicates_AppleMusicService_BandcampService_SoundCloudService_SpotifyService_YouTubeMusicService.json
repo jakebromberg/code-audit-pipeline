@@ -1,0 +1,30 @@
+{
+  "cluster_id": "exact-duplicates:AppleMusicService+BandcampService+SoundCloudService+SpotifyService+YouTubeMusicService",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"shared_field_count\": 1, \"differing_slots\": null",
+    "rationale": "All five members \u2014 `AppleMusicService`, `BandcampService`, `SoundCloudService`, `SpotifyService`, and `YouTubeMusicService` \u2014 are `type-alias-object` declarations in the same package (`MusicShareKit`) with identical structural shape (`shared_field_count: 1`, `differing_slots: null`), meaning they are exact structural duplicates. Because they represent distinct music-service domains that are expected to diverge in behaviour (different APIs, auth flows, etc.), the right abstraction is a shared protocol `MusicService` that each concrete type conforms to, rather than collapsing them into a single generic type. Introducing a PAT allows each service to carry its own `Configuration` associated type while sharing a common interface, eliminating the repeated boilerplate that the pipeline flagged as exact duplicates. All five files live under `Shared/MusicShareKit/Sources/MusicShareKit/Services/`, so the new protocol can be placed in that same package without any cross-package dependency changes.",
+    "specifics": {
+      "associated_type": "Configuration",
+      "constraints": [],
+      "new_protocol": "MusicService",
+      "replaces": [
+        "AppleMusicService",
+        "BandcampService",
+        "SoundCloudService",
+        "SpotifyService",
+        "YouTubeMusicService"
+      ]
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_AppleMusicService_BandcampService_SoundCloudService_SpotifyService_YouTubeMusicService.json",
+  "row_index": 4,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Playlist",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\"",
+    "rationale": "All three records in this cluster have empty `name` fields and empty `fields_or_signature` lists, meaning the structural-analysis pipeline surfaced them on a name-collision signal but could not resolve the actual type or member names involved. Without concrete name or field evidence, there is no grounded basis for recommending a refactor. Two of the records are in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` (a type-alias-object at line 327 and an extension at line 372) and one is in `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift` (an extension at line 90); the stubs file is a testing-support target, making the extension there likely intentional scaffolding rather than an accidental duplicate. None of the context flags (`is_test`, `is_codegen`, `is_mock`, `is_sample_app`) are set, so no automatic exclusion rule applies, but the absence of any resolvable name or field data means any action recommendation would be pure hallucination.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_Playlist.json",
+  "row_index": 11,
+  "trial": 1
+}

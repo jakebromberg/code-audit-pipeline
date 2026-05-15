@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:ApplicationWillTerminateMessage+HLSPlaybackStalledMessage+PlaybackStalledMessage+RequestSentMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"fields_or_signature\": []",
+    "rationale": "All four members are `type-alias-object` declarations with empty `fields_or_signature` lists, meaning they are zero-field message types whose structural identity is entirely coincidental. Each carries a distinct, domain-specific name (`ApplicationWillTerminateMessage` in Core, `PlaybackStalledMessage` and `HLSPlaybackStalledMessage` in Playback, `RequestSentMessage` in MusicShareKit) that encodes a different semantic event in a different package. Collapsing them into a single shared type would conflate unrelated domain concepts and create spurious cross-package coupling. The `shared_field_count: 1` with `jaccard: null` and `differing_slots: null` confirms the only shared trait is structural emptiness, not meaningful content.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_ApplicationWillTerminateMessage_HLSPlaybackStalledMessage_PlaybackStalledMessage_RequestSentMessage.json",
+  "row_index": 8,
+  "trial": 2
+}

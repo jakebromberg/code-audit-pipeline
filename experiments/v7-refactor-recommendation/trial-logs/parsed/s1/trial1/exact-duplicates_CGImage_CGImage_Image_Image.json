@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CGImage+CGImage+Image+Image",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"name\": \"Image\", \"package\": \"Core\" ... \"name\": \"CGImage\", \"package\": \"Artwork\" ... \"shared_field_count\": 1",
+    "rationale": "The cluster surfaces two pairs of same-named extensions in different files and packages: two `Image` extensions in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (lines 19 and 88) and two `CGImage` extensions in `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 61 and 91). The `Image` extensions are in the `Core` package and the `CGImage` extensions are in the `Artwork` package \u2014 these are extensions on distinct platform types (`Image` vs `CGImage`) serving different domain concerns (general image compatibility vs. artwork-specific test helpers). The `shared_field_count` of 1 and null `jaccard`/`differing_slots` values indicate the structural signal is extremely weak. Because the types being extended are unrelated (`Image` and `CGImage`), the packages differ (`Core` vs `Artwork`), and the contexts differ (production vs. test file), the structural coincidence does not warrant consolidation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_CGImage_CGImage_Image_Image.json",
+  "row_index": 11,
+  "trial": 1
+}

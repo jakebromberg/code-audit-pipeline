@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both members are named `cachedFetch`, reside in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), and share a Jaccard similarity of 0.7 \u2014 high enough to flag meaningful duplication but not identical. Because `fields_or_signature` is empty for both records, the exact parameter differences cannot be determined from the cluster data alone, making it unsafe to prescribe a specific refactor category (generic-parameterization vs. default-implementation vs. simple overload collapse) without first reading the source. No context flags (test, codegen, mock, sample-app) are set, so the duplication is not intentional by policy. The recommended action is a targeted inspection followed by the most appropriate consolidation once the signatures are known.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they can be unified into a single generic or defaulted-parameter function. If the differing behaviour is purely in one or two parameters (e.g., a cache policy, expiry duration, or key strategy), introduce a single `cachedFetch` with default-argument values for those parameters and delete the redundant overload. If the two overloads differ in their async/throwing surface or in the type of the fetched value, apply generic parameterization (a type parameter `T` constrained to whatever the return type requires) so that one implementation covers both call sites.",
+      "why_no_category_fits": "The cluster reports two near-duplicate functions (Jaccard 0.7) that live in the same file and same package \u2014 not across packages \u2014 so 'extract-to-common' does not apply. The signatures are not provided (`fields_or_signature` is empty for both), so it is impossible to confirm that a protocol default-implementation or PAT introduction is the right shape. The most defensible first step is a manual inspection followed by either parameter-defaulting or generic parameterization, neither of which maps cleanly to a single named category given the missing signature evidence."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 3
+}

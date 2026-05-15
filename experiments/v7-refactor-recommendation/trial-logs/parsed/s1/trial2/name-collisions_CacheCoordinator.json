@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:CacheCoordinator",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"kind\": \"extension\" ... \"kind\": \"type-alias-object\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "The cluster surfaces two unnamed extensions in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (lines 21 and 117, package `Artwork`) alongside a `type-alias-object` in `Shared/Caching/Sources/Caching/CacheCoordinator.swift` (line 53, package `Caching`). All `fields_or_signature` arrays are empty and all `name` fields are blank, so there is no substantive structural evidence of shared shape or duplicated logic \u2014 only a name-collision signal on `CacheCoordinator`. The two packages (`Artwork` vs. `Caching`) serve distinct domain concerns, and the participating records are different kinds (`extension` vs. `type-alias-object`) with no shared members to extract or unify. With `jaccard: null` and `shared_field_count: null`, there is no grounded basis for a refactor action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_CacheCoordinator.json",
+  "row_index": 9,
+  "trial": 2
+}

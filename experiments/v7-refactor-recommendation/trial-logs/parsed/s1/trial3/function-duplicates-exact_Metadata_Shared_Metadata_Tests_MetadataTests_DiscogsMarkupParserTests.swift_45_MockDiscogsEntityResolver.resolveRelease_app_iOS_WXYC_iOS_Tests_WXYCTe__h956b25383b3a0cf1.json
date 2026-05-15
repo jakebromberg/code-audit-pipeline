@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+    "rationale": "Both `MockDiscogsEntityResolver.resolveRelease` methods are exact duplicates (query: function-duplicates-exact) living in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS). Because the mock is already present in the `Metadata` package \u2014 which is the natural home for Discogs-related entity resolution \u2014 the app:iOS test package should depend on and reuse that shared mock rather than maintaining its own copy. Consolidating into `Metadata` eliminates the risk of the two implementations drifting apart and reduces test-infrastructure duplication across packages. Note: although both records carry `is_test: false` in the context flags, the files are clearly located under `Tests/` directories, suggesting a metadata tagging gap rather than production code.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_45_MockDiscogsEntityResolver.resolveRelease_app_iOS_WXYC_iOS_Tests_WXYCTe__h956b25383b3a0cf1.json",
+  "row_index": 21,
+  "trial": 3
+}

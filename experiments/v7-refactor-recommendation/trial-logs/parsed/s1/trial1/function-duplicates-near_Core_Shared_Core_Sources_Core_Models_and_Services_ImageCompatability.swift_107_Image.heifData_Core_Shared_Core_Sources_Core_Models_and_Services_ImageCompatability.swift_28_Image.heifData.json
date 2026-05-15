@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"Image.heifData\", \"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\", \"line\": 28 ... \"line\": 107 ... \"jaccard\": 0.75",
+    "rationale": "Both members are named `Image.heifData`, reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`), and are separated by roughly 79 lines (line 28 vs. line 107). A Jaccard similarity of 0.75 indicates substantial but not total overlap, consistent with two platform-conditional implementations (e.g., macOS vs. iOS `NSImage`/`UIImage` branches) that share most of their body. Neither record carries any test, codegen, mock, or sample-app flags, so this is live production code worth auditing. If the divergence is purely platform-conditional, the duplication is intentional but should be documented; if not, one definition should be removed.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method definitions at lines 28 and 107 within the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They share a Jaccard similarity of 0.75, suggesting near-duplicate implementations. Determine whether they are platform-conditional variants (e.g., `#if os(macOS)` / `#if os(iOS)` guards) or simply redundant. If they are platform guards, add a clarifying comment and leave them as-is; if they are genuinely redundant, consolidate into a single `heifData` method, extracting any differing logic into a private helper or using a conditional expression inline.",
+      "why_no_category_fits": "Both methods live in the same file and same type (`Image.heifData`), so 'extract-to-common' (cross-file/package) does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved. The most likely explanation is platform-conditional compilation blocks producing two near-identical bodies in one file, which is a within-file deduplication concern that none of the named categories cleanly address."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 1
+}

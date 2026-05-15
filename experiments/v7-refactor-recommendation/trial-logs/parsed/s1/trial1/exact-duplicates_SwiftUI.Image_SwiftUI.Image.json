@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:SwiftUI.Image+SwiftUI.Image",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"shared_field_count\": 2",
+    "rationale": "Two identical `extension SwiftUI.Image` declarations exist in separate targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:190` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:27` \u2014 with `shared_field_count: 2` and no differing slots, confirming exact duplication. Neither record carries any test, codegen, mock, or sample-app flag, so the duplication is unintentional. The extension should be extracted to a shared module (e.g., a `SharedUI` or `Common` framework) that both `WatchXYC` and `iOS` targets already depend on, or at minimum consolidated into a single shared file such as a new `WXYC/Shared/Extensions/Image+Extensions.swift`. The inline placement of the WatchXYC copy inside `PlayerPage.swift` further suggests it was added ad-hoc rather than by design.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_SwiftUI.Image_SwiftUI.Image.json",
+  "row_index": 28,
+  "trial": 1
+}

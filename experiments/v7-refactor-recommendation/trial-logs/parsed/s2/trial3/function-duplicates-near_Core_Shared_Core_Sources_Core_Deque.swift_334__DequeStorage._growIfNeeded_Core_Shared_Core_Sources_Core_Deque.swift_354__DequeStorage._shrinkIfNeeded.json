@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) live in the same file (`Shared/Core/Sources/Core/Deque.swift`) and package (`Core`), and share a Jaccard similarity of 0.714, indicating roughly 5/7 of their token-level structure is identical. The only meaningful divergence is the direction of the capacity predicate (grow vs. shrink). Extracting a shared private helper with a capacity-condition closure would remove the duplication without changing the public or internal API surface of `_DequeStorage`.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at each call site.",
+      "why_no_category_fits": "Neither method is a standalone generic function candidate nor a protocol default implementation. They are private storage-management helpers on the same concrete class (`_DequeStorage`) within the same file. The right fix is an internal private helper extraction \u2014 a classic 'extract method' refactor \u2014 which does not map cleanly to any of the named categories (extract-to-common targets cross-file/package duplication; generic-parameterization targets type-level generics; default-implementation targets protocol conformers). The duplication is structural (mirrored resize logic differing only in the direction of the capacity check), not coincidental."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 3
+}

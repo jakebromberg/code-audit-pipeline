@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.45,
+    "evidence_quote": "\"fields_or_signature\": [], \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": 2",
+    "rationale": "Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) are `type-alias-object` declarations inside test files within the `Caching` package, yet neither record carries `is_test=true` in its context flags. Despite the structural signal of `shared_field_count: 2`, the two aliases carry distinct names that reflect their distinct roles in separate test suites (`CacheCoordinatorTests` vs `CachedFetchTests`), suggesting the shape overlap is coincidental fixture scaffolding rather than unintentional duplication. Because the cluster provides no field list (`fields_or_signature: []`) and no Jaccard or shared-ancestor evidence, there is insufficient grounding to recommend a concrete extraction without risk of hallucination.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 1
+}

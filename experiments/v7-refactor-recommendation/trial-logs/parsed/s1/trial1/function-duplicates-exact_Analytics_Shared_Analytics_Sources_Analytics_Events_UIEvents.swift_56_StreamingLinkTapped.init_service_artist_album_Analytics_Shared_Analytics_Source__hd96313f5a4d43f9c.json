@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` and `ExternalLinkTapped.init(service:artist:album:)` share an identical parameter signature, but they represent structurally distinct analytics event types \u2014 one for streaming-link taps and one for external-link taps \u2014 whose coincidental shape reflects the domain (both events naturally capture the same contextual data: service, artist, album). The `structural_evidence` block carries all-null values (no `differing_slots`, no `jaccard`, no `shared_ancestor`, no `shared_field_count`), meaning the pipeline has no field-level evidence to support a meaningful merge. Collapsing these into a shared initializer or a common protocol would conflate two intentionally separate event concepts, harming analytics clarity and downstream event-routing logic. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 1
+}

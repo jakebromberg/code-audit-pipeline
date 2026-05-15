@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RequestServiceError",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.2,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"structural_evidence\": {\"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null}",
+    "rationale": "The cluster surfaces two unnamed records in the same package ('MusicShareKit') \u2014 one is an extension in 'RequestServiceTests.swift' at line 76 and the other is a type-alias-union in 'RequestService.swift' at line 167. Both have empty 'fields_or_signature' lists and no 'name' field, meaning the structural-analysis pipeline has not captured enough signal to confirm these are genuinely duplicate or conflicting declarations of 'RequestServiceError'. With no shared fields, no Jaccard score, and no shared ancestor recorded, there is insufficient grounded evidence to recommend any refactor action. The test file's context flags show is_test=false, which is unusual and may indicate a metadata gap rather than a real production collision.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_RequestServiceError.json",
+  "row_index": 39,
+  "trial": 1
+}

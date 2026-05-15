@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MPNowPlayingInfoCenter",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"file\": \"Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift\", \"package\": \"Playback\" ... \"file\": \"WXYC/iOS/NowPlayingInfoCenterManager.swift\", \"package\": \"app:iOS\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name: \"\") on `MPNowPlayingInfoCenter` living in structurally distinct layers: one in `Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift` (package `Playback`) and one in `WXYC/iOS/NowPlayingInfoCenterManager.swift` (package `app:iOS`). The cluster carries no structural evidence \u2014 jaccard, shared_field_count, differing_slots, and shared_ancestor are all null \u2014 so there is no demonstrated overlap in members or shape. Extensions on the same system type (`MPNowPlayingInfoCenter`) in a framework layer vs. an app layer are a normal Swift pattern for adding conformances or convenience helpers at each architectural boundary; collapsing them would violate the separation between the reusable `Playback` package and the app target.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_MPNowPlayingInfoCenter.json",
+  "row_index": 25,
+  "trial": 3
+}

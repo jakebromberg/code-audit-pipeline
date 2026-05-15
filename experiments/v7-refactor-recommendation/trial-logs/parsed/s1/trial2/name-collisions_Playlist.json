@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Playlist",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"structural_evidence\": { \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null }",
+    "rationale": "All three records in this cluster have empty `name` fields and empty `fields_or_signature` lists, meaning the structural-analysis pipeline surfaced them on a name-collision signal but could not resolve the actual type or member names involved. Without concrete name or field evidence, there is no grounded basis for a refactor recommendation. Two records are in `PlaylistEntry.swift` (a type-alias-object at line 327 and an extension at line 372) and one is in `PlaylistStubs.swift` (an extension at line 90); the stubs file is a testing-support target (`PlaylistTesting` package), which further suggests the extension there is an intentional test-fixture addition rather than an accidental duplicate. Given the absence of structural evidence (jaccard, shared_field_count, shared_ancestor, and differing_slots are all null), no actionable refactor can be grounded in the cluster data.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_Playlist.json",
+  "row_index": 11,
+  "trial": 2
+}

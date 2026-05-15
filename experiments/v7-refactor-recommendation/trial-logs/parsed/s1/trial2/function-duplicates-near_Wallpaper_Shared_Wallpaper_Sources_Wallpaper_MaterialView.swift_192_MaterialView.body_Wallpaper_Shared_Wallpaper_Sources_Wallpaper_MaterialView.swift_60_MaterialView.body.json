@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.8333333333333334",
+    "rationale": "The structural evidence shows a Jaccard similarity of 0.8333 between `MaterialView.body` at line 60 and `MaterialView.body` at line 192, both in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in the `Wallpaper` package, with no context flags (not test, codegen, mock, or sample-app) indicating intentional duplication. Two `body` implementations with ~83% overlap in the same file strongly suggest that a refactor or copy-paste introduced a near-duplicate SwiftUI view body. The fix is to extract the shared ~83% into a private `@ViewBuilder` helper or sub-`View` struct, leaving only the differing ~17% in each call site (or unifying into one `body` if the two are on the same type).",
+    "specifics": {
+      "proposed_action": "Investigate whether the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent two distinct SwiftUI `View` conformances on separate types/extensions, or a genuine near-duplicate within a single type. If they are on the same type, consolidate into a single `body` implementation, extracting shared sub-view logic into private helper `@ViewBuilder` methods or sub-`View` structs within the same file. If they belong to two distinct `MaterialView` types (e.g., one conditional on a platform or configuration), use `#if` compilation conditions or a shared private `@ViewBuilder` helper to eliminate the ~83% overlap.",
+      "why_no_category_fits": "Both records share the same file, same type name (`MaterialView.body`), and same package (`Wallpaper`), but a SwiftUI `body` property is a protocol requirement of `View` and cannot be extracted to a free function or generic type without losing its role. The duplication is internal to a single file and involves a computed property rather than a free function or struct, so `extract-to-common`, `generic-parameterization`, and `subclass-lift` do not apply cleanly. The right fix is intra-file view decomposition, which none of the named categories capture precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 2
+}

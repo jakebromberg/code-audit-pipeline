@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Breakpoint",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"jaccard\": null, \"shared_field_count\": null, \"differing_slots\": null, \"shared_ancestor\": null",
+    "rationale": "The cluster surfaces two records in the same `Playlist` package \u2014 a `type-alias-object` at `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:51` and an `extension` at `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift:56` \u2014 but both have empty `name` and `fields_or_signature` fields, and the structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are all `null`. There is no substantive shared shape or content to act on; the collision signal appears to be an artifact of the analysis pipeline finding a name token (`Breakpoint`) in proximity rather than a genuine structural overlap. Neither record carries test, codegen, mock, or sample-app flags that would indicate intentional mirroring, but the absence of any grounded evidence of duplication makes any refactor action unjustifiable.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_Breakpoint.json",
+  "row_index": 17,
+  "trial": 2
+}

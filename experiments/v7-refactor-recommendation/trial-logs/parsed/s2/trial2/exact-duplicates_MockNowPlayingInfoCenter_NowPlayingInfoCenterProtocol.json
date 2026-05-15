@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockNowPlayingInfoCenter+NowPlayingInfoCenterProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"kind\": \"interface\" ... \"file\": \"WXYC/iOS/NowPlayingInfoCenterManager.swift\" ... \"kind\": \"type-alias-object\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift\" ... \"shared_field_count\": 1",
+    "rationale": "The cluster pairs `NowPlayingInfoCenterProtocol` (an `interface` in `WXYC/iOS/NowPlayingInfoCenterManager.swift`) with `MockNowPlayingInfoCenter` (a `type-alias-object` in the test file `WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift`). These are structurally different kinds \u2014 a protocol definition versus a type alias used in tests \u2014 and the shared_field_count of 1 with no differing_slots or Jaccard score reported indicates the overlap is minimal and almost certainly coincidental. `MockNowPlayingInfoCenter` is a test-side alias that conforms to or wraps `NowPlayingInfoCenterProtocol`; collapsing or extracting them would destroy the intentional protocol-mock relationship. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockNowPlayingInfoCenter_NowPlayingInfoCenterProtocol.json",
+  "row_index": 47,
+  "trial": 2
+}

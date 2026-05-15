@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\",\n      \"kind\": \"computed-property\",\n      \"line\": 73,\n      \"name\": \"CGImage.pngDataCompatibility\"",
+    "rationale": "Both members are the computed property `CGImage.pngDataCompatibility` residing in the exact same file `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 73 and 103) within the `Artwork` package. Having two identical computed-property definitions in one file will cause a Swift compiler error ('invalid redeclaration'), so at least one must be removed. The `is_test: false` flag on both records is suspicious given the `Tests/ArtworkTests/` path, suggesting a pipeline mis-classification, but the duplication itself is real and actionable regardless. No cross-package or cross-type structural refactor is warranted; this is a straightforward intra-file deduplication.",
+    "specifics": {
+      "proposed_action": "Investigate whether `CGImage.pngDataCompatibility` is genuinely defined twice within `ArtworkServiceTests.swift` (at lines 73 and 103). If so, remove the duplicate definition \u2014 keeping only one \u2014 since both are identical computed properties on `CGImage` in the same file. If the duplication is an artifact of the analysis pipeline (e.g., the property appears inside two different test helper extensions or conditional compilation blocks), consolidate them into a single extension on `CGImage` within the test file, or \u2014 if the property is also needed in production code \u2014 move it to the `Artwork` package's main source and import it from there.",
+      "why_no_category_fits": "Both records share the same file (`Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`), same package (`Artwork`), same name (`CGImage.pngDataCompatibility`), and same kind (`computed-property`), yet both carry `is_test: false`. This is anomalous: the file path is clearly under a `Tests/` directory, but the context flags do not reflect that. Because the duplication is intra-file (not cross-file or cross-package), none of the standard refactor categories (`extract-to-common`, `protocol-inheritance`, `default-implementation`, etc.) cleanly apply \u2014 the fix is simply deduplication within a single file, which is closer to a copy-paste cleanup than a structural refactor."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkServiceTests.swift_103_CGImage.pngDataCompatibility_Artwork_Shared_Artwork_Tests_ArtworkTests_Artwor__h44f4e2cd5f662eae.json",
+  "row_index": 11,
+  "trial": 3
+}

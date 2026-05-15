@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:EnvironmentValues",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"file\": \"Shared/AppServices/Sources/AppServices/PlaylistServiceEnvironment.swift\"\n\"file\": \"Shared/Playback/Sources/RadioPlayer/Controller/RadioPlayerControllerEnvironment.swift\"\n\"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AccentColorEnvironment.swift\"\n\"file\": \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\"",
+    "rationale": "All 11 members are unnamed extensions (name: \"\") on `EnvironmentValues` spread across 5 distinct packages \u2014 AppServices, Playback, WXUI, Wallpaper, and PlayerHeaderView \u2014 each injecting domain-specific keys relevant only to their own package (e.g., PlaylistServiceEnvironment.swift, RadioPlayerControllerEnvironment.swift, AccentColorEnvironment.swift, PlaybackBlendMode.swift). This is the canonical SwiftUI pattern for adding `EnvironmentValues` keys: each feature module extends `EnvironmentValues` locally so that its keys remain encapsulated within the module. Consolidating these extensions would couple unrelated packages together and violate module boundaries. The structural collision is purely coincidental \u2014 the extensions share the extended type name but encode entirely unrelated domain concepts.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_EnvironmentValues.json",
+  "row_index": 1,
+  "trial": 1
+}

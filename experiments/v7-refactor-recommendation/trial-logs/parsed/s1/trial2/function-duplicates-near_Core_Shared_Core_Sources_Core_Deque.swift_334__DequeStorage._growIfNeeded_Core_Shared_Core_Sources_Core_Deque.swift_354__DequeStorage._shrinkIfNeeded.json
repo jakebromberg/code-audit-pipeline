@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.7143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. The high overlap strongly suggests a shared resize-decision skeleton (check current capacity vs. count, compute new capacity, reallocate) that differs only in the direction of the resize. Extracting that skeleton into a single private helper reduces the duplicated logic to one place, making future correctness fixes (e.g., capacity arithmetic, buffer copy logic) apply to both grow and shrink paths automatically. Neither method is test, codegen, mock, or sample-app code, so intentional-duplication rules do not apply.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at each call site.",
+      "why_no_category_fits": "Neither method is a standalone generic function candidate nor a protocol default implementation. They are private storage-management helpers on the same concrete class (`_DequeStorage`) within the same file. The right fix is an internal private helper extraction \u2014 a refactor that is closer to 'extract-to-common' within a single file than any of the cross-type or cross-package categories. 'extract-to-common' implies moving to a different package/file, which is not warranted here. The pattern is a classic 'extract method' within the same class, which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 2
+}

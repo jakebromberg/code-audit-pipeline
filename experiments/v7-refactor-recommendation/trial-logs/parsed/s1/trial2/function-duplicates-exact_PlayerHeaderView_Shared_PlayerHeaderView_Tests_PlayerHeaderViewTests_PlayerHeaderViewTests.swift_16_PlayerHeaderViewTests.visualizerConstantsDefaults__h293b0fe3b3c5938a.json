@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "VisualizerConstantsTests.visualizerConstantsDefaults\n...PlayerHeaderViewTests.visualizerConstantsDefaults",
+    "rationale": "Both `PlayerHeaderViewTests.visualizerConstantsDefaults` (line 16 of PlayerHeaderViewTests.swift) and `VisualizerConstantsTests.visualizerConstantsDefaults` (line 305 of VisualizerDataSourceTests.swift) are flagged as exact function duplicates within the same `PlayerHeaderView` package. Although the context flags incorrectly report `is_test: false`, both files reside under the `Tests/PlayerHeaderViewTests/` directory, making them test-support helpers. The duplicated helper should be extracted into a shared test-support file (e.g., `VisualizerTestHelpers.swift`) within the same test target so both test classes can call a single canonical implementation, eliminating the maintenance risk of the two copies diverging.",
+    "specifics": {
+      "remove_from": [
+        "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift",
+        "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift"
+      ],
+      "target_package": "PlayerHeaderView",
+      "type_name": "VisualizerConstantsDefaults"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_Tests_PlayerHeaderViewTests_PlayerHeaderViewTests.swift_16_PlayerHeaderViewTests.visualizerConstantsDefaults__h293b0fe3b3c5938a.json",
+  "row_index": 36,
+  "trial": 2
+}

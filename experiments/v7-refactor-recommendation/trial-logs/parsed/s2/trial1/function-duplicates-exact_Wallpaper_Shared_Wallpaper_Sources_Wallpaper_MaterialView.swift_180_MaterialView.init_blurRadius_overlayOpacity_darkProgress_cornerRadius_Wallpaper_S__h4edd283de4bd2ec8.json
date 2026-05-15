@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.78,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"kind\": \"initializer\", \"line\": 48, \"name\": \"MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)\"",
+    "rationale": "The cluster reports `query: \"function-duplicates-exact\"` with both members residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` under package `Wallpaper`, differing only in line number (48 vs 180). Neither record carries any context flag (`is_test`, `is_codegen`, `is_sample_app`, `is_mock`) that would justify intentional duplication. Having two identical initializer signatures in the same file is almost certainly an accidental copy-paste or a merge artifact, and Swift itself would reject this at compile time unless the two declarations are guarded by separate `#if` branches \u2014 a situation that warrants an explanatory comment at minimum.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` is genuinely declared twice within `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (at lines 48 and 180). If so, delete the duplicate declaration \u2014 retaining only the canonical one (preferably at line 48, the earlier definition) \u2014 and verify that no conditional-compilation block (`#if`) or extension boundary is masking an intentional platform split. If a platform split is the cause, add a clarifying comment and suppress the lint signal.",
+      "why_no_category_fits": "Both records are identical initializers in the exact same file and package (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, package `Wallpaper`), so there is nothing to extract to a common location, no protocol hierarchy to introduce, and no generic parameterization needed. The correct fix is simply removing the redundant declaration within the single file, which does not map cleanly to any of the named refactor categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:42:MockAudioSession.setCategory+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:53:MockAudioSession.setCategory",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "is_test\": true\n      },\n      \"fields_or_signature\": [],\n      \"file\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\"",
+    "rationale": "Both participating records in this cluster have is_test=true and is_mock=true, and both reside in the same test-utility file at Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift. The two near-duplicate overloads of MockAudioSession.setCategory (lines 42 and 53) are almost certainly distinct overloads of the same mock method \u2014 a common pattern in mock objects where setCategory is overloaded to match different signatures of the real AVAudioSession API. The high Jaccard similarity of 0.875 reflects structural resemblance inherent to overloaded mock stubs, not unintentional duplication. Merging them risks breaking the mock's ability to satisfy multiple protocol conformance requirements.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockAudioSession.swift_42_MockAudioSession.setCategory_Playback_Shared_Playback_Tests_Playb__hd21acab5c7650467.json",
+  "row_index": 50,
+  "trial": 3
+}

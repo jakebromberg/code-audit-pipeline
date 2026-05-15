@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "The pipeline reports two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92, package `Caching`) with a Jaccard similarity of 0.7 \u2014 high enough to flag near-duplication but low enough that a mechanical merge is not safe without inspecting the bodies. Neither record carries test, codegen, mock, or sample-app flags, so intentional duplication is unlikely. Because both functions are in the same file and package, the appropriate fix is an intra-file refactor (shared private helper or generic consolidation) rather than a cross-package extraction.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is only in parameter types or calling conventions, consider collapsing them into a single generic function (e.g., `cachedFetch<T>`) with appropriate type constraints. If the divergence is in caching strategy or async/sync behaviour, document the distinction explicitly with inline comments so future readers understand why two near-identical functions must coexist.",
+      "why_no_category_fits": "Both functions live in the same file and package (`Caching` / `Shared/Caching/Sources/Caching/CachedFetch.swift`), so 'extract-to-common' does not apply \u2014 there is no cross-package duplication to resolve. The Jaccard similarity of 0.7 indicates meaningful but not total overlap; without the actual signatures (fields_or_signature is empty for both members) it is impossible to confirm that a single generic parameterization would be type-safe. The cluster is therefore best described as a candidate for an internal private-helper extraction or a generic consolidation, neither of which maps cleanly to the named categories without risking hallucination about the actual parameter types."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 1
+}

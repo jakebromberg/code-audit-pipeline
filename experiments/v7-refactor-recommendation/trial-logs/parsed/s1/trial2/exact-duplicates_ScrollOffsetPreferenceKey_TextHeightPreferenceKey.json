@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:ScrollOffsetPreferenceKey+TextHeightPreferenceKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"TextHeightPreferenceKey\" ... \"package\": \"app:WatchXYC\" ... \"name\": \"ScrollOffsetPreferenceKey\" ... \"package\": \"app:iOS\"",
+    "rationale": "Although the two types share structural shape (both are `type-alias-object` with `shared_field_count: 1` and no fields listed), they carry distinct names \u2014 `TextHeightPreferenceKey` in `app:WatchXYC` (`WatchXYC/PlayerPage.swift:140`) and `ScrollOffsetPreferenceKey` in `app:iOS` (`iOS/Views/Playlist/Playcut Detail/PlaycutRowView.swift:74`) \u2014 encoding unrelated UI measurement concerns (text height vs. scroll offset) in separate platform targets (watchOS vs. iOS). The structural coincidence is a consequence of both conforming to the same SwiftUI `PreferenceKey` boilerplate pattern, not shared domain logic. Merging or extracting them would conflate semantically distinct preference keys and couple two independent platform targets unnecessarily.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_ScrollOffsetPreferenceKey_TextHeightPreferenceKey.json",
+  "row_index": 34,
+  "trial": 2
+}

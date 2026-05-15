@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "DominantColorExtractorTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage",
+    "rationale": "Both `DominantColorExtractorTests.createSolidColorImage` (line 278) and `ColorPaletteServiceTests.createSolidColorImage` (line 239) are exact function duplicates residing in the same package (`ColorPalette`) under the same test directory (`Shared/ColorPalette/Tests/ColorPaletteTests/`). Despite the `is_test` context flag being incorrectly reported as `false`, the file paths and enclosing type names make clear these are test helper methods. Extracting `createSolidColorImage` into a shared test helper type (e.g., `ColorPaletteTestHelpers`) within the same test target eliminates the duplication and ensures any future changes to the image-creation logic are made in one place.",
+    "specifics": {
+      "remove_from": [
+        "Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift",
+        "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift"
+      ],
+      "target_package": "ColorPalette",
+      "type_name": "ColorPaletteTestHelpers"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 2
+}

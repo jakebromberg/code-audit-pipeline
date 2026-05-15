@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One copy of `DebugMetricsProvider.init` lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41`, while the other lives inside `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82` \u2014 a path that contains `Examples/WallpaperSampleApp`, strongly suggesting it is a local, self-contained debug HUD defined for the Wallpaper sample/example target. Although neither record carries `is_sample_app=true` in its context flags, the file path `Examples/WallpaperSampleApp` is unambiguous evidence of an example-app context. The `Wallpaper` package copy is almost certainly a convenience re-implementation that avoids a hard dependency on the `DebugPanel` package from within an example target; collapsing it would couple the example app to the production `DebugPanel` package, which is likely undesirable. With an empty `fields_or_signature` on both sides there is also insufficient structural evidence to confirm the bodies are truly identical rather than coincidentally named.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_41_DebugMetricsProvider.init_Wallpaper_Shared_Wallpaper_Examples_Wallpaper__ha04514c3757c29af.json",
+  "row_index": 40,
+  "trial": 2
+}

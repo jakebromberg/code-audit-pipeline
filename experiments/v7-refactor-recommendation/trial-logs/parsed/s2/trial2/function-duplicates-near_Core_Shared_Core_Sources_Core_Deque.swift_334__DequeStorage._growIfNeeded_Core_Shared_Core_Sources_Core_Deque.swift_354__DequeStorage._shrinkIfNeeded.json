@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.714 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both private methods on the same type in `Shared/Core/Sources/Core/Deque.swift` within the `Core` package. Their names reveal symmetric, inverse operations (grow vs. shrink), which is a classic pattern where ~71 % of the body is identical bookkeeping (bounds checking, buffer reallocation, element copying) and only the resize condition and target-capacity expression differ. Collapsing the shared skeleton into a single private helper reduces the maintenance surface: a bug in the reallocation logic currently must be fixed in two places. Because both methods are private and intra-file, the change carries zero API-surface risk.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` \u2014 and have both methods delegate to it, differing only in the predicate and capacity-calculation closure they pass. Both methods remain in place as thin wrappers, preserving their distinct call-site semantics (grow vs. shrink).",
+      "why_no_category_fits": "Neither `generic-parameterization` nor `subclass-lift` fits because both methods already live on the same concrete class (`_DequeStorage`) in the same file; there is no type hierarchy and no separate type to parameterise over. `extract-to-common` does not apply because the duplication is intra-file, not cross-package. `default-implementation` does not apply because no protocol is involved. The most idiomatic Swift remedy for two near-duplicate private methods on the same type is a shared private helper that accepts the differing logic as closure parameters \u2014 a refactoring that has no exact match in the named categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 2
+}

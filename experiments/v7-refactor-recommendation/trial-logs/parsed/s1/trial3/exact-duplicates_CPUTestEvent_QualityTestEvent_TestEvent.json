@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CPUTestEvent+QualityTestEvent+TestEvent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift",
+    "rationale": "All three members \u2014 `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 reside in `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`, a test file within the `Analytics` package. Although the `is_test` context flag is reported as `false`, the file path unambiguously places these type-alias objects inside a `Tests/` directory, indicating they are test-only fixtures. Their structural identity (all are `type-alias-object` with empty `fields_or_signature`) reflects intentional lightweight stubs created to exercise distinct named event scenarios in `AnalyticsEventNameTests`, not accidental duplication warranting extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_CPUTestEvent_QualityTestEvent_TestEvent.json",
+  "row_index": 21,
+  "trial": 3
+}

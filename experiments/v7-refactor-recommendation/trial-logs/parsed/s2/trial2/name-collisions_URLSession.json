@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:URLSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Core/Sources/Core/Models and Services/URLSession+WebSession.swift",
+    "rationale": "Four separate packages \u2014 Playlist, Core, Playback, and MusicShareKit \u2014 each declare an unnamed extension on URLSession in unrelated files. The canonical home for cross-cutting URLSession behaviour already exists in the Core package at `Shared/Core/Sources/Core/Models and Services/URLSession+WebSession.swift`, which is the most natural consolidation target since Core is the lowest-level shared package and the other three packages are likely already downstream dependents of it. Consolidating into Core eliminates the risk of divergent or conflicting URLSession augmentations scattered across the module graph. None of the records carry test, codegen, mock, or sample-app flags, so there is no intentional-duplication rationale.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/PlaylistFetcher.swift (line 31)",
+        "Shared/Core/Sources/Core/Models and Services/URLSession+WebSession.swift (line 13)",
+        "Shared/Playback/Sources/MP3Streamer/Streaming/URLSessionProtocol.swift (line 24)",
+        "Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift (line 42)"
+      ],
+      "target_type": "URLSession"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_URLSession.json",
+  "row_index": 8,
+  "trial": 2
+}

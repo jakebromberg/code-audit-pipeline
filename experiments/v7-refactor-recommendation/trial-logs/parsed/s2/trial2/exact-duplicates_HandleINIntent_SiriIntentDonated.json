@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:HandleINIntent+SiriIntentDonated",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"HandleINIntent\" ... \"name\": \"SiriIntentDonated\" ... \"fields_or_signature\": [] ... \"shared_field_count\": 1",
+    "rationale": "Both `HandleINIntent` and `SiriIntentDonated` are `type-alias-object` declarations in the same file (`Shared/Analytics/Sources/Analytics/Events/IntentEvents.swift`) within the `Analytics` package, and the structural evidence shows `shared_field_count: 1` with `differing_slots: null` and `jaccard: null`. While they share the same structural shape (empty `fields_or_signature`, same kind), they are distinct named analytics event type-aliases representing different domain concepts \u2014 one for handling an IN intent and one for donating a Siri intent. Merging or extracting them would conflate semantically distinct events. No context flags (test, codegen, mock, sample app) apply, but the coincidence is purely structural.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_HandleINIntent_SiriIntentDonated.json",
+  "row_index": 40,
+  "trial": 2
+}

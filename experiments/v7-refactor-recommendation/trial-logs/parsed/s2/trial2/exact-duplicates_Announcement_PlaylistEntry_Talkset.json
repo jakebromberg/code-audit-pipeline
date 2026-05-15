@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"name\": \"Announcement\" ... \"kind\": \"interface\", \"name\": \"PlaylistEntry\" ... \"kind\": \"type-alias-object\", \"name\": \"Talkset\" ... \"shared_field_count\": 4",
+    "rationale": "All three members share `shared_field_count: 4` and live in the same `Playlist` package. `Announcement` is a `type-alias-object` in `_Plant_Announcement.swift` and `Talkset` is a `type-alias-object` in `PlaylistEntry.swift`, while `PlaylistEntry` is the `interface` in `PlaylistEntry.swift`. The structural signal (`exact-duplicates`, Jaccard null, differing_slots null) strongly suggests the two alias objects are already aliases of `PlaylistEntry`, meaning the duplication is a naming proliferation issue rather than a copy-paste one. Consolidating around the canonical `PlaylistEntry` name and removing or formally aliasing the other two would reduce confusion without requiring any cross-package move.",
+    "specifics": {
+      "proposed_action": "Investigate whether `Announcement` (line 13, `_Plant_Announcement.swift`) and `Talkset` (line 90, `PlaylistEntry.swift`) are type aliases for `PlaylistEntry` (line 22, `PlaylistEntry.swift`). If so, retain `PlaylistEntry` as the canonical concrete type in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` and replace `Announcement` and `Talkset` with `typealias` declarations pointing to `PlaylistEntry`, or remove them entirely if they are unused. All three reside in the same `Playlist` package, so no cross-package extraction is needed.",
+      "why_no_category_fits": "The cluster contains a mix of kinds (`interface` for `PlaylistEntry` and `type-alias-object` for both `Announcement` and `Talkset`). The most likely situation is that the two type-alias objects are already aliases of the interface, making this a naming/consolidation concern rather than a true extraction, protocol-inheritance, or generic-parameterization problem. The `fields_or_signature` arrays are all empty, so no member-level refactor can be specified precisely. The appropriate action is to confirm the alias relationships and remove redundant names, which does not map cleanly to any named category."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 2
+}

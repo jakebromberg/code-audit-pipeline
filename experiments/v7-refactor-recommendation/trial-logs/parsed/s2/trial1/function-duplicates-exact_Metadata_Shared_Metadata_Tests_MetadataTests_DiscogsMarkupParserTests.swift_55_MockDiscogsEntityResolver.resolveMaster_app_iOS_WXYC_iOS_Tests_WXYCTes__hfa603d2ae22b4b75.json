@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+    "rationale": "The method `MockDiscogsEntityResolver.resolveMaster` appears identically in two test files across two packages: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the `Metadata` package is the natural home for Discogs-related domain logic and its mock helpers, the canonical `MockDiscogsEntityResolver` (including `resolveMaster`) should live in a shared test-support target within the `Metadata` package. The `app:iOS` test file can then import that shared mock, eliminating the duplicate. Both records carry `is_test: false` and `is_mock: false` per the cluster flags, but the file paths and type name prefix `Mock` make the test-helper nature clear, and the `Metadata` package already hosts the parallel declaration.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_55_MockDiscogsEntityResolver.resolveMaster_app_iOS_WXYC_iOS_Tests_WXYCTes__hfa603d2ae22b4b75.json",
+  "row_index": 24,
+  "trial": 1
+}

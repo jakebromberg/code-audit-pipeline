@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"ProcessInfo.ThermalState.description\" ... \"name\": \"PerformanceControls.thermalStateLabel\" ... \"jaccard\": 0.75",
+    "rationale": "Two near-duplicate computed properties (Jaccard 0.75) both map `ProcessInfo.ThermalState` cases to human-readable strings: `ProcessInfo.ThermalState.description` in the sample-app `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in the production `PerformanceControls.swift` (line 152). Because both live in the same `Wallpaper` package, the canonical fix is to add a single `var description: String` extension on `ProcessInfo.ThermalState` in a shared file within `Shared/Wallpaper/Sources/Wallpaper/` (e.g., `Extensions/ProcessInfo+ThermalState.swift`), then delete the local implementations in both files. The sample-app record carries `is_sample_app: true`, which normally suggests no-action, but the production file is not a sample-app file and the logic is clearly shared domain knowledge about thermal state labels, making consolidation worthwhile.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Examples_WallpaperSampleApp_Sources_DebugHUD.swift_237_ProcessInfo.ThermalState.description_Wallpaper_Shared_Wallpaper_Sour__hcb4e7a0d5a1c7e67.json",
+  "row_index": 107,
+  "trial": 3
+}

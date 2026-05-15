@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "\"package\": \"app:WatchXYC\" ... \"file\": \"WXYC/WatchXYC/PlayerPage.swift\" ... \"name\": \"NowPlayingEntry.init(_:)\" ... \"package\": \"app:iOS\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift\" ... \"name\": \"NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)\" ... \"jaccard\": 0.7777777777777778",
+    "rationale": "The two initializers live in structurally distinct targets (app:WatchXYC in WXYC/WatchXYC/PlayerPage.swift and app:iOS in WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift) and carry different names and signatures: NowPlayingEntry.init(_:) vs NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:). The Jaccard similarity of 0.778 reflects a near-duplicate signal in body shape, but the types themselves serve platform-specific widget/timeline roles (watchOS vs iOS WidgetKit) whose initialization logic is expected to converge structurally while remaining intentionally separate. Neither record is test, codegen, mock, or sample-app code, but the platform boundary between WatchXYC and the iOS NowPlayingWidget makes unification inadvisable without evidence of a shared dependency target that both already consume.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_173_NowPlayingEntry.init___app_iOS_WXYC_iOS_NowPlayingWidget_NowPlayingTimelineEntry.swift_24_NowPlayingTi__hc0574c501f18cebd.json",
+  "row_index": 94,
+  "trial": 3
+}

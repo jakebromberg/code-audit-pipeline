@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\"",
+    "rationale": "Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) are `type-alias-object` declarations inside test files within the `Caching` package, yet neither record carries `is_test=true` in its context flags. Despite the structural signal of 2 shared fields, the two aliases carry distinct names that reflect their distinct test-fixture roles \u2014 one is scoped to coordinator tests, the other to fetch tests \u2014 suggesting the name difference is intentional and the shape overlap is coincidental. Merging them into a single shared alias would couple two independent test suites and obscure the intent of each fixture. Given the absence of any non-test consumers and the low confidence that the structural match reflects a real abstraction opportunity, no action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 1
+}

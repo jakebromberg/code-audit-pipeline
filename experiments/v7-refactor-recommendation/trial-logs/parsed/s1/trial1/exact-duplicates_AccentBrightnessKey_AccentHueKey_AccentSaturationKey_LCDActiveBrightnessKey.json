@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:AccentBrightnessKey+AccentHueKey+AccentSaturationKey+LCDActiveBrightnessKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "macro-synthesis",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AccentColorEnvironment.swift\"",
+    "rationale": "All four members \u2014 `AccentHueKey`, `AccentSaturationKey`, `AccentBrightnessKey`, and `LCDActiveBrightnessKey` \u2014 are `type-alias-object` kinds with identical structure (`shared_field_count: 1`, `fields_or_signature: []`) living in the same file `AccentColorEnvironment.swift` in the `PlayerHeaderView` package. This is the classic SwiftUI EnvironmentKey boilerplate pattern where each key type is structurally identical except for its name and default value. A Swift attached macro `@EnvironmentKey` could synthesize the conformance, eliminating all four hand-written declarations and making future keys a one-liner.",
+    "specifics": {
+      "applies_to": [
+        "struct"
+      ],
+      "macro_name": "@EnvironmentKey",
+      "population_size_evidence": "shared_field_count: 1 across all four type-alias-object entries (AccentHueKey line 16, AccentSaturationKey line 21, AccentBrightnessKey line 25, LCDActiveBrightnessKey line 39) in the same file",
+      "synthesizes": "A SwiftUI EnvironmentKey-conforming struct with a default `defaultValue` property, eliminating the need to hand-write each boilerplate key type. Each invocation would expand to a struct conforming to EnvironmentKey with a caller-supplied default value and type.",
+      "use_swift_builtin": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_AccentBrightnessKey_AccentHueKey_AccentSaturationKey_LCDActiveBrightnessKey.json",
+  "row_index": 7,
+  "trial": 1
+}

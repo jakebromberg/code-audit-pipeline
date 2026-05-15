@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:QualityTrend+ThermalDirection",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"QualityTrend\" ... \"name\": \"ThermalDirection\" ... \"shared_field_count\": 3 ... \"kind\": \"type-alias-union\"",
+    "rationale": "Both `QualityTrend` and `ThermalDirection` are `type-alias-union` declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`, lines 191 and 208) within the `Wallpaper` package. Although the structural analysis reports `shared_field_count: 3` \u2014 meaning both aliases happen to union the same three underlying cases \u2014 the two names encode distinct domain concepts: one describes a trend in rendering quality, the other describes a direction of thermal state change. Their structural coincidence is an artifact of the thermal and quality subsystems sharing a small, finite set of directional states (e.g., `up`, `down`, `stable`), not evidence of unintended duplication. Merging or aliasing them to each other would conflate unrelated semantic domains and harm readability.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_QualityTrend_ThermalDirection.json",
+  "row_index": 33,
+  "trial": 2
+}

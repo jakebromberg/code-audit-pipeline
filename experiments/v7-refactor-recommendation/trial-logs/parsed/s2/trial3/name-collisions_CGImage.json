@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:CGImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"\", \"fields_or_signature\": [], \"structural_evidence\": { \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null }",
+    "rationale": "All eight members are unnamed extensions (name is empty string) on CGImage scattered across test files (ArtworkServiceTests.swift, ArtworkFetcherTests.swift, NowPlayingServiceTests.swift), a production source file (MultisourceArtworkService.swift), and the app target (NowPlayingInfoCenterManager.swift). Because the cluster name is 'name-collisions:CGImage' and every record has an empty name with no fields_or_signature, the structural signal is purely that multiple files each declare an unnamed extension on the same Apple framework type (CGImage). These extensions almost certainly serve distinct, file-local purposes (e.g., test helpers, image-construction utilities, media-metadata helpers) whose co-location on CGImage is a coincidence of extending the same system type rather than evidence of duplicated logic. No shared fields or methods are surfaced, and the structural_evidence block carries all-null values, providing no positive evidence of actual duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_CGImage.json",
+  "row_index": 2,
+  "trial": 3
+}

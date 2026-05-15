@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Artist+Discogs.Master.ReleaseArtist+Discogs.Release.Label+Discogs.Release.ReleaseArtist+Release",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All five members are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the structural signal is purely that they are zero-field type aliases \u2014 not that they alias the same underlying type or encode the same domain concept. `Discogs.Release.Label`, `Discogs.Release.ReleaseArtist`, and `Discogs.Master.ReleaseArtist` in `Artwork/DiscogsArtworkService.swift` are Discogs API response shape aliases, while `Release` in `Metadata/_Plant_ReleaseRepository.swift` and `Artist` in `Metadata/_Plant_ArtistRepository.swift` are repository-layer convenience aliases for entirely different domain types. The coincidence is structural (all happen to be empty-body type aliases) rather than semantic, and the `_Plant_` prefix on the Metadata files further suggests these are scaffolding/generated stubs that should not be merged with the Artwork service types.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Artist_Discogs.Master.ReleaseArtist_Discogs.Release.Label_Discogs.Release.ReleaseArtist_Release.json",
+  "row_index": 3,
+  "trial": 1
+}

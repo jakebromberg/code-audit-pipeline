@@ -1,0 +1,28 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.82,
+    "evidence_quote": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode",
+    "rationale": "The pipeline classifies this cluster as `function-duplicates-exact`, meaning `RMSProcessor.setNormalizationMode` (line 61), `FFTProcessor.setNormalizationMode` (line 189), and `AverageProcessor.setNormalizationMode` (line 60) are byte-for-byte identical across three distinct types in the same `PlayerHeaderView` package. Because all three are production code (all context flags false) and share the same package, the idiomatic Swift remedy is to introduce a protocol (e.g., `NormalizationModeConfigurable`) with a protocol extension that provides the single shared default implementation, then have each processor conform to it and delete their individual copies. This eliminates the triplicated logic while preserving each type's independent identity and keeping the change entirely within the `PlayerHeaderView` package.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift",
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift",
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift"
+      ],
+      "method": "setNormalizationMode(_:)",
+      "protocol": "NormalizationModeConfigurable",
+      "target_location": "Shared/PlayerHeaderView/Sources/PlayerHeaderView/NormalizationModeConfigurable.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_Sources_PlayerHeaderView_FFTProcessor.swift_189_FFTProcessor.setNormalizationMode_PlayerHeaderView_Shared_Pl__h6660458d0c0eb104.json",
+  "row_index": 6,
+  "trial": 1
+}

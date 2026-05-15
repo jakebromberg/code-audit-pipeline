@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"TestPerson\", \"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\" ... \"name\": \"CachedPerson\", \"file\": \"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\"",
+    "rationale": "Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) are type-alias-objects in the `Caching` package's test files, yet neither record carries `is_test=true` in its context flags. The two names encode distinct domain roles \u2014 a coordinator-level test fixture versus a fetch-level cached entity \u2014 and the structural overlap (shared_field_count=2, no differing_slots reported) is most likely coincidental given that both are minimal stub types used in separate test suites. Merging or extracting them would conflate unrelated test concerns and provide negligible reuse benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 2
+}

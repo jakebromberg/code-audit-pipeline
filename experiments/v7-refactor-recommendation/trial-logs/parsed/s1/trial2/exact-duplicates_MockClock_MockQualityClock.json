@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\" ... \"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\"",
+    "rationale": "Both `MockQualityClock` (in `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift`, package `Wallpaper`) and `MockClock` (in `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift`, package `Caching`) are `type-alias-object` declarations living in separate test files across unrelated packages. Although they share 2 fields structurally, they serve distinct domain purposes \u2014 quality-control timing in `Wallpaper` vs. cache-coordination timing in `Caching` \u2014 and their names already reflect that divergence. Consolidating them into a shared mock would couple two otherwise independent packages solely for test infrastructure, which is not warranted given the minimal shared surface and the risk of cross-package test dependency churn. Additionally, the `is_mock` flag is `false` on both records, suggesting the pipeline did not classify these as canonical mock objects, further reducing confidence that a shared extraction is appropriate.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 2
+}

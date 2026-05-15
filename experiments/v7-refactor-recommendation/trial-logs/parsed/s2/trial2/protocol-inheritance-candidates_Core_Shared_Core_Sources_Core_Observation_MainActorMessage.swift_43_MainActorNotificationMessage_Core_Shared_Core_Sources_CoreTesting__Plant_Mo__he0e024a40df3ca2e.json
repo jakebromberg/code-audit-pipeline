@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.2,
+    "evidence_quote": "\"is_test\": true ... \"file\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\"",
+    "rationale": "The two protocols `MainActorNotificationMessage` and `MockNotificationMessage` share an identical member set (`makeMessage`, `makeNotification`, `name`) but serve fundamentally different roles: `MainActorNotificationMessage` is the production protocol in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift` (is_test=false), while `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` and carries `is_test=true`. The test-side protocol almost certainly exists to provide a controlled, test-scoped conformance surface that mirrors the production protocol intentionally \u2014 introducing a shared parent protocol would couple the testing infrastructure to the production type hierarchy without meaningful benefit. Furthermore, the structural evidence shows `shared_field_count: 0` and `jaccard: null`, indicating the pipeline found no quantitative overlap beyond the member-name coincidence, which further weakens the case for a refactor.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Core_Shared_Core_Sources_Core_Observation_MainActorMessage.swift_43_MainActorNotificationMessage_Core_Shared_Core_Sources_CoreTesting__Plant_Mo__he0e024a40df3ca2e.json",
+  "row_index": 10,
+  "trial": 2
+}

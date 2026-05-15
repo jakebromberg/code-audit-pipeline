@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DeviceContextProtocol+MockDeviceContext",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift\"",
+    "rationale": "The two records share 4 fields structurally, but they serve entirely different roles: `DeviceContextProtocol` in `Shared/Wallpaper/Sources/Wallpaper/Throttling/DeviceContext.swift` is the production protocol definition, while `MockDeviceContext` in `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift` is a test-support type alias that conforms to (or mirrors) that protocol. A type alias that satisfies a protocol will naturally share the same member shape as the protocol it implements \u2014 this structural coincidence is expected and intentional. Merging or extracting them would conflate the protocol contract with its test double. Additionally, both context flags `is_mock` and `is_test` are recorded as `false` by the pipeline, which appears to be a metadata gap rather than evidence of production duplication, since the file path `Tests/WallpaperTests/Mocks/` clearly places `MockDeviceContext` in test/mock territory.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_DeviceContextProtocol_MockDeviceContext.json",
+  "row_index": 38,
+  "trial": 1
+}

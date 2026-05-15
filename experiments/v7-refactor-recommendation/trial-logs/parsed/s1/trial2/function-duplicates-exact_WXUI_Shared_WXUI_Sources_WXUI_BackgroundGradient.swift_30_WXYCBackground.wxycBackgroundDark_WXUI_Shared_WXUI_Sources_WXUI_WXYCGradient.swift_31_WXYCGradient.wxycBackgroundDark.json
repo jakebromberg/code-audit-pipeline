@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.78,
+    "evidence_quote": "WXYCGradient.wxycBackgroundDark\n    \"file\": \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n    \"WXYCBackground.wxycBackgroundDark\"\n    \"file\": \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\"",
+    "rationale": "Both `WXYCBackground.wxycBackgroundDark` (BackgroundGradient.swift:30) and `WXYCGradient.wxycBackgroundDark` (WXYCGradient.swift:31) are exact-duplicate computed properties living in the same package (WXUI). Neither is test, codegen, mock, or sample-app code. The duplication suggests the property was copy-pasted when one of the two types was introduced. The cleanest Swift resolution is to extract the shared implementation into a single location \u2014 either a protocol with a default implementation or a free function/extension in a dedicated file within WXUI \u2014 and have both `WXYCBackground` and `WXYCGradient` delegate to it, eliminating the redundant definition.",
+    "specifics": {
+      "remove_from": [
+        "Shared/WXUI/Sources/WXUI/BackgroundGradient.swift",
+        "Shared/WXUI/Sources/WXUI/WXYCGradient.swift"
+      ],
+      "target_package": "WXUI",
+      "type_name": "wxycBackgroundDark"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_WXUI_Shared_WXUI_Sources_WXUI_BackgroundGradient.swift_30_WXYCBackground.wxycBackgroundDark_WXUI_Shared_WXUI_Sources_WXUI_WXYCGradient.swift_31_WXYCGradient.wxycBackgroundDark.json",
+  "row_index": 8,
+  "trial": 2
+}

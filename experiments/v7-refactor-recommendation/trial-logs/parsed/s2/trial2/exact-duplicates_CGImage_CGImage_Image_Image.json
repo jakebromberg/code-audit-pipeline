@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CGImage+CGImage+Image+Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"name\": \"Image\", \"package\": \"Core\" ... \"name\": \"CGImage\", \"package\": \"Artwork\" ... \"shared_field_count\": 1, \"jaccard\": null",
+    "rationale": "The cluster groups four extensions across two unrelated types (Image and CGImage) in two different packages (Core and Artwork). The two Image extensions in Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift are likely split by platform-conditional compilation (e.g., #if canImport(UIKit) / #if canImport(AppKit)), which is a standard Swift pattern for cross-platform image compatibility. The two CGImage extensions in Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift serve a test-support role in a test file. The structural signal of shared_field_count=1 with null Jaccard and null differing_slots indicates the pipeline found only superficial shape similarity, not meaningful content duplication. Consolidating across these type and package boundaries would not reduce real duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_CGImage_CGImage_Image_Image.json",
+  "row_index": 11,
+  "trial": 2
+}

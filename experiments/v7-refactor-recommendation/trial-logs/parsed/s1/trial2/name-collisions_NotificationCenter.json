@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:NotificationCenter",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\", \"file\": \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\" ... \"file\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both members are unnamed extensions (name is empty string) on what the cluster labels 'NotificationCenter', residing in the same package ('Core') across two distinct files: 'Shared/Core/Sources/Core/Observation/MainActorMessage.swift' (line 62) and 'Shared/Core/Sources/Core/Observation/AsyncMessage.swift' (line 56). The structural_evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, meaning the pipeline found no measurable structural overlap \u2014 only a name-collision signal on the extended type. Because the extensions serve two different observation mechanisms (MainActorMessage vs. AsyncMessage), the coincidence is purely that both extend the same Foundation type; there is no duplicated logic to consolidate.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_NotificationCenter.json",
+  "row_index": 33,
+  "trial": 2
+}

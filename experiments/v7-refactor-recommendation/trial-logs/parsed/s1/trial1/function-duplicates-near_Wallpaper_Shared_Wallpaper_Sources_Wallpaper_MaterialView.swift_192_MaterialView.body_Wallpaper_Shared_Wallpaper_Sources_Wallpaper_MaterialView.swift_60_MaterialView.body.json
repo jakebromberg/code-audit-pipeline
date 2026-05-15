@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"MaterialView.body\", \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 60 ... \"name\": \"MaterialView.body\", \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both cluster members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 60 and 192 respectively. A Jaccard similarity of 0.8333 indicates the two implementations share roughly 83 % of their token structure, strongly suggesting accidental near-duplication rather than intentional specialization. Neither record carries any test, codegen, mock, or sample-app flag, so this is live production code. Having two `body` properties on what appears to be the same `MaterialView` type is either a Swift compiler error (if in the same extension scope) or a sign of two conflicting type declarations in one file, both of which warrant immediate consolidation.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (two separate `struct`/`extension` declarations each contributing a `body` computed property), or whether the same `body` property is accidentally duplicated within a single type. If two distinct `MaterialView` types exist in the same file, consolidate them into one. If the `body` property is genuinely duplicated, delete the implementation at line 192 and retain the one at line 60 (or vice-versa after confirming which is canonical). If the two `body` implementations differ in their SwiftUI view tree (explaining the near- rather than exact-duplicate signal with Jaccard \u2248 0.83), extract the differing sub-view into a private helper `View` type or a `@ViewBuilder` helper method, then have a single `body` call that helper, eliminating the duplication.",
+      "why_no_category_fits": "Both records are the same property name (`MaterialView.body`) in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at different lines (60 and 192). This is not a cross-file extraction problem, not a protocol/inheritance problem, and not a generic-parameterization problem. The duplication is intra-file and intra-type (or indicates an accidental double declaration), which none of the named categories address precisely. The Jaccard similarity of 0.83 suggests the two bodies are nearly but not exactly identical, so a simple delete-one approach may need a small refactor of the differing portion into a shared helper before removal."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 1
+}

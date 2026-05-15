@@ -1,0 +1,26 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.52,
+    "evidence_quote": "\"file\": \"Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift\"\n\"file\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n\"file\": \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\"",
+    "rationale": "Three separate packages \u2014 DebugPanel and Wallpaper (twice, once in a sample-app file and once in production throttling code) \u2014 each declare an unnamed extension on ProcessInfo.ThermalState at lines 212, 236, and 230 respectively. Because the extensions are unnamed and carry no recorded fields or signatures, the most likely scenario is that each site adds the same convenience members (e.g., a display-string or ordering helper) to the same Foundation type. Consolidating into a single extension in DebugPanel (which already owns the canonical debug-metrics surface) and having Wallpaper import DebugPanel \u2014 or, if that dependency direction is undesirable, extracting to a shared utility package \u2014 eliminates the triplication. The sample-app file (WallpaperSampleApp/Sources/DebugHUD.swift) is the lowest-priority copy and should be the first removed.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift"
+      ],
+      "target_package": "DebugPanel",
+      "type_name": "ProcessInfo.ThermalState"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 2
+}

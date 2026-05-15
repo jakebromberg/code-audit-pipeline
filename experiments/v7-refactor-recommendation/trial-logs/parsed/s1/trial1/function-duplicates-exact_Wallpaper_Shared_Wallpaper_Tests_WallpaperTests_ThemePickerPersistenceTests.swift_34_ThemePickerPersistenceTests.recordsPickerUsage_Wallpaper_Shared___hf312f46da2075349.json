@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:34:ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent",
+    "rationale": "Both methods \u2014 `ThemePickerPersistenceTests.recordsPickerUsage` (line 34) and `ThemePickerPersistenceTests.recordPickerUsageIdempotent` (line 43) \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` within the `Wallpaper` package. Although the pipeline flagged them as exact function duplicates, they are distinct test cases: one verifies that picker usage is recorded at all, and the other verifies idempotency of that recording. Even if their bodies are structurally identical today, they encode separate behavioural assertions whose divergence is expected as the feature evolves. Notably, the context flags report `is_test: false`, which appears to be a metadata gap \u2014 the file path (`Tests/WallpaperTests/`) and the enclosing class name (`ThemePickerPersistenceTests`) unambiguously identify these as test methods, so the intentional-duplication rule for test fixtures applies.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_ThemePickerPersistenceTests.swift_34_ThemePickerPersistenceTests.recordsPickerUsage_Wallpaper_Shared___hf312f46da2075349.json",
+  "row_index": 43,
+  "trial": 1
+}

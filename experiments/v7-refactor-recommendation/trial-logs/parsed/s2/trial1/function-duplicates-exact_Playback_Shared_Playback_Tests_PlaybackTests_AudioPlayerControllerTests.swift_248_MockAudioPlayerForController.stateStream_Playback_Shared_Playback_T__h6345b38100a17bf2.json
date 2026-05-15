@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"MockAudioPlayerForController.stateStream\" ... \"name\": \"MockAudioPlayerForController.eventStream\" ... \"fields_or_signature\": [] ... \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null",
+    "rationale": "Both `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) are computed properties in the same test file `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift`. Although the pipeline flagged them as exact function-duplicates, they represent two semantically distinct stream properties \u2014 a state stream and an event stream \u2014 whose structural similarity (both are empty-signature computed properties) is coincidental. The `fields_or_signature` arrays are both empty, providing no evidence of shared logic worth extracting, and the `structural_evidence` block carries all-null values, indicating no deeper shared structure was detected. Merging or abstracting them would obscure the intentional domain distinction between state and event streams in the mock.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_AudioPlayerControllerTests.swift_248_MockAudioPlayerForController.stateStream_Playback_Shared_Playback_T__h6345b38100a17bf2.json",
+  "row_index": 39,
+  "trial": 1
+}

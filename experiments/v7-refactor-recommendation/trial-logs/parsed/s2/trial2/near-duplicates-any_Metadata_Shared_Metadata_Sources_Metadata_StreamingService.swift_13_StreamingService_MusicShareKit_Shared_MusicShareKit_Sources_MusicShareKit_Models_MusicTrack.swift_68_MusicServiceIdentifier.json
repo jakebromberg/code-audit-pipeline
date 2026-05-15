@@ -1,0 +1,25 @@
+{
+  "cluster_id": "near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "jaccard\": 0.8333333333333334",
+    "rationale": "The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` (in `Shared/Metadata/Sources/Metadata/StreamingService.swift`, line 13) and `MusicServiceIdentifier` (in `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift`, line 68), meaning approximately 5 of 6 structural slots are shared. Both types model the same domain concept \u2014 identifying a music/streaming service \u2014 across two separate shared packages. Since `Shared/Metadata` already owns `StreamingService` and is a natural home for service-identity metadata, `MusicServiceIdentifier` in `Shared/MusicShareKit` should be replaced by a dependency on `Shared/Metadata`'s canonical type, eliminating the near-duplicate. Neither record carries test, codegen, or sample-app flags, so this duplication is not intentional.",
+    "specifics": {
+      "remove_from": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift"
+      ],
+      "target_package": "Shared/Metadata",
+      "type_name": "StreamingService"
+    }
+  },
+  "query": "near-duplicates-any",
+  "raw_response_path": "raw/s2/trial2/near-duplicates-any_Metadata_Shared_Metadata_Sources_Metadata_StreamingService.swift_13_StreamingService_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Models_MusicTrack.swift_68_MusicServiceIdentifier.json",
+  "row_index": 6,
+  "trial": 2
+}

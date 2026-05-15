@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AVAudioSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"Playback\" ... \"package\": \"PartyHorn\"",
+    "rationale": "Both cluster members are unnamed extensions (name is empty string) on what the cluster_id implies is AVAudioSession \u2014 a system framework type \u2014 appearing in two separate packages: 'Playback' (AudioSessionProtocol.swift, line 35) and 'PartyHorn' (SoundPlayer.swift, line 22). Because the extensions are anonymous, carry no fields_or_signature entries, and live in unrelated domain files (audio session protocol conformance vs. sound playback), the structural collision is purely coincidental. There is no shared logic surfaced in the cluster row that would justify extraction or consolidation, and merging extensions across package boundaries on a system type would introduce an unwarranted dependency between Playback and PartyHorn.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_AVAudioSession.json",
+  "row_index": 15,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:String",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.55,
+    "evidence_quote": "\"file\": \"Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift\"\n      \"file\": \"Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift\"\n      \"file\": \"Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift\"\n      \"file\": \"Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift\"",
+    "rationale": "Four separate `extension` declarations on `String` are spread across three distinct packages \u2014 `Playlist`, `AnalyticsMacros`, and `Analytics` \u2014 with no structural evidence (jaccard, shared_field_count, shared_ancestor are all null) that their members overlap or conflict. The primary concern flagged by the `name-collisions` query is that multiple unnamed `String` extensions across packages risk shadowing or colliding on method names at link/module-import time. The two extensions within the `Playlist` package (`String+HTMLDecoding.swift` at line 10 and `FlowsheetEntryType.swift` at line 106) are the most immediately actionable: the inline extension in `FlowsheetEntryType.swift` should be moved into the dedicated `String+HTMLDecoding.swift` file (or a new `String+Playlist.swift`) so all `String` helpers in that package live in one place. The cross-package extensions in `AnalyticsMacros` and `Analytics` cannot be merged without introducing a new shared dependency, so they should at minimum be audited for name collisions and documented.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+        "Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift",
+        "Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift",
+        "Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift"
+      ],
+      "target_type": "String"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_String.json",
+  "row_index": 6,
+  "trial": 3
+}

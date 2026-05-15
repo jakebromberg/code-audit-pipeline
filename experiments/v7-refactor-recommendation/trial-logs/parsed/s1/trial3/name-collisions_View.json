@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:View",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"fields_or_signature\": []",
+    "rationale": "All 15 members are unnamed extensions (name: \"\") on SwiftUI's `View` type, spread across 7 distinct packages (WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, app:iOS) and covering unrelated domain concerns such as GlassEffect compatibility, OverlaySheet layout, PlaybackBlendMode, ThemePickerGesture, WipeDownRevealModifier, AccentColorEnvironment, and StatusBarStyleModifier. The structural signal is purely that they all extend `View`; there are no shared fields, no shared methods listed (fields_or_signature is empty for every record), and no Jaccard or shared-field-count evidence. Extending `View` in a file-local extension is idiomatic SwiftUI practice and the coincidence of the extended type name is entirely structural. No consolidation is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_View.json",
+  "row_index": 0,
+  "trial": 3
+}

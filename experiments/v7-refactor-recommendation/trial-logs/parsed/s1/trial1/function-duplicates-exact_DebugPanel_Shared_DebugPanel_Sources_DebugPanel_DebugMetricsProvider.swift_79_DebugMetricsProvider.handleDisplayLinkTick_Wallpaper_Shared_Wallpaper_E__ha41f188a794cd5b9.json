@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One copy of `DebugMetricsProvider.handleDisplayLinkTick` lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79`, while the duplicate resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113` \u2014 a path that contains the `Examples/WallpaperSampleApp` segment, which is a sample/example application context. Although neither record carries `is_sample_app=true` in its context flags, the file path unambiguously places the second copy inside an Examples sample app tree. Duplicating debug-HUD logic locally in a sample app is a common and intentional pattern to keep the sample self-contained without forcing a hard dependency on the `DebugPanel` package. No refactor is warranted without further evidence that the sample app is intended to reuse the production implementation.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_79_DebugMetricsProvider.handleDisplayLinkTick_Wallpaper_Shared_Wallpaper_E__ha41f188a794cd5b9.json",
+  "row_index": 12,
+  "trial": 1
+}

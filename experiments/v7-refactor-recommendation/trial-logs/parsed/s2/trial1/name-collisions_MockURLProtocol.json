@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockURLProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"file\": \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\" ... \"file\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), making it impossible to confirm they share meaningful shape or behaviour. The two files \u2014 `AppServicesTests/AppConfigurationTests.swift` in the `AppServices` package and `MetadataTests/PlaycutMetadataServiceHTTPTests.swift` in the `Metadata` package \u2014 live in separate test targets and likely define their own local `MockURLProtocol` type aliases independently to satisfy each test's own networking needs. The collision is purely nominal; no field overlap or structural signal supports a merge. All context flags (`is_test`, `is_mock`, `is_codegen`, `is_sample_app`) are reported as `false`, which is likely a pipeline artefact for test-support files, but the file paths unambiguously place both records inside `Tests/` directories. Consolidating them would couple two otherwise independent test packages without any demonstrated benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_MockURLProtocol.json",
+  "row_index": 30,
+  "trial": 1
+}

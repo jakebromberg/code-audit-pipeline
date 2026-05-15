@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"jaccard\": 0.8333333333333334",
+    "rationale": "Both members are `computed-property` declarations named `MaterialView.body` residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 60 and 192) within the `Wallpaper` package, with a high Jaccard similarity of 0.8333. Because Swift forbids duplicate `body` properties on a single type, these must belong to separate type declarations in the same file, making the duplication a strong candidate for refactoring. The shared structural content (83% overlap) suggests a private `@ViewBuilder` helper could absorb the common view-construction logic, but the exact action depends on whether the two declarations differ by a conditional `where` clause, a distinct struct name, or some other discriminator not visible in the cluster metadata.",
+    "specifics": {
+      "proposed_action": "Investigate whether the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent two distinct SwiftUI `View` conformances on separate types/extensions, or a genuine near-duplicate within a single type. If they belong to two separate `MaterialView` structs (e.g., one parameterised differently), consolidate into a single generic or conditional implementation. If they are truly two `body` properties on the same type (which Swift would not normally allow), one is dead code and should be deleted. Extract any shared view-building logic into a private helper method or `@ViewBuilder` function within the same file to eliminate the 83% structural overlap.",
+      "why_no_category_fits": "The cluster shows two `computed-property` declarations both named `MaterialView.body` in the same file (`MaterialView.swift`) at lines 60 and 192 with a Jaccard similarity of 0.8333. Swift does not permit two `body` properties on the same concrete type, so these must live on distinct type declarations (e.g., two structs or a struct plus an extension on a different conditional conformance). The right fix depends on that structural context: it could be dead-code removal, a private `@ViewBuilder` helper extraction, or a generic parameterisation \u2014 none of which maps cleanly to a single named category without inspecting the surrounding declarations. 'extract-to-common' does not apply because both are in the same file/package. 'generic-parameterization' is a candidate but cannot be confirmed without knowing what differs between the two bodies."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 1
+}

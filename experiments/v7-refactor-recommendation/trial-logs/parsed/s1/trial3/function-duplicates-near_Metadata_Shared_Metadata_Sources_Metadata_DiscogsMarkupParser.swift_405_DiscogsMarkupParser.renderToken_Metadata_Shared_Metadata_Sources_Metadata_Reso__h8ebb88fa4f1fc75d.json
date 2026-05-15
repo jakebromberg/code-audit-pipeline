@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift:405:DiscogsMarkupParser.renderToken+Metadata:Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift:158:ResolvedBioToken.attributedString",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.9130434782608695",
+    "rationale": "The cluster reports a Jaccard similarity of 0.913 between `DiscogsMarkupParser.renderToken` (line 405 of DiscogsMarkupParser.swift) and `ResolvedBioToken.attributedString` (line 158 of ResolvedBioToken.swift), both in the `Metadata` package, indicating near-identical attributed-string rendering logic duplicated across two types. Since both files already live in the same package (`Metadata`) and neither is test, codegen, mock, or sample-app code, the duplication is unintentional. The shared logic should be extracted into a single free function or dedicated renderer type (e.g., `DiscogsMarkupRenderer`) within `Shared/Metadata/Sources/Metadata/`, and both call sites should delegate to it, eliminating the ~91% overlap.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift",
+        "Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "DiscogsMarkupRenderer"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Metadata_Shared_Metadata_Sources_Metadata_DiscogsMarkupParser.swift_405_DiscogsMarkupParser.renderToken_Metadata_Shared_Metadata_Sources_Metadata_Reso__h8ebb88fa4f1fc75d.json",
+  "row_index": 46,
+  "trial": 3
+}

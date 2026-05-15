@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:String",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+    "rationale": "Four separate `extension` declarations on `String` are spread across three distinct packages (`Playlist`, `AnalyticsMacros`, `Analytics`) with no fields or signatures surfaced, indicating each package has independently grown ad-hoc `String` helpers. The cluster's `name-collisions` query type signals that these extensions share the same extended type name and risk shadowing or duplicating members across module boundaries. The dedicated file `String+HTMLDecoding.swift` in the `Playlist` package suggests at least one extension is already purposefully named, making it a natural anchor. Where the helpers are genuinely package-specific they should remain local but be consolidated into a single `String+<Package>.swift` file per package; any truly cross-cutting utilities (e.g., HTML decoding used by both `Playlist` and `Analytics`) should be extracted to a shared lower-level package that all three already depend on.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+        "Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift",
+        "Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift",
+        "Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift"
+      ],
+      "target_type": "String"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_String.json",
+  "row_index": 6,
+  "trial": 3
+}

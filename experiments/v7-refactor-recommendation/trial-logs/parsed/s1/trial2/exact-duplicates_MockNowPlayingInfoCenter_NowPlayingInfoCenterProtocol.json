@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockNowPlayingInfoCenter+NowPlayingInfoCenterProtocol",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"interface\" ... \"file\": \"WXYC/iOS/NowPlayingInfoCenterManager.swift\" ... \"kind\": \"type-alias-object\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift\" ... \"shared_field_count\": 1",
+    "rationale": "The cluster pairs `NowPlayingInfoCenterProtocol` (an `interface` in `WXYC/iOS/NowPlayingInfoCenterManager.swift`) with `MockNowPlayingInfoCenter` (a `type-alias-object` in `WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift`). These are structurally different kinds \u2014 a protocol definition versus a type alias used in tests \u2014 and the shared_field_count of 1 with no differing_slots or Jaccard score provided gives very weak evidence of meaningful duplication. The test file's `MockNowPlayingInfoCenter` almost certainly aliases or wraps `NowPlayingInfoCenterProtocol` intentionally so that test code can substitute a mock conformer, which is idiomatic Swift test design and not a refactor target.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MockNowPlayingInfoCenter_NowPlayingInfoCenterProtocol.json",
+  "row_index": 47,
+  "trial": 2
+}

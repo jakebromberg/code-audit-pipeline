@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The cluster reports a Jaccard similarity of 0.714 between `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`, indicating the two computed properties share roughly 71 % of their token body \u2014 almost certainly the HSB component extraction and alpha handling. Because the properties intentionally expose platform-specific types (`UIColor` vs `NSColor`), they cannot simply be merged or made generic, but the shared conversion logic should be extracted to avoid drift. Both records carry all context flags false, confirming this is production code where maintenance quality matters.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIKit: Bool) -> <PlatformColor>` or a shared `_colorComponents() -> (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that encapsulates the shared HSB-to-color conversion logic. `HSBColor.uiColor` and `HSBColor.nsColor` would each call this helper, retaining their distinct return types (`UIColor` and `NSColor` respectively) while eliminating the duplicated body. Alternatively, use a `#if canImport(UIKit) / #if canImport(AppKit)` conditional compilation block with a single `color` computed property that resolves to the correct platform type, removing the need for two separate properties entirely.",
+      "why_no_category_fits": "The two properties (`uiColor` returning `UIColor` and `nsColor` returning `NSColor`) are intentional platform-specific surface-area \u2014 they are not accidental duplicates that should be merged into one name, nor are they candidates for generic parameterization (the return types are unrelated nominal types, not type-parameter variations of the same type). Protocol-inheritance, subclass-lift, macro-synthesis, and extract-to-common do not apply because both properties already live in the same file and package. The most idiomatic Swift remedy is either a shared private helper or a single `#if canImport` property, neither of which maps cleanly to any named category in the schema."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 2
+}

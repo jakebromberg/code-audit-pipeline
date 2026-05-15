@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"",
+    "rationale": "Both members are nested types named `MockDiscogsEntityResolver.MockError` defined inside test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the `is_test` context flag is reported as `false`, the file paths unambiguously place both declarations inside `Tests/` directories, strongly indicating they are test-support types. The duplication is almost certainly intentional: each test file defines its own local mock error type scoped to its own test context, and consolidating them would introduce a cross-package test dependency with no production benefit. The `shared_field_count: 2` with no `differing_slots` confirms structural identity, but structural identity alone does not justify merging isolated test helpers.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MockDiscogsEntityResolver.MockError_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 46,
+  "trial": 1
+}

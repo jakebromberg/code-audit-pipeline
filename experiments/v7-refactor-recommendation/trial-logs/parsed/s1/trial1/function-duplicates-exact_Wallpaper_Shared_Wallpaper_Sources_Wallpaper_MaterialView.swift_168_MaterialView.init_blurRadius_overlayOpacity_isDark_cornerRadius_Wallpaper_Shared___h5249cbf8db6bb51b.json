@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.88,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)\" at line 35 and line 168 of \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"",
+    "rationale": "The cluster surfaces two exact-duplicate initializers \u2014 `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` \u2014 declared at lines 35 and 168 of the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in the `Wallpaper` package. Neither record carries any context flag (is_test, is_codegen, is_sample_app, is_mock) that would justify intentional duplication. Having two identically-named initializers with the same parameter labels in one file is almost certainly a latent bug or a leftover from an incomplete refactor, and Swift will reject it at compile time unless they are separated by `#if` guards. The duplicate at line 168 should be removed (or the conditional-compilation intent should be made explicit).",
+    "specifics": {
+      "proposed_action": "Investigate whether the two definitions of `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` at lines 35 and 168 in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent a true duplicate (e.g., a copy-paste accident, a stale overload left after a refactor, or a conditional-compilation block that accidentally duplicates the signature). Once confirmed, delete the redundant definition \u2014 most likely the one at line 168 \u2014 leaving only the canonical initializer at line 35. If the two bodies differ in a meaningful way that the structural analysis missed (e.g., they are inside separate `#if` branches), add a comment explaining the conditional split so future analysis tools do not flag them again.",
+      "why_no_category_fits": "Both records are in the same file, same package, and carry identical signatures \u2014 this is not a cross-type extraction, protocol, generic, or subclass scenario. The correct fix is simply to remove the duplicate definition within the single file, which does not map cleanly to any of the named refactor categories (all of which assume the duplication spans types, packages, or protocols)."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 1
+}

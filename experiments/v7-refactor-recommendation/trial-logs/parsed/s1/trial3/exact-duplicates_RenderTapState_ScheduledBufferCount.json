@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:RenderTapState+ScheduledBufferCount",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"ScheduledBufferCount\" ... \"kind\": \"type-alias-object\" ... \"name\": \"RenderTapState\" ... \"kind\": \"type-alias-object\" ... \"shared_field_count\": 1 ... \"differing_slots\": null",
+    "rationale": "Both `ScheduledBufferCount` (line 381) and `RenderTapState` (line 418) are `type-alias-object` declarations residing in the same file (`Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayer.swift`) within the `Playback` package. The cluster's `shared_field_count` of 1 with `differing_slots: null` and `jaccard: null` indicates the structural similarity is purely that both are empty-body type aliases \u2014 not that they share any meaningful domain logic or members. Their names encode entirely distinct domain concepts (a render-tap lifecycle state vs. a buffer scheduling count), so the coincidence is structural only and no consolidation is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_RenderTapState_ScheduledBufferCount.json",
+  "row_index": 43,
+  "trial": 3
+}

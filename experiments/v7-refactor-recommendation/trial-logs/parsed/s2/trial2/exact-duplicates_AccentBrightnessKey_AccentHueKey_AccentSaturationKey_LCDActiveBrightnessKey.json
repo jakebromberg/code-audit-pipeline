@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:AccentBrightnessKey+AccentHueKey+AccentSaturationKey+LCDActiveBrightnessKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "macro-synthesis",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"shared_field_count\": 1, \"differing_slots\": null",
+    "rationale": "All four members \u2014 AccentHueKey, AccentSaturationKey, AccentBrightnessKey, and LCDActiveBrightnessKey \u2014 are declared in the same file (AccentColorEnvironment.swift, package PlayerHeaderView) as structurally identical type-alias-object kinds with no differing slots and a shared_field_count of 1. This is a classic SwiftUI EnvironmentKey boilerplate pattern where each type exists solely to satisfy the EnvironmentKey protocol with a defaultValue. A Swift attached macro (@EnvironmentKey) could synthesize the conformance from a single annotation, eliminating all four hand-written declarations and making future additions trivial. No intentional-duplication flag (is_test, is_codegen, is_sample_app, is_mock) is set on any record.",
+    "specifics": {
+      "applies_to": [
+        "struct"
+      ],
+      "macro_name": "@EnvironmentKey",
+      "population_size_evidence": "4 structurally identical type-alias-object records in the same file (shared_field_count: 1, differing_slots: null)",
+      "synthesizes": "A SwiftUI EnvironmentKey-conforming struct with a default `defaultValue` property, eliminating the need to hand-write each boilerplate type-alias-object declaration. Each invocation would expand to a fully conforming EnvironmentKey type, replacing AccentHueKey (line 16), AccentSaturationKey (line 21), AccentBrightnessKey (line 25), and LCDActiveBrightnessKey (line 39).",
+      "use_swift_builtin": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_AccentBrightnessKey_AccentHueKey_AccentSaturationKey_LCDActiveBrightnessKey.json",
+  "row_index": 7,
+  "trial": 2
+}

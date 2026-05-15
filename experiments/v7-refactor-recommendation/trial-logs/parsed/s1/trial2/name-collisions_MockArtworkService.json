@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockArtworkService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\" ... \"file\": \"Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift\" ... \"jaccard\": null ... \"shared_field_count\": null",
+    "rationale": "Both members are `type-alias-object` records with empty `fields_or_signature` lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), so there is no substantive shared shape to consolidate. The two files \u2014 `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (package: Artwork) and `Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift` (package: AppServices) \u2014 live in separate packages and separate test suites, meaning any `MockArtworkService` type-alias defined in each is scoped to its own test target and cannot collide at runtime. The name collision is purely nominal and the coincidence is structural only; the underlying domain concepts (artwork fetching vs. now-playing service) are unrelated.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_MockArtworkService.json",
+  "row_index": 27,
+  "trial": 2
+}

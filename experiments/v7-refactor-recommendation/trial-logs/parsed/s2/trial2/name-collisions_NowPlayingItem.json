@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:NowPlayingItem",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"file\": \"Shared/AppServices/Sources/AppServices/NowPlayingService.swift\" ... \"kind\": \"extension\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/NowPlayingItem+Placeholder.swift\"",
+    "rationale": "The cluster surfaces two records that share the name 'NowPlayingItem' but are structurally distinct: one is a 'type-alias-object' in 'AppServices' (Shared/AppServices/Sources/AppServices/NowPlayingService.swift, line 23) and the other is an 'extension' in the 'app:iOS' package (WXYC/iOS/NowPlayingWidget/NowPlayingItem+Placeholder.swift, line 15). The structural_evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, meaning no shared shape was detected. The type-alias in AppServices likely re-exports or aliases an upstream type, while the extension in the widget target adds placeholder behaviour \u2014 these are complementary, not duplicated, and the name collision is incidental to their different roles.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_NowPlayingItem.json",
+  "row_index": 34,
+  "trial": 2
+}

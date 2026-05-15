@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:QualityTrend+ThermalDirection",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"QualityTrend\" ... \"name\": \"ThermalDirection\" ... \"kind\": \"type-alias-union\" ... \"shared_field_count\": 3",
+    "rationale": "Both `QualityTrend` and `ThermalDirection` are `type-alias-union` declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`) within the `Wallpaper` package, and they share 3 fields structurally. However, they encode distinct domain concepts \u2014 quality trend direction and thermal state direction \u2014 whose structural coincidence (both being small union type-aliases with the same arity) is incidental to their separate semantic roles in throttling logic. Merging or extracting them would conflate unrelated domain vocabulary. No context flags (is_test, is_codegen, is_mock, is_sample_app) suggest intentional duplication of a different kind; the duplication is purely coincidental shape-matching.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_QualityTrend_ThermalDirection.json",
+  "row_index": 33,
+  "trial": 1
+}

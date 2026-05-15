@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "The cluster reports two initializers with the identical signature `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 48 and 180, both in the `Wallpaper` package, with no codegen, test, mock, or sample-app flags set. Having two initializers with the same external parameter labels in the same type is a Swift compile error unless they are separated by conditional-compilation guards; the pipeline's `function-duplicates-exact` signal therefore strongly suggests one is a stale duplicate that should be removed. Because both definitions are co-located in a single file, no cross-package extraction is needed \u2014 the fix is entirely within `MaterialView.swift`.",
+    "specifics": {
+      "proposed_action": "Investigate whether the two definitions of `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 48 and 180) represent a true duplicate or a conditional-compilation block (e.g., `#if os(iOS)` / `#if os(macOS)`). If they are unconditional duplicates, delete the second definition at line 180 and retain the canonical one at line 48. If they differ in body despite identical signatures, extract the shared parameter setup into a private helper initializer or a `private func configure(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` method called by both, then verify which variant is actually reachable at runtime.",
+      "why_no_category_fits": "Both records live in the exact same file (`MaterialView.swift`) and the same package (`Wallpaper`), so 'extract-to-common' is inapplicable. There is no protocol, subclass, or generic relationship involved. The cluster signals an exact duplicate initializer signature within a single file, which is most likely either a stale copy-paste or a platform-guarded overload \u2014 neither of which maps cleanly to the named refactor categories. The correct first step is an in-file investigation and deletion or deduplication, which 'other' best captures."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 2
+}

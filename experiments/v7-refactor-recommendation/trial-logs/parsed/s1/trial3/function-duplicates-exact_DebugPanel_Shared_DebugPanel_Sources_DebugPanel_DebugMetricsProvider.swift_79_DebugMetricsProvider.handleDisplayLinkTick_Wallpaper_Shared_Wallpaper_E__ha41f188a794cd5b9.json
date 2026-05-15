@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second occurrence of `DebugMetricsProvider.handleDisplayLinkTick` lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 a path that contains the `Examples/WallpaperSampleApp` segment, which is a sample-app target. Although `is_sample_app` is not flagged `true` in the context flags, the file path itself is unambiguous evidence that this copy exists inside a standalone sample application that cannot (and should not) take a hard dependency on the `DebugPanel` package. The duplication is therefore structural but intentional: the sample app needs a self-contained debug HUD without pulling in the full `DebugPanel` library. Consolidation would couple the sample app to `DebugPanel`, which is the opposite of the isolation a sample app is meant to demonstrate.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_79_DebugMetricsProvider.handleDisplayLinkTick_Wallpaper_Shared_Wallpaper_E__ha41f188a794cd5b9.json",
+  "row_index": 12,
+  "trial": 3
+}

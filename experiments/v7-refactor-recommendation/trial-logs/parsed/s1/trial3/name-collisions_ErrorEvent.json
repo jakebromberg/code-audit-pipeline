@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ErrorEvent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.2,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\"",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature`, meaning neither carries structural content that can be compared or merged. The two aliases live in distinct packages (`Playback` vs `Analytics`) and distinct files (`PlaybackCore/Analytics/PlaybackAnalytics.swift` vs `Analytics/Events/ErrorEvents.swift`), suggesting each is a locally-scoped type alias that re-exports or narrows a domain-specific error event concept relevant only to its own package. With no shared fields, no Jaccard score, and no shared ancestor recorded in `structural_evidence`, there is insufficient evidence that these aliases refer to the same underlying type or that collapsing them would be safe.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_ErrorEvent.json",
+  "row_index": 24,
+  "trial": 3
+}

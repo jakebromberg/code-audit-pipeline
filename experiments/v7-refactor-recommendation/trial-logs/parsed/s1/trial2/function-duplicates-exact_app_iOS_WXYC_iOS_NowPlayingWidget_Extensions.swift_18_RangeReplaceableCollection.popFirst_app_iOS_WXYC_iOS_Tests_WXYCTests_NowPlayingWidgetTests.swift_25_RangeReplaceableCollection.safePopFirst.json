@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"name\": \"RangeReplaceableCollection.safePopFirst\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift\" ... \"name\": \"RangeReplaceableCollection.popFirst\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "Although both methods extend `RangeReplaceableCollection` with a pop-first-style operation and the cluster flags them as function-duplicates-exact, the names differ (`popFirst` in `WXYC/iOS/NowPlayingWidget/Extensions.swift:18` vs. `safePopFirst` in `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25`), suggesting the test file carries its own helper with a deliberately distinct, safety-signalling name rather than a true duplicate. The `fields_or_signature` arrays are both empty, so there is no concrete signature evidence to confirm the bodies are identical. Additionally, one member lives in a test file (`WXYCTests/NowPlayingWidgetTests.swift`) even though `is_test` is reported as `false`, which is suspicious and reduces confidence that these are truly the same function. Without grounded body-level evidence, recommending a merge or extraction would risk conflating two intentionally separate utilities.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 2
+}

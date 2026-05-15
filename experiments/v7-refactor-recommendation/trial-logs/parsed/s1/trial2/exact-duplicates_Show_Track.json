@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Show+Track",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "_Plant_ShowContainer.swift\" ... \"_Plant_TrackContainer.swift\" ... \"shared_field_count\": 2",
+    "rationale": "Both `Show` and `Track` are `type-alias-object` declarations at line 13 of their respective files (`_Plant_ShowContainer.swift` and `_Plant_TrackContainer.swift`) within the `Playback` package, and the structural signal is that they share 2 fields with no differing slots reported. However, `Show` and `Track` are distinct domain concepts (a broadcast show vs. a music/audio track), and the files are named with a `_Plant_` prefix suggesting they are generated or scaffolded container wrappers for separate domain entities. Their structural coincidence \u2014 same kind, same line number, same field count \u2014 reflects the regularity of the code-generation or scaffolding pattern rather than true logical duplication. Merging or extracting them would conflate unrelated domain types.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_Show_Track.json",
+  "row_index": 39,
+  "trial": 2
+}

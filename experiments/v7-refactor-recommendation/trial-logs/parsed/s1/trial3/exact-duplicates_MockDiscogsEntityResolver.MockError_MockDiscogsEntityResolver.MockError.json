@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"MockDiscogsEntityResolver.MockError\", \"kind\": \"type-alias-union\", \"shared_field_count\": 2",
+    "rationale": "The type `MockDiscogsEntityResolver.MockError` is declared identically (same name, same kind `type-alias-union`, same 2 shared fields, zero differing slots) in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the `Metadata` package is already the canonical home for Discogs-related logic and the `app:iOS` package is a consumer of it, the shared mock type should live in the `Metadata` test target and be imported by the `app:iOS` test target, eliminating the duplicate. Both context-flag sets show `is_codegen: false` and `is_mock: false`, so this is hand-written duplication rather than generated or intentional mock scaffolding.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver.MockError"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_MockDiscogsEntityResolver.MockError_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 46,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+    "rationale": "Although the two initializers share a high Jaccard similarity of 0.778, they belong to structurally distinct types in separate platform targets: `NowPlayingEntry.init(_:)` in `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:173) and `NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)` in `app:iOS` (WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24). The differing parameter labels \u2014 an unlabeled single argument vs. three named arguments (`nowPlayingItem:recentItems:family:`) \u2014 indicate the two initializers serve platform-specific widget/timeline entry construction requirements (watchOS vs. iOS WidgetKit) that are intentionally divergent. The `shared_field_count` of 0 further confirms there are no shared stored properties surfaced by the analysis, leaving only behavioral shape similarity. Merging or extracting a common initializer across watchOS and iOS widget entry types would couple unrelated platform concerns without meaningful deduplication benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_173_NowPlayingEntry.init___app_iOS_WXYC_iOS_NowPlayingWidget_NowPlayingTimelineEntry.swift_24_NowPlayingTi__hc0574c501f18cebd.json",
+  "row_index": 94,
+  "trial": 1
+}

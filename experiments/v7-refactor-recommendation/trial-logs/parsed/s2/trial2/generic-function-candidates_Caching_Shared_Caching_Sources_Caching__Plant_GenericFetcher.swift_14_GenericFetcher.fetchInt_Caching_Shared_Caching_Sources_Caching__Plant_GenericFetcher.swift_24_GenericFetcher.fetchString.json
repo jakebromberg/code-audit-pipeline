@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+    "rationale": "The pipeline has flagged `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` as generic-function candidates with a Jaccard similarity of 0.75, indicating the two methods share nearly identical structure and differ only in their concrete return/parameter type. The `_Plant_` prefix in the filename is a conventional scaffold marker suggesting these stubs were planted specifically to illustrate this refactor opportunity. Collapsing both into a single generic `fetch<T>` method on `GenericFetcher` eliminates the type-specific duplication and makes the type open to any future concrete type without further method proliferation. Both records are production code (all context flags false), so there is no test-fixture or codegen reason to preserve the duplication.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "fetch",
+      "replaces": [
+        "GenericFetcher.fetchInt",
+        "GenericFetcher.fetchString"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_14_GenericFetcher.fetchInt_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_24_GenericFetcher.fetchString.json",
+  "row_index": 19,
+  "trial": 2
+}

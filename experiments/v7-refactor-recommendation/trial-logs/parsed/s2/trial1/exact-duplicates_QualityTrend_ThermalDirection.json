@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:QualityTrend+ThermalDirection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"QualityTrend\" ... \"name\": \"ThermalDirection\" ... \"file\": \"Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift\" ... \"shared_field_count\": 3",
+    "rationale": "Both `QualityTrend` and `ThermalDirection` are `type-alias-union` declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`) within the `Wallpaper` package, and they share 3 fields structurally. However, their names encode distinct domain concepts \u2014 `QualityTrend` describes a direction of change in rendering/stream quality, while `ThermalDirection` describes thermal state movement \u2014 whose structural coincidence (both being small union type-aliases with the same arity) is incidental rather than a sign of unintended duplication. Because both declarations already live in the same file, there is no cross-file or cross-package redundancy to eliminate, and collapsing them into a single shared alias would conflate unrelated semantic domains. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_QualityTrend_ThermalDirection.json",
+  "row_index": 33,
+  "trial": 1
+}

@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:UserDefaults",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift\nShared/Caching/Sources/Caching/DefaultsStorage.swift",
+    "rationale": "Both members are unnamed extensions on `UserDefaults` within the same `Caching` package, living in two separate files (`UserDefaults+WXYC.swift` at line 15 and `DefaultsStorage.swift` at line 47). Having two extension declarations on the same type within the same package module creates a name-collision signal and scatters related `UserDefaults` behaviour across files. Consolidating both extensions into the dedicated `UserDefaults+WXYC.swift` file (or a single canonical extension file) would eliminate the collision, improve discoverability, and keep all `UserDefaults` customisation in one place within the `Caching` package.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift",
+        "Shared/Caching/Sources/Caching/DefaultsStorage.swift"
+      ],
+      "target_type": "UserDefaults"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_UserDefaults.json",
+  "row_index": 45,
+  "trial": 2
+}

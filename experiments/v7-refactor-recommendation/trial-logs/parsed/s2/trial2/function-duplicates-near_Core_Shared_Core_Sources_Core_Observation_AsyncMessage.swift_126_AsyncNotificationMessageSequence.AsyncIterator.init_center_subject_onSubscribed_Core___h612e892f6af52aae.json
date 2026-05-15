@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "The two initializers `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 of AsyncMessage.swift) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 of MainActorMessage.swift) share an identical parameter label signature and a Jaccard similarity of 0.857, indicating near-identical bodies. Both live in the same package (`Core`) under `Shared/Core/Sources/Core/Observation/`, so no cross-package dependency is introduced. The shared initialisation logic \u2014 setting up a notification center subscription with a `center`, `subject`, and `onSubscribed` closure \u2014 can be extracted into a common base initializer (e.g., on a shared `struct` or via a free function/protocol extension within the same `Observation` directory), with each `AsyncIterator` delegating to it. This eliminates the duplicated subscription-wiring code while preserving the distinct actor-isolation semantics of each sequence type.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Core/Sources/Core/Observation/AsyncMessage.swift",
+        "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"
+      ],
+      "target_package": "Core",
+      "type_name": "NotificationMessageIteratorBase"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Core___h612e892f6af52aae.json",
+  "row_index": 55,
+  "trial": 2
+}

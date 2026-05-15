@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"\n\"file\": \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"",
+    "rationale": "Two `type-alias-object` declarations named `MockDiscogsEntityResolver` exist independently in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because both are type aliases (likely aliasing the same underlying mock or stub type related to Discogs entity resolution), the `app:iOS` test file is almost certainly duplicating something already defined in the `Metadata` package's test infrastructure. The canonical home should be the `Metadata` package since that is where the domain concept lives; the `app:iOS` test can then import and reuse it, eliminating the duplication. Neither record carries `is_codegen`, `is_mock`, or `is_sample_app` flags, so this is not intentional infrastructure duplication.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_MockDiscogsEntityResolver.json",
+  "row_index": 28,
+  "trial": 2
+}

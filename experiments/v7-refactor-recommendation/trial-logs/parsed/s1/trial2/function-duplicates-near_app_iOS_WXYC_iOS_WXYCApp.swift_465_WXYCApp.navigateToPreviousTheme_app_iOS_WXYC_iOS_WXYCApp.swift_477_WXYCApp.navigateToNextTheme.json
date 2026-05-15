@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "Both `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file (`WXYC/iOS/WXYCApp.swift`) and share a Jaccard similarity of 0.75, indicating their bodies are structurally nearly identical. The only meaningful difference is the navigation direction, which is already encoded in their names. Introducing a single `navigateTheme(direction:)` or `navigateTheme(offset:)` helper removes the duplicated logic while keeping the two public entry-points as thin, readable wrappers. Neither method is test, codegen, mock, or sample-app code, so there is no intentional-duplication rationale.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method \u2014 e.g., `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)` \u2014 where the direction/offset parameter encodes whether to step forward or backward. Both call sites become one-liners delegating to the shared helper, eliminating the near-duplicate body (Jaccard 0.75).",
+      "why_no_category_fits": "The two members are concrete instance methods on the same class in the same file, not separate types, protocols, or packages. None of the named categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) describe the straightforward 'collapse two near-identical methods into one parameterised helper on the same type' refactor that is warranted here."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 2
+}

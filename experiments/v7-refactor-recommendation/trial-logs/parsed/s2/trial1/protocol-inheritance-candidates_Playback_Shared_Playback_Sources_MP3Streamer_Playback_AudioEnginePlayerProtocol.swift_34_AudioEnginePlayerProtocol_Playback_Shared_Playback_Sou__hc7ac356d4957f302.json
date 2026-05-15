@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift:34:AudioEnginePlayerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27:PlaybackController",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "shared_field_count: 0",
+    "rationale": "Although both `AudioEnginePlayerProtocol` and `PlaybackController` live in the same `Playback` package and share a handful of surface-level method names (`installRenderTap`, `removeRenderTap`, `isPlaying`, `play`, `stop`), the structural evidence confirms zero shared fields (`shared_field_count: 0`) and a null Jaccard similarity. The two protocols operate at distinct abstraction layers: `AudioEnginePlayerProtocol` is a low-level AVAudioEngine wrapper (exposing `eventStream:AsyncStream<AudioPlayerEvent>`, `scheduleBuffer`, `scheduleBuffers`, `volume`, `makeRenderTapStream`) while `PlaybackController` is a higher-level domain controller (exposing `state:PlaybackState`, `isLoading`, `toggle:(reason: PlaybackReason)`, `makeAudioBufferStream`). Forcing a parent\u2013child inheritance relationship would couple unrelated concerns and leak engine-level details into the domain protocol boundary. The overlapping names (`play`, `stop`, `installRenderTap`) have different signatures across the two protocols (e.g., `play:() throws` vs `play:(reason: PlaybackReason) throws`), making a shared parent impractical without signature changes.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial1/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_MP3Streamer_Playback_AudioEnginePlayerProtocol.swift_34_AudioEnginePlayerProtocol_Playback_Shared_Playback_Sou__hc7ac356d4957f302.json",
+  "row_index": 5,
+  "trial": 1
+}

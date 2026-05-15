@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One copy of `DebugMetricsProvider.setUpDisplayLink` lives in the canonical library location (`Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`, package `DebugPanel`), while the duplicate resides in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 a path that contains the `Examples/WallpaperSampleApp` segment, which is a sample-app tree. Sample-app targets routinely inline or re-implement debug utilities to remain self-contained and avoid adding a hard dependency on a library package. Although neither record carries `is_sample_app=true` in its context flags, the file path `Examples/WallpaperSampleApp` is unambiguous evidence of a sample-app context. Consolidating the two would couple the sample app to the `DebugPanel` package, which is likely undesirable. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_49_DebugMetricsProvider.setUpDisplayLink_Wallpaper_Shared_Wallpaper_Exampl__h678da617c855463f.json",
+  "row_index": 33,
+  "trial": 1
+}

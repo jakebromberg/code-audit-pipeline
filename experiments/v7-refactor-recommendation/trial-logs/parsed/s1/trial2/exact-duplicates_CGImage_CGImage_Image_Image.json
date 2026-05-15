@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CGImage+CGImage+Image+Image",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"",
+    "rationale": "The cluster surfaces two pairs of same-named extensions in different files and packages: two `Image` extensions in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (lines 19 and 88) and two `CGImage` extensions in `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 61 and 91). The `Image` extensions are in the `Core` package extending a platform type, while the `CGImage` extensions are in the `Artwork` package's test file \u2014 these are extensions on unrelated types (`Image` vs `CGImage`) in separate packages serving distinct domain purposes (image compatibility shims vs. artwork test helpers). The `shared_field_count` of 1 and null Jaccard/differing_slots values indicate the structural overlap is minimal and likely coincidental. With empty `fields_or_signature` arrays on all four records, there is insufficient evidence to determine that any meaningful deduplication is possible or desirable.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_CGImage_CGImage_Image_Image.json",
+  "row_index": 11,
+  "trial": 2
+}

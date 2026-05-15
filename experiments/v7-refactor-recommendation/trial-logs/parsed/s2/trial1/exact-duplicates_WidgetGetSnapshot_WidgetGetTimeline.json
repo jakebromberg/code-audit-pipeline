@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:WidgetGetSnapshot+WidgetGetTimeline",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"WidgetGetSnapshot\" ... \"name\": \"WidgetGetTimeline\" ... \"kind\": \"type-alias-object\" ... \"shared_field_count\": 1",
+    "rationale": "Both `WidgetGetSnapshot` and `WidgetGetTimeline` are `type-alias-object` declarations in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`) within the `Analytics` package. Although the structural pipeline flags them as exact duplicates (shared_field_count=1, differing_slots=null), they represent distinct widget lifecycle events \u2014 snapshot fetching vs. timeline generation \u2014 whose structural similarity is coincidental. Merging or collapsing them would conflate two semantically separate analytics events, harming readability and event-tracking fidelity. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, but the domain-concept divergence is sufficient to recommend no action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_WidgetGetSnapshot_WidgetGetTimeline.json",
+  "row_index": 37,
+  "trial": 1
+}

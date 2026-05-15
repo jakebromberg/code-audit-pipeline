@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+    "rationale": "Both `MockHLSAVPlayer.play` and `MockPlayer.play` live under test-support paths (`Shared/Playback/Tests/HLSPlayerTests/` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/`) within the `Playback` package. Although the context flags report `is_test: false` and `is_mock: false`, the file paths and type names (prefixed `Mock`) make clear these are test-double types. A `play()` method with an empty signature is the minimal stub required by whatever player protocol each mock satisfies; the two mocks exist to stand in for structurally different collaborators (`HLSAVPlayer` vs a generic `Player`), so the coincidence of an identical no-op `play` body is structural only and does not represent actionable duplication. Consolidating them would couple unrelated mock hierarchies.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift:31:makePlaycut+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:113:makeTestPlaycut",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"is_test\": true",
+    "rationale": "Both participating records have `is_test: true` and reside under `WXYC/iOS/Tests/WXYCTests/`. The functions `makePlaycut` (NowPlayingInfoCenterManagerTests.swift:31) and `makeTestPlaycut` (NowPlayingWidgetTests.swift:113) are test-fixture factory helpers, each scoped to its own test file. Although the Jaccard similarity is high (0.818), near-duplicate factory helpers in separate test files are a common and intentional pattern \u2014 each test suite may need slight variations in the constructed value, and consolidating them into a shared helper would couple unrelated test modules. No production code is involved.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingInfoCenterManagerTests.swift_31_makePlaycut_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_113_makeTestPlaycut.json",
+  "row_index": 70,
+  "trial": 1
+}

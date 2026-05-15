@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:ApplicationWillTerminateMessage+HLSPlaybackStalledMessage+PlaybackStalledMessage+RequestSentMessage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\"",
+    "rationale": "All four records are `type-alias-object` declarations with empty `fields_or_signature` lists, meaning they share only the structural shape of being a zero-field type alias \u2014 not any actual content or domain meaning. `ApplicationWillTerminateMessage` (Core package), `PlaybackStalledMessage` and `HLSPlaybackStalledMessage` (Playback package), and `RequestSentMessage` (MusicShareKit package) each represent distinct domain events in unrelated subsystems. The `shared_field_count: 1` with `jaccard: null` and `differing_slots: null` confirms the only commonality is the empty-body shape, not any shared fields or logic. Collapsing these into a single type or common base would conflate unrelated domain concepts and destroy the semantic clarity that distinct message types provide in a message-passing architecture.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_ApplicationWillTerminateMessage_HLSPlaybackStalledMessage_PlaybackStalledMessage_RequestSentMessage.json",
+  "row_index": 8,
+  "trial": 1
+}

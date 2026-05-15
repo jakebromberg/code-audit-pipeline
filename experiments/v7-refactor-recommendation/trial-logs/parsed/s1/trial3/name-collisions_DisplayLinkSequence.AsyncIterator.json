@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:DisplayLinkSequence.AsyncIterator",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\"",
+    "rationale": "Both records are anonymous type-alias-object declarations (name is empty string, fields_or_signature is empty) for what appears to be a nested type alias of `DisplayLinkSequence.AsyncIterator`. One lives in `DebugPanel/DebugMetricsProvider.swift` and the other in `Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 entirely separate packages serving unrelated domain concerns (debug metrics vs. wallpaper HUD). The structural signal is purely coincidental: both packages independently conform to or alias the same `AsyncSequence`-related iterator type, which is a common Swift concurrency pattern. There is no shared field list or meaningful overlap to consolidate, and the second record resides in a sample-app path.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_DisplayLinkSequence.AsyncIterator.json",
+  "row_index": 22,
+  "trial": 3
+}

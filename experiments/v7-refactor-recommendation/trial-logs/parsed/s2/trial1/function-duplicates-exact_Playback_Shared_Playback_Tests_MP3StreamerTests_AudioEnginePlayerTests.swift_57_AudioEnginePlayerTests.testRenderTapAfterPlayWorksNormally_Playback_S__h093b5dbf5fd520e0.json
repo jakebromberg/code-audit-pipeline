@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:57:AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:75:AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift",
+    "rationale": "Both members reside in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift` within the `Playback` package and are named with the `test` prefix (`testRenderTapAfterPlayWorksNormally` at line 57 and `testMultipleRenderTapCallsBeforePlay` at line 75), making them clearly test methods. Although the pipeline has flagged `is_test: false` on both records, the file path (`Tests/`) and the `test`-prefixed method names on `AudioEnginePlayerTests` unambiguously identify these as XCTest cases. Structurally identical test bodies are common when two test scenarios exercise the same code path under slightly different preconditions (tap-after-play vs. multiple-taps-before-play); collapsing them would obscure the distinct intent of each scenario and reduce diagnostic clarity on failure. No production code is involved, so no refactor is warranted.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_57_AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally_Playback_S__h093b5dbf5fd520e0.json",
+  "row_index": 18,
+  "trial": 1
+}

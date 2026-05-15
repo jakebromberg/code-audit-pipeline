@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:NowPlayingItem",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"file\": \"Shared/AppServices/Sources/AppServices/NowPlayingService.swift\" ... \"kind\": \"extension\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/NowPlayingItem+Placeholder.swift\"",
+    "rationale": "The two records share the name 'NowPlayingItem' but are structurally distinct kinds: one is a 'type-alias-object' in 'AppServices' (Shared/AppServices/Sources/AppServices/NowPlayingService.swift, line 23) and the other is an 'extension' in 'app:iOS' (WXYC/iOS/NowPlayingWidget/NowPlayingItem+Placeholder.swift, line 15). The extension file name 'NowPlayingItem+Placeholder.swift' strongly suggests it is extending the type-alias defined in AppServices, which is the normal Swift pattern of defining a type in one module and extending it in another. All structural_evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are null, and both records have empty fields_or_signature lists, providing no evidence of duplicated logic. No refactoring action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_NowPlayingItem.json",
+  "row_index": 34,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:LCDMaxOffsetKey+LCDMinOffsetKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"LCDMinOffsetKey\"\n    },\n    {\n      \"context_flags\": {\n        \"is_codegen\": false,\n        \"is_mock\": false,\n        \"is_sample_app\": false,\n        \"is_test\": false\n      },\n      \"fields_or_signature\": [],\n      \"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AccentColorEnvironment.swift\",\n      \"kind\": \"type-alias-object\",\n      \"line\": 35,\n      \"name\": \"LCDMaxOffsetKey\"",
+    "rationale": "Both `LCDMinOffsetKey` and `LCDMaxOffsetKey` are type-alias objects defined in the same file (`AccentColorEnvironment.swift`) within the `PlayerHeaderView` package, just four lines apart (lines 31 and 35). Although they share structural shape (both are empty type-alias objects), they encode semantically distinct concepts \u2014 a minimum offset key and a maximum offset key \u2014 that are intentionally paired as separate SwiftUI `EnvironmentKey` types. Collapsing them would destroy the semantic distinction between the two offset bounds. No context flags (test, codegen, mock, sample-app) apply, and the duplication is a natural consequence of SwiftUI's `EnvironmentKey` boilerplate pattern requiring one concrete type per key.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_LCDMaxOffsetKey_LCDMinOffsetKey.json",
+  "row_index": 35,
+  "trial": 2
+}

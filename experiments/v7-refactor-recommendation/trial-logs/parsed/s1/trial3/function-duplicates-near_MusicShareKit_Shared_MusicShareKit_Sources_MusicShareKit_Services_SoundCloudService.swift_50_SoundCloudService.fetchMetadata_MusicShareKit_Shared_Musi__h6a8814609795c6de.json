@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.8076923076923077",
+    "rationale": "Both `SoundCloudService.fetchMetadata` (SoundCloudService.swift:50) and `YouTubeMusicService.fetchMetadata` (YouTubeMusicService.swift:64) live in the same `MusicShareKit` package and share a near-duplicate implementation with a Jaccard similarity of 0.808, indicating substantial structural overlap. Introducing a `MusicMetadataFetchable` protocol with a `fetchMetadata` requirement in the `MusicShareKit` package would unify the shared logic, allow a default implementation via a protocol extension for the common body, and leave each service free to override only the parts that differ (e.g., endpoint URL, response parsing). This is the most idiomatic Swift approach because both types are concrete service classes in the same package with no cross-package boundary concerns, and none of the context flags (is_test, is_codegen, is_mock, is_sample_app) suggest intentional divergence.",
+    "specifics": {
+      "associated_type": "Metadata",
+      "constraints": [],
+      "new_protocol": "MusicMetadataFetchable",
+      "replaces": [
+        "SoundCloudService.fetchMetadata",
+        "YouTubeMusicService.fetchMetadata"
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Services_SoundCloudService.swift_50_SoundCloudService.fetchMetadata_MusicShareKit_Shared_Musi__h6a8814609795c6de.json",
+  "row_index": 71,
+  "trial": 3
+}

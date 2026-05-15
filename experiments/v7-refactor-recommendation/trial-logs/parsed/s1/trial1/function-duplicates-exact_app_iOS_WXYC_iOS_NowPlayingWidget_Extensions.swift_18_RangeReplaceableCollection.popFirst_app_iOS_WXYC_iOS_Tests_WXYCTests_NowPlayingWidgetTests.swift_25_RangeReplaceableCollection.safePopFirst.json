@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.35,
+    "evidence_quote": "\"name\": \"RangeReplaceableCollection.safePopFirst\" ... \"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift\" ... \"name\": \"RangeReplaceableCollection.popFirst\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "Although both methods extend `RangeReplaceableCollection` with a pop-first-style operation and live in the same package (`app:iOS`), they carry distinct names \u2014 `popFirst` in `WXYC/iOS/NowPlayingWidget/Extensions.swift` and `safePopFirst` in `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift` \u2014 which suggests the test file defines its own named variant (likely a wrapper or alias used to make test assertions more readable) rather than a true duplicate. The `fields_or_signature` arrays are both empty, so there is no concrete evidence that the implementations are identical beyond the structural shape signal. Merging them risks conflating a production utility with a test-scoped helper whose naming convention may be intentional. Without body-level evidence of duplication, the safer recommendation is no-action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 1
+}

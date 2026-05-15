@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackController",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"differing_slots\": null,\n            \"jaccard\": null,\n            \"shared_ancestor\": null,\n            \"shared_field_count\": null",
+    "rationale": "The cluster surfaces two declarations in the same `Playback` package: an `extension` in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift` (line 31) and an `interface` in `Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift` (line 27). Both have empty `fields_or_signature` lists and no name recorded, so there is no structural evidence of duplication (all `structural_evidence` fields are null). The extension in the test harness file is almost certainly extending the production `PlaybackController` protocol for test-support purposes, which is the standard Swift pattern and is intentional. No refactoring is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_PlaybackController.json",
+  "row_index": 35,
+  "trial": 3
+}
