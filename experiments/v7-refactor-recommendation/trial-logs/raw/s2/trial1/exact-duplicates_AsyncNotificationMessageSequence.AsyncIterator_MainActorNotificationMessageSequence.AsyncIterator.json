@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence.AsyncIterator+MainActorNotificationMessageSequence.AsyncIterator\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"AsyncIterator\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\"\n      ]\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence.AsyncIterator` (line 149 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence.AsyncIterator` (line 123 of `AsyncMessage.swift`) are type-alias-objects in the same `Core` package with identical structure (shared_field_count: 1, no differing_slots). Because they are exact duplicates living in the same package, the alias definition can be consolidated into a single shared location \u2014 for example a new `Shared/Core/Sources/Core/Observation/NotificationMessageSequence+AsyncIterator.swift` \u2014 and both originating files can reference that single definition. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication rationale.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", ... \\\"shared_field_count\\\": 1, ... \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are intentionally separate public types whose `AsyncIterator` type-aliases point to different underlying iterator types (e.g., one is `@MainActor`-isolated), the structural identity detected here may be coincidental and merging the aliases could break actor-isolation semantics. In that case no action should be taken until the underlying iterator types are confirmed to be identical.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Yaf9UwBPBC8DmJ7Mto6uRK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2340,
+    "output_tokens": 534,
+    "service_tier": "standard"
+  }
+}

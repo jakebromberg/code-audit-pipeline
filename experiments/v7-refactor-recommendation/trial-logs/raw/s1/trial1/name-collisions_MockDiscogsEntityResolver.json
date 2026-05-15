@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockDiscogsEntityResolver\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Two `type-alias-object` declarations named `MockDiscogsEntityResolver` exist independently in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS). Both have all context flags false, meaning neither is generated, mocked, or a sample-app artifact \u2014 they are hand-written test helpers that have drifted into duplication. Because the canonical home for Discogs-related metadata logic is already the `Metadata` package, the shared alias should live there (in a test-support target) and be imported by the app-layer test, eliminating the divergence risk.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\", \\\"package\\\": \\\"Metadata\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both records carry `is_test: false` in their context flags (likely a pipeline mis-classification given the file paths end in `Tests/`), and the `fields_or_signature` arrays are empty, so there is no field-level evidence that the two aliases are structurally identical beyond sharing a name. If they resolve to different underlying types in their respective modules, the collision is coincidental and no merge is warranted.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JbbXDCuv66KY6kE5VbA1Rk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 499,
+    "service_tier": "standard"
+  }
+}

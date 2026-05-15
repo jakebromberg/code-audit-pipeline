@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:20:WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"WXYCGradient\",\n      \"consolidate_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundLight` (line 20 of `BackgroundGradient.swift`) and `WXYCGradient.wxycBackgroundLight` (line 21 of `WXYCGradient.swift`) are exact-duplicate computed properties living in the same `WXUI` package. Because the property is gradient-specific by name and `WXYCGradient` is the canonical gradient type in this package, the authoritative definition should live solely on `WXYCGradient` in `WXYCGradient.swift`. The duplicate on `WXYCBackground` should be removed; if `WXYCBackground` still needs the value it can delegate to `WXYCGradient.wxycBackgroundLight` or inherit it via a shared protocol. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication justification.\",\n    \"evidence_quote\": \"WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"WXYCBackgroundProviding\",\n        \"associated_type\": \"GradientValue\",\n        \"constraints\": [],\n        \"replaces\": [\"WXYCBackground.wxycBackgroundLight\", \"WXYCGradient.wxycBackgroundLight\"]\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` are intended to remain distinct types that both expose background-colour computed properties, a protocol `WXYCBackgroundProviding` with a `wxycBackgroundLight` requirement and a single default implementation in a protocol extension would eliminate the duplication without merging the two types. This is heavier machinery than simple consolidation but preserves the separate type identities.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ahn8eChZX3m33ZURMzFUbn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2411,
+    "output_tokens": 710,
+    "service_tier": "standard"
+  }
+}

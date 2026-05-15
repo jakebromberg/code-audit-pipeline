@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze what's available.\n\nThe cluster row has an empty `members` array, so I cannot inspect field lists, method signatures, context flags (is_test, is_mock, is_codegen, etc.), or package dependency graphs directly. However, the `cluster_id` itself encodes meaningful structural evidence I can quote verbatim:\n\n- One participant is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` at line 97 \u2014 the path contains `AnalyticsTesting` and the type name contains `Mock`, both strong signals of a test/mock fixture.\n- The other participant is `CPUSessionEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` at line 272 \u2014 a production type.\n- The Jaccard similarity is 0.875 (high), suggesting near-structural identity.\n- Because `members` is empty I cannot ground any specific field or method names to support a concrete refactor recommendation without hallucinating.\n\nThe presence of `AnalyticsTesting` and `Mock` in one record strongly indicates intentional duplication: a mock/test proxy deliberately mirrors the shape of the production `CPUSessionEvent`. With `members: []` I cannot safely go further.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"One participant is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` residing in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 the `AnalyticsTesting` path component and the `Mock` prefix in the type name are canonical signals of an intentional test/mock fixture. The high Jaccard similarity of 0.875 is expected and desirable here: the mock must mirror the shape of the production type `CPUSessionEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` in order to serve as a faithful stand-in during testing. Because `members` is empty, no field-level evidence is available to ground any deeper refactor, and inventing such evidence would violate the no-hallucination rule.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QDSJZ8N7dCrdZ4AAGemZUb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2123,
+    "output_tokens": 718,
+    "service_tier": "standard"
+  }
+}

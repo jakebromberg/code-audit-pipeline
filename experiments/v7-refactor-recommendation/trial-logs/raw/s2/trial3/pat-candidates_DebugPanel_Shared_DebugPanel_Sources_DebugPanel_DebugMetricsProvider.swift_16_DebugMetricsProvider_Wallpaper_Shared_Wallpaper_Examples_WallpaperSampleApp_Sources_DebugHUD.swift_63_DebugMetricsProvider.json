@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:16:DebugMetricsProvider+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:63:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` and carries `is_sample_app: true`, placing it squarely in a sample/example app target. The near-identical `DebugMetricsProvider` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` is the canonical implementation; the sample-app copy is a self-contained convenience duplicate that avoids a hard dependency from the example app on the `DebugPanel` package. The only structural difference \u2014 `metalDevice:MTLDevice?` vs `metalDevice:(any MTLDevice)?` \u2014 is a minor existential-syntax variant consistent with the sample app being compiled under different Swift language settings, not a meaningful semantic divergence. Extracting or unifying these would couple the sample app to `DebugPanel`, which is the dependency direction the sample-app pattern is specifically designed to avoid.\",\n    \"evidence_quote\": \"is_sample_app\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever allowed to depend on the DebugPanel package, the 12 shared fields (`cpuUsage:Double`, `fps:Int`, `memoryMB:Double`, etc.) make the canonical `DebugMetricsProvider` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` a drop-in replacement, eliminating the duplicate entirely. The single differing slot (`metalDevice` existential syntax) would need to be reconciled to `(any MTLDevice)?` for forward Swift compatibility.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PYLQ8P5huPvxb9Z25pKovj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2735,
+    "output_tokens": 648,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method, e.g. `navigateTheme(direction: ThemeNavigationDirection)` where `ThemeNavigationDirection` is a two-case enum (`.previous`, `.next`), or alternatively `navigateTheme(offset: Int)` where the caller passes `-1` or `+1`. The two public entry points can then become one-line forwarding calls or be replaced entirely at call sites.\",\n      \"why_no_category_fits\": \"The two methods are not separate types, protocols, or structs, so extract-to-common, protocol-inheritance, generic-parameterization, and subclass-lift do not apply. They live in the same file and class, so extension-consolidation is not the right frame. The near-duplicate body logic (Jaccard 0.75) is best collapsed by introducing a direction parameter \u2014 a classic 'parameterise by variation' refactor \u2014 which does not map cleanly to any of the named structural categories.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package. The names differ only in direction ('Previous' vs 'Next'), strongly suggesting the bodies share the same theme-cycling logic with a single sign or index-offset difference. Collapsing them into one parameterised helper eliminates the near-duplicate and makes future theme-navigation changes a single-site edit. Neither method carries any context flags (not test, codegen, mock, or sample-app), so no intentional-duplication exemption applies.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `navigateToPreviousTheme` and `navigateToNextTheme` have meaningfully asymmetric side-effects beyond a simple direction flip (e.g., different animation curves, boundary-clamping logic, or async behaviour), the 0.75 Jaccard overlap may reflect shared scaffolding rather than true duplication, and keeping them separate preserves clarity. Without access to the actual method bodies this cannot be ruled out.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PVSZGQ5M4219ZGNAqLDjkW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2387,
+    "output_tokens": 764,
+    "service_tier": "standard"
+  }
+}

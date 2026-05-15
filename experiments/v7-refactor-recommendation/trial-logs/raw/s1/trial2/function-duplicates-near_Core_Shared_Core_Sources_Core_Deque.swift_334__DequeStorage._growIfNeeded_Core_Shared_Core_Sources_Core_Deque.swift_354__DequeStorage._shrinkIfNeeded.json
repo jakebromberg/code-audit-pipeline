@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at each call site.\",\n      \"why_no_category_fits\": \"Neither method is a standalone generic function candidate nor a protocol default implementation. They are private storage-management helpers on the same concrete class (`_DequeStorage`) within the same file. The right fix is an internal private helper extraction \u2014 a refactor that is closer to 'extract-to-common' within a single file than any of the cross-type or cross-package categories. 'extract-to-common' implies moving to a different package/file, which is not warranted here. The pattern is a classic 'extract method' within the same class, which none of the named categories precisely describe.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.7143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. The high overlap strongly suggests a shared resize-decision skeleton (check current capacity vs. count, compute new capacity, reallocate) that differs only in the direction of the resize. Extracting that skeleton into a single private helper reduces the duplicated logic to one place, making future correctness fixes (e.g., capacity arithmetic, buffer copy logic) apply to both grow and shrink paths automatically. Neither method is test, codegen, mock, or sample-app code, so intentional-duplication rules do not apply.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"Direction\", \"constraint\": null }\n        ],\n        \"new_name\": \"_resizeIfNeeded\",\n        \"replaces\": [\"_DequeStorage._growIfNeeded\", \"_DequeStorage._shrinkIfNeeded\"]\n      },\n      \"rationale\": \"If the grow/shrink direction can be cleanly parameterised (e.g., via an enum or a Bool flag rather than a closure), a single generic or parameterised `_resizeIfNeeded` function could replace both methods entirely. However, this is less idiomatic for a private storage helper where a simple extracted private method with closure parameters is clearer and avoids unnecessary type complexity.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WPuABALSmzrREo1GQtKp43",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2368,
+    "output_tokens": 818,
+    "service_tier": "standard"
+  }
+}

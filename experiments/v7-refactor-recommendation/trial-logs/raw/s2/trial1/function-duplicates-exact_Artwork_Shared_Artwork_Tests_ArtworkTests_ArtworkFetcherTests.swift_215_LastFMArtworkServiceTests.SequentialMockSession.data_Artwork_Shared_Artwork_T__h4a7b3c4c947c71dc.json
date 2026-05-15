@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"SequentialMockSession\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"All four members are exact duplicates of the `data` method, each nested inside a per-test-class `SequentialMockSession` inner type: `iTunesArtworkServiceTests.SequentialMockSession.data` (line 88), `LastFMArtworkServiceTests.SequentialMockSession.data` (line 215), `DiscogsArtworkServiceTests.SequentialMockSession.data` (lines 321 and 367), all within `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` in the `Artwork` package. The pattern indicates that each test class has independently copy-pasted an identical `SequentialMockSession` helper. A single top-level (or file-scope) `SequentialMockSession` type should be extracted within the same test file (or a dedicated `TestHelpers` file in the `Artwork` test target), and all four per-class copies should be removed in favour of the shared one. Note: despite the file path containing `Tests/`, all four records carry `is_test: false`, which may be a pipeline classification gap \u2014 the recommendation is made on structural grounds.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"no-action\": {\n          \"reason_class\": \"test-fixture\"\n        }\n      },\n      \"rationale\": \"All four duplicates live under `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`, a path that strongly implies a test target. If the `is_test: false` flags are a pipeline mis-classification and these inner types are intentionally scoped per test class for isolation, no refactor is needed.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GRhM8oQBP13wqZbreDp7xi",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2803,
+    "output_tokens": 898,
+    "service_tier": "standard"
+  }
+}

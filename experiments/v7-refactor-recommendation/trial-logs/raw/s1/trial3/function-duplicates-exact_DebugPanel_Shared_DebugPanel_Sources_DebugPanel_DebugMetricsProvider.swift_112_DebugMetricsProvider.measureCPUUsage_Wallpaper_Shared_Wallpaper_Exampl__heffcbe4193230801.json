@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DebugMetricsProvider\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"The method `DebugMetricsProvider.measureCPUUsage` is duplicated exactly between `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (line 112, package `DebugPanel`) and `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (line 141, package `Wallpaper`). The canonical home is already the `DebugPanel` package, which owns the `DebugMetricsProvider` type by name. The `Wallpaper` package's `DebugHUD.swift` copy should be deleted and replaced with a dependency on `DebugPanel`, since neither record carries `is_codegen`, `is_test`, or `is_mock` flags that would justify intentional duplication. Although the file path for the `Wallpaper` copy contains `Examples/WallpaperSampleApp`, the `is_sample_app` flag is explicitly `false`, so the sample-app-mirror exemption does not apply.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"The duplicate in the `Wallpaper` package lives under a path containing `Examples/WallpaperSampleApp`, which superficially suggests a sample-app mirror. However, the `is_sample_app` context flag is explicitly `false` for that record, so this exemption is not formally satisfied; the primary recommendation to consolidate into `DebugPanel` is preferred.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011dhi3cwEpsbkKBpSigs9uy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2437,
+    "output_tokens": 675,
+    "service_tier": "standard"
+  }
+}

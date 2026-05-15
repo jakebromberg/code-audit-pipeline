@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both methods \u2014 `QualitySignalTests.hysteresisHeatingEntry` (line 295) and `QualitySignalTests.hysteresisHeatingExit` (line 312) \u2014 live in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` within the `Wallpaper` package. Despite the `is_test` flag being reported as `false`, the file path (`Tests/WallpaperTests/`) and the enclosing type name (`QualitySignalTests`) make it clear these are test helper or test case methods. More importantly, the two methods encode semantically opposite domain events \u2014 hysteresis *entry* versus hysteresis *exit* \u2014 so their structural similarity is a natural consequence of testing symmetric state transitions, not accidental duplication. Merging or abstracting them would obscure the distinct test intent of each method.\",\n    \"evidence_quote\": \"QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011yxzLJvKsbUHdJwxnrrnxU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2433,
+    "output_tokens": 457,
+    "service_tier": "standard"
+  }
+}

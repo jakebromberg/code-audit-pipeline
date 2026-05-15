@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MetricRow+MetricRow\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two `MetricRow` type-alias-object records lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under an `Examples/WallpaperSampleApp` path \u2014 a clear sample-app context. The duplication is therefore expected: the sample app carries its own local copy of `MetricRow` rather than taking a hard dependency on the `DebugPanel` package. Extracting it would couple the sample app to `DebugPanel`, which is likely undesirable. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"MetricRow\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample app is ever promoted to a first-class consumer of `DebugPanel`, the duplicate `MetricRow` in `WallpaperSampleApp` could be deleted and the canonical definition in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` (line 53) reused directly, eliminating the 3-shared-field duplication.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Mj6ntLfP4T4v3cdKRV5HkZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2329,
+    "output_tokens": 456,
+    "service_tier": "standard"
+  }
+}

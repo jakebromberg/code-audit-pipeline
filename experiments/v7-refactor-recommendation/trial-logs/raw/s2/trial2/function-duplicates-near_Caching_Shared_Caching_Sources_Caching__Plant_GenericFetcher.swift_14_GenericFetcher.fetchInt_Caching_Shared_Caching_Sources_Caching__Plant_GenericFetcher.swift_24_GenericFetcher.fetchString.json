@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"T\", \"constraint\": null }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\"GenericFetcher.fetchInt\", \"GenericFetcher.fetchString\"]\n    },\n    \"rationale\": \"The two methods `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` share a Jaccard similarity of 0.75, indicating near-identical bodies that differ only in the concrete return/parameter type (Int vs String). The `_Plant_` prefix in the filename strongly suggests this file was scaffolded as a planting/seed example of exactly this pattern \u2014 i.e., the two type-specific variants exist to demonstrate the need for a single generic function. Collapsing them into a single generic `fetch<T>` method on `GenericFetcher` eliminates the duplication and is the idiomatic Swift resolution. Both records are production code (all context flags false), so there is no test-fixture or codegen reason to preserve the duplication.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `fetchInt` and `fetchString` carry meaningfully different validation, caching key strategies, or serialization logic that merely happens to produce a 0.75 Jaccard score, the similarity could be coincidental and the type-specific names may be intentional API surface. However, the `_Plant_` filename prefix and the high Jaccard score make this unlikely.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015iTF18NvRD3U5sTev6aDVy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2399,
+    "output_tokens": 608,
+    "service_tier": "standard"
+  }
+}

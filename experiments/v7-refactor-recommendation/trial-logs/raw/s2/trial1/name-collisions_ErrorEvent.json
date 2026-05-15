@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:ErrorEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the cluster detector found only a name collision on `ErrorEvent` across two separate packages (`Playback` and `Analytics`) with no structural evidence to support merging \u2014 `jaccard`, `shared_field_count`, and `shared_ancestor` are all null. A `PlaybackAnalytics.swift`-local `ErrorEvent` alias in the `Playback` package and an `ErrorEvents.swift`-declared alias in the `Analytics` package almost certainly alias different underlying types serving distinct domain concerns (playback-layer errors vs. general analytics error events). Without field or signature overlap, unifying them risks conflating unrelated domain concepts.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": null, \\\"shared_field_count\\\": null, \\\"shared_ancestor\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Analytics\",\n        \"type_name\": \"ErrorEvent\",\n        \"remove_from\": [\n          \"Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift\"\n        ]\n      },\n      \"rationale\": \"If investigation reveals both aliases resolve to the same underlying type, the canonical definition in `Shared/Analytics/Sources/Analytics/Events/ErrorEvents.swift` (package `Analytics`) should be the single source of truth, and the alias at line 203 of `PlaybackAnalytics.swift` in the `Playback` package should be removed in favour of a direct import of `Analytics`.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WujRNbL5srqkjap7oM9uZ9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2299,
+    "output_tokens": 456,
+    "service_tier": "standard"
+  }
+}

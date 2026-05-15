@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"The second member, `MockNotificationMessage` in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`, carries `is_test: true`, marking it as a test-support fixture. The sole structural difference between the two interfaces is the `sending` ownership modifier on `makeMessage`'s `notification` parameter in the mock \u2014 a deliberate divergence that accommodates Swift concurrency transfer semantics in the test harness without altering the production protocol `AsyncNotificationMessage`. Merging or extracting a shared PAT would either force the `sending` keyword into the production API (a breaking semantic change) or strip it from the test fixture (defeating its purpose). The near-identical shape is therefore intentional: the mock mirrors the production protocol closely by design, not by accident.\",\n    \"evidence_quote\": \"makeMessage:(_ notification: Notification) -> Self?\\\" vs \\\"makeMessage:(_ notification: sending Notification) -> Self?\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QdSKdpK4NVMZB6vH5kkYiA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2504,
+    "output_tokens": 350,
+    "service_tier": "standard"
+  }
+}

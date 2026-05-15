@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NotificationMessage\",\n      \"associated_type\": \"Subject\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) share 3 of 3 members identically \u2014 `name: Notification.Name`, `makeNotification(_ message: Self, object: Subject?) -> Notification`, and a `makeMessage` factory \u2014 differing only in whether the `Notification` parameter is annotated `sending` (for the async variant). A base PAT `NotificationMessage` can capture the shared contract (`name`, `makeNotification`, and a non-`sending` `makeMessage`), while `AsyncNotificationMessage` and `MainActorNotificationMessage` can refine it by adding or overriding the `sending`-annotated overload via protocol inheritance or a constrained extension, eliminating the structural duplication. Both records are production code in the same `Core` package with no test, codegen, or mock flags, making consolidation safe.\",\n    \"evidence_quote\": \"shared_field_count\\\": 3\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\n          \"AsyncNotificationMessage\",\n          \"MainActorNotificationMessage\"\n        ],\n        \"moved_members\": [\n          \"name:Notification.Name\",\n          \"makeNotification:(_ message: Self, object: Subject?) -> Notification\"\n        ],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If a full PAT refactor is too disruptive, a simpler protocol-inheritance hierarchy where `NotificationMessage` declares the two shared members (`name` and `makeNotification`) and each child protocol adds its own `makeMessage` variant (with or without `sending`) achieves the same deduplication with less structural change, keeping `AsyncNotificationMessage` and `MainActorNotificationMessage` as distinct named contracts for call-site clarity.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015dGn36Cd5nyuczu3Cc8z7p",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2506,
+    "output_tokens": 658,
+    "service_tier": "standard"
+  }
+}

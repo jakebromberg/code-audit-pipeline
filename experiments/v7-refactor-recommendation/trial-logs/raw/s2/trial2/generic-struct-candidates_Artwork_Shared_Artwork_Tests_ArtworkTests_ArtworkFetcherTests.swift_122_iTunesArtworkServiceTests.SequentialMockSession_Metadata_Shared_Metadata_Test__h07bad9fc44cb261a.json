@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/MetadataTests/PlaycutMetadataServiceCachingTests.swift:79:MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true: 'iTunesArtworkServiceTests.SequentialMockSession' in Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift and 'MetadataMockWebSession' in Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift. Although they share the field 'requestedURLs:[URL]' and a structurally similar 'responses' field, the differing slot ('responses:[Data]' vs 'responses:[String: Data]') reflects genuinely different test-fixture contracts for their respective services. Extracting a generic shared mock into production-visible shared infrastructure would couple two independent test packages and risk obscuring the distinct response-lookup semantics each fixture intentionally encodes.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"ResponseStore\", \"constraint\": null }\n        ],\n        \"new_name\": \"SequentialMockSession\",\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"MetadataMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists (or is planned) that both the Artwork and Metadata packages depend on, a single generic struct parameterised over ResponseStore (instantiated as [Data] or [String: Data]) would eliminate the structural duplication while preserving each fixture's distinct response-lookup behaviour. The shared field 'requestedURLs:[URL]' and the single differing slot identified in structural_evidence make this a clean two-type-param collapse.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TFCJM3EtWfvravHj2KwqPa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2508,
+    "output_tokens": 602,
+    "service_tier": "standard"
+  }
+}

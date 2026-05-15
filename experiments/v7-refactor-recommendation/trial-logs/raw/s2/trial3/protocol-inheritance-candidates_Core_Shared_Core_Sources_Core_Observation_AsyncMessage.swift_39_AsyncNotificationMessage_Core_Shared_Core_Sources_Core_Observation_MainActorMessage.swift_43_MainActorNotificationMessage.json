@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"protocol-inheritance\",\n    \"specifics\": {\n      \"parent\": \"NotificationMessage\",\n      \"children\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ],\n      \"moved_members\": [\n        \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n        \"name:Notification.Name\"\n      ],\n      \"reuse_existing_swift_protocol\": false\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) share two identical members \u2014 `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name` \u2014 and differ only in the `makeMessage` factory: the async variant uses `sending Notification` while the main-actor variant uses plain `Notification`. Introducing a parent protocol `NotificationMessage` in the same `Core` package to hold the two shared members eliminates the duplication and makes the relationship between the two protocols explicit. The sole differing slot (`makeMessage`) remains in each child protocol as a specialisation requirement, preserving the concurrency-contract distinction that justifies having two protocols at all. Both records are production code (all context flags false), so no test-fixture or codegen exemption applies.\",\n    \"evidence_quote\": \"makeNotification:(_ message: Self, object: Subject?) -> Notification\\\",\\n        \\\"name:Notification.Name\\\"\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"NotificationMessage\",\n        \"method\": \"makeNotification(_ message: Self, object: Subject?) -> Notification\",\n        \"target_location\": \"Shared/Core/Sources/Core/Observation/NotificationMessage.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared parent protocol is introduced, a default implementation of `makeNotification` could be provided in a protocol extension, removing any boilerplate conformance code in both `AsyncMessage.swift` and `MainActorMessage.swift`. This is secondary to the inheritance refactor because the shared members are requirements, not implementations \u2014 the default-impl benefit only materialises after the parent protocol exists.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01M31aQbWUu8QuWAvtV7r1hM",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2453,
+    "output_tokens": 703,
+    "service_tier": "standard"
+  }
+}

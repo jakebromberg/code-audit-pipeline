@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"HumanReadableNamed\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\n        \"ShaderDirectiveStore.humanReadableName\",\n        \"ShaderDirectiveControlsDisclosure.humanReadableName\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) in the `Wallpaper` package implement a method with the same name and a high structural similarity (Jaccard 0.8), yet they live in distinct types \u2014 one in `Core/ShaderDirectiveStore.swift` and one in `DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift`. Introducing a `HumanReadableNamed` protocol with a `humanReadableName` requirement in the `Wallpaper` package's `Core` layer would unify the contract, allow call-sites to accept any `HumanReadableNamed` value without caring about the concrete type, and make the shared intent explicit. A default implementation could also be provided via a protocol extension if the bodies are sufficiently similar, reducing further duplication. Neither record is test, codegen, mock, or sample-app code, so there is no reason to treat this as intentional divergence.\",\n    \"evidence_quote\": \"ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"HumanReadableNamed\",\n        \"method\": \"humanReadableName\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `humanReadableName` bodies are near-identical (Jaccard 0.8 supports this), a protocol extension default implementation on `HumanReadableNamed` placed in the `Core` layer could eliminate the duplicate body in `ShaderDirectiveControls.swift` entirely, leaving only the protocol declaration and the conformance stubs.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SLeizNawMt8vDoW6Fw8n4g",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2445,
+    "output_tokens": 779,
+    "service_tier": "standard"
+  }
+}

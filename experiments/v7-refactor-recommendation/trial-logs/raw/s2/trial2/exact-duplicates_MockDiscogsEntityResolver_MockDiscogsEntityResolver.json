@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Two identical `MockDiscogsEntityResolver` type-alias-object declarations exist in separate packages \u2014 one in `Metadata` (Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:29) and one in `app:iOS` (WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:25) \u2014 with `shared_field_count: 4` and no differing slots, confirming they are exact duplicates. Since the canonical home for Discogs-related types is the `Metadata` package (which is already shared), the single authoritative definition should live there. The `app:iOS` copy should be removed and replaced with an import of the `Metadata` test support module. Neither record carries `is_codegen`, `is_mock`, or `is_sample_app` flags, so this is not intentional duplication.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both records have `is_test: false` set (the context flags do not mark them as test fixtures despite living in test files), and the structural pipeline may have mis-classified them. If the two mocks are used in isolation within their respective test targets and sharing test-support infrastructure across packages is undesirable, leaving them in place is acceptable. However, the exact structural match (4 shared fields, no differing slots) makes consolidation the stronger choice.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AR87Zbq7xPFYvqA88W7dUc",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2335,
+    "output_tokens": 515,
+    "service_tier": "standard"
+  }
+}

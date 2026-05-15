@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheLoadable\",\n      \"associated_type\": \"Payload\",\n      \"constraints\": [],\n      \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n    },\n    \"rationale\": \"Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single protocol with an `associatedtype Payload` and a `load:() async throws -> Payload` requirement would unify both interfaces without loss of type safety. `CacheLoader` would conform with `Payload == Data` and `MetadataLoader` with `Payload == PlaycutMetadata`. The new protocol should live in the `Caching` package (or a shared `Core`/`Shared` package if one exists) so both packages can depend on it.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"load:() async throws -> Data\\\"], \\\"b\\\": [\\\"load:() async throws -> PlaycutMetadata\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Caching\",\n        \"type_name\": \"AnyLoader\",\n        \"remove_from\": [\n          \"Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift\",\n          \"Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a PAT is considered too heavyweight for the current call-site complexity, the three shared members (`cacheKey:String`, `invalidate:() async`, `lastLoadedAt:Date?`) could be extracted into a non-generic base protocol `AnyLoader` in the `Caching` package, with `CacheLoader` and `MetadataLoader` inheriting from it. This avoids associated-type constraints at call sites but sacrifices the type-safe `load` return type unification.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0148UyCEsK94KjGkqr5hDZLx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2502,
+    "output_tokens": 648,
+    "service_tier": "standard"
+  }
+}

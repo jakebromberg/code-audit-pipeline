@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at each call site.\",\n      \"why_no_category_fits\": \"Neither `generic-parameterization` nor `subclass-lift` applies because both methods live on the same concrete class `_DequeStorage` with no inheritance hierarchy involved. `extract-to-common` does not apply because both methods are already co-located in the same file and package. The duplication is a classic 'symmetric operation' pattern (grow vs. shrink) where a private parameterised helper is the idiomatic Swift resolution, but that pattern does not map cleanly to any of the named categories.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.7143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. The high overlap strongly suggests a shared resize-decision skeleton that differs only in the direction of the capacity change. Because both methods are on the same type in the same file, extraction to a common package is unnecessary; a private parameterised helper within `_DequeStorage` is the minimal, idiomatic fix. Neither method is test, codegen, mock, or sample-app code, so intentional-duplication rules do not apply.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"intentional-specialization\"\n      },\n      \"rationale\": \"Grow and shrink are inverse operations on a deque's backing storage; their structural similarity may be intentional symmetry rather than accidental duplication. If the two methods diverge in subtle capacity-arithmetic details (e.g., different growth factors vs. shrink thresholds), merging them into a shared helper could obscure those semantics and introduce bugs, making no-action the safer choice until the full method bodies are reviewed.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013VzFBYyRZDF26oX8eJ5WC4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2368,
+    "output_tokens": 726,
+    "service_tier": "standard"
+  }
+}

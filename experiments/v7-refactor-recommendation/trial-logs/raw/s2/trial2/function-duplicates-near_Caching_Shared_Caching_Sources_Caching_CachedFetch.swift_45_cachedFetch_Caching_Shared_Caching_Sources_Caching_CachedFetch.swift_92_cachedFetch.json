@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"T\", \"constraint\": null }\n      ],\n      \"new_name\": \"cachedFetch\",\n      \"replaces\": [\n        \"cachedFetch (line 45, Shared/Caching/Sources/Caching/CachedFetch.swift)\",\n        \"cachedFetch (line 92, Shared/Caching/Sources/Caching/CachedFetch.swift)\"\n      ]\n    },\n    \"rationale\": \"Both functions are named `cachedFetch`, live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) within the `Caching` package, and share a Jaccard similarity of 0.70 \u2014 indicating substantial structural overlap with only moderate divergence. Because they are near-duplicates rather than exact duplicates, the most likely cause is that one overload was copy-pasted from the other and then lightly specialised. The idiomatic Swift resolution is to unify them into a single generic function parameterised over the differing type(s), eliminating the redundant body while preserving both call sites. Neither record carries any test, codegen, mock, or sample-app flag, so there is no intentional-duplication exemption.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Introduce a private shared helper function that captures the common ~70% body, and have both `cachedFetch` overloads (lines 45 and 92) delegate to it, retaining their distinct public signatures if the divergence is in parameter types rather than logic.\",\n        \"why_no_category_fits\": \"If the two overloads differ only in their parameter labels or argument types (not in generic-parameterisable logic), a full generic merge may not be possible without changing the public API; a private helper extraction would reduce duplication without altering call sites.\"\n      },\n      \"rationale\": \"A private helper extraction is safer when the 30% divergence between the two `cachedFetch` bodies (lines 45 and 92 in `Shared/Caching/Sources/Caching/CachedFetch.swift`) reflects genuinely distinct parameter contracts that cannot be collapsed into a single type parameter without breaking callers.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HmNEbkzqf1HjS22gz3xmaP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2375,
+    "output_tokens": 694,
+    "service_tier": "standard"
+  }
+}

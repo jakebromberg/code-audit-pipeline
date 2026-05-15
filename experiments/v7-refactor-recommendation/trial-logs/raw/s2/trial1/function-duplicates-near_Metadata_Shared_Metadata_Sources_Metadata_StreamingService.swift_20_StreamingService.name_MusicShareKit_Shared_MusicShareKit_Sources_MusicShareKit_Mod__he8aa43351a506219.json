@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:20:StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although `StreamingService.name` (Metadata package) and `MusicServiceIdentifier.displayName` (MusicShareKit package) share a high structural similarity (Jaccard 0.875), they are computed properties on two distinct domain types \u2014 `StreamingService` and `MusicServiceIdentifier` \u2014 that model related but separate concepts. The differing names (`name` vs `displayName`) and their residence in separate packages with no indicated shared ancestor suggest the similarity is a natural consequence of both being simple string-returning display-label properties rather than a true duplication worth collapsing. Extracting a shared protocol or default implementation would couple two packages that currently have no stated dependency relationship, introducing architectural overhead that outweighs the marginal gain from deduplicating a trivially small computed property body.\",\n    \"evidence_quote\": \"StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"DisplayNamed\",\n        \"associated_type\": null,\n        \"constraints\": [],\n        \"replaces\": [\"StreamingService.name\", \"MusicServiceIdentifier.displayName\"]\n      },\n      \"rationale\": \"If a shared dependency between Metadata and MusicShareKit is acceptable, a lightweight `DisplayNamed` protocol with a single `var displayName: String { get }` requirement could unify both properties and serve as a common abstraction for any future service-identifier types. However, this requires establishing a cross-package dependency and renaming `StreamingService.name` to `displayName`, which is a breaking API change not justified by the current evidence of only two conformers.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TvKNT4FH8yMuiLehCwL6zt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2387,
+    "output_tokens": 561,
+    "service_tier": "standard"
+  }
+}

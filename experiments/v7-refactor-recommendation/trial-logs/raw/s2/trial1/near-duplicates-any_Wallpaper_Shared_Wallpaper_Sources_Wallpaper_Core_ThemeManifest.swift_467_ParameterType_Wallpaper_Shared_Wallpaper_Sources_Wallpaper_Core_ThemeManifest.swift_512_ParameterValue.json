@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:467:ParameterType+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.8 between `ParameterType` (line 467) and `ParameterValue` (line 512), both residing in `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift`. However, the `members` array is empty, providing no field lists, method signatures, or context flags to ground a concrete refactor recommendation. `ParameterType` and `ParameterValue` are semantically distinct domain concepts \u2014 one describes the kind/shape of a parameter and the other its concrete value \u2014 so their structural similarity is most plausibly coincidental (e.g., both are small enums or structs with a similar number of cases). Without member-level evidence to confirm shared logic that could be safely unified, any action recommendation would be speculative.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ParameterDescriptor\",\n        \"children\": [\"ParameterType\", \"ParameterValue\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If member inspection reveals that `ParameterType` and `ParameterValue` share common properties (e.g., a display name, a raw identifier, or validation logic), introducing a shared `ParameterDescriptor` protocol in `ThemeManifest.swift` and having both types conform to it would eliminate the structural duplication while preserving their distinct semantic roles. This is only actionable once the empty `members` array is populated with actual field/method data.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MpipZorWYTUqmW4TxzPh87",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2123,
+    "output_tokens": 544,
+    "service_tier": "standard"
+  }
+}

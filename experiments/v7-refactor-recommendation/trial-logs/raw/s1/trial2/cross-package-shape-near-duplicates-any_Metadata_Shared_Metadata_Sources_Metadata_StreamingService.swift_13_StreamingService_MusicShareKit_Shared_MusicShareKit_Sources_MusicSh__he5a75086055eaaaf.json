@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the cross-package shape near-duplicate signal between `StreamingService` in `Shared/Metadata` and `MusicServiceIdentifier` in `Shared/MusicShareKit`.\n\nThe cluster_id encodes the key evidence:\n- `Shared/Metadata/Sources/Metadata/StreamingService.swift:13` \u2014 a type named `StreamingService`\n- `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68` \u2014 a type named `MusicServiceIdentifier`\n- Jaccard similarity of **0.8333** (very high structural overlap)\n- Both are in `Shared/` packages (neither is test, codegen, sample-app, or mock per the members array)\n- The names differ (`StreamingService` vs `MusicServiceIdentifier`) but the shapes are nearly identical\n\nThe high Jaccard score (0.83) strongly suggests these two types share most of their fields/cases. However, the names encode meaningfully different domain concepts \u2014 one is a \"streaming service\" entity, the other is a \"music service identifier\" \u2014 which could be coincidental structural overlap or a genuine consolidation opportunity. Since `members` is empty I cannot inspect field lists directly, but the cluster_id path and type names are sufficient to ground a recommendation. The two types live in sibling `Shared/` packages with no clear API/impl boundary distinction, making extraction to a common shared location the most idiomatic Swift answer. The alternative is no-action if the concepts are intentionally distinct.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Shared/Metadata\",\n      \"type_name\": \"StreamingService\",\n      \"remove_from\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68), meaning five of six structural slots are shared across two sibling Shared/ packages. Because both packages are already under the `Shared/` umbrella and neither record carries test, codegen, or sample-app flags, the duplication is not intentional by policy. The canonical definition should live in `Shared/Metadata` (where `StreamingService` already exists at line 13), and `MusicShareKit` should import and typealias or directly use that type, removing the near-duplicate `MusicServiceIdentifier` declaration. This eliminates the risk of the two definitions drifting on the one differing slot.\",\n    \"evidence_quote\": \"Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `StreamingService` and `MusicServiceIdentifier` encode genuinely distinct domain concepts \u2014 one representing a streaming platform entity and the other a lightweight identifier token used only within MusicTrack composition \u2014 the 0.8333 Jaccard overlap may be purely structural coincidence. In that case merging them would conflate unrelated abstractions and no action is warranted.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Xop3cnVP65CQM2zHufb53t",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2129,
+    "output_tokens": 965,
+    "service_tier": "standard"
+  }
+}

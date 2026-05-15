@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both records share the exact name `DisplayLinkSequence.AsyncIterator.init` and neither is flagged as test, codegen, or mock, one copy lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 a path that sits under `Examples/WallpaperSampleApp`, strongly suggesting it is a self-contained sample/debug HUD that intentionally re-implements a display-link async sequence locally rather than taking a dependency on the `DebugPanel` package. The two types belong to different packages (`DebugPanel` vs `Wallpaper`) with no indicated shared-dependency relationship, and the `fields_or_signature` arrays are both empty, providing no structural evidence beyond the name match to confirm the bodies are truly identical or that a shared abstraction is safe. Consolidation would couple a sample-app debug utility to a production `DebugPanel` package, which is likely undesirable; if consolidation is ever desired, the canonical home would be a new shared `DisplayLink` utility package, but that decision requires more context than this cluster supplies.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DisplayLinkSequence\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `DisplayLinkSequence.AsyncIterator.init` implementations are confirmed to be byte-for-byte identical and the `WallpaperSampleApp` is willing to take a dependency on `DebugPanel` (or a new shared utility package), the duplicate in `DebugHUD.swift` could be deleted and the type imported from `DebugPanel`. However, this couples a sample-app file to a production package, so it should only be pursued if `DisplayLinkSequence` is intended as a reusable public utility.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Hixa9EZ2V4fk2skCN2zaf9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 689,
+    "service_tier": "standard"
+  }
+}

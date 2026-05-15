@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DisplayLinkSequence\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Two exact-duplicate `DisplayLinkSequence.AsyncIterator.init` initializers exist independently in `DebugPanel` (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185) and `Wallpaper` (Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209). Neither record is marked is_test, is_codegen, is_mock, or is_sample_app, so this is live production code duplicated across packages. The `DebugPanel` package is the more natural canonical home because `DisplayLinkSequence` is already defined there; the `Wallpaper` package's `DebugHUD.swift` copy should be removed and replaced with an import of `DebugPanel`. Note that the `DebugHUD.swift` file lives under an `Examples/WallpaperSampleApp` path, which slightly reduces urgency, but the context flag `is_sample_app` is explicitly `false`, so it is treated as production code per the cluster data.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"Although `is_sample_app` is flagged false in the cluster data, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` strongly suggests this copy lives inside a sample/example application. If the build system intentionally excludes this target from the main product and the duplication is accepted as a self-contained demo convenience, no action is needed. This alternative should be confirmed by checking whether the `WallpaperSampleApp` target is shipped or is purely a developer example.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Cfqr9spBpcRPSzSwaaQns5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 705,
+    "service_tier": "standard"
+  }
+}

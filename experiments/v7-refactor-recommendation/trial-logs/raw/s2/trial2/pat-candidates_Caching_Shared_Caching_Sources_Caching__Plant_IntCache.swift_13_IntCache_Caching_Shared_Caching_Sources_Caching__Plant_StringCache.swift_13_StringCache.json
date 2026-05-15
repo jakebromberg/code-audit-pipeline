@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"Cache\",\n      \"associated_type\": \"Key\",\n      \"constraints\": [\"Hashable\"],\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift:13`) and `IntCache` (in `_Plant_IntCache.swift:13`) within the `Caching` package share an identical structural shape \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[K: CacheEntry]` \u2014 differing only in the key type of `storage` (`String` vs `Int`). This is a textbook PAT candidate: the sole differing slot is the dictionary key type, which can be abstracted as an `associatedtype Key: Hashable`. Introducing a `Cache` protocol with `associatedtype Key: Hashable` and a generic `Cache<Key: Hashable>` struct (or a protocol-backed design) eliminates the duplication entirely while preserving type safety for both `String`- and `Int`-keyed use sites. The `_Plant_` filename prefix suggests these were auto-generated from a template, making a proper generic abstraction the correct long-term replacement.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n        ],\n        \"new_name\": \"Cache\",\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"Rather than introducing a protocol with an associated type, a single generic struct `Cache<Key: Hashable>` in `Shared/Caching/Sources/Caching/Cache.swift` directly replaces both `StringCache` and `IntCache` with zero protocol overhead. `StringCache` becomes a typealias `typealias StringCache = Cache<String>` and `IntCache` becomes `typealias IntCache = Cache<Int>` for backward compatibility, after which the two `_Plant_` files can be deleted.\"\n    },\n    \"confidence\": 0.91\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WoMETKYcR57SW3E1knj9Mn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2496,
+    "output_tokens": 672,
+    "service_tier": "standard"
+  }
+}

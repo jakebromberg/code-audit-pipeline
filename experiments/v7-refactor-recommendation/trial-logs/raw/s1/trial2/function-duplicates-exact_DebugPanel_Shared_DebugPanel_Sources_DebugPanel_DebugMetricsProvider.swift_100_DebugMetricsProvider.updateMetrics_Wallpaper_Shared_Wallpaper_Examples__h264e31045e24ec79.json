@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the two members carefully.\n\n**Key observations:**\n1. One member lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a production source file.\n2. The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample app location.\n3. Neither record has `is_sample_app=true` set in context flags, but the file path `Examples/WallpaperSampleApp/Sources/` is a canonical sample-app directory. The `DebugHUD.swift` file in the Wallpaper sample app is almost certainly a local copy of the debug metrics provider for standalone demo purposes.\n4. The `is_sample_app` flag being `false` is suspicious but the path evidence is unambiguous \u2014 `Examples/WallpaperSampleApp` is a sample app mirror of the canonical implementation in `DebugPanel`.\n5. The better long-term fix would be for the sample app to import `DebugPanel` directly, but that is a dependency restructuring decision, not a simple refactor within the current shape.\n\nGiven the path evidence strongly indicating a sample-app mirror, and the decision rule that records under `Examples/` qualify as `sample-app-mirror`, I'll recommend no-action with that reason class, while noting the alternative of making the sample app depend on `DebugPanel` directly.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.updateMetrics` lives in the canonical production location `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`), while the duplicate resides in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package `Wallpaper`). The `Examples/WallpaperSampleApp/` path segment is a textbook sample-app directory, indicating the second copy was inlined into the standalone demo to avoid adding a hard dependency on the `DebugPanel` package. This is a common and intentional pattern for self-contained example targets. Merging or extracting would either break the sample app's self-containment or require restructuring its dependency graph, neither of which is warranted by this signal alone.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` target is willing to take a dependency on the `DebugPanel` package, the inlined copy of `updateMetrics` in `DebugHUD.swift` could be deleted and the sample app could import `DebugMetricsProvider` directly from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`, eliminating the divergence risk. This is only viable if the sample app's self-contained build constraint is relaxed.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HcMrQoc4Cur9oEkyV5EKXb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 1018,
+    "service_tier": "standard"
+  }
+}

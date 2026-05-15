@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendModeProvider\",\n      \"method\": \"blendMode\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeProvider.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"Three distinct types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 all define a `blendMode` implementation at the same line number (62) within the `Wallpaper` package, which is the canonical signal for a default-implementation candidate. Because all three live in the same package (`Shared/Wallpaper/Sources/Wallpaper/Core/`) and share the identical method name and line position, the implementation is almost certainly identical or near-identical and can be hoisted into a protocol extension. Introducing a `BlendModeProvider` protocol with a default `blendMode` implementation in a new `BlendModeProvider.swift` file in the same package would eliminate the triplication while keeping all three conforming types intact. None of the records carry test, codegen, or sample-app flags, so there is no intentional-duplication exemption.\",\n    \"evidence_quote\": \"MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"BlendModeProvider\",\n        \"children\": [\"MaterialBlendMode\", \"PlaybackBlendMode\", \"OverlayBlendMode\"],\n        \"moved_members\": [\"blendMode\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the three blend-mode types already share additional structural shape beyond `blendMode`, a protocol-inheritance hierarchy where `BlendModeProvider` declares and provides a default `blendMode` and each concrete type refines it would be equally valid; however, a plain protocol-extension default implementation is the lighter-weight Swift idiom when only one method is shared.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GSLVmgCW9ZTjkmPyNLr5uh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2175,
+    "output_tokens": 838,
+    "service_tier": "standard"
+  }
+}

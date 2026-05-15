@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four members are exact duplicates of the `data` method, each nested inside a per-test-class `SequentialMockSession` inner type (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession` \u00d7 2) within the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` in the `Artwork` package. The duplication arises because each test class re-declares an identical mock helper rather than sharing a single top-level `SequentialMockSession` type. Extracting `SequentialMockSession` as a single file-scope (or test-support-module-scope) type within the `Artwork` test target would eliminate all four redundant declarations and make the mock reusable across all service test classes. Note: although the file path contains `Tests/`, the `is_test` context flag is recorded as `false` on all members, so the test-fixture no-action rule does not strictly apply; the duplication is nonetheless test-infrastructure code and the refactor is low-risk.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"All four duplicate `data` methods live in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`, a test file. Even though `is_test` is recorded as `false`, the path and naming convention strongly suggest these are test fixtures. If the pipeline's `is_test` flag is unreliable for nested test-class helpers, the duplication may be considered intentional test scaffolding and left in place.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RuJS6VYRPb1yRU6UF6KiHu",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2803,
+    "output_tokens": 810,
+    "service_tier": "standard"
+  }
+}

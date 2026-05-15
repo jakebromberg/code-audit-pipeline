@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MetadataRepository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ArtistRepository\", \"ReleaseRepository\"]\n    },\n    \"rationale\": \"Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of `resolve:(id: Int) async throws -> <Entity>`. This is the canonical PAT pattern: a single protocol with an `associatedtype Entity` and a `resolve(id: Int) async throws -> Entity` requirement would unify both interfaces, eliminate the structural duplication, and allow generic consumers to operate over any `MetadataRepository`. The `shared_field_count: 4` with exactly one differing slot confirms the fit is tight. Both files are production code (`is_codegen: false`, `is_test: false`, `is_mock: false`) in the same package, so the refactor carries no cross-boundary risk.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"AnyMetadataRepository\",\n        \"remove_from\": [\n          \"Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift\",\n          \"Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a PAT is considered too constraining for call-site ergonomics (e.g., existential usage is needed), a type-erased `AnyMetadataRepository` wrapper carrying the three shared fields as concrete stored properties could be extracted to the `Metadata` package instead, with `ArtistRepository` and `ReleaseRepository` reduced to thin specialisations. This is less idiomatic Swift 5.7+ but avoids `any MetadataRepository` existential overhead at call sites.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NLxmJ7emrEyQ7b7vATbFMh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 628,
+    "service_tier": "standard"
+  }
+}

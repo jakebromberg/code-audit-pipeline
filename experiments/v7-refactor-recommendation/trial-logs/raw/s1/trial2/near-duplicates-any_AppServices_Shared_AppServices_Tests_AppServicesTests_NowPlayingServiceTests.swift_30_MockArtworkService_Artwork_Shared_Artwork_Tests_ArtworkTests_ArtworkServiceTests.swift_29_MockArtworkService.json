@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:AppServices:Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:30:MockArtworkService+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:29:MockArtworkService\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records are mock types named `MockArtworkService` living under test file paths (`NowPlayingServiceTests.swift` and `ArtworkServiceTests.swift`). The cluster's Jaccard similarity of 0.75 is consistent with two test-only mock doubles that share most of their shape because they stub the same underlying service interface. Deduplicating test mocks across package boundaries (`AppServices` vs `Artwork`) would couple unrelated test suites and is generally considered an anti-pattern in Swift package layouts. No members list is present to confirm divergence, so the safer default is no-action.\",\n    \"evidence_quote\": \"Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:30:MockArtworkService+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:29:MockArtworkService\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"MockArtworkService\",\n        \"remove_from\": [\n          \"Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift\",\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `MockArtworkService` definitions are confirmed to be structurally identical (Jaccard 0.75 is close but not exact), a single shared mock could be extracted into a test-support target within the `Artwork` package and re-exported to `AppServices` tests. This would eliminate the near-duplication while keeping the mock co-located with the real `ArtworkService` it doubles. However, this introduces a test-time cross-package dependency and should only be pursued if the diverging 25% of shape is incidental rather than intentional.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017vKdLn71mQ97b88g2rUt8J",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2114,
+    "output_tokens": 600,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two initializers live in structurally distinct targets (app:WatchXYC in WXYC/WatchXYC/PlayerPage.swift and app:iOS in WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift) and carry different names and signatures: NowPlayingEntry.init(_:) vs NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:). The Jaccard similarity of 0.778 reflects a near-duplicate signal in body shape, but the types themselves serve platform-specific widget/timeline roles (watchOS vs iOS WidgetKit) whose initialization logic is expected to converge structurally while remaining intentionally separate. Neither record is test, codegen, mock, or sample-app code, but the platform boundary between WatchXYC and the iOS NowPlayingWidget makes unification inadvisable without evidence of a shared dependency target that both already consume.\",\n    \"evidence_quote\": \"\\\"package\\\": \\\"app:WatchXYC\\\" ... \\\"file\\\": \\\"WXYC/WatchXYC/PlayerPage.swift\\\" ... \\\"name\\\": \\\"NowPlayingEntry.init(_:)\\\" ... \\\"package\\\": \\\"app:iOS\\\" ... \\\"file\\\": \\\"WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift\\\" ... \\\"name\\\": \\\"NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)\\\" ... \\\"jaccard\\\": 0.7777777777777778\",\n    \"alternative\": null,\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01G3ZcoszkK9YDP1YLJweZ3A",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2428,
+    "output_tokens": 532,
+    "service_tier": "standard"
+  }
+}

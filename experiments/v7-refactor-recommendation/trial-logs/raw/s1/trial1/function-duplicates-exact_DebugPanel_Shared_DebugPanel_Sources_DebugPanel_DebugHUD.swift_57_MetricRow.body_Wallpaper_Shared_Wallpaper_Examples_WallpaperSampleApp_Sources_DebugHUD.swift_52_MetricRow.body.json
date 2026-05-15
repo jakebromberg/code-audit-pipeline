@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' in the Wallpaper package \u2014 a path that contains 'Examples/WallpaperSampleApp', which is a sample-app context. The canonical copy resides in 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' (DebugPanel package). The sample app almost certainly copied or re-implemented MetricRow.body locally to remain self-contained and avoid a hard dependency on the DebugPanel package, which is the standard pattern for example/sample targets. Consolidating the two would couple the sample app to the production DebugPanel module, undermining its illustrative independence.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"MetricRow\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever allowed to depend on DebugPanel, the duplicate MetricRow.body in the sample app could be deleted and the type imported directly from 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift', eliminating the exact duplication. This is only viable if the sample-app isolation constraint is relaxed.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012kWcYogv4TvEiiGk8LKy7G",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2401,
+    "output_tokens": 566,
+    "service_tier": "standard"
+  }
+}

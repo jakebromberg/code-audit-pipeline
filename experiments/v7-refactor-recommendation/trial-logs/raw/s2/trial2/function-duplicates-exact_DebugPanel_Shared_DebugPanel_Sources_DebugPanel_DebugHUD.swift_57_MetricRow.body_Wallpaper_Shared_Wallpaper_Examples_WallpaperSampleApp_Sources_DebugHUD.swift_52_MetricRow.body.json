@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' in the Wallpaper package \u2014 a path that contains 'Examples/WallpaperSampleApp', which is a canonical sample-app location. The canonical copy resides in 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' (package: DebugPanel). It is standard practice to copy or re-implement a debug HUD view inside a sample app so the sample app remains self-contained and does not take a hard dependency on the DebugPanel library target. Although neither record carries is_sample_app=true in its context flags, the file path evidence ('Examples/WallpaperSampleApp') is sufficient to classify this as a deliberate sample-app mirror rather than an accidental duplication.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"MetricRow\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever allowed to depend on DebugPanel, the duplicate MetricRow.body computed property in the sample app could be deleted and the app could import MetricRow directly from 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift'. This would eliminate the exact duplication, but it introduces a cross-package dependency from a sample app into a library, which is typically undesirable.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014dsMUXx1gmiCp1EE3XMmWt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2401,
+    "output_tokens": 607,
+    "service_tier": "standard"
+  }
+}

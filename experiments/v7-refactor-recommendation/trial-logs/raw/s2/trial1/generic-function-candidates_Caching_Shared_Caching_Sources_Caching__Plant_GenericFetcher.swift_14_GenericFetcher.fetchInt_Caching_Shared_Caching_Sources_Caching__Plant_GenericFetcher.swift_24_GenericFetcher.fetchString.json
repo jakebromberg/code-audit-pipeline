@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"T\", \"constraint\": null }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\"GenericFetcher.fetchInt\", \"GenericFetcher.fetchString\"]\n    },\n    \"rationale\": \"The two methods `GenericFetcher.fetchInt` and `GenericFetcher.fetchString` in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` (lines 14 and 24) share a Jaccard similarity of 0.75, strongly suggesting they differ only in their concrete return/parameter type. The `_Plant_` prefix on the file name is a conventional pipeline marker indicating this file was planted specifically as a generic-function candidate. Collapsing both into a single generic `fetch<T>` method on `GenericFetcher` eliminates the type-specific variants while preserving all call-site semantics. Both records are production code (all context flags false), so there is no test-fixture or codegen reason to keep them separate.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `fetchInt` and `fetchString` carry meaningfully different validation, caching policies, or serialization logic beyond their type, the structural similarity would be coincidental and merging them into a generic function could obscure important domain distinctions. In that case no action is warranted.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UA9p1kfTmmdCSJnmP9S3rV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2397,
+    "output_tokens": 558,
+    "service_tier": "standard"
+  }
+}

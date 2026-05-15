@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) share the same structural shape (3 shared fields, empty `fields_or_signature` list, both `kind: interface`), their names and locations signal distinct domain roles: one is a production `@MainActor`-bound notification message type, while the other is a test-plant mock living in the `CoreTesting` sub-package. The `_Plant_` prefix in the mock's filename is a strong conventional signal that this type is a generated or hand-planted test double, not an accidental duplicate. Merging or extracting a common base would conflate production and test-support concerns, and the structural coincidence of having the same field count is insufficient justification for a refactor given the clear semantic divergence.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KVCoyuqG9eVpekn5ajzmhs",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2311,
+    "output_tokens": 347,
+    "service_tier": "standard"
+  }
+}

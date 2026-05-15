@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `MockDiscogsEntityResolver.resolveRelease` methods are exact duplicates (query: function-duplicates-exact) living in test files across two packages: `Metadata` (Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45) and `app:iOS` (WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41). Because the mock is already present in the `Metadata` package \u2014 which is the natural home for anything related to Discogs entity resolution \u2014 the `app:iOS` copy should be removed and the test target in `app:iOS` should instead import and reuse the shared mock from `Metadata`. This eliminates the risk of the two copies drifting apart as the `resolveRelease` contract evolves. Note that although both records carry `is_test: false` in the context flags, the files are clearly located under `Tests/` directories, suggesting a metadata tagging gap rather than production code.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `app:iOS` cannot or should not take a test-support dependency on the `Metadata` package's test target, keeping the duplicate local to each test target is acceptable. The two mocks serve different test suites (DiscogsMarkupParserTests vs. DiscogsFormatterTests) and may need to diverge independently as each suite grows.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JreqnihejXqmVBNS4F56PY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 659,
+    "service_tier": "standard"
+  }
+}

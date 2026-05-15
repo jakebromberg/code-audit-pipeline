@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"BlendModeDisplayable\",\n      \"associated_type\": null,\n      \"constraints\": [\"RawRepresentable\", \"CaseIterable\"],\n      \"replaces\": [\"MaterialBlendMode.displayName\", \"PlaybackBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n    },\n    \"rationale\": \"All three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently defines an identical `displayName` computed property at line 41 of their respective files. Introducing a `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension (e.g., in a new `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift`) eliminates all three duplicate bodies. Because the three types are enum-like blend modes sharing the same structural shape, a protocol with a default implementation is the most idiomatic Swift solution; no associated type is needed since `displayName` is a plain `String` property.\",\n    \"evidence_quote\": \"PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a full PAT feels heavyweight for a single property, the same outcome can be achieved by declaring `BlendModeDisplayable` as a simple protocol with a `var displayName: String { get }` requirement and providing the shared implementation via a `protocol extension` default. Each of the three blend-mode types then conforms with zero additional code, and the three duplicate bodies at line 41 in MaterialBlendMode.swift, PlaybackBlendMode.swift, and _Plant_OverlayBlendMode.swift are deleted.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XkePwLMHPeSdJfim5fNRw2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2600,
+    "output_tokens": 868,
+    "service_tier": "standard"
+  }
+}

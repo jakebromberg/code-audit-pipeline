@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:16:DebugMetricsProvider+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:63:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, line 63) carries `is_sample_app: true`, placing it squarely under the sample-app-mirror rule. The near-identical shape (12 shared fields, only a trivial `MTLDevice?` vs `(any MTLDevice)?` spelling difference) is consistent with the sample app having copy-pasted the canonical `DebugMetricsProvider` from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` for a self-contained demo rather than taking a real dependency on the `DebugPanel` package. Extracting a PAT or shared protocol here would couple the sample app to production infrastructure, which is contrary to the purpose of an isolated example target. No refactor is warranted.\",\n    \"evidence_quote\": \"is_sample_app: true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever promoted to a real integration target (not a standalone example), the sample-app copy should be deleted and the app should import `DebugMetricsProvider` directly from the `DebugPanel` package, eliminating the 12-field duplication and the `MTLDevice?` spelling divergence.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011W7nkPUzPaEALNGv86ZHGA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2735,
+    "output_tokens": 567,
+    "service_tier": "standard"
+  }
+}

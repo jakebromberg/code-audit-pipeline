@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"ShaderDirectiveNamed\",\n      \"method\": \"func humanReadableName() -> String\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) live in the same `Wallpaper` package and share a Jaccard similarity of 0.8, indicating near-identical implementations. Rather than introducing a generic free function (which would require passing the relevant state explicitly), the more idiomatic Swift approach is to define a protocol \u2014 e.g., `ShaderDirectiveNamed` \u2014 with a default implementation of `humanReadableName()` in a protocol extension housed in `ShaderDirectiveStore.swift` (the Core layer), then have both types conform to it and delete their individual implementations. This keeps the shared logic in one place within the package's Core layer, which both the Core and DebugUI sub-modules already depend on.\",\n    \"evidence_quote\": \"ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"ShaderDirectiveNamed\" }\n        ],\n        \"new_name\": \"humanReadableName\",\n        \"replaces\": [\n          \"ShaderDirectiveStore.humanReadableName\",\n          \"ShaderDirectiveControlsDisclosure.humanReadableName\"\n        ]\n      },\n      \"rationale\": \"A generic free function `humanReadableName<T: ShaderDirectiveNamed>(_ value: T) -> String` would also unify the two implementations without requiring a protocol extension default, but this is less idiomatic Swift than a protocol with a default implementation and would require call-site changes throughout the Wallpaper package.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01J2ycyMzApGse7HZfGMmWQQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2445,
+    "output_tokens": 776,
+    "service_tier": "standard"
+  }
+}

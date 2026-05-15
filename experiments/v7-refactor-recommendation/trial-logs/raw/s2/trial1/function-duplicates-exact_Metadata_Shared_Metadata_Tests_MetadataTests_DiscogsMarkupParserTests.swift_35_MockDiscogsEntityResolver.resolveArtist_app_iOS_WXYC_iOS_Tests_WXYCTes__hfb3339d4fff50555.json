@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records carry all context flags as false (is_test=false, is_mock=false, is_codegen=false, is_sample_app=false), yet the files are located under test directories ('Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' and 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift') and the type name 'MockDiscogsEntityResolver' strongly implies these are test-support mock objects. The two mocks live in separate packages ('Metadata' and 'app:iOS') and serve distinct test suites (markup parsing vs. formatter tests), so their structural coincidence is a natural consequence of both needing a minimal stub of the same protocol method rather than a true unintentional duplication. Consolidating them into a shared test helper would introduce a cross-package test dependency that is unlikely to be warranted given the narrow scope of each mock.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the 'app:iOS' package already depends on 'Metadata', a shared test-support module within 'Metadata' (e.g., MetadataTestSupport) could host a single canonical 'MockDiscogsEntityResolver' that both test suites import, eliminating the duplicate 'resolveArtist' implementation. However, this is only worthwhile if the mock grows in complexity; at present the empty fields_or_signature list suggests it is trivially small.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011N8UrTCz4jZBqJixyPz6eL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2413,
+    "output_tokens": 680,
+    "service_tier": "standard"
+  }
+}

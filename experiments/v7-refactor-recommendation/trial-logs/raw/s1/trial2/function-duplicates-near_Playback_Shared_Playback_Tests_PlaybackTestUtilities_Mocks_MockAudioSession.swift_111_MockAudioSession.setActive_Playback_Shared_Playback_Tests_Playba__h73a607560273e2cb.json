@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:111:MockAudioSession.setActive+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:65:MockAudioSession.setActive\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both members of this cluster are in the same mock file `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift` within the `Playback` package, and both carry `is_test: true` and `is_mock: true`. The two `MockAudioSession.setActive` methods at lines 65 and 111 are near-duplicates (Jaccard 0.83) but live inside a test mock type where overloaded or overridden `setActive` variants are a common and intentional pattern \u2014 for example, one overload may accept different argument labels or simulate different error conditions. Collapsing them risks breaking the mock's ability to capture distinct call signatures under test.\",\n    \"evidence_quote\": \"is_mock\\\": true,\\n        \\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Da7NCYQ5Lveb3swc1pLqkV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2412,
+    "output_tokens": 357,
+    "service_tier": "standard"
+  }
+}

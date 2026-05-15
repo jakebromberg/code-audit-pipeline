@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the two members carefully:\n\n- Member 1: `DebugPanel` package, `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`, `is_sample_app: false`\n- Member 2: `Wallpaper` package, `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, `is_sample_app: false` (but the file path contains `Examples/WallpaperSampleApp/`)\n\nThe second file lives under `Examples/WallpaperSampleApp/` \u2014 this is a sample app path, even though `is_sample_app` is flagged `false`. The structural signal is an exact function duplicate (`function-duplicates-exact`) of `DebugMetricsProvider.updateMetrics` across two packages. The `Wallpaper` sample app appears to have copied the implementation from `DebugPanel` rather than depending on it. However, since the canonical implementation already exists in `DebugPanel`, the sample app copy is a mirror \u2014 the sample app should simply import and reuse the `DebugPanel` implementation rather than duplicating it. The path `Examples/WallpaperSampleApp/` strongly indicates sample-app context regardless of the flag value.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which is unambiguously under an Examples/SampleApp directory tree. The duplication of 'DebugMetricsProvider.updateMetrics' in that file is consistent with a self-contained sample app that intentionally re-implements or copies debug instrumentation rather than taking a hard dependency on the 'DebugPanel' package. Although 'is_sample_app' is flagged false on both records, the file path 'Examples/WallpaperSampleApp' overrides that flag per the decision rules. Forcing the sample app to depend on 'DebugPanel' solely to de-duplicate one method would couple an illustrative example to a non-trivial internal package, which is typically undesirable.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever promoted beyond a throwaway example and already depends on 'DebugPanel', the duplicate 'updateMetrics' implementation in 'DebugHUD.swift' (line 131) should be deleted and the canonical one in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (line 100) used directly, eliminating the exact-duplicate divergence risk.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012b2MPbL4MXhy3E4KRHKvuw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 928,
+    "service_tier": "standard"
+  }
+}

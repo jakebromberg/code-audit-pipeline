@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DebugMetricsProvider\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"The method `DebugMetricsProvider.measureMemoryUsage` is duplicated exactly between `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (line 148, package `DebugPanel`) and `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (line 175, package `Wallpaper`). The canonical home is already the `DebugPanel` package, which owns the `DebugMetricsProvider` type by name. The `Wallpaper` sample app's `DebugHUD.swift` should be updated to import `DebugPanel` and call the existing implementation rather than re-declaring it. Neither record carries `is_codegen`, `is_test`, or `is_mock` flags, so this is live production duplication. Although the `DebugHUD.swift` path contains `Examples/WallpaperSampleApp`, the context flag `is_sample_app` is explicitly `false`, so the sample-app-mirror exemption does not apply.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"The duplicate lives under `Examples/WallpaperSampleApp/`, which structurally suggests a sample-app mirror. However, because `is_sample_app` is explicitly `false` on that record, this exemption is not formally triggered, making extract-to-common the stronger recommendation.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015ogkjVQLkEZPWZYBqwvEG9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2433,
+    "output_tokens": 659,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        {\n          \"name\": \"T\",\n          \"constraint\": null\n        }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\n        \"GenericFetcher.fetchInt\",\n        \"GenericFetcher.fetchString\"\n      ]\n    },\n    \"rationale\": \"The two methods `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` share a near-duplicate body (Jaccard 0.75) and differ only in their concrete return type \u2014 `Int` vs `String`. The `_Plant_` prefix in the filename strongly suggests this file was planted as a refactoring seed to illustrate exactly this pattern. Collapsing both into a single generic function `fetch<T>() -> T` (or with an appropriate constraint such as `T: Decodable` if the body warrants it) eliminates the duplication and makes the intent of the `GenericFetcher` type self-evident. Both records are production code with no test, mock, codegen, or sample-app flags, so the change is safe to make directly.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `fetchInt` and `fetchString` have meaningfully different internal logic beyond the return type (e.g., different cache key strategies or serialisation paths), the 0.75 Jaccard similarity may reflect coincidental structural overlap rather than true duplication, and keeping them separate preserves clarity of intent. However, the `_Plant_` filename prefix makes this unlikely.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AkCdtktBZbPGtJqHaHzf2z",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2399,
+    "output_tokens": 626,
+    "service_tier": "standard"
+  }
+}

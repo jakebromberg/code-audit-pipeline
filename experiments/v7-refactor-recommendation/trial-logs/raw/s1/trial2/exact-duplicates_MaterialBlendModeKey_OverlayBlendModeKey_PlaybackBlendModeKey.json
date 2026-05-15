@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"Mode\", \"constraint\": null }\n      ],\n      \"new_name\": \"BlendModeKey\",\n      \"replaces\": [\n        \"PlaybackBlendModeKey\",\n        \"MaterialBlendModeKey\",\n        \"OverlayBlendModeKey\"\n      ]\n    },\n    \"rationale\": \"All three type-alias-objects \u2014 `PlaybackBlendModeKey` (PlaybackBlendMode.swift:89), `MaterialBlendModeKey` (MaterialBlendMode.swift:89), and `OverlayBlendModeKey` (_Plant_OverlayBlendMode.swift:89) \u2014 are exact duplicates residing in the same `Wallpaper` package, all at line 89, with `shared_field_count: 1` and no differing slots. Because they differ only in the blend-mode domain they tag, a single generic `BlendModeKey<Mode>` type parameterised on the mode type would unify all three without loss of type safety. The three concrete aliases can then be re-expressed as `typealias PlaybackBlendModeKey = BlendModeKey<PlaybackBlendMode>` etc., preserving call-site compatibility while eliminating the structural duplication.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendModeKey\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a generic parameterisation is considered over-engineering for a simple environment-key alias, a single non-generic `BlendModeKey` could be extracted to a shared file within the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKey.swift`) and the three per-mode files reduced to plain typealiases pointing at it, keeping all three files but removing the structural duplication.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01H8hBuuxWqoHh7PCmN8CmPG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2498,
+    "output_tokens": 684,
+    "service_tier": "standard"
+  }
+}

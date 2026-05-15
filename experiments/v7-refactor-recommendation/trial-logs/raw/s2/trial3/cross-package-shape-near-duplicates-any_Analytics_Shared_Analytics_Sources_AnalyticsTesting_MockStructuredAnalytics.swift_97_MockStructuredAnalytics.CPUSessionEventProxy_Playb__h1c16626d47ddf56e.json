@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no grounded field-level evidence to act on. One participant lives under `AnalyticsTesting` (a test/mock support target, as signalled by the `MockStructuredAnalytics` prefix and the `Testing` path segment), while the other is a production type in `PlaybackCore`; this straddles a test-support boundary that is typically intentional. The Jaccard similarity of 0.875 is suggestive but, without concrete member lists, cannot be distinguished from a coincidental structural overlap between a mock proxy and its real counterpart. Recommending any refactor without member-level evidence risks conflating a deliberately thin mock with the real domain type.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Analytics\",\n        \"type_name\": \"CPUSessionEvent\",\n        \"remove_from\": [\n          \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift\",\n          \"Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift\"\n        ]\n      },\n      \"rationale\": \"If a future analysis pass populates the `members` array and confirms that `CPUSessionEventProxy` in `MockStructuredAnalytics` and `CPUSessionEvent` in `PlaybackAnalytics` share the same fields (Jaccard 0.875 hints at this), extracting a canonical `CPUSessionEvent` value type into the `Analytics` shared package and having `PlaybackCore` depend on it would eliminate the near-duplication. The mock could then simply re-export or wrap the shared type.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JJBj6crnwRDFDWS1Ceh9tm",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2135,
+    "output_tokens": 635,
+    "service_tier": "standard"
+  }
+}

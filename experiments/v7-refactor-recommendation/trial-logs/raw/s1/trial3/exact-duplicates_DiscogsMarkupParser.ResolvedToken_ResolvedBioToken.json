@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsMarkupParser.ResolvedToken+ResolvedBioToken\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Determine which of the two type aliases is the canonical definition and delete the other, updating all call sites to use the surviving name. Given that `ResolvedBioToken` lives in its own dedicated file (`ResolvedBioToken.swift`) and has a top-level, non-nested name, it is the better candidate to keep. `DiscogsMarkupParser.ResolvedToken` (line 89 of `DiscogsMarkupParser.swift`) should be replaced with a `typealias ResolvedToken = ResolvedBioToken` inside `DiscogsMarkupParser` \u2014 or removed entirely \u2014 so that the single shared-field-count-9 union type is defined exactly once in the `Metadata` package.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-union` declarations in the same package (`Metadata`), not conforming types or protocols, so none of the structured categories (protocol-inheritance, default-implementation, generic-parameterization, subclass-lift, etc.) apply. The duplication is a straightforward alias-vs-alias redundancy: one nested alias inside `DiscogsMarkupParser` and one top-level alias in a dedicated file define the same 9-case union. The correct fix is a simple deduplication/redirect, which is closer to 'extract-to-common' in spirit but does not require moving anything to a new package \u2014 both already live in `Metadata`. 'extract-to-common' would misrepresent the action because no cross-package extraction is needed.\"\n    },\n    \"rationale\": \"Both `DiscogsMarkupParser.ResolvedToken` (line 89, `DiscogsMarkupParser.swift`) and `ResolvedBioToken` (line 20, `ResolvedBioToken.swift`) are `type-alias-union` declarations in the same `Metadata` package with identical structure (`shared_field_count: 9`, `jaccard: null` indicating exact match). Neither record carries any test, codegen, mock, or sample-app flag, so the duplication is not intentional by policy. Maintaining two names for the same 9-case union type creates silent divergence risk: a future change to one alias will not automatically propagate to the other, and consumers may inadvertently depend on the nested name `DiscogsMarkupParser.ResolvedToken` rather than the public top-level `ResolvedBioToken`.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-union\\\", \\\"shared_field_count\\\": 9\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"ResolvedBioToken\",\n        \"remove_from\": [\n          \"Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift\"\n        ]\n      },\n      \"rationale\": \"If the intent is to make the canonical type maximally visible within the `Metadata` package, keeping only the top-level `ResolvedBioToken` in `ResolvedBioToken.swift` and removing the nested `DiscogsMarkupParser.ResolvedToken` alias from `DiscogsMarkupParser.swift` achieves the same deduplication goal and fits loosely within 'extract-to-common' (consolidating to one location inside the existing package).\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EsbQMba4a1w8DGck6fQqdW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2336,
+    "output_tokens": 869,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Two computed properties in the same `Wallpaper` package \u2014 `ProcessInfo.ThermalState.description` in the sample-app's `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in `PerformanceControls.swift` (line 152) \u2014 share near-identical logic (Jaccard 0.75) for converting a `ProcessInfo.ThermalState` value to a human-readable string. The canonical home for this logic is a single `extension ProcessInfo.ThermalState` in the production `Wallpaper` source tree (e.g., a new file under `Shared/Wallpaper/Sources/Wallpaper/DebugUI/`), which both the sample app and `PerformanceControls` can then consume. Because one member carries `is_sample_app: true`, the duplication is partly explained by the sample app copying production logic, but the production copy in `PerformanceControls.swift` is itself a local helper rather than a proper extension, so consolidation is still warranted.\",\n    \"evidence_quote\": \"ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"One of the two members has `is_sample_app: true` (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`), which under the decision rules is a candidate for intentional duplication as a sample-app mirror. If the sample app is intentionally self-contained and must not import internal production debug utilities, leaving the duplication in place is acceptable.\"\n    },\n    \"confidence\": 0.68\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PWfPBwbpmvG3BS724rnBYk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 747,
+    "service_tier": "standard"
+  }
+}

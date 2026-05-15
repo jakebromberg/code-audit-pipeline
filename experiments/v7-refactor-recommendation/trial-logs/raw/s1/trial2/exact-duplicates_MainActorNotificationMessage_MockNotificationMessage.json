@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) share the same structural shape (3 shared fields, empty `fields_or_signature` lists, both `kind: interface`), their names and locations encode distinct domain roles: one is a production `@MainActor`-bound notification message type, the other is a test-plant mock living in the `CoreTesting` sub-package. The `_Plant_` prefix in the mock's filename is a strong conventional signal that it is a generated or hand-planted test double, not an accidental duplicate. Merging or extracting a common base would conflate production and test-support concerns without clear benefit, and the `shared_field_count: 3` with `jaccard: null` and `differing_slots: null` suggests the pipeline matched on shape alone rather than on meaningful semantic overlap.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the 3 shared fields represent a genuine shared contract (e.g., a message identifier, payload, and timestamp), introducing a `NotificationMessage` protocol in `Shared/Core/Sources/Core/Observation/` and having both types conform to it would make the relationship explicit without merging production and test code. However, the empty `fields_or_signature` arrays prevent grounding this in concrete member names, so confidence is low.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HyLr4Ki9aMQzEFENtYLhUa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2311,
+    "output_tokens": 532,
+    "service_tier": "standard"
+  }
+}

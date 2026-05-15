@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"NowPlayingWidgetEntryView\",\n      \"remove_from\": [\n        \"WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift\",\n        \"WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift\"\n      ]\n    },\n    \"rationale\": \"The two `body` computed properties \u2014 `SmallNowPlayingWidgetEntryView.body` (line 17 of SmallNowPlayingWidgetEntryView.swift) and `MediumNowPlayingWidgetEntryView.body` (line 17 of MediumNowPlayingWidgetEntryView.swift) \u2014 share a Jaccard similarity of 0.714, indicating substantial structural overlap in their SwiftUI view hierarchies. Both live in the same package (`app:iOS`) and the same `NowPlayingWidget/Views/` directory, so no cross-package dependency changes are required. The most idiomatic Swift/SwiftUI approach is to extract a shared `NowPlayingWidgetEntryView` that accepts a `WidgetFamily` (or equivalent size parameter) and branches internally, eliminating the near-duplicate `body` implementations. Neither record is test, codegen, mock, or sample-app code, so the duplication is not intentional by policy.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Layout\", \"constraint\": \"View\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\n          \"SmallNowPlayingWidgetEntryView\",\n          \"MediumNowPlayingWidgetEntryView\"\n        ]\n      },\n      \"rationale\": \"If the two views differ primarily in a layout sub-view injected into an otherwise identical scaffold, a generic struct parameterised on a `Layout: View` type parameter would let the compiler enforce the shared structure while keeping size-specific layout code at the call site, avoiding a runtime `WidgetFamily` branch inside `body`.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JmDKG4W7C3KQXqejszndmP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2456,
+    "output_tokens": 730,
+    "service_tier": "standard"
+  }
+}

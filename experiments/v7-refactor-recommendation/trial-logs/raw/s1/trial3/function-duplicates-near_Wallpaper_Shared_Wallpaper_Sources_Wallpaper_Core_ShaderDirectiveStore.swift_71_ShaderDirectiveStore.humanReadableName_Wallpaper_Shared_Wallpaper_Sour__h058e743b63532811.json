@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"ShaderDirectiveNamed\",\n      \"method\": \"humanReadableName\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) live in the same `Wallpaper` package and exhibit a Jaccard similarity of 0.8, indicating nearly identical implementations. Since both types operate on shader directive concepts within the same package, the idiomatic Swift approach is to introduce a protocol (e.g., `ShaderDirectiveNamed`) with a default implementation of `humanReadableName` in a protocol extension housed in the Core layer (`ShaderDirectiveStore.swift` or a nearby Core file), allowing both conforming types to delete their redundant per-type implementations. Neither record carries any test, codegen, mock, or sample-app flags, so there is no reason to treat the duplication as intentional.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ShaderDirectiveNameHelper\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a new protocol is considered too heavyweight, the shared logic could instead be extracted into a free function or namespace helper type within the Wallpaper Core layer and called from both `ShaderDirectiveStore` and `ShaderDirectiveControlsDisclosure`, avoiding the protocol machinery while still eliminating the duplication.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0197xbquPs2NSEHdNsZFGBtD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2447,
+    "output_tokens": 719,
+    "service_tier": "standard"
+  }
+}

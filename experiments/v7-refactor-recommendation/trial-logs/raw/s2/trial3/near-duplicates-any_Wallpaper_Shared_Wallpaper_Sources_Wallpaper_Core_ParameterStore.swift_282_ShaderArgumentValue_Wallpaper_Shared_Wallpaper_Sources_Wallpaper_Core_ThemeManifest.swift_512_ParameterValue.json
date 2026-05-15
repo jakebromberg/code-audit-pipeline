@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no grounded structural evidence beyond the Jaccard score of 0.75 inferred from the cluster ID. The two types \u2014 `ShaderArgumentValue` in `ParameterStore.swift:282` and `ParameterValue` in `ThemeManifest.swift:512` \u2014 have distinct names suggesting distinct domain roles (a GPU shader argument value vs. a theme manifest parameter value); their shape similarity may be purely coincidental given both likely wrap a small set of primitive Swift value cases. Without member-level field lists or method signatures to confirm shared semantics, any merge or extraction recommendation would be speculative and unsupported by the available evidence.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If future inspection of the member lists confirms that `ShaderArgumentValue` and `ParameterValue` share the same cases or fields (consistent with the Jaccard of 0.75), a single canonical type in the `Wallpaper` package \u2014 both files already reside under `Shared/Wallpaper/Sources/Wallpaper/Core/` \u2014 could replace both, with a typealias preserving the `ShaderArgumentValue` name at the call site in `ParameterStore.swift`.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HzjobHVCzVUQ39N7Jy15Bt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2122,
+    "output_tokens": 612,
+    "service_tier": "standard"
+  }
+}

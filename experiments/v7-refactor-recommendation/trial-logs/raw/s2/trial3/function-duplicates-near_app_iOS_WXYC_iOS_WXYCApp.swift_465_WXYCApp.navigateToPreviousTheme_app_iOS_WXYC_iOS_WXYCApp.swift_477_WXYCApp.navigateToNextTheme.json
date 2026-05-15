@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method \u2014 e.g., `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)` \u2014 where the direction/offset parameter encodes whether to step backward or forward. Both call sites become one-liners that pass `.previous`/`.next` (or `-1`/`+1`). This eliminates the near-duplicate body (Jaccard 0.75) while keeping the two public entry-points as thin forwarding wrappers if their names are part of a public or `@objc` interface, or by replacing them outright if they are purely internal.\",\n      \"why_no_category_fits\": \"The two members are methods on the same concrete type (`WXYCApp`) in the same file, not separate types or protocols, so 'extract-to-common', 'protocol-inheritance', 'default-implementation', 'pat-introduction', 'generic-parameterization', 'subclass-lift', and 'macro-synthesis' do not apply. 'composition' and 'extension-consolidation' are also inapplicable because there is no type decomposition or scattered extension involved. The correct fix is a direction-parameterised helper \u2014 a standard Swift refactor that does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both residing in `WXYC/iOS/WXYCApp.swift` in the `app:iOS` package. Their names differ only in the direction token ('Previous' vs 'Next'), strongly suggesting the bodies share the same theme-cycling logic with a single sign or index difference. Extracting a shared `navigateTheme(direction:)` helper removes the duplicated logic, makes the direction explicit and testable, and leaves the two public methods as trivial one-line forwarders (or eliminates them entirely if they are internal). No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, so this is live production code where the duplication carries real maintenance risk.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"navigateTheme(offset:)\",\n        \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n      },\n      \"rationale\": \"If the theme list is indexed, a single `navigateTheme(offset: Int)` accepting `+1` or `-1` is an equally valid consolidation that avoids introducing a new enum type, at the cost of slightly less self-documenting call sites.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DTUAu8DhqjNPZFdtMnGsvT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2387,
+    "output_tokens": 897,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"PlayerHeaderView\",\n      \"type_name\": \"VisualizerConstantsTestHelpers\",\n      \"remove_from\": [\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift\",\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `PlayerHeaderViewTests.visualizerConstantsDefaults` (line 16 of PlayerHeaderViewTests.swift) and `VisualizerConstantsTests.visualizerConstantsDefaults` (line 305 of VisualizerDataSourceTests.swift) are exact function duplicates residing in the same package (`PlayerHeaderView`) and the same test directory. Despite the `is_test` context flag being recorded as `false` for both members, the file paths clearly place them inside the `Tests/PlayerHeaderViewTests/` folder, indicating shared test-support logic. Extracting the method into a single shared helper type (e.g., `VisualizerConstantsTestHelpers`) within the same test target eliminates the duplication and provides a single source of truth for visualizer-constants default assertions.\",\n    \"evidence_quote\": \"VisualizerConstantsTests.visualizerConstantsDefaults\\nPlayerHeaderViewTests.visualizerConstantsDefaults\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both files live under `Tests/PlayerHeaderViewTests/`, strongly suggesting these are test fixtures. If the `is_test=false` flag is a metadata artefact and the duplication is intentional per-suite setup, no action is needed; each test class may legitimately own its own constants-defaults helper to remain self-contained.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019ubBJyKKZ6x8q4iWKTeTAX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 605,
+    "service_tier": "standard"
+  }
+}

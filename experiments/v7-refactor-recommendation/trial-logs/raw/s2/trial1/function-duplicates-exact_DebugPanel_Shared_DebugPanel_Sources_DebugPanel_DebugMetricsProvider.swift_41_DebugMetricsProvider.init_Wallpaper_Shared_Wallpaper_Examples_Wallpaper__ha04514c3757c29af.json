@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the duplication is intentional or actionable.\n\nKey observations:\n- One member lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a proper library source file.\n- The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample/example app context, even though `is_sample_app` is flagged `false` by the pipeline.\n- The file path `Examples/WallpaperSampleApp/` strongly signals this is a sample app mirror of the canonical `DebugMetricsProvider.init` defined in `DebugPanel`. The pipeline's `is_sample_app` flag appears to have missed this based on the directory structure alone.\n- The canonical definition already exists in `DebugPanel`; the `WallpaperSampleApp` copy is almost certainly a local convenience re-implementation for the example harness rather than a true unintentional duplicate.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.init` is the canonical definition in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`). The duplicate resides in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the `Examples/WallpaperSampleApp/` path segment identifies this as a sample-app context regardless of the pipeline's `is_sample_app: false` flag. Sample apps routinely inline or re-implement lightweight debug helpers to remain self-contained and avoid pulling in the full `DebugPanel` dependency graph. Merging them would couple the example app to the library in a way that defeats its illustrative purpose.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp is ever intended to demonstrate real DebugPanel integration rather than serve as a standalone example, the duplicate `DebugMetricsProvider.init` in `DebugHUD.swift` should be deleted and the app should import the canonical initializer from the `DebugPanel` package instead.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XEXxZbEtMS8NnQ2FQzUghe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2419,
+    "output_tokens": 851,
+    "service_tier": "standard"
+  }
+}

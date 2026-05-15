@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is limited to a small number of call-site parameters (e.g., a cache policy, expiry duration, or key strategy), unify them into a single generic or defaulted-parameter function, removing the near-duplicate body. If the two overloads are genuinely distinct entry points that happen to share ~70 % of their logic, extract the shared logic into a private `_cachedFetch(...)` implementation function and have both public overloads delegate to it.\",\n      \"why_no_category_fits\": \"Both functions live in the same file and package (`Caching` / `Shared/Caching/Sources/Caching/CachedFetch.swift`), so 'extract-to-common' (cross-package move) does not apply. The cluster provides no field/signature data (`fields_or_signature: []`), so we cannot confirm a protocol, PAT, generic type, or subclass relationship \u2014 ruling out those categories. The Jaccard similarity of 0.7 indicates meaningful but incomplete overlap, which is best addressed by an internal refactor (shared private helper or parameter consolidation) rather than any of the structural cross-cutting patterns the other categories describe.\"\n    },\n    \"rationale\": \"Both members are named `cachedFetch`, reside in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and package (`Caching`), and carry a Jaccard body-similarity of 0.7 \u2014 indicating roughly 70 % shared implementation. Neither record is a test, mock, codegen artifact, or sample-app file, so the duplication is not intentional by policy. Because the signatures are unavailable (`fields_or_signature: []`) and both functions are co-located in one file, the most appropriate fix is an internal consolidation: extract the shared ~70 % into a private helper and have the two public overloads delegate to it, rather than any cross-package or protocol-level restructuring.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Decodable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If inspection reveals the two overloads differ only in the concrete return type they decode or cache, a single generic `cachedFetch<T: Decodable>` in `Shared/Caching/Sources/Caching/CachedFetch.swift` could replace both, which is idiomatic Swift for caching utilities. This is listed as an alternative because the missing signature data prevents confirming the type-parameter hypothesis.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WPiiyX1vVeTaFwd2a8BekL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2375,
+    "output_tokens": 870,
+    "service_tier": "standard"
+  }
+}

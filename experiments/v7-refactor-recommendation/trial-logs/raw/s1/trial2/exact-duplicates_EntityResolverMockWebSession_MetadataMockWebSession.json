@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MetadataMockWebSession` (in `PlaycutMetadataServiceCachingTests.swift`, line 79) and `EntityResolverMockWebSession` (in `DiscogsAPIEntityResolverCachingTests.swift`, line 72) are type-alias objects living under `Shared/Metadata/Tests/MetadataTests/`, making them test-support declarations despite the `is_test` flag reading `false` at the record level. Their file paths unambiguously place them inside the test target, and the names carry the conventional `Mock` infix used for test doubles. Although the two aliases share the same structural shape (`shared_field_count: 2`, no differing slots), they carry distinct names scoped to their respective test files, suggesting each is intentionally local to its own test suite. Merging them into a single shared alias would couple two independent test files without meaningful benefit.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockWebSession\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two aliases are confirmed to resolve to the exact same underlying type (evidenced by `shared_field_count: 2` and `differing_slots: null`), a single `MockWebSession` type alias could be extracted to a shared test-support file within the `Metadata` package's test target, eliminating the duplication. However, this is only worthwhile if additional test files in the package also need the same alias; with only two consumers the coupling cost likely outweighs the benefit.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KG1L4G7VNWuQhBdXSSoLN1",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2347,
+    "output_tokens": 584,
+    "service_tier": "standard"
+  }
+}

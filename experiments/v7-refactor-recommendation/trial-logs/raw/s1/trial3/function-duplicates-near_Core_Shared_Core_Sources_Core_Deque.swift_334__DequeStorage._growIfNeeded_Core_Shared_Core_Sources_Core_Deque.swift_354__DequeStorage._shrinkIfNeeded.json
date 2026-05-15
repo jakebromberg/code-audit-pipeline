@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared structural logic of `_growIfNeeded` (line 334) and `_shrinkIfNeeded` (line 354) in `_DequeStorage` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private `_resize(_:)` \u2014 within `Shared/Core/Sources/Core/Deque.swift`. The two methods would then delegate to this helper, differing only in the predicate/direction of the capacity check. This eliminates the ~71% structural overlap without collapsing the two distinct public-facing entry points.\",\n      \"why_no_category_fits\": \"Neither `generic-parameterization` nor `extract-to-common` fits precisely: both methods already live in the same file and same type (`_DequeStorage`), so there is nothing to move across packages or files. The overlap is a classic 'grow/shrink mirror' pattern where a shared private helper parameterised on the resize direction is the idiomatic Swift fix, but that pattern maps most naturally to 'other' because the named categories address cross-file/cross-package duplication or protocol-shape duplication rather than intra-type method mirroring.\"\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.7142857142857143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. A grow/shrink pair on a storage type is a well-known mirror pattern: the two methods almost certainly share capacity-threshold arithmetic and buffer-reallocation logic, differing only in the direction of the resize. Introducing a shared private helper removes the duplicated body while preserving the two semantically distinct call sites. No context flags (is_test, is_codegen, is_mock, is_sample_app) are set, so this is live production code where the duplication carries real maintenance risk.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"intentional-specialization\"\n      },\n      \"rationale\": \"Grow and shrink paths in a deque storage layer sometimes diverge intentionally \u2014 e.g., shrink may use a hysteresis factor to avoid thrashing while grow uses a strict doubling strategy. If the two methods encode genuinely different resize policies rather than mirrored boilerplate, the structural similarity is coincidental and no refactor is warranted. This should be verified by inspecting the method bodies before acting on the primary recommendation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0196c1mfJCcWYrenYRogmfyw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2368,
+    "output_tokens": 777,
+    "service_tier": "standard"
+  }
+}

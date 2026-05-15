@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockAudioSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four participating records reside under test file paths \u2014 specifically 'Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift', 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' (two entries), and 'Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift'. Although the context flags do not explicitly set is_test=true (likely a tagging gap in the pipeline), the file paths unambiguously place every record inside a Tests/ directory, and the dedicated Mocks/ subdirectory further confirms test-support intent. The name collision across the Playback and PartyHorn packages is therefore expected: each package defines its own local mock for isolation purposes, and consolidating them could introduce unwanted cross-package test dependencies.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playback\",\n        \"type_name\": \"MockAudioSession\",\n        \"remove_from\": [\n          \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\",\n          \"Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the MockAudioSession type-alias definitions are truly identical in shape (the cluster surfaces them as name-collisions across Playback and PartyHorn), the canonical definition in 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' could be promoted to a shared test-utilities target that PartyHorn's tests import, eliminating the duplicate in SoundPlayerTests.swift. However, this is only worthwhile if PartyHorn already depends on Playback's test utilities, and the empty fields_or_signature lists make it impossible to confirm the definitions are truly equivalent.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01K46kmfH3Js5QbC9GzJAer7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2575,
+    "output_tokens": 573,
+    "service_tier": "standard"
+  }
+}

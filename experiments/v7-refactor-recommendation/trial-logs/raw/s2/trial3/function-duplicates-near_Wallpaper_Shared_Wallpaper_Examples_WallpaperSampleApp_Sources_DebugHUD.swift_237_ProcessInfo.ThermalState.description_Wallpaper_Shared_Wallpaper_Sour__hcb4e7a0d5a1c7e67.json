@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Two computed properties in the same `Wallpaper` package \u2014 `ProcessInfo.ThermalState.description` in the sample-app's `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in `PerformanceControls.swift` (line 152) \u2014 share near-identical logic for converting a `ProcessInfo.ThermalState` value to a human-readable string (Jaccard 0.75). The canonical home for this logic is a single extension on `ProcessInfo.ThermalState` placed in the main `Wallpaper` sources (e.g., `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThermalStateExtensions.swift`), which both the sample-app `DebugHUD` and `PerformanceControls` can then consume. Because one member lives in the sample app (`is_sample_app: true`) and the other in production sources, the duplication is not intentional mirroring \u2014 the production copy already exists and the sample-app copy is redundant.\",\n    \"evidence_quote\": \"ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"Because `DebugHUD.swift` carries `is_sample_app: true`, one could argue the sample app intentionally duplicates the thermal-state label to remain self-contained and avoid a dependency on internal `DebugUI` types. If the `DebugUI` module is not exported as a public API, keeping the sample-app copy isolated is defensible.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01B1rZurPG1gmRUTREkguNyp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 737,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two protocols `MainActorNotificationMessage` and `MockNotificationMessage` share an identical member set (`makeMessage`, `makeNotification`, `name`) but serve fundamentally different roles: `MainActorNotificationMessage` is the production protocol in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift` (is_test=false), while `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` and carries `is_test=true`. The test-side protocol almost certainly exists to provide a controlled, test-scoped conformance surface that mirrors the production protocol intentionally \u2014 introducing a shared parent protocol would couple the testing infrastructure to the production type hierarchy without meaningful benefit. Furthermore, the structural evidence shows `shared_field_count: 0` and `jaccard: null`, indicating the pipeline found no quantitative overlap beyond the member-name coincidence, which further weakens the case for a refactor.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true ... \\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [\n          \"makeMessage:(_ notification: sending Notification) -> Self?\",\n          \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n          \"name:Notification.Name\"\n        ],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the test protocol is intended to be a drop-in substitute for the production protocol (Liskov-style), extracting a shared base protocol `NotificationMessage` into `Shared/Core/Sources/Core/Observation/` and having both `MainActorNotificationMessage` and `MockNotificationMessage` inherit from it would eliminate the member duplication and make the substitutability relationship explicit. However, this is only warranted if `MockNotificationMessage` is genuinely meant to be used polymorphically with production code, which is not evidenced by the cluster data.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018Zqy4xCUpPPubEc5mt7u9H",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2460,
+    "output_tokens": 657,
+    "service_tier": "standard"
+  }
+}

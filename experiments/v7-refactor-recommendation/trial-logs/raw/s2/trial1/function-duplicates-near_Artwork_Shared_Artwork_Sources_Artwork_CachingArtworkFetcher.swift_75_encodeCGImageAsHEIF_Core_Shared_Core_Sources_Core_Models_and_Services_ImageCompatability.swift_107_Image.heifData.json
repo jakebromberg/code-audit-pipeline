@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The two functions `encodeCGImageAsHEIF` in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (package `Artwork`) and `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`) share a Jaccard similarity of 0.706, indicating near-duplicate HEIF-encoding logic. Since `Core` already hosts `Image.heifData` in an `ImageCompatability.swift` file that is clearly the canonical home for image format utilities, the `Artwork` package's standalone `encodeCGImageAsHEIF` function should be removed and its call sites redirected to `Core`'s `Image.heifData`. The `Artwork` package is a natural downstream consumer of `Core`, so this consolidation introduces no new dependency cycle. Neither record is test, codegen, mock, or sample-app code, so the duplication is unintentional.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75\",\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107\"\n        ]\n      },\n      \"rationale\": \"If `encodeCGImageAsHEIF` operates on `CGImage` rather than the `Image` wrapper type, a second viable approach is to consolidate both implementations into a single `extension CGImage` (or `extension Image`) block inside `ImageCompatability.swift` in `Core`, exposing a unified HEIF-encoding API surface there. This is slightly less idiomatic than simply reusing the existing `Image.heifData` method, hence it is the alternative rather than the primary recommendation.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BgPUihqnS2qkcHyJV8uA6Y",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 667,
+    "service_tier": "standard"
+  }
+}

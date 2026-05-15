@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MetadataMockWebSession` (in `PlaycutMetadataServiceCachingTests.swift`, line 79) and `EntityResolverMockWebSession` (in `DiscogsAPIEntityResolverCachingTests.swift`, line 72) are type-alias objects living under `Shared/Metadata/Tests/MetadataTests/`, making them test-only declarations despite the `is_test` flag reading `false`. Their distinct names suggest they are intentionally scoped to their respective test files to keep each test suite self-contained and independently readable. Merging them into a shared test helper would couple two unrelated test suites and reduce locality of test setup. The structural signal of `shared_field_count: 2` with no differing slots indicates shape coincidence rather than meaningful duplication warranting extraction.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockWebSession\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two type aliases expand to identical underlying types and the test suites are expected to grow, a single `MockWebSession` type-alias extracted to a shared test-support file within the `Metadata` package's test target would eliminate the duplication. However, this is only worthwhile if the aliases are genuinely identical in expansion and not just coincidentally shaped.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Biagyg69EfXnSYXesf8Zmt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2347,
+    "output_tokens": 533,
+    "service_tier": "standard"
+  }
+}

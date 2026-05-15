@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsMarkupParser.ResolvedToken+ResolvedBioToken\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Determine which of the two type aliases is the canonical definition and delete the other, updating all call sites to use the surviving name. The most likely outcome is that `ResolvedBioToken` (declared at the top level in `Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift`) becomes the single source of truth, and `DiscogsMarkupParser.ResolvedToken` (a nested type alias inside `DiscogsMarkupParser` at line 89 of `DiscogsMarkupParser.swift`) is replaced with a `typealias ResolvedToken = ResolvedBioToken` or removed entirely, leaving all consumers referencing `ResolvedBioToken` directly. Both live in the same `Metadata` package, so no cross-package coordination is required.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-union` kinds, not concrete types, protocols, or functions. The standard refactor categories (extract-to-common, protocol-inheritance, generic-parameterization, etc.) all assume concrete or protocol types. The correct action here is a simple alias-deduplication / rename within the same package, which is a deletion-and-redirect operation that none of the named categories model precisely. 'extract-to-common' is the closest fit but is misleading because both aliases already live in the same package (`Metadata`) \u2014 there is nothing to move across a package boundary.\"\n    },\n    \"rationale\": \"Both `DiscogsMarkupParser.ResolvedToken` (line 89, `DiscogsMarkupParser.swift`) and `ResolvedBioToken` (line 20, `ResolvedBioToken.swift`) are `type-alias-union` declarations in the same `Metadata` package with `shared_field_count: 9` and an exact-duplicate signal, meaning they alias identical underlying union types. Neither record carries any context flag (`is_test`, `is_codegen`, `is_mock`, `is_sample_app`) that would mark the duplication as intentional. Having two names for the same structural type in the same package creates confusion about which name is authoritative and forces readers to mentally track the equivalence.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-union\\\" ... \\\"shared_field_count\\\": 9 ... \\\"package\\\": \\\"Metadata\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `DiscogsMarkupParser.ResolvedToken` is intentionally scoped as a private implementation detail of the parser (using the nested name to signal that it is only meaningful within that parser's context) while `ResolvedBioToken` is the public-facing name for bio-specific resolution, the two names may encode distinct semantic roles despite sharing the same underlying union shape. In that case the duplication is coincidental from a domain perspective and no action is warranted.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PjFhVMyfzSqBRYMACHCcRs",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2336,
+    "output_tokens": 766,
+    "service_tier": "standard"
+  }
+}

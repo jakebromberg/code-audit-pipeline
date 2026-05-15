@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheLoadable\",\n      \"associated_type\": \"Payload\",\n      \"constraints\": [],\n      \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n    },\n    \"rationale\": \"Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single protocol with an `associatedtype Payload` and a requirement `load:() async throws -> Payload` would unify both interfaces, allowing the three shared members to be declared once. Introducing `CacheLoadable` in a shared package (e.g., `Caching`, which `Metadata` could depend on, or a new thin `CacheCore` package) eliminates the structural duplication while preserving each concrete loader's type-safe return. Neither record is test, codegen, mock, or sample-app code, so there is no intentional-duplication exemption.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4, \\\"differing_slots\\\": [{\\\"a\\\": [\\\"load:() async throws -> Data\\\"], \\\"b\\\": [\\\"load:() async throws -> PlaycutMetadata\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Caching\",\n        \"type_name\": \"AnyLoader\",\n        \"remove_from\": [\n          \"Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift\",\n          \"Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a PAT is considered too heavyweight for the current dependency graph, the three shared members (`cacheKey:String`, `invalidate:() async`, `lastLoadedAt:Date?`) could be lifted into a non-generic base protocol `AnyLoader` in the `Caching` package, with `CacheLoader` and `MetadataLoader` inheriting from it and each adding their own typed `load` requirement. This is less idiomatic Swift than a PAT but avoids any opaque-type or `some`/`any` complexity at call sites.\"\n    },\n    \"confidence\": 0.87\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FtRk8hmeTUrd3hf31aXdnj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2502,
+    "output_tokens": 697,
+    "service_tier": "standard"
+  }
+}

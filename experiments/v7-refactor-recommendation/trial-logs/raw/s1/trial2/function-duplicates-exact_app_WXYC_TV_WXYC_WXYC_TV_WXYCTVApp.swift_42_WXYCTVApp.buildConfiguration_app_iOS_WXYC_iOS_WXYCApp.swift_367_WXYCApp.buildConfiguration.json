@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:42:WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:WXYC TV\",\n      \"type_name\": \"buildConfiguration\",\n      \"remove_from\": [\n        \"WXYC/WXYC TV/WXYCTVApp.swift\",\n        \"WXYC/iOS/WXYCApp.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster identifies an exact function-duplicate signal between `WXYCTVApp.buildConfiguration` in `WXYC/WXYC TV/WXYCTVApp.swift` (package `app:WXYC TV`) and `WXYCApp.buildConfiguration` in `WXYC/iOS/WXYCApp.swift` (package `app:iOS`). Neither record carries any test, codegen, mock, or sample-app flags, so the duplication is not intentional by policy. Because both app targets share the same repository root and the method name and body are structurally identical, the implementation should be extracted into a shared location \u2014 ideally a common Swift file or module both targets already depend on \u2014 and each app entry point should delegate to that shared implementation. This eliminates the risk of the two copies diverging silently as configuration logic evolves.\",\n    \"evidence_quote\": \"WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Define a free function `buildConfiguration()` in a shared Swift file (e.g., `WXYC/Shared/Configuration.swift`) and have both `WXYCTVApp` and `WXYCApp` call it, without extracting a new package.\",\n        \"why_no_category_fits\": \"If no formal shared package/module boundary exists between the two app targets, a simple shared source file with a free function is more pragmatic than creating a new package dependency, but this falls between 'extract-to-common' (which implies a package) and 'extension-consolidation' (which implies a single type).\"\n      },\n      \"rationale\": \"If the project build system does not already expose a shared module that both `app:WXYC TV` and `app:iOS` depend on, the lightest-weight fix is a shared source file rather than a new package target, avoiding build-graph changes while still eliminating the duplicate.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XYuMbzxwNd66NLYK68uMvk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2387,
+    "output_tokens": 714,
+    "service_tier": "standard"
+  }
+}

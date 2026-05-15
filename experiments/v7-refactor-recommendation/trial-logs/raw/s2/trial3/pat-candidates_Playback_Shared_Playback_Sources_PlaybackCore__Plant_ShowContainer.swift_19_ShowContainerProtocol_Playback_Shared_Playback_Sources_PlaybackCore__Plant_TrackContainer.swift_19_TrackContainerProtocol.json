@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in the `Playback` package share three identical fields (`isStale:Bool`, `lastRefreshedAt:Date?`, `pageToken:String?`) and differ only in the `item` slot \u2014 `item:Show` vs `item:Track`. This is a textbook PAT opportunity: introducing `ContainerProtocol` with `associatedtype Item` and a single `item:Item` requirement collapses the two protocols into one, eliminating the structural duplication. Neither record carries any test, codegen, mock, or sample-app flag, so the duplication is not intentional. Both files live in the same package (`Playback`) and the same source root (`Shared/Playback/Sources/PlaybackCore`), making the consolidation low-risk.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"item:Show\\\"], \\\"b\\\": [\\\"item:Track\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale\", \"lastRefreshedAt\", \"pageToken\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If call-site code must continue to name `ShowContainerProtocol` and `TrackContainerProtocol` explicitly (e.g., because they are part of a public API surface that cannot be broken), a non-PAT protocol-inheritance approach \u2014 extracting the three shared members into a parent `ContainerProtocol` and having each child inherit from it while adding its own typed `item` requirement \u2014 is a viable alternative that avoids the existential-erasure complexity that PATs introduce prior to Swift 5.7 primary associated types.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015MmRhgBLr4ohrHuLVURfnV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2492,
+    "output_tokens": 653,
+    "service_tier": "standard"
+  }
+}

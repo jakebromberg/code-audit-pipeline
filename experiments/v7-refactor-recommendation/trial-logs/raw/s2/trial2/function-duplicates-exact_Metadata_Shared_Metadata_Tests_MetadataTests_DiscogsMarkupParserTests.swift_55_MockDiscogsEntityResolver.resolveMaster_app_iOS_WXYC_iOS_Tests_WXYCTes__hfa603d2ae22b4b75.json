@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveMaster` appears as an exact duplicate in two test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the mock is already present in the `Metadata` package's test target \u2014 which is the package that owns the `DiscogsEntityResolver` abstraction \u2014 the canonical home for this mock is there. The `app:iOS` test target should import or otherwise reuse the shared mock rather than redeclaring it, eliminating the maintenance risk of the two implementations diverging. Neither record carries `is_codegen`, `is_mock`, or `is_sample_app` flags that would indicate intentional duplication.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `MockDiscogsEntityResolver` in each file has a subtly different conformance body (not visible in the cluster row because `fields_or_signature` is empty for both), the duplication may be intentional test isolation \u2014 each test file providing only the minimal stub it needs. In that case no consolidation is warranted.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01W2Y22LCKTvWj3Gi68A7qHd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 597,
+    "service_tier": "standard"
+  }
+}

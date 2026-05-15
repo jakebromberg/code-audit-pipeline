@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both members are exact duplicates of `MockDiscogsEntityResolver.resolveRelease`: one lives in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and the other in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Because the `Metadata` package is already a shared/upstream dependency, the canonical mock should live there (or in a dedicated test-support target within `Metadata`) so that `app:iOS` tests can import it rather than redeclare it. Consolidating removes the risk of the two copies drifting apart as the `DiscogsEntityResolver` protocol evolves. Note: although the context flags incorrectly report `is_test=false` for both records, the file paths (`Tests/MetadataTests/` and `Tests/WXYCTests/`) and the `Mock` prefix on the type name make it clear these are test-support helpers, so the extracted target should be a test-support module (e.g., `MetadataTestSupport`) rather than production code.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both occurrences reside under `Tests/` directories (`Shared/Metadata/Tests/MetadataTests/` and `WXYC/iOS/Tests/WXYCTests/`) and carry the `Mock` prefix, strongly suggesting they are test fixtures. If the two test targets cannot share a common test-support module without introducing an undesirable dependency edge, keeping the duplication is acceptable and the no-action / test-fixture classification applies.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JR6ZS29ZXSr9mQxnGd4jtE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 691,
+    "service_tier": "standard"
+  }
+}

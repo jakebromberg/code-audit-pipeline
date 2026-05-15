@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NotificationMessage\",\n      \"associated_type\": \"Subject\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) are interfaces in the same `Core` package sharing 3 of 3 members: `name: Notification.Name`, `makeNotification(_ message: Self, object: Subject?) -> Notification`, and a `makeMessage` factory. The sole structural difference is that `MainActorNotificationMessage.makeMessage` marks its `Notification` parameter as `sending` (for actor-isolation transfer), while `AsyncNotificationMessage` does not. Introducing a base PAT `NotificationMessage` with the shared `name` property and `makeNotification` requirement, then having each existing protocol refine it and add only its own `makeMessage` variant, eliminates the duplicated surface while preserving the concurrency-semantic distinction. Both protocols already use `Self` as the return type of `makeMessage`, confirming they are already written in a PAT-friendly style.\",\n    \"evidence_quote\": \"shared_field_count\\\": 3\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"NotificationMessage\",\n        \"method\": \"makeNotification(_ message: Self, object: Subject?) -> Notification\",\n        \"target_location\": \"Shared/Core/Sources/Core/Observation/NotificationMessage.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"If a full PAT hierarchy is considered over-engineering, a lighter alternative is to unify only the shared `makeNotification` and `name` requirements into a single base protocol `NotificationMessage` with a default extension implementation, and keep `AsyncNotificationMessage` and `MainActorNotificationMessage` as thin refinements that add only their respective `makeMessage` signatures. This avoids the associated-type complexity while still removing the duplicated `makeNotification` and `name` declarations.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JASyuFuJPcZq1Vk1HP5dML",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2506,
+    "output_tokens": 694,
+    "service_tier": "standard"
+  }
+}

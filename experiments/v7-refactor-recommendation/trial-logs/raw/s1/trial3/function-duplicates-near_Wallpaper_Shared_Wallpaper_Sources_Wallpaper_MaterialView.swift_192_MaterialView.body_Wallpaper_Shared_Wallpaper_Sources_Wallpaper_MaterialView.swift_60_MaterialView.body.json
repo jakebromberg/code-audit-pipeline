@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (two separate `struct`/`extension` declarations each contributing a `body` computed property), or whether the same `body` property is accidentally duplicated within a single type. If two distinct `MaterialView` types exist in the same file, consolidate them into one. If the `body` property is genuinely duplicated, delete the implementation at line 192 and retain the one at line 60 (or vice-versa after confirming which is canonical), then extract any differing sub-view logic into a private helper `@ViewBuilder` function so the single `body` can call it conditionally.\",\n      \"why_no_category_fits\": \"Both records share the same type name (`MaterialView.body`), the same file, and the same package \u2014 they are not in separate files or packages, so `extract-to-common` and `extension-consolidation` do not apply. They are not a protocol/subclass hierarchy, not a PAT candidate, not a generic candidate, and not a macro candidate. The Jaccard similarity of 0.833 indicates near-identical but not identical bodies, suggesting one is a variant of the other within the same file. The correct fix is an in-file deduplication with a shared private helper, which does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"Both `MaterialView.body` computed properties live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192, within the same `Wallpaper` package, with a Jaccard similarity of 0.833 \u2014 meaning roughly 83 % of their structure is shared. This strongly suggests either an accidental duplication of the `body` property or two separate `MaterialView` declarations in one file each carrying a `body`. Neither record is test, codegen, mock, or sample-app code, so the duplication is unintentional production code. The fix is to unify the two into a single `body` implementation, extracting the ~17 % divergent logic into a private `@ViewBuilder` helper.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` properties arise from two separate `extension MaterialView` blocks in the same file, consolidating those extensions into a single declaration block would eliminate the duplicate `body` property and is the standard Swift idiom for this situation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RNkYvBFkMqC63rZA9ZHskJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 879,
+    "service_tier": "standard"
+  }
+}

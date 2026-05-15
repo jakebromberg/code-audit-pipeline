@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:38:ReviewRequestServiceTests.recordRequestSentIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in the same test file `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordPlaybackStartedIncrementsCount` (line 22) and `recordRequestSentIncrementsCount` (line 38) \u2014 are distinct test cases that verify different behaviours of `ReviewRequestService` (playback-started vs. request-sent event paths). Their structural similarity (Jaccard 0.75) is expected for counter-increment tests that follow the same Arrange-Act-Assert skeleton; collapsing them into a shared helper would obscure the intent of each individual test scenario.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019mWg99fSTNNaqGYUsF3J2b",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2405,
+    "output_tokens": 338,
+    "service_tier": "standard"
+  }
+}

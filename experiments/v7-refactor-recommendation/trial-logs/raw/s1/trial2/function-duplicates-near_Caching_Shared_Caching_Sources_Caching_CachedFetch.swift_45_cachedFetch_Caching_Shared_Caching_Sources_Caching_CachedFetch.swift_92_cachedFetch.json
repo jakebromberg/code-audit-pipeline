@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they can be unified into a single generic or defaulted-parameter function. If the differing behaviour is purely in one or two parameters (e.g., a cache policy, expiry duration, or key strategy), introduce a single `cachedFetch` with default-argument values for those parameters and delete the redundant overload. If the bodies share a substantial common path, extract that path into a private helper and have both call sites delegate to it, reducing the Jaccard overlap from 0.7 toward 1.0.\",\n      \"why_no_category_fits\": \"Both functions live in the same file and package (`Caching` / `Shared/Caching/Sources/Caching/CachedFetch.swift`), so 'extract-to-common' does not apply. The cluster reports `fields_or_signature: []` for both members, meaning the pipeline did not surface distinct type-parameter or field differences that would justify 'generic-parameterization'. The functions are free functions, not protocol members, so 'default-implementation' and 'protocol-inheritance' are inapplicable. The Jaccard similarity of 0.7 (not 1.0) indicates the two are near-duplicates rather than exact duplicates, suggesting a parameter-defaulting or private-helper extraction is the right move, but neither maps cleanly to any named category in the schema.\"\n    },\n    \"rationale\": \"The pipeline flagged two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 high enough to indicate substantial shared logic but not an exact copy. Neither record carries any test, codegen, mock, or sample-app flag, so intentional duplication is unlikely. Because both symbols are free functions in the same file and package, the appropriate remedy is consolidation within that file (parameter defaulting or a shared private helper), not cross-package extraction or protocol machinery.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Codable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two overloads differ only in the concrete type they fetch and decode, a single generic `cachedFetch<T: Codable>` could replace both. This is defensible but requires confirming the type-parameter hypothesis from the actual source, which the cluster row does not expose (fields_or_signature is empty for both members).\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SexpnXcDni9uCE3hThfrop",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2375,
+    "output_tokens": 852,
+    "service_tier": "standard"
+  }
+}

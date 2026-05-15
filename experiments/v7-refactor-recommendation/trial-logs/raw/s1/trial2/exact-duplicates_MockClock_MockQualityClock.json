@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (in `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift`, package `Wallpaper`) and `MockClock` (in `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift`, package `Caching`) are `type-alias-object` declarations living in separate test files across unrelated packages. Although they share 2 fields structurally, they serve distinct domain purposes \u2014 quality-control timing in `Wallpaper` vs. cache-coordination timing in `Caching` \u2014 and their names already reflect that divergence. Consolidating them into a shared mock would couple two otherwise independent packages solely for test infrastructure, which is not warranted given the minimal shared surface and the risk of cross-package test dependency churn. Additionally, the `is_mock` flag is `false` on both records, suggesting the pipeline did not classify these as canonical mock objects, further reducing confidence that a shared extraction is appropriate.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CCjg1TU5u2DNhBrsz26du6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2334,
+    "output_tokens": 400,
+    "service_tier": "standard"
+  }
+}

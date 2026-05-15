@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both methods \u2014 `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) \u2014 live in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package and are named for distinct, sequential phases of an HLS stall lifecycle (entering a stall vs. recovering from one). Despite the structural signal of exact function-duplicate shape, the names encode meaningfully different test scenarios whose structural similarity is incidental to the test-setup boilerplate they share. Notably, both records carry `is_test: false` in their context flags, which is likely a metadata gap given the file path (`Tests/HLSPlayerTests/`), but even taking the flags at face value there is no shared domain concept that warrants extraction \u2014 merging or abstracting them would obscure the distinct intent of each test case.\",\n    \"evidence_quote\": \"HLSPlayerTests.stallFromPlaying+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playback\",\n        \"type_name\": \"HLSPlayerStallTestHelpers\",\n        \"remove_from\": [\n          \"Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two methods share identical setup/teardown scaffolding (e.g., player initialisation, mock injection), that shared scaffolding could be extracted into a helper type or `setUp`/helper method within the same `Playback` test target, reducing duplication while keeping `stallFromPlaying` and `recoveryFromStall` as distinct test entry points.\"\n    },\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013HMNwWP92XPKtKHYsbZV51",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2405,
+    "output_tokens": 604,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:164:AudioPlayerIdempotencyTests.playAfterStopWorks+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:88:AudioPlayerCoreStateTests.isPlayingFalseAfterStop\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have `is_test: true` and reside in the same test file `Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift`. Although the Jaccard similarity is 0.7, the two methods belong to distinct test classes (`AudioPlayerCoreStateTests` and `AudioPlayerIdempotencyTests`) and verify different behavioural properties: one asserts that `isPlaying` is false after a stop, while the other asserts that play-after-stop succeeds idempotently. The structural similarity is a natural consequence of both tests exercising the same stop/play boundary, not an indication of unintentional duplication. Merging or extracting them would obscure the distinct intent of each test class.\",\n    \"evidence_quote\": \"AudioPlayerCoreStateTests.isPlayingFalseAfterStop ... AudioPlayerIdempotencyTests.playAfterStopWorks ... is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GxmrcrWUP9Ph9oWQv82B9p",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2437,
+    "output_tokens": 401,
+    "service_tier": "standard"
+  }
+}

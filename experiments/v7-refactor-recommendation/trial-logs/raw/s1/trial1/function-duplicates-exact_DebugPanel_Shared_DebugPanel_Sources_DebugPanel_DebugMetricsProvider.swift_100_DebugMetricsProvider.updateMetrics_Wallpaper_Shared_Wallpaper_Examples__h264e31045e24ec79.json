@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the duplication is intentional or actionable.\n\nKey observations:\n1. One member lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`) \u2014 a proper library source file.\n2. The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`) \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample/example app context.\n3. Despite `is_sample_app` being `false` on the second record, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` unambiguously places it under an Examples/SampleApp directory tree.\n4. The `WallpaperSampleApp` copy is almost certainly a local re-implementation of `DebugMetricsProvider.updateMetrics` for demo/debugging purposes within the sample app, rather than a production duplication that needs consolidation.\n5. The canonical implementation belongs in `DebugPanel`; the sample app copy mirrors it for standalone use without a full dependency graph.\n\nThis matches the \"sample-app-mirror\" intentional duplication rule.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.updateMetrics` lives in the canonical library location `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: `DebugPanel`), while the duplicate resides in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`). The file path explicitly places the second copy under `Examples/WallpaperSampleApp/`, a sample-app tree, indicating it is a self-contained local re-implementation for demo or debugging purposes rather than an accidental production duplicate. Consolidating it would couple the sample app to the `DebugPanel` package, which may be intentionally avoided to keep the example standalone. The decision rules call for 'no-action' when records sit under an Examples/SampleApp directory.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is willing to take a dependency on `DebugPanel`, the duplicate `updateMetrics` implementation in `DebugHUD.swift` could be deleted and the sample app could call the canonical `DebugMetricsProvider.updateMetrics` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` directly, eliminating the divergence risk.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GRfRMyKGJBfBgLsTKG6qgY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 944,
+    "service_tier": "standard"
+  }
+}

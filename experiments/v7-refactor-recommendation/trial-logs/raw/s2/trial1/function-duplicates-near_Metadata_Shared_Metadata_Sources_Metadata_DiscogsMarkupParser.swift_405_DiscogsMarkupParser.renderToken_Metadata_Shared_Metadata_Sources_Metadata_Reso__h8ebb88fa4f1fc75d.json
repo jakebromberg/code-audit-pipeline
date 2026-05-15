@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift:405:DiscogsMarkupParser.renderToken+Metadata:Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift:158:ResolvedBioToken.attributedString\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"DiscogsMarkupRenderer\",\n      \"remove_from\": [\n        \"Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift\",\n        \"Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.913 between `DiscogsMarkupParser.renderToken` (line 405 of `DiscogsMarkupParser.swift`) and `ResolvedBioToken.attributedString` (line 158 of `ResolvedBioToken.swift`), both in the `Metadata` package and neither flagged as test, codegen, mock, or sample-app code. This near-identical attributed-string rendering logic is duplicated across two distinct types that serve different roles (parsing vs. resolved token representation). The shared logic should be extracted into a single free function or dedicated helper type \u2014 e.g., `DiscogsMarkupRenderer` \u2014 within the same `Metadata` package, and both call sites should delegate to it, eliminating the duplication while keeping both types intact.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.9130434782608695\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"DiscogsMarkupRenderable\",\n        \"method\": \"func attributedString(for token: DiscogsMarkupToken) -> NSAttributedString\",\n        \"target_location\": \"Shared/Metadata/Sources/Metadata/DiscogsMarkupRenderable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift\",\n          \"Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift\"\n        ]\n      },\n      \"rationale\": \"If the rendering logic needs to remain polymorphically overridable per type, introducing a `DiscogsMarkupRenderable` protocol with a default implementation in a protocol extension within the `Metadata` package would also eliminate the duplication while preserving per-type customisation points. However, this adds protocol overhead that is likely unnecessary given both types live in the same package and neither is part of a public API surface requiring conformance flexibility.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BnZ8WyjPeGRQAnEFy4rN9c",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2396,
+    "output_tokens": 686,
+    "service_tier": "standard"
+  }
+}

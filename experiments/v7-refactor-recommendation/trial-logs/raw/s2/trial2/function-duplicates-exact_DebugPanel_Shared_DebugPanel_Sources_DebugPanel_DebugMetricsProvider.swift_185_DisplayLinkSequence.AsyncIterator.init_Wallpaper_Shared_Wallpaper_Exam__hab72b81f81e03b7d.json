@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"One copy of `DisplayLinkSequence.AsyncIterator.init` lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package: DebugPanel) and the other in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: Wallpaper). The Wallpaper copy resides under an `Examples/WallpaperSampleApp` path, which is a sample-app context even though `is_sample_app` is not flagged true \u2014 the path itself is strong evidence of an isolated demo target. Both packages independently need a `CADisplayLink`-backed async iterator for their own debug/HUD tooling; the structural coincidence of an empty-signature initializer is trivially explained by the fact that `AsyncIteratorProtocol` conformances commonly have a no-argument `init`. Consolidating them would create a cross-package dependency between DebugPanel and Wallpaper (or require a third shared target) for what is effectively boilerplate, yielding no meaningful reduction in complexity.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DisplayLinkSequence\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `DisplayLinkSequence` types are truly identical in full (not just their `init`), the Wallpaper sample app could import DebugPanel and reuse the canonical implementation, eliminating the duplicate. However, this would introduce a production-framework dependency from a sample app into DebugPanel, which is architecturally undesirable and likely why the copy exists in the first place.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UFqcvDuLRwkA6XXCGk8fHw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2427,
+    "output_tokens": 658,
+    "service_tier": "standard"
+  }
+}

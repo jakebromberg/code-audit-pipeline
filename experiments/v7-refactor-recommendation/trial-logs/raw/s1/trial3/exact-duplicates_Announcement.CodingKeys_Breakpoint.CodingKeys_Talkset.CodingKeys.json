@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all type-alias-unions over the same 4 shared fields. If so, define a single shared `PlaylistEntryCodingKeys` enum (or typealias) in the `Playlist` package \u2014 ideally in a new file such as `Shared/Playlist/Sources/Playlist/PlaylistEntryCodingKeys.swift` \u2014 and replace each nested `CodingKeys` declaration with a `typealias CodingKeys = PlaylistEntryCodingKeys`. If the three types require distinct key sets in the future, the alias can be overridden per-type without touching the shared definition.\",\n      \"why_no_category_fits\": \"The three members are nested `CodingKeys` enums (kind: `type-alias-union`) inside three distinct parent types (`Announcement`, `Breakpoint`, `Talkset`). The canonical refactor categories do not cleanly cover the case of identical nested `CodingKeys` enums that belong to sibling value types: `extract-to-common` is the closest fit, but the extracted artifact is a nested enum used as a `CodingKey` conformance rather than a standalone reusable type, and the indirection must be expressed as a `typealias` inside each parent to satisfy `Codable` synthesis \u2014 a nuance the `extract-to-common` specifics schema does not capture. `generic-parameterization` and `protocol-inheritance` do not apply to `CodingKeys` enums. Hence `other` is the most accurate category.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` (line 34, `_Plant_Announcement.swift`), `Breakpoint.CodingKeys` (line 72, `PlaylistEntry.swift`), and `Talkset.CodingKeys` (line 111, `PlaylistEntry.swift`) \u2014 are flagged as `exact-duplicates` with `shared_field_count: 4` and `differing_slots: null`, meaning their key sets are structurally identical. All three live in the same `Playlist` package and none carry test, codegen, mock, or sample-app flags, so the duplication is unintentional production code. Consolidating them into a single shared `CodingKeys` definition (re-exposed via `typealias` in each parent) eliminates the risk of the three sets drifting apart when new JSON keys are added.\",\n    \"evidence_quote\": \"\\\"query\\\": \\\"exact-duplicates\\\", \\\"shared_field_count\\\": 4, \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playlist\",\n        \"type_name\": \"PlaylistEntryCodingKeys\",\n        \"remove_from\": [\n          \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\",\n          \"Shared/Playlist/Sources/Playlist/PlaylistEntry.swift\"\n        ]\n      },\n      \"rationale\": \"If the `Codable` synthesiser can be satisfied by a top-level `CodingKeys` enum that each parent type aliases, the straightforward `extract-to-common` move \u2014 placing `PlaylistEntryCodingKeys` in the `Playlist` package and deleting the three inline declarations \u2014 is the simplest mechanical change. The risk is that Swift's `Codable` synthesis requires the nested name to be exactly `CodingKeys`, so each parent still needs `typealias CodingKeys = PlaylistEntryCodingKeys`; this is achievable but slightly non-obvious, which is why `other` is preferred as primary.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015PnzR2eZUfXzx5JhFgj5LU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2470,
+    "output_tokens": 984,
+    "service_tier": "standard"
+  }
+}

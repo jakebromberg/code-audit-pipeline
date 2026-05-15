@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:122:iTunesArtworkServiceTests.SequentialMockSession+Metadata:Shared/Metadata/Tests/MetadataTests/MetadataTests/PlaycutMetadataServiceCachingTests.swift:79:MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records have is_test=true \u2014 `iTunesArtworkServiceTests.SequentialMockSession` in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and `MetadataMockWebSession` in `Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift`. Although they share the `requestedURLs:[URL]` field and a broadly similar shape, the `responses` field differs meaningfully (`[Data]` vs `[String: Data]`), reflecting genuinely different stubbing contracts for their respective test suites. Merging or genericising test-only fixtures across package boundaries would couple unrelated test modules without meaningful production benefit.\",\n    \"evidence_quote\": \"is_test: true ... requestedURLs:[URL] ... responses:[Data] ... responses:[String: Data]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"ResponseStore\", \"constraint\": null }\n        ],\n        \"new_name\": \"SequentialMockSession\",\n        \"replaces\": [\n          \"iTunesArtworkServiceTests.SequentialMockSession\",\n          \"MetadataMockWebSession\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library were introduced, a single generic struct `SequentialMockSession<ResponseStore>` parameterised over the `responses` storage type (`[Data]` vs `[String: Data]`) could replace both fixtures. However, this would require a new cross-package test-support target and is unlikely to justify the added dependency complexity given the single differing slot.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018gqHohKhMFwG2hEqjYkWUe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2508,
+    "output_tokens": 586,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:20:WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"WXYCGradient\",\n      \"consolidate_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundLight` (line 20 in BackgroundGradient.swift) and `WXYCGradient.wxycBackgroundLight` (line 21 in WXYCGradient.swift) are exact-duplicate computed properties living in the same package (WXUI). The duplication suggests that `WXYCBackground` and `WXYCGradient` have overlapping responsibilities around the same gradient value. The canonical definition should live on `WXYCGradient` in WXYCGradient.swift, and the duplicate on `WXYCBackground` in BackgroundGradient.swift should be removed or replaced with a delegation to the canonical one, eliminating the exact duplication flagged by the pipeline.\",\n    \"evidence_quote\": \"WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"WXUI\",\n        \"type_name\": \"WXYCGradientValues\",\n        \"remove_from\": [\n          \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n          \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n        ]\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` are genuinely distinct types that both need `wxycBackgroundLight`, the value could be extracted into a shared namespace or constants type (e.g., `WXYCGradientValues`) within the same WXUI package, and both types could reference it, avoiding duplication without collapsing the two types.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01X22gZS8mqFp5atUjwSuHdz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2411,
+    "output_tokens": 684,
+    "service_tier": "standard"
+  }
+}

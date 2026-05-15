@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) share the same structural shape (3 shared fields, empty `fields_or_signature` lists, both `kind: interface`), their names and locations encode distinct domain roles: one is a production `@MainActor`-bound notification message type, the other is a test-plant mock living in the `CoreTesting` module. The `_Plant_` prefix in the mock's filename is a strong signal of intentional test-infrastructure scaffolding. Merging or extracting a common base would conflate production and test-support concerns without a clear benefit, and the empty field list means there is no concrete shared implementation to deduplicate.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the 3 shared fields represent a stable contract (e.g., a message identifier, payload, and sender), a common `NotificationMessage` protocol could be introduced in `Shared/Core/Sources/Core/Observation/` so that `MockNotificationMessage` in `CoreTesting` can conform to it, enabling test doubles to substitute for the production type without structural duplication. However, the empty `fields_or_signature` list means the shared members are not visible in the cluster data, making this speculative.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018BzRBSjtU8oBTtzFgYf8P6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2311,
+    "output_tokens": 521,
+    "service_tier": "standard"
+  }
+}

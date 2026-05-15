@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two protocols `MainActorNotificationMessage` and `MockNotificationMessage` share an identical member set (`makeMessage`, `makeNotification`, `name`) but serve fundamentally different roles: `MainActorNotificationMessage` is a production protocol in `Shared/Core/Sources/Core/Observation/` while `MockNotificationMessage` (prefixed `_Plant_Mock`, `is_test: true`) is a test-fixture stand-in in `Shared/Core/Sources/CoreTesting/`. Introducing a shared parent protocol would couple the production API surface to the test infrastructure package, which is an undesirable dependency inversion. The structural identity is coincidental \u2014 the mock was designed to mirror the production protocol exactly so that test doubles satisfy the same contract, not because a common abstraction is missing. The `structural_evidence` block confirms `shared_field_count: 0` and no `shared_ancestor`, further indicating the pipeline found no deeper structural relationship beyond surface-level member matching.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true ... \\\"name\\\": \\\"MockNotificationMessage\\\" ... \\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016gmCKXtecVvSSD3pM7AAea",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2460,
+    "output_tokens": 415,
+    "service_tier": "standard"
+  }
+}

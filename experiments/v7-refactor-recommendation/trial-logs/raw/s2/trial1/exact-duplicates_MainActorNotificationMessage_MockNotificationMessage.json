@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) share the same structural shape (3 shared fields, empty `fields_or_signature` lists, both `kind: interface`), they serve distinct domain roles: the former is a production `@MainActor`-bound notification message type, while the latter is a test-plant mock counterpart living in the `CoreTesting` sub-target. The `_Plant_` prefix in the mock's filename is a strong conventional signal that this file is a generated or hand-authored test double intentionally mirroring the production interface. Merging or extracting a common base would conflate production and testing concerns and likely break the mock's ability to diverge in behaviour. No structural change is warranted.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessageProtocol\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the 3 shared fields represent a stable contract, a lightweight protocol `NotificationMessageProtocol` could be introduced in `Shared/Core/Sources/Core/Observation/` so that `MockNotificationMessage` conforms to it, enabling injection without structural duplication. However, the empty `fields_or_signature` list means the shared members are not enumerated in the cluster data, making it impossible to ground the moved_members list in evidence \u2014 so this alternative is speculative and the no-action recommendation is preferred.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0123uJEZA9FD6g5aPPgUhVHT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2311,
+    "output_tokens": 536,
+    "service_tier": "standard"
+  }
+}

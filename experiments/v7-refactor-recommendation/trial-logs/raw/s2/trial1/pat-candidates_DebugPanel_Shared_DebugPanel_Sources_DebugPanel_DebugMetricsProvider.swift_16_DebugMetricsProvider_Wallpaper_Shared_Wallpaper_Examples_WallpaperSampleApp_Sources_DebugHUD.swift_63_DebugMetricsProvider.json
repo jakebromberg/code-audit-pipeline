@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:16:DebugMetricsProvider+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:63:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, line 63) carries `is_sample_app: true`, placing it squarely in a sample/example application. The near-identical `DebugMetricsProvider` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` is the canonical implementation in the `DebugPanel` package; the sample-app copy is a self-contained convenience duplicate that avoids a hard dependency from the `Wallpaper` example target onto `DebugPanel`. The only structural difference \u2014 `metalDevice:MTLDevice?` vs `metalDevice:(any MTLDevice)?` \u2014 is a minor existential-syntax variant consistent with independent, loosely-maintained sample code rather than a shared abstraction. Introducing a PAT or extracting a shared type would force the `WallpaperSampleApp` example to take on a real package dependency, which is typically undesirable for sample apps.\",\n    \"evidence_quote\": \"is_sample_app: true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is ever promoted beyond a throwaway example and a dependency on `DebugPanel` becomes acceptable, the 12 shared fields make the canonical `DebugMetricsProvider` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` a natural single source of truth, eliminating the divergent `metalDevice` existential-syntax copy.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Nb87ziuJ29KFySPNVHSZrh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2735,
+    "output_tokens": 627,
+    "service_tier": "standard"
+  }
+}

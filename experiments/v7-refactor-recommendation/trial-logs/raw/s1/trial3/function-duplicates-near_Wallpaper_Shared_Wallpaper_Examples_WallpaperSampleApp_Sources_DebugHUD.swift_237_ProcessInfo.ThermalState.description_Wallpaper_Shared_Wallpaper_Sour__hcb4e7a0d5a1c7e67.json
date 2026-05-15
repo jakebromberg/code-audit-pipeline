@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"ProcessInfo.ThermalState\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n      ]\n    },\n    \"rationale\": \"Two near-duplicate computed properties (Jaccard 0.75) both map `ProcessInfo.ThermalState` cases to human-readable strings: `ProcessInfo.ThermalState.description` in the sample-app `DebugHUD.swift` (line 237) and `PerformanceControls.thermalStateLabel` in the production `PerformanceControls.swift` (line 152). Because both live in the same `Wallpaper` package, the canonical fix is to add a single `var description: String` extension on `ProcessInfo.ThermalState` in a shared file within `Shared/Wallpaper/Sources/Wallpaper/` (e.g., `Extensions/ProcessInfo+ThermalState.swift`), then delete the local implementations in both files. The sample-app record carries `is_sample_app: true`, which normally suggests no-action, but the production file is not a sample-app file and the logic is clearly shared domain knowledge about thermal state labels, making consolidation worthwhile.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"ProcessInfo.ThermalState.description\\\" ... \\\"name\\\": \\\"PerformanceControls.thermalStateLabel\\\" ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"One of the two records has `is_sample_app: true` (`DebugHUD.swift`), which under the intentional-duplication rules suggests the sample app may deliberately maintain its own copy of debug utilities to remain self-contained and avoid a dependency on internal production APIs. If the sample app must be independently buildable without the production `DebugUI` module, keeping the duplicate is intentional.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017S1xXGEQAPehgYEpvTNm3T",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2451,
+    "output_tokens": 706,
+    "service_tier": "standard"
+  }
+}

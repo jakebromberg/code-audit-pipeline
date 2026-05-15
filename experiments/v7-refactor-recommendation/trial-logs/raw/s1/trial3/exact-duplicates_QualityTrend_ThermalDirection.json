@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether `QualityTrend` and `ThermalDirection` are true duplicates warranting action, or whether their structural similarity is coincidental.\n\n**Key observations:**\n- Both are `type-alias-union` kinds in the **same file** (`QualitySignal.swift`), same package (`Wallpaper`), lines 191 and 208 \u2014 only 17 lines apart.\n- Both have empty `fields_or_signature` arrays, so I cannot inspect the actual union cases.\n- `shared_field_count: 3` suggests they alias unions with 3 cases each, which is the entirety of the structural match.\n- The names encode **distinct domain concepts**: `QualityTrend` (a directional quality signal) vs. `ThermalDirection` (a thermal state direction). These are semantically different even if they happen to be 3-case unions.\n- No cross-package boundary, no test/codegen/mock flags \u2014 but the coincidence of shape (3-case union) for two domain-specific type aliases in the same throttling file is almost certainly intentional domain modeling, not accidental duplication.\n- Without field names I cannot confirm the cases are identical; the pipeline flagged `shared_field_count: 3` but `differing_slots: null` and `jaccard: null`, which is inconclusive.\n\nGiven the distinct semantic names and the inability to confirm case-level identity, the coincidental-shape rule applies.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:QualityTrend+ThermalDirection\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `QualityTrend` (line 191) and `ThermalDirection` (line 208) are `type-alias-union` declarations in the same file `Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`, and their structural similarity (`shared_field_count: 3`) reflects only that both happen to alias 3-case unions. The names encode distinct domain concepts \u2014 quality trend direction versus thermal state direction \u2014 within the throttling subsystem, making the shape overlap coincidental rather than a sign of unintended duplication. Furthermore, `differing_slots: null` and `jaccard: null` mean the pipeline could not confirm case-level identity, so there is insufficient evidence to assert these are true duplicates. Collapsing them into a single shared alias would conflate unrelated domain semantics and harm readability.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityTrend\\\" ... \\\"name\\\": \\\"ThermalDirection\\\" ... \\\"shared_field_count\\\": 3 ... \\\"differing_slots\\\": null, \\\"jaccard\\\": null\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VbpThiCKMm8AknaHytuXYD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2340,
+    "output_tokens": 695,
+    "service_tier": "standard"
+  }
+}

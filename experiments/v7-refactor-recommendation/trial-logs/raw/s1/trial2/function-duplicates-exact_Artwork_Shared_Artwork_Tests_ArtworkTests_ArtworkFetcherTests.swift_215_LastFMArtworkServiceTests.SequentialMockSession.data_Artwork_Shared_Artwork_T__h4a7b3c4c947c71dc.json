@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four duplicate `SequentialMockSession.data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`, a test file in the `Artwork` package. Although the pipeline did not set `is_test: true` on these records, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the enclosing type names (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`) unambiguously identify these as per-test-class mock helpers. Each `SequentialMockSession` is a nested mock type scoped to its own test class, so the duplication is intentional test-fixture isolation rather than accidental redundancy. Consolidating them would couple otherwise independent test suites and reduce clarity.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data ... LastFMArtworkServiceTests.SequentialMockSession.data ... DiscogsArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"SequentialMockSession\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the `data` implementations are truly byte-for-byte identical, a single shared `SequentialMockSession` helper could be extracted to a test-support file within the `Artwork` package (e.g., `Shared/Artwork/Tests/ArtworkTests/TestSupport/SequentialMockSession.swift`) and reused by all three test classes, eliminating the four-way duplication at lines 88, 215, 321, and 367. This is only worth pursuing if the implementations are confirmed identical and the test classes are expected to remain in sync.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016aZdb2ZHbifKNuEp4kaKCd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2803,
+    "output_tokens": 771,
+    "service_tier": "standard"
+  }
+}

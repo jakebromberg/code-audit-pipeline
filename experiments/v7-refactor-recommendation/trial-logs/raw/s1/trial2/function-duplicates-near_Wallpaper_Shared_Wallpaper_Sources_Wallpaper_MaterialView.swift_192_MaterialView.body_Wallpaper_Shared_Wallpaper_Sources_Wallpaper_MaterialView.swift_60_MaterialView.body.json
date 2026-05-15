@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent two distinct SwiftUI `View` conformances on separate types/extensions, or a genuine near-duplicate within a single type. If they are on the same type, consolidate into a single `body` implementation, extracting shared sub-view logic into private helper `@ViewBuilder` methods or sub-`View` structs within the same file. If they belong to two distinct `MaterialView` types (e.g., one conditional on a platform or configuration), use `#if` compilation conditions or a shared private `@ViewBuilder` helper to eliminate the ~83% overlap.\",\n      \"why_no_category_fits\": \"Both records share the same file, same type name (`MaterialView.body`), and same package (`Wallpaper`), but a SwiftUI `body` property is a protocol requirement of `View` and cannot be extracted to a free function or generic type without losing its role. The duplication is internal to a single file and involves a computed property rather than a free function or struct, so `extract-to-common`, `generic-parameterization`, and `subclass-lift` do not apply cleanly. The right fix is intra-file view decomposition, which none of the named categories capture precisely.\"\n    },\n    \"rationale\": \"The structural evidence shows a Jaccard similarity of 0.8333 between `MaterialView.body` at line 60 and `MaterialView.body` at line 192, both in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in the `Wallpaper` package, with no context flags (not test, codegen, mock, or sample-app) indicating intentional duplication. Two `body` implementations with ~83% overlap in the same file strongly suggest that a refactor or copy-paste introduced a near-duplicate SwiftUI view body. The fix is to extract the shared ~83% into a private `@ViewBuilder` helper or sub-`View` struct, leaving only the differing ~17% in each call site (or unifying into one `body` if the two are on the same type).\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` properties live in separate `extension MaterialView` blocks within the same file (a common SwiftUI pattern for platform splits), consolidating them into a single extension with a shared private `@ViewBuilder` helper would eliminate the overlap while preserving the extension-per-conformance idiom.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ky1FWeVmJ9Bva1A4VMRSnL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 839,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"ShowContainerProtocol and TrackContainerProtocol in package Playback are structurally identical across four of their five members (isStale:Bool, lastRefreshedAt:Date?, pageToken:String?, and the shared-field-count of 4), differing only in the single slot 'item:Show' vs 'item:Track'. This is a textbook PAT opportunity: introducing an associatedtype Item collapses both protocols into one generic ContainerProtocol<Item>, eliminating the duplication while preserving full type safety for Show and Track consumers. Both files live in the same package (Playback) and neither is test, codegen, mock, or sample-app code, so there is no intentional-duplication rationale to block the refactor.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"item:Show\\\"], \\\"b\\\": [\\\"item:Track\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale\", \"lastRefreshedAt\", \"pageToken\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If callers already reference ShowContainerProtocol and TrackContainerProtocol by name and a breaking rename is undesirable, a protocol-inheritance approach can extract the three shared members (isStale:Bool, lastRefreshedAt:Date?, pageToken:String?) into a base ContainerProtocol, leaving each child protocol to declare only its typed 'item' property. This is less idiomatic than a PAT for a single varying slot but avoids renaming existing conformers.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01L2BnFF78AoJw347j7QWjwe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2492,
+    "output_tokens": 625,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockAudioSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four participating records reside under test file paths \u2014 specifically 'Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift', 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' (two entries), and 'Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift'. Although the context flags do not have is_test=true (likely a tagging gap in the pipeline), the file paths unambiguously place every record inside a Tests/ directory, indicating these are test-only type-alias objects. The name collision across the Playback and PartyHorn packages is expected for mock helpers that shadow the same production type in isolated test targets. Consolidating them into a shared mock utility could be considered, but the structural evidence fields (jaccard, shared_field_count) are all null and the fields_or_signature arrays are empty, providing no grounding for a concrete refactor recommendation.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playback\",\n        \"type_name\": \"MockAudioSession\",\n        \"remove_from\": [\n          \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\",\n          \"Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the MockAudioSession type-aliases in RadioPlayerControllerTests.swift and SoundPlayerTests.swift are structurally identical to the one already canonically housed in Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift, the PlaybackTestUtilities target could serve as the single source of truth and both consuming test targets could import it instead of redeclaring it. However, without field/signature evidence this cannot be confirmed, so this remains a lower-confidence alternative.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DrFpw8LqKHApGzK2RHPpM8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2575,
+    "output_tokens": 580,
+    "service_tier": "standard"
+  }
+}

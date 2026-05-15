@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"One copy of `DebugMetricsProvider.updateMetrics` lives in the canonical package `DebugPanel` at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100`, while the duplicate lives inside `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131` \u2014 a path that contains `Examples/WallpaperSampleApp`, strongly indicating it is a self-contained sample/demo app that intentionally re-implements a lightweight debug HUD rather than taking a hard dependency on the `DebugPanel` package. Although `is_sample_app` is reported as `false` by the context flags, the file path itself (`Examples/WallpaperSampleApp`) is the canonical signal for a sample-app mirror. Consolidating the two would couple the sample app to `DebugPanel`, which is likely undesirable for a standalone example. No action is warranted until the sample app is confirmed to be a first-class consumer of `DebugPanel`.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the `WallpaperSampleApp` is ever promoted to a real integration target that already depends on `DebugPanel`, the duplicate `updateMetrics` implementation in `DebugHUD.swift` should be deleted and the type should import `DebugMetricsProvider` directly from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014iLUrvtsUyNBvKKxYDcwG8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 654,
+    "service_tier": "standard"
+  }
+}

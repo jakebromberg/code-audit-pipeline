@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `MockDiscogsEntityResolver.resolveRelease` (line 41) and `MockDiscogsEntityResolver.resolveMaster` (line 51) \u2014 reside in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` and both carry `is_test: true`. Per the decision rules, when all participating records are test fixtures the duplication is intentional and no refactor action is warranted. Although the Jaccard similarity of 0.714 suggests structural overlap, the two methods resolve distinct entity types (`Release` vs `Master`) within a mock object, making any generic collapse a test-readability trade-off that is not worth the added complexity in a test file.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"Entity\", \"constraint\": null }\n        ],\n        \"new_name\": \"resolve\",\n        \"replaces\": [\n          \"MockDiscogsEntityResolver.resolveRelease\",\n          \"MockDiscogsEntityResolver.resolveMaster\"\n        ]\n      },\n      \"rationale\": \"The 0.714 Jaccard similarity between `resolveRelease` and `resolveMaster` in `DiscogsFormatterTests.swift` suggests a single generic `resolve<Entity>` method could replace both, reducing duplication inside the mock. However, because both methods live in a test file, the explicitness of separate named methods is generally preferred for test clarity, so this remains a secondary option only.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Rh5xhV3oXNCga49ZUrPYyt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2418,
+    "output_tokens": 559,
+    "service_tier": "standard"
+  }
+}

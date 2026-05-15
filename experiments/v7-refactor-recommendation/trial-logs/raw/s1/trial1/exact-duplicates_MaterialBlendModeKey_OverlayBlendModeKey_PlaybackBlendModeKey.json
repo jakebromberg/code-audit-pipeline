@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"BlendMode\", \"constraint\": null }\n      ],\n      \"new_name\": \"BlendModeKey\",\n      \"replaces\": [\n        \"MaterialBlendModeKey\",\n        \"OverlayBlendModeKey\",\n        \"PlaybackBlendModeKey\"\n      ]\n    },\n    \"rationale\": \"All three members \u2014 `MaterialBlendModeKey`, `OverlayBlendModeKey`, and `PlaybackBlendModeKey` \u2014 are `type-alias-object` declarations at exactly line 89 in three parallel files within the same `Wallpaper` package, with identical structure (`shared_field_count: 1`, no differing slots). The only distinction is the domain-concept prefix (Material, Overlay, Playback), which is a strong signal that a single generic `BlendModeKey<BlendMode>` type parameterised on the blend-mode kind would unify all three without loss of type safety. Because all three live in `Shared/Wallpaper/Sources/Wallpaper/Core/`, a new file such as `BlendModeKey.swift` in that same directory is the natural home, and the three existing type aliases can be reduced to `typealias MaterialBlendModeKey = BlendModeKey<MaterialBlendMode>` etc., or removed entirely if call sites are updated.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"line\\\": 89\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendModeKey\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three blend-mode kinds are not intended to be distinguished at the type-parameter level, a single concrete `BlendModeKey` struct extracted into a shared file within the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKey.swift`) and re-exported from each domain file as a plain `typealias` would eliminate the duplication with minimal churn.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Xvi82n5wzDfXHQpY4ykCGB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2498,
+    "output_tokens": 714,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` represent two distinct SwiftUI `View` conformances on separate types/extensions, or a genuine near-duplicate within a single type. If they belong to two different `MaterialView` structs (e.g., one parameterised by a different material style), consolidate them into a single generic or parameterised `MaterialView` body that accepts the varying configuration as an initialiser argument or environment value, eliminating the near-duplicate body at line 192. If they are in separate extensions that differ only in a single condition, extract the shared view-building logic into a private helper method (e.g., `private func makeContentView() -> some View`) called from both `body` properties, keeping each `body` as a thin wrapper.\",\n      \"why_no_category_fits\": \"The cluster is a near-duplicate pair of computed properties (`body`) within the *same file* (`MaterialView.swift`) rather than across packages or types, so 'extract-to-common' (cross-package) does not apply. They are not protocol/subclass relationships, not test fixtures, not codegen, and the Jaccard similarity of 0.833 indicates meaningful shared structure rather than coincidental overlap. The most precise fix is either generic-parameterization of the view or extraction of a private helper \u2014 but because both `body` declarations live in the same file and the cluster provides no field/signature detail to confirm which structural variant applies, 'other' with a branching recommendation is the most honest and actionable choice.\"\n    },\n    \"rationale\": \"Both members are named `MaterialView.body` (kind: `computed-property`) and reside in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in the `Wallpaper` package, at lines 60 and 192 respectively. A Jaccard similarity of 0.8333 confirms the two bodies share roughly five-sixths of their token structure, making this a substantive near-duplicate rather than a coincidental overlap. Because they are in the same file, the duplication cannot be intentional cross-module mirroring; the most likely cause is copy-paste divergence between two `MaterialView` variants or two conditional rendering paths. Consolidating the shared logic into a private helper or a single parameterised body would reduce maintenance surface and eliminate the risk of the two implementations drifting further apart.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Material\", \"constraint\": \"ShapeStyle\" }\n        ],\n        \"new_name\": \"MaterialView\",\n        \"replaces\": [\"MaterialView (line 60 variant)\", \"MaterialView (line 192 variant)\"]\n      },\n      \"rationale\": \"If the two `body` implementations differ only in the concrete `Material` or `ShapeStyle` type they apply, making `MaterialView` generic over a `ShapeStyle`-constrained type parameter would collapse both bodies into one, with the differing material passed at the call site. This is idiomatic SwiftUI and would fully eliminate the near-duplicate rather than merely extracting a helper.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01ENKzpNux2czjwztV6vESnp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 922,
+    "service_tier": "standard"
+  }
+}

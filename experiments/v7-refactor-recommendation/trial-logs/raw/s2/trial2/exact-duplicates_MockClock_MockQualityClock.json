@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (Wallpaper package, `AdaptiveQualityControllerTests.swift`) and `MockClock` (Caching package, `CacheCoordinatorTests.swift`) are `type-alias-object` declarations living inside test files, despite `is_test` being reported as false. Their structural similarity (shared_field_count: 2, both empty `fields_or_signature`) is almost certainly coincidental: they alias a clock type for unrelated domain tests \u2014 adaptive quality control vs. cache coordination \u2014 in separate packages with no declared shared ancestor. Consolidating them would couple two independent packages (Wallpaper and Caching) for no meaningful reuse gain, and the differing names (`MockQualityClock` vs. `MockClock`) already signal intentional domain-specific naming.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MxiumU7wG82EUuoWrpEmEm",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2334,
+    "output_tokens": 353,
+    "service_tier": "standard"
+  }
+}

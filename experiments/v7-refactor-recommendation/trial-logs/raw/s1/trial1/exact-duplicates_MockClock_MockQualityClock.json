@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (in `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift`, package `Wallpaper`) and `MockClock` (in `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift`, package `Caching`) are `type-alias-object` declarations living exclusively inside test targets of separate packages. Although `is_test` is reported as `false` by the context flags, the file paths unambiguously place both types under `Tests/\u2026Tests/` directories, making them test-only fixtures. Consolidating them across package boundaries would introduce a cross-package test-support dependency that is unlikely to be warranted for two trivially-shaped clock aliases. The structural evidence shows only 2 shared fields and no differing slots, confirming the similarity is coincidental shape rather than meaningful shared logic.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0172hfbhBHa9DSLvij65tvv6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2334,
+    "output_tokens": 377,
+    "service_tier": "standard"
+  }
+}

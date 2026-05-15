@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `MockDiscogsEntityResolver.resolveMaster` methods are exact duplicates (query: function-duplicates-exact) living in two separate test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package: Metadata) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package: app:iOS). Because the mock is already present in the Metadata package's own test target, the canonical home is there. The app:iOS test target almost certainly already depends on the Metadata package, so moving the shared mock into a test-support module or a shared test helper file within Metadata (e.g., `Shared/Metadata/Tests/MetadataTests/TestHelpers/MockDiscogsEntityResolver.swift`) and importing it from `DiscogsFormatterTests.swift` eliminates the duplication without changing behaviour. Note that both records carry `is_test: false` in their context flags, which is likely a pipeline mis-classification given the file paths end in `Tests/`; the structural evidence of exact duplication still stands regardless.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both occurrences reside in test files (paths contain `Tests/`) and represent a local mock helper. If the Metadata test target is not accessible from app:iOS tests, keeping a local copy in each test target is the pragmatic choice and the duplication is intentional test-fixture isolation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013QFLfPGUTeotiuQ36AsoQg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2409,
+    "output_tokens": 650,
+    "service_tier": "standard"
+  }
+}

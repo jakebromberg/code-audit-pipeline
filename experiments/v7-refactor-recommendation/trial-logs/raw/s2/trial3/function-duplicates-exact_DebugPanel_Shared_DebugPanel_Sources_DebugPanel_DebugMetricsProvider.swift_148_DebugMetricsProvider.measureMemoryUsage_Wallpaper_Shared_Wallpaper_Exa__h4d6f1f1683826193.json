@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"DebugPanel\",\n      \"type_name\": \"DebugMetricsProvider\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n      ]\n    },\n    \"rationale\": \"Both members are exact duplicates of `DebugMetricsProvider.measureMemoryUsage`: one lives in the canonical `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148`, and the other is a verbatim copy embedded in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175` inside the `Wallpaper` package. The authoritative implementation already exists in `DebugPanel`, so the `Wallpaper` copy should be deleted and the `WallpaperSampleApp` target should instead import and call the `DebugPanel` version. Neither record carries `is_test`, `is_codegen`, or `is_mock` flags, so this is live production/sample code duplication that warrants consolidation.\",\n    \"evidence_quote\": \"DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"sample-app-mirror\"\n      },\n      \"rationale\": \"The duplicate resides under `Examples/WallpaperSampleApp`, which is a sample/example target. If the sample app is intentionally self-contained and cannot take a dependency on the `DebugPanel` package, the copy may be acceptable as a local convenience. However, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` suggests it is within a shared workspace where the `DebugPanel` dependency is already available, making the copy unnecessary.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LwM94oDyBr2GRiCYBLKp6W",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2433,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

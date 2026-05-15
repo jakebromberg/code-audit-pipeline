@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"HSBInitializable\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\n        \"HSBColor.init(hue:saturation:brightness:)\",\n        \"AccentColor.init(hue:saturation:brightness:)\",\n        \"HSBOffset.init(hue:saturation:brightness:)\"\n      ]\n    },\n    \"rationale\": \"Three distinct types \u2014 `HSBColor` (package `ColorPalette`), `AccentColor`, and `HSBOffset` (both in package `Wallpaper`, file `ThemeColors.swift`) \u2014 each independently declare an identical `init(hue:saturation:brightness:)` initializer. Because these are value types in separate packages that cannot share a common base class, the idiomatic Swift solution is to introduce a protocol `HSBInitializable` with a required `init(hue:saturation:brightness:)` requirement, placed in the `ColorPalette` package (which `Wallpaper` already depends on, given it uses HSB concepts). Each conforming type retains its own stored properties but satisfies the protocol requirement, eliminating the triplicated initializer shape and enabling generic code that constructs any HSB-initializable color.\",\n    \"evidence_quote\": \"HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"ColorPalette\",\n        \"type_name\": \"HSBComponents\",\n        \"remove_from\": [\n          \"Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift\"\n        ]\n      },\n      \"rationale\": \"An alternative is to extract a shared `HSBComponents` struct (with `hue`, `saturation`, `brightness` stored properties) into the `ColorPalette` package and have `HSBColor`, `AccentColor`, and `HSBOffset` each hold an `HSBComponents` value via composition, delegating their `init(hue:saturation:brightness:)` to it. This removes the duplicated initializer body entirely but changes the storage layout of all three types, which may be a larger blast radius than the protocol approach.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015LuhDUKUsHWxFcwEbtx3vu",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2609,
+    "output_tokens": 840,
+    "service_tier": "standard"
+  }
+}

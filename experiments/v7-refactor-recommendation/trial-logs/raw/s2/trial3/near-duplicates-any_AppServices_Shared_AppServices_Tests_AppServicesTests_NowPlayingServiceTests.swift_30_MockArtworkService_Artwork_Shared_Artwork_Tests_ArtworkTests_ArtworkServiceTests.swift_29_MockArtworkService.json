@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:AppServices:Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:30:MockArtworkService+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:29:MockArtworkService\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records are mock types named `MockArtworkService` living under test file paths (`NowPlayingServiceTests.swift` and `ArtworkServiceTests.swift`). The cluster's Jaccard similarity of 0.75 is consistent with two independently-written test doubles for the same service interface rather than accidental duplication in production code. Test mocks are routinely duplicated per test suite to keep each suite self-contained and to allow independent evolution of test behaviour without cross-suite coupling. Because all participating records reside in test targets, Decision Rule 1 (test-fixture) applies and no refactor action is warranted.\",\n    \"evidence_quote\": \"Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:30:MockArtworkService+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:29:MockArtworkService\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Artwork\",\n        \"type_name\": \"MockArtworkService\",\n        \"remove_from\": [\n          \"Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift\",\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `MockArtworkService` implementations are confirmed to be structurally identical (Jaccard 0.75 is high but not perfect), a single shared mock could be extracted into a test-support module within `Shared/Artwork` and imported by both test targets, reducing maintenance burden when the real `ArtworkService` interface changes.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Bve6jAnxSJ1vMW5WF9Awiu",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2114,
+    "output_tokens": 557,
+    "service_tier": "standard"
+  }
+}

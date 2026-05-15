@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (two separate `struct`/`extension` declarations each contributing a `body` computed property), or whether the same `body` property is accidentally duplicated within a single type. If two distinct `MaterialView` types exist in the same file, consolidate them into one. If the `body` property is genuinely duplicated, delete the implementation at line 192 and retain the one at line 60 (or vice-versa after confirming which is canonical). If the two `body` implementations differ in their SwiftUI view tree (explaining the near- rather than exact-duplicate signal with Jaccard \u2248 0.83), extract the differing sub-view into a private helper `View` type or a `@ViewBuilder` helper method, then have a single `body` call that helper, eliminating the duplication.\",\n      \"why_no_category_fits\": \"Both records are the same property name (`MaterialView.body`) in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at different lines (60 and 192). This is not a cross-file extraction problem, not a protocol/inheritance problem, and not a generic-parameterization problem. The duplication is intra-file and intra-type (or indicates an accidental double declaration), which none of the named categories address precisely. The Jaccard similarity of 0.83 suggests the two bodies are nearly but not exactly identical, so a simple delete-one approach may need a small refactor of the differing portion into a shared helper before removal.\"\n    },\n    \"rationale\": \"Both cluster members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 60 and 192 respectively. A Jaccard similarity of 0.8333 indicates the two implementations share roughly 83 % of their token structure, strongly suggesting accidental near-duplication rather than intentional specialization. Neither record carries any test, codegen, mock, or sample-app flag, so this is live production code. Having two `body` properties on what appears to be the same `MaterialView` type is either a Swift compiler error (if in the same extension scope) or a sign of two conflicting type declarations in one file, both of which warrant immediate consolidation.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MaterialView.body\\\", \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"name\\\": \\\"MaterialView.body\\\", \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If `MaterialView` is split across two `extension` blocks in the same file \u2014 each providing its own `body` \u2014 consolidating both extensions into a single primary `struct` declaration with one `body` property would resolve the duplication. The differing ~17 % of token content (per Jaccard 0.83) could be unified by extracting the variant sub-view into a private `@ViewBuilder` helper, leaving a single authoritative `body` implementation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LEtJtPtBvPJanximuZbL8Q",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2384,
+    "output_tokens": 1017,
+    "service_tier": "standard"
+  }
+}

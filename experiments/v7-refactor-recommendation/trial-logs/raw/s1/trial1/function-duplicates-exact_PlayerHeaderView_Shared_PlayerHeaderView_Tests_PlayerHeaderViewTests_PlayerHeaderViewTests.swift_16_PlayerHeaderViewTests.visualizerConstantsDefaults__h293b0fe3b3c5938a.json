@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"PlayerHeaderView\",\n      \"type_name\": \"VisualizerConstantsDefaults\",\n      \"remove_from\": [\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift\",\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `PlayerHeaderViewTests.visualizerConstantsDefaults` (line 16 of PlayerHeaderViewTests.swift) and `VisualizerConstantsTests.visualizerConstantsDefaults` (line 305 of VisualizerDataSourceTests.swift) are exact function duplicates residing in the same package (`PlayerHeaderView`) and the same test directory. Although the `is_test` context flag is incorrectly reported as `false` for both records, the file paths unambiguously place them under `Tests/PlayerHeaderViewTests/`, indicating they are test helpers. The duplicated helper should be extracted into a shared test utility file within the `PlayerHeaderView` package's test target so both `PlayerHeaderViewTests` and `VisualizerConstantsTests` can import it, eliminating the redundancy. Because both records live in the same package, no cross-package dependency change is required.\",\n    \"evidence_quote\": \"VisualizerConstantsTests.visualizerConstantsDefaults\\n...PlayerHeaderViewTests.visualizerConstantsDefaults\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both methods reside under `Tests/PlayerHeaderViewTests/` and are clearly test helpers despite the `is_test: false` flag. If the duplication is intentional to keep each test class self-contained and the method body is trivially small, leaving them in place is acceptable and avoids introducing a shared test utility dependency.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Bi8YGEgzxUwV6gYoozWtjk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2425,
+    "output_tokens": 623,
+    "service_tier": "standard"
+  }
+}

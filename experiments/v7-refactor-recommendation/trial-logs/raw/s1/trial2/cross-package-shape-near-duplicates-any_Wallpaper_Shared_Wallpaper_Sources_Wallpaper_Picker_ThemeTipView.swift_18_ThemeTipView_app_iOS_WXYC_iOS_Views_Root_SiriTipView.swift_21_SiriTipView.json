@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array, meaning no field or method lists are available to ground a concrete refactor recommendation. The only structural evidence provided is a Jaccard similarity of 0.75 between `ThemeTipView` (Shared/Wallpaper package) and `SiriTipView` (app/iOS package), but without inspecting the actual members it is impossible to determine which fields or methods are shared versus divergent. Given that the two types encode distinct domain concepts \u2014 a wallpaper-theme tip UI and a Siri-integration tip UI \u2014 their structural similarity is most likely coincidental (both are small tip/hint view types that naturally converge on the same SwiftUI shape). Recommending an extraction or protocol without member-level evidence would risk hallucination.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that the 75% Jaccard overlap corresponds to shared SwiftUI layout boilerplate (e.g., icon + title + body text fields), a generic `TipView` base extracted to a shared UI utilities package would eliminate the duplication. However, this cannot be confirmed without the actual member lists, so it remains a speculative alternative.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01A1bNLAZcQAhBPqNGBWbCYH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2131,
+    "output_tokens": 558,
+    "service_tier": "standard"
+  }
+}

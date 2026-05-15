@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MetadataRepository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ArtistRepository\", \"ReleaseRepository\"]\n    },\n    \"rationale\": \"Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members (`cacheKey:(for id: Int) -> String`, `entityKind:String`, `lastSync:Date?`) and differ only in the return type of `resolve:(id: Int) async throws -> <Entity>`. This is the canonical PAT pattern: a single protocol with `associatedtype Entity` and a `resolve(id: Int) async throws -> Entity` requirement would unify both interfaces, eliminating the structural duplication while preserving type safety. The `structural_evidence` confirms exactly one differing slot (`resolve` return type) against four shared fields, making the associated-type lift low-risk and high-value.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"MetadataRepository\",\n        \"method\": \"cacheKey(for id: Int) -> String\",\n        \"target_location\": \"Shared/Metadata/Sources/Metadata/MetadataRepository.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift\",\n          \"Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift\"\n        ]\n      },\n      \"rationale\": \"Once the PAT is introduced, the shared `cacheKey`, `entityKind`, and `lastSync` members could receive default implementations in a protocol extension, further reducing boilerplate in each conforming type. This is secondary to the PAT introduction itself.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014ZsjYdQ8vb3i4GqYd2NxzU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 557,
+    "service_tier": "standard"
+  }
+}

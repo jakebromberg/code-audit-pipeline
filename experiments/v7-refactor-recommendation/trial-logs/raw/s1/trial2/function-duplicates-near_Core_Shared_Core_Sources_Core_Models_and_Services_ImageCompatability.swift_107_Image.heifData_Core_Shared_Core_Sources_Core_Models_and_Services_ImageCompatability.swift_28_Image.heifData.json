@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `Image.heifData` method definitions at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. They share the same name and a Jaccard similarity of 0.75, suggesting they are near-duplicates within the same file. Likely one is a platform-conditional variant (e.g., `#if os(macOS)` vs `#if os(iOS)`) or one is a deprecated overload. Consolidate them into a single implementation using a `#if canImport(...)` or `#available(...)` guard, or extract the shared logic into a private helper and have both call it. Remove whichever variant is redundant after unification.\",\n      \"why_no_category_fits\": \"Both methods live in the exact same file and package (`Core`, `ImageCompatability.swift`), so 'extract-to-common' does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved \u2014 these are two near-identical free/extension methods on `Image`. The most appropriate action is intra-file deduplication via a private helper or conditional compilation consolidation, which does not map cleanly to any of the named categories.\"\n    },\n    \"rationale\": \"Both `Image.heifData` methods reside in the same file (`Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`) at lines 28 and 107, within the `Core` package, with a Jaccard similarity of 0.75. Having two near-duplicate methods with identical names in the same file is almost certainly unintentional \u2014 the divergence likely stems from a platform-conditional copy-paste or an incomplete refactor. Neither record carries any test, codegen, mock, or sample-app flags, so this is live production code that warrants cleanup.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"Image.heifData\\\" ... \\\"line\\\": 28 ... \\\"name\\\": \\\"Image.heifData\\\" ... \\\"line\\\": 107 ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the two `Image.heifData` definitions at lines 28 and 107 are intentionally separated by a compile-time conditional block (e.g., `#if os(macOS)` / `#else`) that the static analysis pipeline cannot see, the duplication is structural-only and the methods encode platform-specific behaviour. In that case no refactor is needed, though adding a comment clarifying the conditional split would improve readability.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Faxref1pZdrKaYpUfR9ZcQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2363,
+    "output_tokens": 743,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `MockDiscogsEntityResolver.resolveArtist` (line 35) and `MockDiscogsEntityResolver.resolveRelease` (line 45) \u2014 reside in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and both carry `is_test: true`. The two methods are domain-distinct stubs on the same mock type: one resolves an artist entity and the other resolves a release entity. Even though their structural similarity (Jaccard 0.71) makes them look like generic-function candidates, collapsing them into a single generic method inside a test-only mock would obscure test intent and couple unrelated entity-resolution paths. Per the decision rules, all participating records being test fixtures is sufficient grounds for no-action.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"Entity\", \"constraint\": null }\n        ],\n        \"new_name\": \"resolveEntity\",\n        \"replaces\": [\"MockDiscogsEntityResolver.resolveArtist\", \"MockDiscogsEntityResolver.resolveRelease\"]\n      },\n      \"rationale\": \"If the mock grows additional `resolveX` stubs with identical bodies, a single generic `resolveEntity<Entity>` method in `MockDiscogsEntityResolver` (within `DiscogsMarkupParserTests.swift`) could reduce repetition. The Jaccard score of 0.71 and the shared-file location support this, but the benefit is marginal for only two methods in a test fixture.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UAi4VZJMsUWQCY38maFbMM",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2416,
+    "output_tokens": 569,
+    "service_tier": "standard"
+  }
+}

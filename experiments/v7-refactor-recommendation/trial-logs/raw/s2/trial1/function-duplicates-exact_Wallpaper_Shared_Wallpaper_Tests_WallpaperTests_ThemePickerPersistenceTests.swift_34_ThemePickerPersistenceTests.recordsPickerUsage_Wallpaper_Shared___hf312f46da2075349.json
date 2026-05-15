@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:34:ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both methods \u2014 `ThemePickerPersistenceTests.recordsPickerUsage` (line 34) and `ThemePickerPersistenceTests.recordPickerUsageIdempotent` (line 43) \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` within the `Wallpaper` package. Although the pipeline reports `is_test: false` for both records, the file path (`Tests/WallpaperTests/`) and the enclosing class name (`ThemePickerPersistenceTests`) make it unambiguous that these are XCTest methods. The structural similarity between the two is almost certainly intentional: one test verifies that picker usage is recorded at all (`recordsPickerUsage`) while the other verifies idempotency (`recordPickerUsageIdempotent`), which are distinct behavioural assertions that legitimately share setup and assertion shape. Merging or deduplicating them would obscure test intent and reduce diagnostic clarity on failure.\",\n    \"evidence_quote\": \"ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013qhimTkVCKCphFd5bweWU6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2457,
+    "output_tokens": 518,
+    "service_tier": "standard"
+  }
+}

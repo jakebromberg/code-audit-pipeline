@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:115:AudioEnginePlayerTests.testPlay+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:365:AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in the same test file `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift` within the `Playback` package. The two methods \u2014 `AudioEnginePlayerTests.testPlay` (line 115) and `AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown` (line 365) \u2014 are distinct test cases that, despite a high Jaccard similarity of 0.833, intentionally exercise different scenarios: a baseline play path versus a play-after-engine-teardown recovery path. Collapsing or extracting them would obscure the distinct failure conditions each test is designed to catch, reducing diagnostic clarity when either test fails.\",\n    \"evidence_quote\": \"is_test: true ... AudioEnginePlayerTests.testPlay ... AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown ... jaccard: 0.8333333333333334\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NRtv2Y3YenLN9CLHdo2fM3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2424,
+    "output_tokens": 401,
+    "service_tier": "standard"
+  }
+}

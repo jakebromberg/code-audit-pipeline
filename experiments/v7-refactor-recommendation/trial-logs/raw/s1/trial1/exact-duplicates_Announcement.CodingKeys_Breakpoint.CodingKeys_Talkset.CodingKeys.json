@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Replace the three identical `CodingKeys` type-alias-union declarations nested in `Announcement`, `Breakpoint`, and `Talkset` with a single shared `CodingKeys` enum (or typealias) defined once in the `Playlist` package \u2014 for example as a top-level or namespaced type in `Shared/Playlist/Sources/Playlist/` \u2014 and have each of the three parent types reference it. If the four shared coding keys are truly identical across all three types, a common `PlaylistEntryCodingKeys` (or similar) can be declared once and typealiased inside each parent type to preserve the `MyType.CodingKeys` call-site spelling required by `Codable`.\",\n      \"why_no_category_fits\": \"The three members are `type-alias-union` declarations (not functions, structs, protocols, or classes), so none of the action categories \u2014 generic-parameterization, subclass-lift, protocol-inheritance, default-implementation, etc. \u2014 map cleanly. The duplication is in nested `CodingKeys` enum/typealias definitions that are structurally identical (`shared_field_count: 4`, `jaccard: null` indicating exact match) across `Announcement`, `Breakpoint`, and `Talkset` within the same `Playlist` package. The correct remedy is a one-time declaration plus per-type typealiases, which is an 'other' pattern not covered by the schema categories.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` (line 34, `_Plant_Announcement.swift`), `Breakpoint.CodingKeys` (line 72), and `Talkset.CodingKeys` (line 111, both in `PlaylistEntry.swift`) \u2014 are flagged as `exact-duplicates` with `shared_field_count: 4` and reside in the same `Playlist` package. Because they are `type-alias-union` kinds rather than functions or nominal types, none of the structured refactor categories apply directly. The idiomatic Swift fix is to declare a single `PlaylistEntryCodingKeys` enum once in the `Playlist` package and introduce a `typealias CodingKeys = PlaylistEntryCodingKeys` inside each of the three parent types, eliminating the four-field duplication while preserving `Codable` conformance ergonomics.\",\n    \"evidence_quote\": \"\\\"query\\\": \\\"exact-duplicates\\\", \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playlist\",\n        \"type_name\": \"PlaylistEntryCodingKeys\",\n        \"remove_from\": [\n          \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\",\n          \"Shared/Playlist/Sources/Playlist/PlaylistEntry.swift\"\n        ]\n      },\n      \"rationale\": \"If the tooling can represent the extracted type as a standalone enum in the `Playlist` package, `extract-to-common` into `Shared/Playlist/Sources/Playlist/` is a valid framing \u2014 the three files listed are the only locations where the duplicate currently lives, and all three already belong to the same `Playlist` package, so no new dependency edge is introduced.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0196sXRH849jydMgc5iHKMy1",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2470,
+    "output_tokens": 879,
+    "service_tier": "standard"
+  }
+}

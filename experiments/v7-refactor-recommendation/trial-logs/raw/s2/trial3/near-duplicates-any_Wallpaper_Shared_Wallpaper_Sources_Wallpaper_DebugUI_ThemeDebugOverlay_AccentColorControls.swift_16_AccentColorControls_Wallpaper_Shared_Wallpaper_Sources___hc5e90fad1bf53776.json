@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no concrete field lists, method signatures, or context flags to ground a refactor recommendation. The only available evidence is a Jaccard similarity of 0.75 between `AccentColorControls` (AccentColorControls.swift:16) and `MaterialControls` (MaterialControls.swift:15) in the `Wallpaper` package's `DebugUI/ThemeDebugOverlay` group. While the structural similarity is notable, `AccentColorControls` and `MaterialControls` encode distinct UI concerns (accent-color selection vs. material selection) whose shape overlap is likely coincidental given their separate domain roles. Without member-level evidence it is not possible to identify safe shared abstractions, so recommending a refactor would risk hallucination.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75, \\\"differing_slots\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ThemeDebugControlsBase\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that the 0.75 Jaccard overlap corresponds to shared SwiftUI view scaffolding (e.g., body structure, preview providers, or common state fields), a shared base view or view-modifier in the same `Wallpaper` package's `DebugUI/ThemeDebugOverlay` group could eliminate the duplication. This alternative should only be pursued once the `members` payload is populated and the overlapping members are confirmed to be structurally identical.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0126sBhYt7fXdTeUS28vFuM8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2141,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}
