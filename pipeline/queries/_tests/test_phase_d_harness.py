@@ -297,5 +297,56 @@ class TestEndToEndOneRowWithMockedTransport(unittest.TestCase):
             self.assertEqual(written["raw_response_path"], "raw/s2/trial1/exact_foo.json")
 
 
+class TestCliResumeFilterPreservesQuery(unittest.TestCase):
+    """Regression test for the per-file row-index collision bug.
+
+    `_load_rows` enumerates each JSONL file from 0, so the same `row_index`
+    appears in multiple (query, row_index, raw) tuples. The resume filter in
+    the CLI must NOT key its `query`-recovery off `row_index` alone — that
+    silently mis-labels rows whose indices collide between query files. The
+    fix keeps `(query, row_index, raw)` triples intact through filtering.
+    """
+
+    def test_filter_does_not_collide_on_per_file_indices(self):
+        # Two query files, each with row_index=0 and row_index=1.
+        all_rows = [
+            ("exact-duplicates", 0, {"cluster_id": "exact:A"}),
+            ("exact-duplicates", 1, {"cluster_id": "exact:B"}),
+            ("pat-candidates", 0, {"cluster_id": "pat:C"}),
+            ("pat-candidates", 1, {"cluster_id": "pat:D"}),
+        ]
+        completed: set[str] = set()  # nothing completed yet
+        # Mirror the CLI's inline filter:
+        pending_full = [
+            (q, idx, raw)
+            for (q, idx, raw) in all_rows
+            if telemetry.sanitize_cluster_id(raw.get("cluster_id", "")) not in completed
+        ]
+        # Every row keeps its original query — no collision-driven re-labeling.
+        self.assertEqual(
+            sorted((q, raw["cluster_id"]) for q, _, raw in pending_full),
+            sorted([
+                ("exact-duplicates", "exact:A"),
+                ("exact-duplicates", "exact:B"),
+                ("pat-candidates", "pat:C"),
+                ("pat-candidates", "pat:D"),
+            ]),
+        )
+
+    def test_filter_drops_completed_by_sanitized_id(self):
+        all_rows = [
+            ("exact-duplicates", 0, {"cluster_id": "exact:A"}),
+            ("pat-candidates", 0, {"cluster_id": "pat:C"}),
+        ]
+        completed = {"exact_A"}  # sanitized form of "exact:A"
+        pending_full = [
+            (q, idx, raw)
+            for (q, idx, raw) in all_rows
+            if telemetry.sanitize_cluster_id(raw.get("cluster_id", "")) not in completed
+        ]
+        self.assertEqual(len(pending_full), 1)
+        self.assertEqual(pending_full[0][0], "pat-candidates")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

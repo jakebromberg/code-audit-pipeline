@@ -62,7 +62,6 @@ from harness.checks import (
 )
 from harness.extract import ExtractError
 from harness.gates import is_token_overrun
-from harness.telemetry import filter_incomplete
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / "experiments" / "v7-refactor-recommendation"
@@ -182,10 +181,16 @@ def main() -> int:
     completed = list_completed_cluster_ids(out_root, args.condition, args.trial)
     _log(f"resume: {len(completed)} cluster ids already have telemetry; skipping those")
 
-    pending = filter_incomplete(((idx, raw) for _, idx, raw in all_rows), completed)
-    # Re-attach query names that filter_incomplete drops.
-    by_idx_query = {idx: q for (q, idx, _) in all_rows}
-    pending_full = [(by_idx_query[idx], idx, raw) for idx, raw in pending]
+    # Filter inline rather than threading (idx, raw) through filter_incomplete:
+    # `idx` is the row's offset within its JSONL file and is NOT unique across
+    # files, so re-attaching the `query` via a {idx: query} dict would silently
+    # mis-key rows whose offsets collide between files. Keep the (query, idx,
+    # raw) tuple intact through the filter step.
+    pending_full = [
+        (q, idx, raw)
+        for (q, idx, raw) in all_rows
+        if sanitize_cluster_id(raw.get("cluster_id", "")) not in completed
+    ]
     _log(f"pending after resume filter: {len(pending_full)} rows")
 
     prompt_doc_text = PROMPT_DOC.read_text()
