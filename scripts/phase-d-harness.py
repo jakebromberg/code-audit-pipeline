@@ -17,6 +17,7 @@ CLI:
   --out <dir>         (default: experiments/v7-refactor-recommendation/trial-logs/)
   --queries q1,q2,... (optional: restrict to these query types)
   --max-rows N        (optional: cap the per-condition row count, smoke-run aid)
+  --budget-usd USD    (optional: per (condition, trial) envelope; default $3.50)
   --no-pause          (don't pause on mid-run signature-check fires; log only)
   --dry-run           (skip API calls; just normalize, render, and report)
 
@@ -26,7 +27,9 @@ overwritten — to re-run a row, delete its telemetry file.
 
 Cost / token gates (plan §6.3):
   - per-rec combined token cap: 50,000 → `error_class: trial-overrun`
-  - per-condition $-budget: $3.50 → 80% alert, 100% halt for that condition
+  - per-(condition, trial) $-budget: default $3.50 (plan §6.3 reference, scoped
+    for 150-rec runs); overridable via `--budget-usd`. 80% alert, 100% halt.
+    All-rows production runs pass `--budget-usd 12` to clear S2's ~525 rows.
   - mid-run §14.1 / §14.4 signature checks at 25% completion of (cond,trial)
 """
 
