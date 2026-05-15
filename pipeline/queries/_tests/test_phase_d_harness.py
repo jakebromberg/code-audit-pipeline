@@ -92,6 +92,29 @@ class TestCostGates(unittest.TestCase):
         self.assertEqual(s.add(2.0), "halt")
         self.assertEqual(s.add(0.01), "halt")
 
+    def test_budget_flag_envelope_thresholds(self):
+        """Non-default --budget-usd values must shift alert/halt thresholds linearly.
+
+        Locks the contract the `--budget-usd` CLI flag relies on: BudgetState's
+        80%/100% thresholds scale with the supplied envelope. The §6.3 all-rows
+        run uses `--budget-usd 12` (alert at $9.60, halt at $12.00); regressing
+        this would cause the production run to halt or alert at the wrong cost.
+        """
+        s = gates.BudgetState(budget_usd=12.0, alert_fraction=0.80)
+        self.assertAlmostEqual(s.alert_threshold_usd, 9.60)
+        # Just under the alert:
+        self.assertEqual(s.add(9.00), "ok")
+        self.assertFalse(s.alerted)
+        # Cross alert at $9.60:
+        self.assertEqual(s.add(1.00), "alert")
+        self.assertTrue(s.alerted)
+        # Still under halt:
+        self.assertEqual(s.add(1.00), "ok")
+        self.assertFalse(s.is_halted)
+        # Cross halt at $12.00:
+        self.assertEqual(s.add(1.50), "halt")
+        self.assertTrue(s.is_halted)
+
 
 class TestSignatureChecks(unittest.TestCase):
     def test_should_run_midrun_at_quarter_mark(self):
