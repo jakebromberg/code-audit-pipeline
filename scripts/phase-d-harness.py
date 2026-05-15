@@ -168,6 +168,12 @@ def main() -> int:
                         help="comma-separated query names to restrict the run to")
     parser.add_argument("--max-rows", type=int, default=0,
                         help="cap rows per condition (smoke-run aid; 0 = no cap)")
+    parser.add_argument("--budget-usd", type=float, default=PER_CONDITION_BUDGET_USD,
+                        help=f"per (condition, trial) $-budget envelope. "
+                             f"Default ${PER_CONDITION_BUDGET_USD:.2f} matches plan §6.3's "
+                             f"reference value (scoped for 150-rec runs). All-rows runs "
+                             f"against the full cluster output need ~$12 to clear S2's "
+                             f"~525 rows at the §5.3 dry-run cost/rec.")
     parser.add_argument("--no-pause", action="store_true",
                         help="don't pause on signature-check fires; log only")
     parser.add_argument("--dry-run", action="store_true",
@@ -207,7 +213,7 @@ def main() -> int:
     prompt_doc_text = PROMPT_DOC.read_text()
     instructions, specifics = extract_prompt_body(prompt_doc_text)
 
-    budget = BudgetState(budget_usd=PER_CONDITION_BUDGET_USD)
+    budget = BudgetState(budget_usd=args.budget_usd)
     per_cluster_categories: dict[str, list[str]] = {}
     confidences: list[float] = []
     rows_total = len(all_rows)
@@ -272,10 +278,10 @@ def main() -> int:
 
         gate_state = budget.add(cost)
         if gate_state == "alert":
-            _log(f"ALERT: condition {args.condition} crossed 80% of ${PER_CONDITION_BUDGET_USD:.2f} budget "
+            _log(f"ALERT: condition {args.condition} crossed 80% of ${args.budget_usd:.2f} budget "
                  f"(spent ${budget.spent_usd:.4f})")
         elif gate_state == "halt":
-            _log(f"HALT: condition {args.condition} crossed ${PER_CONDITION_BUDGET_USD:.2f} budget "
+            _log(f"HALT: condition {args.condition} crossed ${args.budget_usd:.2f} budget "
                  f"(spent ${budget.spent_usd:.4f}); will stop after this row")
 
         write_telemetry(
@@ -301,7 +307,7 @@ def main() -> int:
             )
             midrun_done = True
 
-    _log(f"done: spent ${budget.spent_usd:.4f} / ${PER_CONDITION_BUDGET_USD:.2f} for condition {args.condition} trial {args.trial}")
+    _log(f"done: spent ${budget.spent_usd:.4f} / ${args.budget_usd:.2f} for condition {args.condition} trial {args.trial}")
     return 0
 
 
