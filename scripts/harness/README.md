@@ -119,9 +119,9 @@ To force a re-run of a specific row: delete its telemetry file (and optionally i
 
 | Gate | Threshold | Behavior |
 |---|---|---|
-| Per-rec token cap | 50,000 combined input+output | Recorded with `error_class: "trial-overrun"`; continue with next row. |
+| Per-rec token cap | 50,000 combined input+output | **Post-hoc labeling**, not preventative — evaluated after the call returns. Crossings get `error_class: "trial-overrun"` for downstream filtering; the cost still counts. Continue with next row. |
 | Per-condition $-alert | 80% of $3.50 | Log a warning, continue. Fires once per condition state. |
-| Per-condition $-halt | 100% of $3.50 | Stop the loop after writing the current row's telemetry. Subsequent rows are not processed. |
+| Per-condition $-halt | 100% of $3.50 | Stop the loop after writing the current row's telemetry. Subsequent rows are not processed. The in-flight row's cost is always counted. |
 
 Pricing comes from `reproducibility.yaml > execution.api_pricing_snapshot` ($3.00 input + $15.00 output per million tokens for Sonnet 4.6).
 
@@ -149,7 +149,7 @@ By default the harness pauses for human review on a fire (press ENTER to continu
 pipeline/queries/_tests/test_phase_d_harness.sh
 ```
 
-27 unit tests cover fence extraction, cost gates, signature-check trigger and outcomes, telemetry write/resume, mocked-HTTP round-trip. No live API calls.
+31 unit tests cover fence extraction, cost gates, signature-check trigger and outcomes, telemetry write/resume, malformed-JSONL skip, CLI resume-filter (cross-file index collision regression), and mocked-HTTP round-trip. No live API calls.
 
 ## See also
 
