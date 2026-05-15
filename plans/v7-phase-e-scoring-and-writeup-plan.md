@@ -50,7 +50,7 @@ Per-parsed-rec schema:
   "row_index": 0,
   "raw_response_path": "raw/s2/trial1/<sanitized>.json",
   "parsed": {
-    "category": "introduce-pat",
+    "category": "pat-introduction",
     "specifics": {"new_protocol": "Container", "associated_type": "Element"},
     "rationale": "<verbatim>",
     "evidence_quote": "<verbatim or null>",
@@ -130,11 +130,11 @@ Three things in one PR:
 ### 3.2 Acceptance
 
 - `score_all.py` is idempotent + deterministic (same parsed cache → same `auto-scores.json`).
-- Auto-scoring rate ≥ methodology §8's target. If the panel route rate exceeds the §14.3 risk threshold (>50%), `results.md` documents it as a finding, not as a procedural problem.
+- Auto-scoring rate is reported in `results.md` per (condition, category) cell. The pre-registered acceptance bar is **panel-route rate ≤ 50%** (equivalently, auto-scored fraction ≥ 50%) per methodology §14.3's "rubric undercovers" signature; a panel-route rate above that threshold is reported as a finding rather than as a procedural failure.
 - All 25 plants have a per-plant score recorded in `score-summary.json` for each (condition, trial) cell.
 - Fleiss κ computed and recorded in `results.md` per methodology §12.
 - `reproducibility.yaml`: `panel_composition` non-TBD; `rubric_modifications` either `null` or path-to-file.
-- PR body declares "Closes #67-followup" or references the Phase E tracker issue (see §5 below).
+- PR body declares `Closes #<E3-issue-number>` against the E3 issue filed per §5.1 (since the four PRs are tracked as four sibling issues on the "V7 Phase E" GitHub Project, not under a single tracker issue, there is no parent issue to close). Issue #67 is referenced in prose, not as a close-target — PR-E3 does not satisfy #67's scope.
 
 ### 3.3 Why the panel goes in E3, not its own PR
 
