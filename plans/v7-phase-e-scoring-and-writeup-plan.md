@@ -77,7 +77,9 @@ Per-parsed-rec schema:
   - `confidence` field absent → `parsed.confidence: null` (not an error)
   - missing `specifics` map → `parse_error: "missing-required-field"` with field-name list
   - cross-condition smoke: parse 10 real recorded bodies (5 each S1, S2), assert all produce non-null `parsed.category`
-- All 39 existing harness tests still pass.
+- Existing test suites still pass: `python3 experiments/v7-refactor-recommendation/test_validator.py` exits 0; any tests under `scripts/harness/` that exist at E1 kickoff run green. (The exact in-tree test count is whatever the branch shows at E1 kickoff, not a number frozen in this plan.)
+
+**Parse-error namespace alignment.** The `parse_error` discriminator values introduced here — `wrong-array-length`, `json-parse-error`, `missing-required-field` — are a superset that intentionally aligns with `scripts/harness/extract.py`'s existing `ExtractError.error_class` namespace where they overlap. `json-parse-error` is reused verbatim so that telemetry's `error_class` field and the parsed cache's `parse_error` field never disagree on the 2 corpus rows that already failed extraction. The two new values (`wrong-array-length`, `missing-required-field`) are net additions for failure modes the harness extractor doesn't itself surface (it raises `no-array`/`not-a-list` for shape errors and stops before per-field validation). The parser does not invent a parallel namespace.
 
 ### 1.3 No analysis logic in PR-E1
 
@@ -157,7 +159,7 @@ Out of scope to specify in detail here; if the trigger fires, E4 gets its own pl
 
 ### 5.1 Issue graph and project tracking
 
-The four PRs (E1–E4) are tracked as four separate issues on `jakebromberg/code-audit-pipeline`, surfaced via a repo-level **GitHub Project** named "V7 Phase E" rather than a single tracker issue with sub-issue edges. The project provides the rollup view (status board / table with deps); the issues themselves stay self-contained per the [`file-ticket` skill](../../.claude/skills/file-ticket/) conventions for body content.
+The four PRs (E1–E4) are tracked as four separate issues on `jakebromberg/code-audit-pipeline`, surfaced via a repo-level **GitHub Project** named "V7 Phase E" rather than a single tracker issue with sub-issue edges. The project provides the rollup view (status board / table with deps); the issues themselves stay self-contained per the `file-ticket` skill's body-content conventions (durable on-issue context, structured Relationships, cross-references in prose) — the skill lives in the user's global `~/.claude/skills/` and is not vendored into this repo.
 
 Issues to file at plan kickoff (each gets added to the "V7 Phase E" project on creation):
 
@@ -168,7 +170,7 @@ Issues to file at plan kickoff (each gets added to the "V7 Phase E" project on c
 
 Dependencies (blocked-by edges, wired via the GitHub issue-dependencies API per the file-ticket reference doc on `dependencies/blocked_by` — *not* via sub-issue edges, since there's no parent tracker): E2 ← E1, E3 ← E1, E3 ← E2, E4 ← E3.
 
-Project board columns: **Backlog → In progress → In review → Done**. Each issue moves through the columns as its PR opens / merges. Closed issue #67 (§6.3 production trial execution) is referenced via prose in E1's body but not as a structured dependency — E1 reads files #67 committed; there's no remaining unblocking work on #67.
+Project board columns: **Backlog → In progress → In review → Done**. Each issue moves through the columns as its PR opens / merges. Issue #67 (§6.3 production trial execution; satisfied by merged PR #72) is referenced via prose in E1's body but not as a structured dependency — E1 reads the trial-log files PR #72 committed; there's no remaining unblocking work on #67 regardless of whether the tracker issue is still open at E1 kickoff.
 
 ### 5.2 Worktree discipline
 
@@ -197,7 +199,7 @@ The plan adopts the main plan §8 defaults wherever possible. Open decisions spe
 ## See also
 
 - [`v7-refactor-recommendation-implementation-plan.md`](v7-refactor-recommendation-implementation-plan.md) — the parent plan; this doc operationalizes its §7.
-- [`../docs/refactor-recommendation-experiment-methodology.md`](../docs/refactor-recommendation-experiment-methodology.md) — §8 scoring rubric, §10 reproducibility, §11 panel review, §12 inter-rater stats, §14 failure-mode signatures.
+- [`../docs/refactor-recommendation-experiment-methodology.md`](../docs/refactor-recommendation-experiment-methodology.md) — §8 scoring rubric (panel-route rule), §10 pre-registration / reproducibility, §12 inter-rater stats (Fleiss κ), §14 failure-mode signatures, §17 decision #3 (panel composition).
 - [`../experiments/v7-refactor-recommendation/reproducibility.yaml`](../experiments/v7-refactor-recommendation/reproducibility.yaml) — pre-registration hashes, execution stamps so far.
 - [`../scripts/harness/README.md`](../scripts/harness/README.md) — Phase D harness contract; §14.1 self-skip note this plan resolves.
 - [PR #72](https://github.com/jakebromberg/code-audit-pipeline/pull/72) — the Phase D trial execution that produced this corpus.
