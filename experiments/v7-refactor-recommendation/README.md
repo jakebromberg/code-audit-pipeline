@@ -12,7 +12,7 @@ This directory is the shell. Each phase populates it:
 | `rubric.yaml` | A | Machine-readable rubric extracted from methodology §8 |
 | `clusters-s1/`, `clusters-s2/` | C | Cluster JSONL outputs per condition |
 | `reproducibility.yaml` | D | Hash-pinned inputs (repo_sha, model_versions, api_pricing_snapshot, etc.) |
-| `trial-logs/` | D | Per-recommendation telemetry sidecar |
+| `trial-logs/` | D | Per-recommendation telemetry sidecar (written by [`scripts/phase-d-harness.py`](../../scripts/phase-d-harness.py); see [`scripts/harness/README.md`](../../scripts/harness/README.md)) |
 | `rubric-modifications.md` | D/E | Post-hoc rubric adjustments, if any |
 | `results.md` | E | Companion results doc, structured like V5/V6 results |
 
