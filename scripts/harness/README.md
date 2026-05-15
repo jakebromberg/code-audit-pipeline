@@ -152,7 +152,7 @@ By default the harness pauses for human review on a fire (press ENTER to continu
 pipeline/queries/_tests/test_phase_d_harness.sh
 ```
 
-31 unit tests cover fence extraction, cost gates, signature-check trigger and outcomes, telemetry write/resume, malformed-JSONL skip, CLI resume-filter (cross-file index collision regression), and mocked-HTTP round-trip. No live API calls.
+32 unit tests cover fence extraction, cost gates (including the `--budget-usd 12` envelope thresholds), signature-check trigger and outcomes, telemetry write/resume, malformed-JSONL skip, CLI resume-filter (cross-file index collision regression), and mocked-HTTP round-trip. No live API calls.
 
 ## See also
 

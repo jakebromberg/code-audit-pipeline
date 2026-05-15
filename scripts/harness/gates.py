@@ -10,9 +10,11 @@ Implements the §6.3 controls inline (not as a separate post-pass):
      against the per-condition budget. The cap exists to surface runaway
      recommendations in telemetry, not to prevent them.
 
-  2. Per-condition $-budget: $3.50 envelope. The harness alerts (logs a
-     warning) at 80% of envelope and halts at 100%. The budget state is per
-     condition (s1 vs s2), so a halt in one condition doesn't stop the other.
+  2. Per-(condition, trial) $-budget. Default $3.50 envelope (plan §6.3
+     reference, scoped for 150-rec runs); overridable per invocation via the
+     harness CLI's `--budget-usd` flag. The harness alerts (logs a warning)
+     at 80% of envelope and halts at 100%. State is per harness invocation
+     (one (condition, trial) pair), so a halt in one doesn't stop the others.
      Halt prevents the *next* call, not the current one — the in-flight row's
      cost is always counted.
 
