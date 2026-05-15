@@ -81,10 +81,15 @@ _FUNCTION_DUPLICATE_QUERIES = {
 }
 
 # Queries whose row is a pair (a/b), with optional differing-slot evidence.
+# `function-duplicates-near` lives here (not in `_FUNCTION_DUPLICATE_QUERIES`)
+# because the near-duplicate function-duplicates rows have an a/b pair shape,
+# not the cluster `decls[]` shape used by the exact subtype. The two subtypes
+# co-exist in `function-duplicates.jsonl` (see `generate-clusters-v7.sh`).
 _PAIR_SHAPED_QUERIES = {
     "pat-candidates", "protocol-inheritance-candidates",
     "generic-struct-candidates", "generic-function-candidates",
     "default-impl-candidates",
+    "function-duplicates-near",
 }
 
 
@@ -98,8 +103,11 @@ def normalize_row(raw: dict) -> dict:
     cluster_id = raw.get("cluster_id", "")
 
     members: list[dict] = []
+    # `function-duplicates-near` emits jaccard under the short key `jacc`; keep
+    # the canonical `jaccard` key on the normalized row so downstream prompt
+    # rendering and analysis can compare jaccard across queries uniformly.
     structural: dict = {
-        "jaccard": raw.get("jaccard"),
+        "jaccard": raw.get("jaccard", raw.get("jacc")),
         "shared_field_count": raw.get("field_count") or raw.get("shared_field_count"),
         "differing_slots": None,
         "shared_ancestor": None,

@@ -20,6 +20,7 @@ across runs.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -29,11 +30,36 @@ from typing import Iterable
 
 _UNSAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
+# macOS (APFS/HFS+) and most Linux filesystems cap a single path component at
+# 255 bytes. Atomic-write uses tempfile.NamedTemporaryFile with prefix
+# `.tmp-XXXXXXXX` (13 chars) + suffix `.json` (5 chars) = 18 chars of
+# scaffolding, so the sanitized stem must stay below 237 to be safely
+# rename-able. We pick 195 to leave a comfortable margin and to keep
+# `_SAFE_STEM_LIMIT > 206` (the longest stem written before this cap was
+# introduced) so already-completed telemetry files retain their original
+# stems — resume detection stays valid across this fix.
+_SAFE_STEM_LIMIT = 220
+_TRUNCATED_PREFIX_LEN = 175  # leaves room for "__h" + 16-hex-char digest = 19
+
 
 def sanitize_cluster_id(cluster_id: str) -> str:
-    """Make a cluster_id safe to use as a filename. Empty → 'EMPTY'."""
+    """Make a cluster_id safe to use as a filename. Empty → 'EMPTY'.
+
+    Most ids fit comfortably under the filesystem's 255-byte filename limit
+    once the unsafe-char remap is applied. The two-decl shape-near-duplicates
+    queries are the outlier: each side carries a full file-path:line:type-name
+    triple, and the spliced cluster id can run past 260 chars. For ids whose
+    sanitized form exceeds `_SAFE_STEM_LIMIT`, we keep a readable prefix and
+    append a stable hash so distinct overlong ids still produce distinct
+    stems (resume detection requires injectivity).
+    """
     cleaned = _UNSAFE_RE.sub("_", cluster_id).strip("_")
-    return cleaned or "EMPTY"
+    if not cleaned:
+        return "EMPTY"
+    if len(cleaned) <= _SAFE_STEM_LIMIT:
+        return cleaned
+    digest = hashlib.sha256(cleaned.encode("utf-8")).hexdigest()[:16]
+    return f"{cleaned[:_TRUNCATED_PREFIX_LEN]}__h{digest}"
 
 
 def telemetry_path(out_root: Path, condition: str, trial: int, cluster_id: str) -> Path:
