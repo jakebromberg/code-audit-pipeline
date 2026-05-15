@@ -297,6 +297,55 @@ class TestEndToEndOneRowWithMockedTransport(unittest.TestCase):
             self.assertEqual(written["raw_response_path"], "raw/s2/trial1/exact_foo.json")
 
 
+class TestLoadRowsTolerates(unittest.TestCase):
+    """Regression test for the malformed-JSONL-line abort bug.
+
+    `_load_rows` reads each line from `clusters-<cond>/*.jsonl`. A single
+    corrupt line — partial write, manual edit, encoding glitch — should not
+    abort the whole condition before any telemetry has been written. The
+    harness logs and skips, preserving forward progress on the remaining
+    rows so resume semantics can pick up where the run left off.
+    """
+
+    def _run_load_rows_against(self, cluster_dir: Path) -> list[tuple[str, int, dict]]:
+        # The CLI lives at scripts/phase-d-harness.py; import its `_load_rows`
+        # but rebind EXP_DIR to our fixture cluster root.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "_phd_for_test", REPO_ROOT / "scripts" / "phase-d-harness.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        # Point EXP_DIR at the test fixture so the function's cluster-dir
+        # lookup resolves to <fixture>/clusters-<cond>/.
+        mod.EXP_DIR = cluster_dir
+        return mod._load_rows("s2", None)
+
+    def test_skips_malformed_line_and_keeps_valid_neighbors(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "clusters-s2").mkdir(parents=True)
+            jsonl = root / "clusters-s2" / "exact-duplicates.jsonl"
+            jsonl.write_text(
+                '{"cluster_id": "ok:1", "query": "exact-duplicates"}\n'
+                '{not valid json at all\n'
+                '\n'  # blank line, should also be skipped (not as malformed)
+                '{"cluster_id": "ok:2", "query": "exact-duplicates"}\n'
+            )
+            rows = self._run_load_rows_against(root)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([r["cluster_id"] for _, _, r in rows], ["ok:1", "ok:2"])
+
+    def test_all_malformed_is_empty_not_crash(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "clusters-s2").mkdir(parents=True)
+            (root / "clusters-s2" / "x.jsonl").write_text(
+                "not json\nstill not json\n"
+            )
+            rows = self._run_load_rows_against(root)
+        self.assertEqual(rows, [])
+
+
 class TestCliResumeFilterPreservesQuery(unittest.TestCase):
     """Regression test for the per-file row-index collision bug.
 

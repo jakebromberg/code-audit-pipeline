@@ -2,13 +2,19 @@
 
 Implements the §6.3 controls inline (not as a separate post-pass):
 
-  1. Per-rec token cap (50K combined input+output). Recommendations whose
+  1. Per-rec token cap (50K combined input+output). POST-HOC LABELING, not
+     preventative — the cap is evaluated after `/v1/messages` returns (output
+     tokens aren't knowable before the call). Recommendations whose reported
      usage crosses the cap are recorded with `error_class: "trial-overrun"`
-     and the loop continues with the next row.
+     for downstream filtering; the cost is still billed and still counts
+     against the per-condition budget. The cap exists to surface runaway
+     recommendations in telemetry, not to prevent them.
 
   2. Per-condition $-budget: $3.50 envelope. The harness alerts (logs a
      warning) at 80% of envelope and halts at 100%. The budget state is per
      condition (s1 vs s2), so a halt in one condition doesn't stop the other.
+     Halt prevents the *next* call, not the current one — the in-flight row's
+     cost is always counted.
 
   3. Pricing snapshot ($3.00/$15.00 per MTok in/out for Sonnet 4.6, per
      `reproducibility.yaml > execution.api_pricing_snapshot`).

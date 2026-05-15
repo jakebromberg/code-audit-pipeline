@@ -75,7 +75,13 @@ def _log(msg: str) -> None:
 
 
 def _load_rows(condition: str, queries: set[str] | None) -> list[tuple[str, int, dict]]:
-    """Walk clusters-<condition>/*.jsonl and return [(query, row_index, raw_row), ...]."""
+    """Walk clusters-<condition>/*.jsonl and return [(query, row_index, raw_row), ...].
+
+    Malformed JSON lines are logged and skipped — one corrupt line shouldn't
+    abort a multi-hundred-row run before any telemetry is written. `row_index`
+    tracks raw line offsets (including blanks/skipped) so the telemetry value
+    points back to a forensically reproducible position in the source file.
+    """
     cluster_dir = EXP_DIR / f"clusters-{condition}"
     if not cluster_dir.is_dir():
         raise SystemExit(f"ERROR: cluster dir not found: {cluster_dir}")
@@ -89,7 +95,12 @@ def _load_rows(condition: str, queries: set[str] | None) -> list[tuple[str, int,
                 line = line.strip()
                 if not line:
                     continue
-                rows.append((query, idx, json.loads(line)))
+                try:
+                    parsed = json.loads(line)
+                except json.JSONDecodeError as e:
+                    _log(f"  skip malformed JSON in {path.name} line {idx}: {e}")
+                    continue
+                rows.append((query, idx, parsed))
     return rows
 
 
