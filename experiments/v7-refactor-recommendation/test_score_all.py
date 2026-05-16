@@ -3,8 +3,9 @@
 
 Synthetic fixtures only; the real corpus lives under `trial-logs/parsed/` and
 is too large for unit tests. The corpus run is exercised by the CLI smoke
-tests and by `score_all.py --self-check` (a deterministic-output regression
-on a tiny in-tree fixture).
+tests in `CLISmokeTests.test_runs_on_synthetic_corpus`, which builds a tiny
+in-tree fixture in a tempdir and confirms `score_all.py` produces non-empty
+deterministic outputs end-to-end.
 """
 from __future__ import annotations
 
@@ -329,6 +330,14 @@ class FleissKappaTests(unittest.TestCase):
         # Disagreement → κ should be negative or near-zero
         self.assertLess(kappa, 0.5)
 
+    def test_single_rater_raises_value_error(self):
+        # m < 2 is undefined for Fleiss κ (P_i denominator m*(m-1) → 0 at m=1
+        # and the metric has no meaning at m=0). The function must raise
+        # rather than emit an undefined number.
+        ratings = [{"a": 1, "b": 0}]
+        with self.assertRaises(ValueError):
+            score_all.fleiss_kappa(ratings, m=1)
+
     def test_known_reference_value(self):
         # Worked example from Fleiss 1971 (paraphrased): 10 items, 4 raters,
         # 3 categories. We use a small construction whose κ we can compute by
@@ -353,6 +362,65 @@ class FleissKappaTests(unittest.TestCase):
         ]
         kappa = score_all.fleiss_kappa(ratings, m=3)
         self.assertAlmostEqual(kappa, 1.0 / 3.0, places=4)
+
+
+# ─── attach_panel_kappa (jsonl → summary integration) ────────────────────
+
+
+class AttachPanelKappaTests(unittest.TestCase):
+    def test_missing_file_emits_panel_pending_sentinel(self):
+        summary = {}
+        score_all.attach_panel_kappa(summary, Path("/nonexistent/path.jsonl"))
+        block = summary["inter_rater"]
+        self.assertIsNone(block["fleiss_kappa"])
+        self.assertEqual(block["n_items"], 0)
+        self.assertIsNone(block["n_raters"])
+        self.assertIn("not present", block["note"])
+
+    def test_three_reviewers_populates_kappa(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            # 2 items × 3 reviewers, with split agreement on item 2.
+            rows = [
+                {"rec_token": "pr-aaaa", "reviewer": "alice", "score": 1.0},
+                {"rec_token": "pr-aaaa", "reviewer": "bob",   "score": 1.0},
+                {"rec_token": "pr-aaaa", "reviewer": "carol", "score": 1.0},
+                {"rec_token": "pr-bbbb", "reviewer": "alice", "score": 0.5},
+                {"rec_token": "pr-bbbb", "reviewer": "bob",   "score": 0.7},
+                {"rec_token": "pr-bbbb", "reviewer": "carol", "score": 0.5},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            summary = {}
+            score_all.attach_panel_kappa(summary, path)
+            block = summary["inter_rater"]
+            self.assertIsNotNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_items"], 2)
+            self.assertEqual(block["n_raters"], 3)
+            # Score buckets are stringified for the dict keys
+            self.assertIn("1.0", block["score_buckets"])
+
+    def test_single_reviewer_emits_panel_pending_sentinel(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text(json.dumps(
+                {"rec_token": "pr-aaaa", "reviewer": "alice", "score": 1.0}
+            ) + "\n")
+            summary = {}
+            score_all.attach_panel_kappa(summary, path)
+            block = summary["inter_rater"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_raters"], 1)
+            self.assertIn("requires ≥2", block["note"])
+
+    def test_empty_file_emits_panel_pending_sentinel(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text("")
+            summary = {}
+            score_all.attach_panel_kappa(summary, path)
+            block = summary["inter_rater"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_items"], 0)
 
 
 # ─── determinism ──────────────────────────────────────────────────────────

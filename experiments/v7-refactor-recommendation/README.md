@@ -15,7 +15,7 @@ This directory is the shell. Each phase populates it:
 | `trial-logs/raw/`, `trial-logs/<cond>/` | D | Per-recommendation raw response bodies + telemetry sidecar (written by [`scripts/phase-d-harness.py`](../../scripts/phase-d-harness.py); see [`scripts/harness/README.md`](../../scripts/harness/README.md)) |
 | `parse_responses.py`, `trial-logs/parsed/` | E | Idempotent fence-aware parser + parsed-fields cache (PR-E1); see [Phase E plan §1](../../plans/v7-phase-e-scoring-and-writeup-plan.md) |
 | `analyses/substrate_helped.py`, `analyses/plant_recall_extended.py`, `analyses/*.json` | E | §14.1 substrate-helped signature check + plant-recall confirm against parsed categories (PR-E2); see [Phase E plan §2](../../plans/v7-phase-e-scoring-and-writeup-plan.md) |
-| `score_all.py`, `analyses/auto-scores.json`, `analyses/score-summary.json`, `analyses/panel-routing.jsonl`, `analyses/panel-instructions.md` | E | Bulk auto-scorer run + panel-routing artifact + panel instructions (PR-E3); see [Phase E plan §3](../../plans/v7-phase-e-scoring-and-writeup-plan.md) |
+| `score_all.py`, `analyses/auto-scores.json`, `analyses/score-summary.json`, `analyses/panel-routing.jsonl`, `analyses/panel-unblind.json`, `analyses/panel-instructions.md` | E | Bulk auto-scorer run + panel-routing artifact + unblind map + panel instructions; Fleiss κ wired into `score-summary.json::inter_rater` once `analyses/panel-scores.jsonl` lands (PR-E3); see [Phase E plan §3](../../plans/v7-phase-e-scoring-and-writeup-plan.md) |
 | `rubric-modifications.md` | D/E | Post-hoc rubric adjustments, if any |
 | `results.md` | E | Companion results doc, structured like V5/V6 results |
 

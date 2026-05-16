@@ -4,7 +4,7 @@
 Walks every parsed recommendation under `trial-logs/parsed/<cond>/trial<n>/`,
 binds each rec to zero-or-more plants via cluster_id substring match against
 plant.source_files, calls `auto-scorer.py::score_recommendation` for every
-(rec, plant) pair, and emits three artifacts:
+(rec, plant) pair, and emits four artifacts:
 
   • `analyses/auto-scores.json`  — every (rec, plant) pair the scorer ran on,
     plus per-rec buckets for unmatched (no plant) and parse_error rows.
@@ -16,8 +16,10 @@ plant.source_files, calls `auto-scorer.py::score_recommendation` for every
     panel-pending case.
   • `analyses/panel-routing.jsonl` — opaque-tokenized one-per-line records
     for the panel sitting (per methodology §17 decision #3, 3 internal
-    reviewers blind to condition). The unblind map writes to
-    `analyses/panel-unblind.json` separately.
+    reviewers blind to condition).
+  • `analyses/panel-unblind.json` — token → {cluster_id, condition, trial}
+    mapping; commits alongside results.md after the panel sitting (Phase E
+    plan §6 decision #3).
 
 Run from the repo root:
 
@@ -82,6 +84,11 @@ def _load_auto_scorer(scorer_path: Path):
     classes can resolve `cls.__module__` during class construction.
     """
     spec = importlib.util.spec_from_file_location("auto_scorer", scorer_path)
+    if spec is None or spec.loader is None:
+        raise FileNotFoundError(
+            f"could not load auto-scorer from {scorer_path}; "
+            "check the path exists and is importable"
+        )
     module = importlib.util.module_from_spec(spec)
     sys.modules["auto_scorer"] = module
     spec.loader.exec_module(module)
@@ -332,6 +339,13 @@ def aggregate_summary(scored_doc: dict, plants: list[dict]) -> dict:
                 for p in canon_plants:
                     pairs = cell_pairs.get((cond, t, p["plant_id"]), [])
                     best, _ = _best_score(pairs)
+                    # Panel-route-only plants get `best is None` (no numeric
+                    # score available). Counted as 0.0 against canonical
+                    # recall: the auto-scored headline can't credit a
+                    # deferred panel decision. A plant whose every (cond,
+                    # trial) cell is panel-routed thus silently lands at 0.0
+                    # — pending the panel sitting that promotes those cells
+                    # to numeric scores.
                     canon_scores.append(best if best is not None else 0.0)
                 n_fp = 0
                 for p in rest_plants:
@@ -441,6 +455,16 @@ def fleiss_kappa(ratings_per_item: list[dict[str, int]], *, m: int) -> float:
     N = len(ratings_per_item)
     if N == 0:
         return 0.0
+    if m < 2:
+        # κ is undefined for fewer than two raters per item — the P_i
+        # denominator m*(m-1) vanishes at m=1 and the metric has no meaning at
+        # m=0. Callers should treat m<2 as a precondition violation and route
+        # to a panel-pending sentinel; we raise here so the failure is loud
+        # rather than silently emitting an undefined number.
+        raise ValueError(
+            f"fleiss_kappa requires at least 2 raters per item (got m={m}); "
+            "use attach_panel_kappa's panel-pending sentinel instead"
+        )
     categories: set[str] = set()
     for r in ratings_per_item:
         categories.update(r.keys())
@@ -493,12 +517,21 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
             reviewers.add(reviewer)
     m = len(reviewers)
     items = [dict(counts) for counts in by_token.values()]
-    if not items or m == 0:
+    if not items or m < 2:
+        # Fleiss κ requires ≥2 raters per item to be defined. A 0- or
+        # 1-reviewer file is a partial-panel state, not a κ value — emit a
+        # structured sentinel so downstream consumers (results.md) can show
+        # "panel pending" rather than crash on a ZeroDivisionError.
+        note = (
+            "panel scores file is empty or has no reviewers"
+            if not items
+            else f"only {m} reviewer(s) present; Fleiss κ requires ≥2"
+        )
         summary["inter_rater"] = {
             "fleiss_kappa": None,
-            "n_items": 0,
+            "n_items": len(items),
             "n_raters": m,
-            "note": "panel scores file is empty or has no reviewers",
+            "note": note,
         }
         return summary
     kappa = fleiss_kappa(items, m=m)
