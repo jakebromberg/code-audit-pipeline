@@ -164,5 +164,20 @@ execution:
   # Sum of per-rec cost_usd across all 2907 trial-log records (3 trials × 444
   # S1 + 3 trials × 525 S2). Well under the §6.3 acceptance hard cap of $120.
   actual_spend_usd: 39.4584
-  panel_composition: TBD     # populated at Phase E
-  rubric_modifications: null # populated at Phase E (pointer to rubric-modifications.md if any)
+  # Panel sitting per methodology §17 decision #3 — 3 internal reviewers
+  # scoring the 12 panel-routed recs blind to condition. Reviewer identities
+  # are role-only here per the project's anonymity convention; specific
+  # individuals are coordinated outside this artifact.
+  panel_composition:
+    n_reviewers: 3
+    recruitment_source: internal
+    blind_to_condition: true
+    time_commitment_per_reviewer_hours: 4
+    target_metric: fleiss_kappa
+    target_threshold: 0.4   # methodology §12 "fair agreement" lower bound
+    # Per-rec inter-rater κ populates analyses/score-summary.json::inter_rater
+    # once analyses/panel-scores.jsonl is concatenated from the per-reviewer
+    # files; until then the inter_rater block holds the null sentinel.
+    scores_consolidated_at: analyses/panel-scores.jsonl
+    instructions_at: analyses/panel-instructions.md
+  rubric_modifications: null  # round 1: no post-hoc rubric edits
