@@ -552,6 +552,212 @@ class AttachPanelKappaTests(unittest.TestCase):
             self.assertEqual(block["n_items"], 0)
 
 
+# ─── attach_collapsed_panel_kappa (judgment-level κ) ──────────────────────
+
+
+def _routing_row(rec_token: str, plant_id: str, cluster_id: str,
+                 condition: str = "s1", trial: int = 1) -> dict:
+    """Build a synthetic panel-routing.jsonl row carrying only the fields
+    attach_collapsed_panel_kappa reads: rec_token, plant_id, unblind.cluster_id."""
+    return {
+        "rec_token": rec_token,
+        "plant_id": plant_id,
+        "plant_category": "default-implementation",
+        "plant_restraint": False,
+        "query": "function-duplicates",
+        "rec_category": "other",
+        "rec_specifics": {},
+        "rec_rationale": "",
+        "rec_evidence_quote": "",
+        "rec_confidence": 0.5,
+        "match_reason": "other_routes_to_panel",
+        "unblind": {"cluster_id": cluster_id, "condition": condition, "trial": trial},
+    }
+
+
+def _write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
+class AttachCollapsedPanelKappaTests(unittest.TestCase):
+    """Round-1's 12 panel-routed pairs are actually 2 distinct cluster-plant
+    judgments duplicated across 3 trials × 2 conditions. inter_rater κ on
+    12 items is inflated relative to κ on 2 distinct judgments. The
+    `attach_collapsed_panel_kappa` function reduces each reviewer's set of
+    scores per (plant_id, cluster_id) judgment to a median and computes κ
+    over those reduced judgments.
+    """
+
+    def test_missing_panel_scores_emits_sentinel(self):
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            _write_jsonl(routing, [_routing_row("pr-aaaa", "1.1", "c1")])
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(
+                summary,
+                Path("/nonexistent/scores.jsonl"),
+                routing,
+            )
+            block = summary["inter_rater_collapsed"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_judgments"], 0)
+            self.assertIsNone(block["n_raters"])
+            self.assertIn("not present", block["note"])
+
+    def test_missing_panel_routing_emits_sentinel(self):
+        with TemporaryDirectory() as td:
+            scores = Path(td) / "panel-scores.jsonl"
+            _write_jsonl(scores, [{"rec_token": "pr-aaaa", "reviewer": "alice", "score": 1.0}])
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(
+                summary,
+                scores,
+                Path("/nonexistent/routing.jsonl"),
+            )
+            block = summary["inter_rater_collapsed"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_judgments"], 0)
+            self.assertIn("not present", block["note"])
+
+    def test_single_reviewer_emits_sentinel(self):
+        with TemporaryDirectory() as td:
+            scores = Path(td) / "panel-scores.jsonl"
+            routing = Path(td) / "panel-routing.jsonl"
+            _write_jsonl(routing, [_routing_row("pr-aaaa", "1.1", "c1")])
+            _write_jsonl(scores, [{"rec_token": "pr-aaaa", "reviewer": "alice", "score": 0.3}])
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_raters"], 1)
+            self.assertIn("requires ≥2", block["note"])
+
+    def test_two_judgments_perfect_agreement(self):
+        """Two reviewers, two judgments (plant 3.1 / plant 5.1 on the same
+        HSBColor cluster), each reviewer gives identical score across the
+        3 duplicates of each judgment, and both reviewers agree on each
+        judgment's score → Fleiss κ ≈ 1.0.
+        """
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            scores = Path(td) / "panel-scores.jsonl"
+            # 2 judgments × 3 duplicates = 6 rec_tokens
+            routing_rows = []
+            score_rows = []
+            for plant_id, score in [("3.1", 0.0), ("5.1", 0.3)]:
+                for trial in (1, 2, 3):
+                    token = f"pr-{plant_id.replace('.', '')}t{trial}"
+                    routing_rows.append(_routing_row(token, plant_id, "hsbcolor", trial=trial))
+                    for reviewer in ("alice", "bob"):
+                        score_rows.append({"rec_token": token, "reviewer": reviewer, "score": score})
+            _write_jsonl(routing, routing_rows)
+            _write_jsonl(scores, score_rows)
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            self.assertEqual(block["n_judgments"], 2)
+            self.assertEqual(block["n_raters"], 2)
+            self.assertAlmostEqual(block["fleiss_kappa"], 1.0)
+            self.assertEqual(block["within_reviewer_inconsistency_count"], 0)
+            judgments = sorted(block["judgments"], key=lambda j: j["plant_id"])
+            self.assertEqual(judgments[0]["plant_id"], "3.1")
+            self.assertEqual(judgments[0]["reviewer_medians"]["alice"], 0.0)
+            self.assertEqual(judgments[0]["reviewer_medians"]["bob"], 0.0)
+            self.assertEqual(judgments[0]["n_duplicates_per_reviewer"], 3)
+
+    def test_two_judgments_disagreement_yields_low_kappa(self):
+        """Reviewers consistently disagree on every judgment → κ ≤ 0."""
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            scores = Path(td) / "panel-scores.jsonl"
+            routing_rows = []
+            score_rows = []
+            # Plant 3.1: alice=0.0, bob=1.0; Plant 5.1: alice=0.3, bob=0.5
+            for plant_id, alice_s, bob_s in [("3.1", 0.0, 1.0), ("5.1", 0.3, 0.5)]:
+                for trial in (1, 2, 3):
+                    token = f"pr-{plant_id.replace('.', '')}t{trial}"
+                    routing_rows.append(_routing_row(token, plant_id, "hsbcolor", trial=trial))
+                    score_rows.append({"rec_token": token, "reviewer": "alice", "score": alice_s})
+                    score_rows.append({"rec_token": token, "reviewer": "bob", "score": bob_s})
+            _write_jsonl(routing, routing_rows)
+            _write_jsonl(scores, score_rows)
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            self.assertIsNotNone(block["fleiss_kappa"])
+            self.assertLessEqual(block["fleiss_kappa"], 0.0)
+
+    def test_median_reduction_across_duplicates(self):
+        """A reviewer scoring [0.0, 0.3, 0.5] across 3 duplicates of one
+        judgment has median 0.3. With 2 reviewers and 1 judgment, the κ is
+        defined (single-judgment κ is 1.0 if both agree, but here both
+        agree on the median 0.3)."""
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            scores = Path(td) / "panel-scores.jsonl"
+            routing_rows = [_routing_row(f"pr-t{i}", "3.1", "hsbcolor", trial=i) for i in (1, 2, 3)]
+            # Both reviewers score [0.0, 0.3, 0.5] across the 3 duplicates →
+            # both medians collapse to 0.3.
+            score_rows = []
+            for token, s in zip(("pr-t1", "pr-t2", "pr-t3"), (0.0, 0.3, 0.5)):
+                score_rows.append({"rec_token": token, "reviewer": "alice", "score": s})
+                score_rows.append({"rec_token": token, "reviewer": "bob", "score": s})
+            _write_jsonl(routing, routing_rows)
+            _write_jsonl(scores, score_rows)
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            self.assertEqual(block["n_judgments"], 1)
+            judgment = block["judgments"][0]
+            self.assertEqual(judgment["reviewer_medians"]["alice"], 0.3)
+            self.assertEqual(judgment["reviewer_medians"]["bob"], 0.3)
+            # 3 distinct scores per reviewer = nonzero within-reviewer variance.
+            self.assertGreater(judgment["reviewer_variance"]["alice"], 0)
+            self.assertGreater(judgment["reviewer_variance"]["bob"], 0)
+            self.assertEqual(block["within_reviewer_inconsistency_count"], 2)
+
+    def test_within_reviewer_consistency_zero_when_uniform(self):
+        """If every reviewer gives the same score across all duplicates of a
+        judgment, within-reviewer variance is 0 and the inconsistency count
+        is 0."""
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            scores = Path(td) / "panel-scores.jsonl"
+            routing_rows = [_routing_row(f"pr-t{i}", "3.1", "hsbcolor", trial=i) for i in (1, 2)]
+            score_rows = []
+            for token in ("pr-t1", "pr-t2"):
+                score_rows.append({"rec_token": token, "reviewer": "alice", "score": 0.0})
+                score_rows.append({"rec_token": token, "reviewer": "bob", "score": 0.5})
+            _write_jsonl(routing, routing_rows)
+            _write_jsonl(scores, score_rows)
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            judgment = block["judgments"][0]
+            self.assertEqual(judgment["reviewer_variance"]["alice"], 0.0)
+            self.assertEqual(judgment["reviewer_variance"]["bob"], 0.0)
+            self.assertEqual(block["within_reviewer_inconsistency_count"], 0)
+
+    def test_orphan_token_is_skipped_with_note(self):
+        """A panel-scores row whose rec_token isn't in panel-routing.jsonl
+        can't be mapped to a judgment; skip it and surface a note."""
+        with TemporaryDirectory() as td:
+            routing = Path(td) / "panel-routing.jsonl"
+            scores = Path(td) / "panel-scores.jsonl"
+            # routing has only pr-aaaa; panel-scores has pr-aaaa AND pr-orphan
+            _write_jsonl(routing, [_routing_row("pr-aaaa", "3.1", "hsbcolor")])
+            _write_jsonl(scores, [
+                {"rec_token": "pr-aaaa", "reviewer": "alice", "score": 0.3},
+                {"rec_token": "pr-aaaa", "reviewer": "bob", "score": 0.3},
+                {"rec_token": "pr-orphan", "reviewer": "alice", "score": 1.0},
+            ])
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, routing)
+            block = summary["inter_rater_collapsed"]
+            self.assertEqual(block["n_judgments"], 1)
+            self.assertIn("orphan", (block.get("note") or "").lower())
+
+
 # ─── promote_panel_scores ─────────────────────────────────────────────────
 
 
