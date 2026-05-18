@@ -272,6 +272,75 @@ def score_recommendations(
     }
 
 
+# ─── panel-score promotion ────────────────────────────────────────────────
+
+
+def promote_panel_scores(scored_doc: dict, panel_scores_path: Path) -> dict:
+    """Replace `PANEL_ROUTE` sentinels in `scored_doc["scored"]` with the
+    panel-supplied numeric score from `panel_scores_path`. For multi-reviewer
+    panels, uses the median across reviewers per rec_token.
+
+    Match key: each scored entry's rec_token is recomputed from
+    (cluster_id, condition, trial, plant_id) using `_opaque_token`, matching
+    the scheme `score_recommendations` uses when it populates
+    `scored_doc["panel_routed"]`. A token with no panel-supplied score is
+    left at `PANEL_ROUTE` (deferred to a later round).
+
+    The function mutates `scored_doc` in place and returns it for chaining.
+    Numeric (non-`PANEL_ROUTE`) entries are never touched.
+
+    Why this exists: the auto-scorer routes the rec_category=="other" and
+    specifics-out-of-tolerance cases to panel and stamps `score=PANEL_ROUTE`.
+    `_best_score` (used by `aggregate_summary`) ignores `PANEL_ROUTE` because
+    it isn't numeric, so per-cell `best_score` and the headline
+    canonical_recall reflect auto-scored pairs only. Once the panel sitting
+    produces scores, this step backfills them into `scored_doc["scored"]` so
+    the re-run pickup is a single change: panel-routed cells get their final
+    panel-resolved value before aggregation, instead of staying as deferred
+    nulls forever.
+    """
+    if not panel_scores_path.exists():
+        return scored_doc
+    by_token: dict[str, list[float]] = defaultdict(list)
+    with panel_scores_path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            token = row["rec_token"]
+            score = row["score"]
+            if isinstance(score, (int, float)) and not isinstance(score, bool):
+                by_token[token].append(float(score))
+    if not by_token:
+        return scored_doc
+    for entry in scored_doc["scored"]:
+        if entry.get("score") != PANEL_ROUTE:
+            continue
+        token = _opaque_token(
+            str(entry.get("cluster_id") or ""),
+            str(entry.get("condition") or ""),
+            str(entry.get("trial") or ""),
+            str(entry.get("plant_id") or ""),
+        )
+        scores = by_token.get(token, [])
+        if not scores:
+            continue
+        scores_sorted = sorted(scores)
+        n = len(scores_sorted)
+        if n % 2:
+            median = scores_sorted[n // 2]
+        else:
+            median = (scores_sorted[n // 2 - 1] + scores_sorted[n // 2]) / 2.0
+        original_match = entry.get("match")
+        entry["score"] = median
+        entry["match"] = "panel_promoted"
+        notes = entry.get("notes") or []
+        notes.append(f"panel_promoted_from_{original_match}_n_reviewers_{n}")
+        entry["notes"] = notes
+    return scored_doc
+
+
 # ─── aggregation ──────────────────────────────────────────────────────────
 
 
@@ -344,8 +413,9 @@ def aggregate_summary(scored_doc: dict, plants: list[dict]) -> dict:
                     # recall: the auto-scored headline can't credit a
                     # deferred panel decision. A plant whose every (cond,
                     # trial) cell is panel-routed thus silently lands at 0.0
-                    # — pending the panel sitting that promotes those cells
-                    # to numeric scores.
+                    # until `promote_panel_scores` (run upstream of
+                    # `aggregate_summary` in `main`) substitutes the panel-
+                    # supplied numeric for the PANEL_ROUTE sentinel.
                     canon_scores.append(best if best is not None else 0.0)
                 n_fp = 0
                 for p in rest_plants:
@@ -398,17 +468,26 @@ def aggregate_summary(scored_doc: dict, plants: list[dict]) -> dict:
             "n_restraint_plants": rest_total,
         }
 
-    # Panel-route rate per condition (denominator = planted recs, i.e. scored entries)
+    # Panel-route rate per condition (denominator = planted recs, i.e. scored entries).
+    # The numerator counts ORIGINALLY panel-routed pairs from
+    # `scored_doc["panel_routed"]` — that list is populated by
+    # `score_recommendations` and is preserved across `promote_panel_scores`,
+    # so the §14.3 acceptance check measures the auto-scorer's true punt rate
+    # regardless of whether panel sitting has happened yet.
     panel_route_rate: dict[str, dict] = {}
+    panel_by_cond: dict[str, int] = defaultdict(int)
+    for r in scored_doc["panel_routed"]:
+        cond = r.get("unblind", {}).get("condition")
+        if cond:
+            panel_by_cond[cond] += 1
     for cond in conditions:
-        planted = [r for r in scored_doc["scored"] if r["condition"] == cond]
-        panel = [r for r in planted if r["score"] == PANEL_ROUTE]
-        denom = len(planted)
+        denom = sum(1 for r in scored_doc["scored"] if r["condition"] == cond)
+        n_panel = panel_by_cond.get(cond, 0)
         panel_route_rate[cond] = {
-            "n_panel": len(panel),
+            "n_panel": n_panel,
             "n_planted": denom,
-            "fraction": (len(panel) / denom) if denom else None,
-            "passes_threshold": (len(panel) / denom <= DEFAULT_PANEL_ROUTE_RATE_THRESHOLD) if denom else None,
+            "fraction": (n_panel / denom) if denom else None,
+            "passes_threshold": (n_panel / denom <= DEFAULT_PANEL_ROUTE_RATE_THRESHOLD) if denom else None,
         }
 
     # Counts: parsed totals, planted totals, unmatched totals, parse errors
@@ -644,6 +723,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     scored = score_recommendations(parsed_records, plants, rubric)
+    promote_panel_scores(scored, args.panel_scores)
     summary = aggregate_summary(scored, plants)
     attach_panel_kappa(summary, args.panel_scores)
 

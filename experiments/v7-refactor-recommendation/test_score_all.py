@@ -304,6 +304,36 @@ class AggregateSummaryTests(unittest.TestCase):
         self.assertEqual(rate["n_panel"], 1)
         self.assertEqual(rate["n_planted"], 2)
 
+    def test_panel_route_rate_preserved_after_promotion(self):
+        """Regression: panel_route_rate measures the auto-scorer's punt rate,
+        which must not collapse to zero after promote_panel_scores rewrites
+        the PANEL_ROUTE sentinels in scored_doc["scored"]. The §14.3 ≤50%
+        acceptance check depends on this surviving promotion.
+        """
+        with TemporaryDirectory() as td:
+            rec_panel = _rec(
+                cluster_id="exact-duplicates:Pkg/A1.swift+X",
+                category="other",
+                specifics={"proposed_action": "x", "why_no_category_fits": "y"},
+                rationale="other",
+            )
+            rec_scored = self._rec_primary("exact-duplicates:Pkg/A2.swift+X")
+            out = score_all.score_recommendations([rec_panel, rec_scored], self.plants, self.rubric)
+            # Promote the lone panel-routed pair to a numeric score.
+            token = out["panel_routed"][0]["rec_token"]
+            scores_path = Path(td) / "panel-scores.jsonl"
+            scores_path.write_text(json.dumps(
+                {"rec_token": token, "reviewer": "r1", "score": 0.5}
+            ) + "\n")
+            score_all.promote_panel_scores(out, scores_path)
+            summary = score_all.aggregate_summary(out, self.plants)
+            rate = summary["panel_route_rate"]["s2"]
+            # n_panel still 1 because the pair was originally panel-routed —
+            # promotion doesn't rewrite the audit-trail count.
+            self.assertEqual(rate["n_panel"], 1)
+            self.assertAlmostEqual(rate["fraction"], 0.5)
+            self.assertTrue(rate["passes_threshold"])
+
 
 # ─── Fleiss κ ─────────────────────────────────────────────────────────────
 
@@ -423,6 +453,173 @@ class AttachPanelKappaTests(unittest.TestCase):
             self.assertEqual(block["n_items"], 0)
 
 
+# ─── promote_panel_scores ─────────────────────────────────────────────────
+
+
+def _scored_entry(
+    *,
+    cluster_id: str = "cluster-1",
+    condition: str = "s1",
+    trial: int = 1,
+    plant_id: str = "1.1",
+    score=None,
+    match: str = "auto",
+    notes: list[str] | None = None,
+) -> dict:
+    """Build a synthetic scored entry shaped like score_recommendations emits."""
+    return {
+        "cluster_id": cluster_id,
+        "condition": condition,
+        "trial": trial,
+        "query": "exact-duplicates",
+        "plant_id": plant_id,
+        "plant_category": "extract-to-common",
+        "plant_restraint": False,
+        "rec_category": "other",
+        "rec_confidence": 0.7,
+        "score": score,
+        "match": match,
+        "notes": list(notes or []),
+    }
+
+
+def _token_for(scored_entry: dict) -> str:
+    return score_all._opaque_token(
+        str(scored_entry["cluster_id"]),
+        str(scored_entry["condition"]),
+        str(scored_entry["trial"]),
+        str(scored_entry["plant_id"]),
+    )
+
+
+class PromotePanelScoresTests(unittest.TestCase):
+    def test_replaces_panel_route_with_single_reviewer_score(self):
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text(json.dumps(
+                {"rec_token": token, "reviewer": "r1", "score": 0.3}
+            ) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], 0.3)
+            self.assertEqual(doc["scored"][0]["match"], "panel_promoted")
+            self.assertTrue(any("panel_promoted_from_other_routes_to_panel" in n
+                                for n in doc["scored"][0]["notes"]))
+
+    def test_uses_median_across_multiple_reviewers(self):
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE)
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            rows = [
+                {"rec_token": token, "reviewer": "r1", "score": 0.0},
+                {"rec_token": token, "reviewer": "r2", "score": 0.5},
+                {"rec_token": token, "reviewer": "r3", "score": 1.0},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            # Median of {0.0, 0.5, 1.0} is 0.5
+            self.assertEqual(doc["scored"][0]["score"], 0.5)
+
+    def test_even_count_reviewers_averages_middle_two(self):
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE)
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            rows = [
+                {"rec_token": token, "reviewer": "r1", "score": 0.3},
+                {"rec_token": token, "reviewer": "r2", "score": 0.7},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            # Median of {0.3, 0.7} averages to 0.5
+            self.assertAlmostEqual(doc["scored"][0]["score"], 0.5)
+
+    def test_panel_route_without_matching_token_stays_deferred(self):
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            # A score for an unrelated token; the entry's token won't match.
+            path.write_text(json.dumps(
+                {"rec_token": "pr-unrelated", "reviewer": "r1", "score": 1.0}
+            ) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+            self.assertEqual(doc["scored"][0]["match"], "other_routes_to_panel")
+
+    def test_missing_panel_scores_file_is_no_op(self):
+        entry = _scored_entry(score=score_all.PANEL_ROUTE)
+        doc = {"scored": [entry]}
+        score_all.promote_panel_scores(doc, Path("/nonexistent/path.jsonl"))
+        self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+
+    def test_empty_panel_scores_file_is_no_op(self):
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text("")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+
+    def test_numeric_entries_are_not_touched(self):
+        with TemporaryDirectory() as td:
+            numeric_entry = _scored_entry(score=0.7, match="primary_match_full")
+            panel_entry = _scored_entry(
+                plant_id="2.1", score=score_all.PANEL_ROUTE, match="other_routes_to_panel"
+            )
+            token = _token_for(panel_entry)
+            doc = {"scored": [numeric_entry, panel_entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            # Even if a panel score row collides with the numeric entry's token,
+            # promote_panel_scores must only rewrite PANEL_ROUTE entries.
+            numeric_token = _token_for(numeric_entry)
+            rows = [
+                {"rec_token": numeric_token, "reviewer": "r1", "score": 1.0},
+                {"rec_token": token, "reviewer": "r1", "score": 0.3},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], 0.7)
+            self.assertEqual(doc["scored"][0]["match"], "primary_match_full")
+            self.assertEqual(doc["scored"][1]["score"], 0.3)
+            self.assertEqual(doc["scored"][1]["match"], "panel_promoted")
+
+    def test_tokens_align_with_score_recommendations(self):
+        """Integration: tokens produced by score_recommendations for panel-
+        routed pairs must be recoverable from scored entries via the same
+        _opaque_token call promote_panel_scores uses."""
+        plants = [_plant(plant_id="1.1", source_files=["Pkg/A.swift"])]
+        rubric = {
+            "weak_rationale_policy": "auto-score-0.5",
+            "specifics_schemas": {
+                "other": {"required": ["proposed_action", "why_no_category_fits"]},
+            },
+            "adjacent_categories": [],
+        }
+        rec = _rec(
+            cluster_id="exact-duplicates:Pkg/A.swift+X",
+            condition="s2",
+            trial=1,
+            category="other",
+            specifics={"proposed_action": "...", "why_no_category_fits": "..."},
+            rationale="x",
+        )
+        out = score_all.score_recommendations([rec], plants, rubric)
+        panel_tokens = [p["rec_token"] for p in out["panel_routed"]]
+        self.assertEqual(len(panel_tokens), 1)
+        # The corresponding scored entry must recompute the same token.
+        panel_scored = [s for s in out["scored"] if s["score"] == score_all.PANEL_ROUTE]
+        self.assertEqual(len(panel_scored), 1)
+        recomputed = _token_for(panel_scored[0])
+        self.assertEqual(recomputed, panel_tokens[0])
+
+
 # ─── determinism ──────────────────────────────────────────────────────────
 
 
@@ -523,6 +720,14 @@ class CLISmokeTests(unittest.TestCase):
                     "--auto-scores-out", str(outdir / "auto-scores.json"),
                     "--summary-out", str(outdir / "score-summary.json"),
                     "--panel-routing-out", str(outdir / "panel-routing.jsonl"),
+                    # Override --panel-unblind-out and --panel-scores so the
+                    # smoke test never reads from or writes to the production
+                    # `analyses/` directory under this repo. Without these,
+                    # the test clobbered `analyses/panel-unblind.json` with
+                    # synthetic empty data and silently read whichever
+                    # `analyses/panel-scores.jsonl` happened to be present.
+                    "--panel-unblind-out", str(outdir / "panel-unblind.json"),
+                    "--panel-scores", str(outdir / "panel-scores.jsonl"),
                 ],
                 capture_output=True, text=True,
             )
