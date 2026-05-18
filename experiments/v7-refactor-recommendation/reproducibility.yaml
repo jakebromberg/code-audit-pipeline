@@ -211,4 +211,45 @@ execution:
           inter_rater with a numeric κ and update the headline if any
           panel-resolved value shifts.
         deadline: round 2 panel sitting (no fixed date yet).
+    round1_correction:
+      description: |
+        After PR #82 merged, two round-1 artifacts were corrected in a
+        follow-up PR (closeout). A2 — bind_recs_to_plants tightened with a
+        prefer-signal-match resolution rule: when a cluster substring-matches
+        multiple plants, bind only to those whose expected_substrate_signals
+        include the rec's query. A3 — agent prompt rule 1 sub-bullets for
+        is_test / is_mock / is_sample_app were rephrased from "all
+        participating records have X" to "ANY participating record has X" so
+        restraint markers are load-bearing in mixed-marker clusters (the
+        canonical restraint pattern).
+      consequence: |
+        A2: 24 incidental false bindings cleaned (Plant 3.1 -3, 3R -9, 5.1
+        -3, 5.3 -9). Headline canonical_recall and panel_routed counts
+        unchanged. The Plant 3.1 / 5.1 panel-routed co-binding for the
+        HSBColor function-duplicates-near cluster is NOT cleaned up — both
+        plants legitimately list function-duplicates in their signals AND
+        both have HSBColor.swift in their source_files. The deeper fix
+        requires symbol-level matching (new manifest field
+        expected_cluster_symbols), filed as round-2 follow-up in the
+        closeout plan §6.2.
+
+        A3: round-1 measurable effect is null. The agent already emits
+        no-action on Plant 1R's two canonical clusters under the existing
+        prompt; Plant 1R's 1.0 per-cell FPR comes from incidental bindings
+        (DebugMetricsProvider clusters substring-matching DebugHUD.swift),
+        which §6.2's symbol-level fix will also resolve. The prompt edit
+        is methodologically correct future-proofing; its measurable effect
+        lands in round 2.
+      targeted_rerun:
+        cancelled: true
+        rationale: |
+          The plan originally called for a 10-invocation targeted re-run
+          against Plant 1R's two canonical clusters under the new prompt.
+          Audit of the round-1 raw responses showed the agent already emits
+          no-action on those clusters under the OLD prompt — re-running
+          validates nothing observable. The prompt change is monotonic in
+          the no-action direction (any-vs-all is more permissive), so a
+          regression on existing no-action behavior is logically impossible.
+      prompt_hash_post_correction: a04a8360e7b514e9836c3035652787c5fb9e4c60fddc2483924dc056fc035c33
+      prompt_hash_pre_correction: kept in top-level pre_registration.prompt_hash
   rubric_modifications: null  # round 1: no post-hoc rubric edits
