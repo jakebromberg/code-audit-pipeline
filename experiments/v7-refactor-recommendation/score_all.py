@@ -676,6 +676,197 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
     return summary
 
 
+# ─── attach_collapsed_panel_kappa (judgment-level κ) ─────────────────────
+
+
+def _median(values: list[float]) -> float:
+    """Median of a non-empty list of floats. Even-count median averages the
+    middle two values — may produce a value outside the rubric's score
+    buckets, which is fine for Fleiss κ (categories are derived from
+    observed values)."""
+    s = sorted(values)
+    n = len(s)
+    if n % 2:
+        return s[n // 2]
+    return (s[n // 2 - 1] + s[n // 2]) / 2.0
+
+
+def _variance(values: list[float]) -> float:
+    """Population variance of a non-empty list of floats. 0.0 when all values
+    are equal — that's the "reviewer was internally consistent across
+    duplicates" signal we want.
+    """
+    n = len(values)
+    if n <= 1:
+        return 0.0
+    mean = sum(values) / n
+    return sum((v - mean) ** 2 for v in values) / n
+
+
+def attach_collapsed_panel_kappa(
+    summary: dict,
+    panel_scores_path: Path,
+    panel_routing_path: Path,
+) -> dict:
+    """Compute Fleiss κ over distinct (plant_id, cluster_id) judgments rather
+    than over the per-(condition, trial) panel rows. Round-1's 12 panel-
+    routed pairs are 2 cluster-plant calls duplicated across 3 trials × 2
+    conditions, so the rec-level κ is inflated by item correlation. This
+    function collapses each reviewer's set of scores per judgment to a
+    median, then computes Fleiss κ over those medians.
+
+    Output shape (assigned to summary["inter_rater_collapsed"]):
+
+        {
+          "fleiss_kappa": float | None,
+          "n_judgments": int,
+          "n_raters": int | None,
+          "judgments": [
+            {"plant_id": ..., "cluster_id": ...,
+             "n_duplicates_per_reviewer": int,
+             "reviewer_medians": {reviewer_id: float, ...},
+             "reviewer_variance": {reviewer_id: float, ...}},
+            ...
+          ],
+          "within_reviewer_inconsistency_count": int,
+          "note": str | None,
+        }
+
+    `within_reviewer_inconsistency_count` is the number of (judgment,
+    reviewer) cells where the reviewer's variance across duplicates is > 0
+    — i.e., the reviewer didn't score every duplicate of that judgment
+    identically. High counts mean reviewers are sensitive to the prose
+    variation across trials, not just the underlying call.
+
+    Sentinel emitted (fleiss_kappa=None, note populated) when:
+      - panel_scores_path doesn't exist
+      - panel_routing_path doesn't exist
+      - fewer than 2 reviewers contributed scores
+      - panel scores file is empty
+    """
+    if not panel_scores_path.exists():
+        summary["inter_rater_collapsed"] = {
+            "fleiss_kappa": None,
+            "n_judgments": 0,
+            "n_raters": None,
+            "judgments": [],
+            "within_reviewer_inconsistency_count": 0,
+            "note": f"panel scores file not present at {panel_scores_path}; populate after panel sitting",
+        }
+        return summary
+    if not panel_routing_path.exists():
+        summary["inter_rater_collapsed"] = {
+            "fleiss_kappa": None,
+            "n_judgments": 0,
+            "n_raters": None,
+            "judgments": [],
+            "within_reviewer_inconsistency_count": 0,
+            "note": f"panel routing file not present at {panel_routing_path}; needed to map rec_token to judgment",
+        }
+        return summary
+
+    # 1. Load the rec_token → (plant_id, cluster_id) mapping from panel-routing.
+    token_to_judgment: dict[str, tuple[str, str]] = {}
+    with panel_routing_path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            cluster_id = (row.get("unblind") or {}).get("cluster_id", "")
+            token_to_judgment[row["rec_token"]] = (row["plant_id"], cluster_id)
+
+    # 2. Load panel scores, grouping by (judgment, reviewer) → list of scores.
+    by_cell: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    reviewers: set[str] = set()
+    orphan_tokens: set[str] = set()
+    with panel_scores_path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            token = row["rec_token"]
+            reviewer = row["reviewer"]
+            score = row["score"]
+            if not isinstance(score, (int, float)) or isinstance(score, bool):
+                continue
+            if token not in token_to_judgment:
+                orphan_tokens.add(token)
+                continue
+            plant_id, cluster_id = token_to_judgment[token]
+            by_cell[(plant_id, cluster_id, reviewer)].append(float(score))
+            reviewers.add(reviewer)
+
+    m = len(reviewers)
+    note_parts = []
+    if orphan_tokens:
+        note_parts.append(
+            f"{len(orphan_tokens)} orphan rec_token(s) in panel-scores had no matching panel-routing row; skipped"
+        )
+
+    # 3. Reduce per-(judgment, reviewer): median + variance.
+    judgments_by_key: dict[tuple[str, str], dict] = {}
+    inconsistency_count = 0
+    for (plant_id, cluster_id, reviewer), scores in by_cell.items():
+        key = (plant_id, cluster_id)
+        if key not in judgments_by_key:
+            judgments_by_key[key] = {
+                "plant_id": plant_id,
+                "cluster_id": cluster_id,
+                "n_duplicates_per_reviewer": len(scores),
+                "reviewer_medians": {},
+                "reviewer_variance": {},
+            }
+        judgments_by_key[key]["reviewer_medians"][reviewer] = _median(scores)
+        var = _variance(scores)
+        judgments_by_key[key]["reviewer_variance"][reviewer] = var
+        if var > 0:
+            inconsistency_count += 1
+
+    judgments = sorted(judgments_by_key.values(), key=lambda j: (j["plant_id"], j["cluster_id"]))
+    n_judgments = len(judgments)
+
+    if n_judgments == 0 or m < 2:
+        note = (
+            "panel scores file is empty or has no judgments"
+            if n_judgments == 0
+            else f"only {m} reviewer(s) present; Fleiss κ requires ≥2"
+        )
+        if note_parts:
+            note = note + "; " + "; ".join(note_parts)
+        summary["inter_rater_collapsed"] = {
+            "fleiss_kappa": None,
+            "n_judgments": n_judgments,
+            "n_raters": m,
+            "judgments": judgments,
+            "within_reviewer_inconsistency_count": inconsistency_count,
+            "note": note,
+        }
+        return summary
+
+    # 4. Build the (item × category-count) matrix Fleiss κ expects.
+    items: list[dict[str, int]] = []
+    for j in judgments:
+        counts: dict[str, int] = defaultdict(int)
+        for reviewer in reviewers:
+            if reviewer not in j["reviewer_medians"]:
+                continue  # reviewer didn't cover this judgment
+            counts[str(j["reviewer_medians"][reviewer])] += 1
+        items.append(dict(counts))
+
+    kappa = fleiss_kappa(items, m=m)
+    summary["inter_rater_collapsed"] = {
+        "fleiss_kappa": kappa,
+        "n_judgments": n_judgments,
+        "n_raters": m,
+        "judgments": judgments,
+        "within_reviewer_inconsistency_count": inconsistency_count,
+        "note": "; ".join(note_parts) if note_parts else None,
+    }
+    return summary
+
+
 # ─── loaders ──────────────────────────────────────────────────────────────
 
 
@@ -780,9 +971,16 @@ def main(argv: list[str] | None = None) -> int:
     summary = aggregate_summary(scored, plants)
     attach_panel_kappa(summary, args.panel_scores)
 
+    # Write panel-routing.jsonl BEFORE attach_collapsed_panel_kappa so it has
+    # the rec_token → (plant_id, cluster_id) map available. The collapsed-κ
+    # block reduces the panel-routed rec rows to distinct (plant_id,
+    # cluster_id) judgments (round-1 panel is duplicated across (condition,
+    # trial)) and computes κ over the median per judgment-reviewer cell.
+    _write_panel_jsonl(args.panel_routing_out, scored["panel_routed"])
+    attach_collapsed_panel_kappa(summary, args.panel_scores, args.panel_routing_out)
+
     _write_json(args.auto_scores_out, scored)
     _write_json(args.summary_out, summary)
-    _write_panel_jsonl(args.panel_routing_out, scored["panel_routed"])
     _write_unblind(args.panel_unblind_out, scored["panel_routed"])
 
     # Console digest
