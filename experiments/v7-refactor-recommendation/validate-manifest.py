@@ -93,6 +93,8 @@ KNOWN_KEYS = {
     "specifics_tolerance",
     "alternative_answers",
     "wrong_answers",
+    # Round-2 binding-artifact v2 (#86): per-plant cluster_id symbol gate
+    "expected_cluster_symbols",
 }
 
 # Categories valid as a primary/alternative/wrong-answer recommendation. Mirrors the agent-prompt taxonomy
@@ -220,6 +222,17 @@ def validate_rubric(
     if not _is_non_empty_string_list(signals):
         errors.append(
             f"{prefix}: expected_substrate_signals must be a non-empty list of strings"
+        )
+
+    # 9j: expected_cluster_symbols is a non-empty list of non-empty strings.
+    # Per round-2 binding-artifact v2 (#86), this field gates plant ↔ cluster
+    # bindings on planted-symbol membership in cluster_id. An empty list or
+    # empty-string entry would defeat the gate (an empty string substring-
+    # matches every cluster_id), so both are rejected.
+    symbols = plant.get("expected_cluster_symbols")
+    if not _is_non_empty_string_list(symbols):
+        errors.append(
+            f"{prefix}: expected_cluster_symbols must be a non-empty list of non-empty strings"
         )
 
     # 9b–9e: primary_answer shape.

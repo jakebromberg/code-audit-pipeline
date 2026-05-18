@@ -236,6 +236,44 @@ def corrupt_rule_9a(doc: dict) -> None:
     _find_canonical(doc["plants"])["expected_substrate_signals"] = []
 
 
+# ─── Rule 9j: expected_cluster_symbols must be non-empty list of non-empty strings ───
+
+
+def corrupt_rule_9j_empty(doc: dict) -> None:
+    """Empty out expected_cluster_symbols."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = []
+
+
+def corrupt_rule_9j_missing(doc: dict) -> None:
+    """Delete expected_cluster_symbols field entirely."""
+    del _find_canonical(doc["plants"])["expected_cluster_symbols"]
+
+
+def corrupt_rule_9j_null(doc: dict) -> None:
+    """Set expected_cluster_symbols to null."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = None
+
+
+def corrupt_rule_9j_non_list_string(doc: dict) -> None:
+    """Make expected_cluster_symbols a string instead of a list."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = "MetricRow"
+
+
+def corrupt_rule_9j_non_list_dict(doc: dict) -> None:
+    """Make expected_cluster_symbols a dict instead of a list."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = {"primary": "MetricRow"}
+
+
+def corrupt_rule_9j_non_string_entry(doc: dict) -> None:
+    """Put a non-string entry into the list."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = ["valid", 42]
+
+
+def corrupt_rule_9j_empty_string_entry(doc: dict) -> None:
+    """Put an empty string into the list — would substring-match every cluster_id."""
+    _find_canonical(doc["plants"])["expected_cluster_symbols"] = ["valid", ""]
+
+
 # ─── Rule 9b: primary_answer.category must be in valid set ────────────────────
 
 
@@ -440,6 +478,13 @@ FIXTURES: list[Fixture] = [
         corrupt_rule_9a,
         "expected_substrate_signals",
     ),
+    Fixture("9j (empty)", "expected_cluster_symbols empty", corrupt_rule_9j_empty, "expected_cluster_symbols"),
+    Fixture("9j (missing)", "expected_cluster_symbols missing", corrupt_rule_9j_missing, "expected_cluster_symbols"),
+    Fixture("9j (null)", "expected_cluster_symbols null", corrupt_rule_9j_null, "expected_cluster_symbols"),
+    Fixture("9j (non-list string)", "expected_cluster_symbols is a string", corrupt_rule_9j_non_list_string, "expected_cluster_symbols"),
+    Fixture("9j (non-list dict)", "expected_cluster_symbols is a dict", corrupt_rule_9j_non_list_dict, "expected_cluster_symbols"),
+    Fixture("9j (non-string entry)", "expected_cluster_symbols entry not a string", corrupt_rule_9j_non_string_entry, "expected_cluster_symbols"),
+    Fixture("9j (empty string entry)", "expected_cluster_symbols contains an empty string", corrupt_rule_9j_empty_string_entry, "expected_cluster_symbols"),
     Fixture("9b", "primary_answer.category bogus", corrupt_rule_9b, "primary_answer.category"),
     Fixture(
         "9c",
