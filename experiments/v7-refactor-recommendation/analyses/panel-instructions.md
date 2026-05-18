@@ -83,14 +83,36 @@ Each reviewer writes a JSONL file at `analyses/panel-scores-<reviewer-id>.jsonl`
 
 After all reviewers finish, concatenate to `analyses/panel-scores.jsonl` (one consolidated file). [`score_all.py`](../score_all.py)'s `attach_panel_kappa()` reads that consolidated file and computes Fleiss κ over the score buckets; rerun the scorer once the consolidated file lands and `analyses/score-summary.json` regenerates with the `inter_rater` block populated.
 
-## 6. Round-1 panel coverage
+## 6. Round-1 panel coverage and the correlated-items caveat
 
-The 12 panel-routed recs concentrate on two plants:
+The 12 panel-routed recs concentrate on two plants — both bound to the **same** HSBColor `function-duplicates-near` cluster:
 
 - **Plant 3.1** (default-implementation): 6 recs (3 in S1, 3 in S2 — one per trial each)
 - **Plant 5.1** (generic-parameterization): 6 recs (3 in S1, 3 in S2)
 
-Each reviewer scores all 12 recs. Total panel-pair count: 12 recs × 3 reviewers = 36 score rows. Inter-rater κ is computed over the 12 items × 3 raters, with the score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0} as categories.
+Each reviewer scores all 12 recs. Total panel-pair count: 12 recs × 3 reviewers = 36 score rows.
+
+### Two κ measures, two granularities
+
+The 12 items are NOT 12 independent judgments. Empirically, the 6 Plant 3.1 rec rationale texts are linguistically distinct (the agent re-phrases per trial) but **semantically identical** — all 6 propose the same private-helper refactor. Same for the 6 Plant 5.1 rows. A reviewer scoring on substance will likely give all 6 duplicates of a judgment the same score; a reviewer scoring on prose granularity might vary by 0.0–0.1.
+
+To surface this, `score_all.py` emits **two** inter-rater blocks:
+
+- **`inter_rater`** — Fleiss κ over the 12 rec rows × N raters. Score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0} are the categories. This is the literal methodology §8 / §12 measure. **May be inflated** if reviewers give correlated scores across the duplicates (e.g., all 6 Plant 3.1 rows get the same score from every reviewer → looks like agreement on 6 items but is really agreement on 1 underlying call).
+- **`inter_rater_collapsed`** — Fleiss κ over the **2 distinct (plant_id, cluster_id) judgments** × N raters. Each (reviewer, judgment) cell reduces the 6 per-cell scores to a median, and κ is computed over those medians. This is the methodologically cleaner measure for round 1's correlated panel set — at the cost of N=2 items, which has very low statistical power.
+
+A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer, judgment) cells where the reviewer's variance across duplicates was > 0. If this number is high, reviewers are sensitive to prose variation across trials — `inter_rater_collapsed` understates disagreement and `inter_rater` is the truer measure. If it's near zero (reviewers internally consistent across duplicates), `inter_rater_collapsed` is the truer measure of cross-reviewer agreement.
+
+### How to interpret the two κs together
+
+| `inter_rater` κ | `inter_rater_collapsed` κ | Reading |
+|---|---|---|
+| High | High | Reviewers agree on the underlying calls AND on every duplicate. Confident rubric coverage. |
+| High | Low | Reviewers agree on most duplicate rows by chance (e.g., all defaulting to 0.0 for "other"), but disagree on the underlying calls. `inter_rater` is inflated — trust the collapsed measure. |
+| Low | High | Reviewers agree on the underlying calls but disagree on individual duplicates (prose-sensitive scoring). Calibration needed on prose vs substance — see `within_reviewer_inconsistency_count`. |
+| Low | Low | Reviewers genuinely disagree on the calls. Rubric needs round-2 work. |
+
+Round 2 (when this panel sitting completes) should populate both measures and report them together in `results.md` §4.3. If they disagree by more than ~0.2, that's a methodology gap to log in `rubric-modifications.md`.
 
 The concentration on Plants 3.1 and 5.1 is itself a finding: the agent consistently classifies these two plants' clusters as "other" rather than as their manifest-pinned categories. The plant manifest's category attribution may be too narrow for what the agent is seeing in these clusters, or the agent's prompt is steering it toward novel-category responses on these structural shapes. Worth a debrief discussion after panel scores land.
 
