@@ -1,6 +1,6 @@
-# V7 refactor-recommendation experiment — round-1 results (auto-scored)
+# V7 refactor-recommendation experiment — round-1 results
 
-Companion results doc for the V7 refactor-recommendation experiment, MVP scope (5 categories × 4 canonical + 1 restraint = 25 plants; 2 conditions S1/S2; 3 trials per condition; `claude-sonnet-4-6`). Structured per the [main implementation plan §7.3](../../plans/v7-refactor-recommendation-implementation-plan.md#7-phase-e--scoring--writeup-2-3-weeks). Numbers below are the auto-scorer pass; panel-reviewed numbers for the 12 routed recs land after the panel sitting (see [§4 below](#4-panel-coverage--inter-rater-stats) and the [panel instructions](analyses/panel-instructions.md)).
+Companion results doc for the V7 refactor-recommendation experiment, MVP scope (5 categories × 4 canonical + 1 restraint = 25 plants; 2 conditions S1/S2; 3 trials per condition; `claude-sonnet-4-6`). Structured per the [main implementation plan §7.3](../../plans/v7-refactor-recommendation-implementation-plan.md#7-phase-e--scoring--writeup-2-3-weeks). The 12 panel-routed recs were scored by a single expert reviewer in round 1 (see [§4 below](#4-panel-coverage--inter-rater-stats) and the [reproducibility.yaml `round1_deviation` block](reproducibility.yaml)); their numeric scores are backfilled into the headline by `promote_panel_scores` in [`score_all.py`](score_all.py).
 
 ## TL;DR
 
@@ -8,11 +8,11 @@ Headline 2-D point (canonical recall × restraint 1−FPR):
 
 | Condition | Canonical recall | 1 − FPR | Panel-route rate |
 |---|---|---|---|
-| S1 (V6 substrate) | **0.255** | 0.800 | 2.1% |
+| S1 (V6 substrate) | **0.270** | 0.800 | 2.1% |
 | S2 (V7 substrate) | **0.615** | 0.800 | 1.3% |
-| **S2 − S1** | **+0.360** | 0.000 | −0.8 pp |
+| **S2 − S1** | **+0.345** | 0.000 | −0.8 pp |
 
-Substrate enrichment delivered a **+0.36** absolute jump in canonical recall on the 20 canonical plants. Restraint false-positive rate held flat at 0.20 (1 of 5 restraint plants — Plant 1R — triggered an action recommendation under both conditions). Panel-route rate stayed well under the methodology §14.3 50% acceptance bar in both conditions, so the rubric covers what it intends to cover.
+Substrate enrichment delivered a **+0.345** absolute jump in canonical recall on the 20 canonical plants. Restraint false-positive rate held flat at 0.20 (1 of 5 restraint plants — Plant 1R — triggered an action recommendation under both conditions). Panel-route rate stayed well under the methodology §14.3 50% acceptance bar in both conditions, so the rubric covers what it intends to cover.
 
 The improvement is **not uniform across categories**: it concentrates in the two V7-new substrate queries (`pat-candidates`, `protocol-inheritance-candidates`), which is consistent with the substrate-enrichment story but is also the narrowest possible story — V7's other enrichments did not move the needle on the categories V6 already served.
 
@@ -26,7 +26,7 @@ Mean canonical recall across the 3 trials, per condition, per category:
 | protocol-inheritance | 0.125 | 0.875 | **+0.750** | V7-new `protocol-inheritance-candidates` query is the substrate change. The category went from "barely surfaces" to "near-canonical recall." |
 | default-implementation | 0.542 | 0.792 | **+0.250** | V7-new `default-impl-candidates` query. V6 partially surfaced these via near-duplicates; V7 made them explicit. |
 | pat-introduction | 0.000 | 0.550 | **+0.550** | V7-new `pat-candidates` query. V6 had no signal for this category at all. |
-| generic-parameterization | 0.325 | 0.550 | **+0.225** | V7-new `generic-struct-candidates`, `generic-function-candidates`. V6 partially via near-duplicates. |
+| generic-parameterization | 0.400 | 0.575 | **+0.175** | V7-new `generic-struct-candidates`, `generic-function-candidates`. V6 partially via near-duplicates. Panel scoring promoted Plant 5.1 from auto-scored 0.0 → 0.3 (adjacent-defensible) across all S1 trials and S2 trial 2, narrowing the V6→V7 gap; the agent's S1 answer reaches the rubric's adjacency floor without the substrate signal. |
 
 The signal is clean: where V7 added a new query, recall jumps; where V7 did not (extract-to-common), recall is identical. Per category cells per trial, see [`analyses/score-summary.json`](analyses/score-summary.json) → `per_category_per_cell`.
 
@@ -71,7 +71,34 @@ Auto-scoring rate (auto-scored fraction = 1 − panel-route fraction):
 
 Methodology §14.3 sets the acceptance bar at "auto-scored fraction ≥ 50%" (equivalently panel-route ≤ 50%). Both conditions pass with two orders of magnitude of headroom — the rubric covers what it intends to cover.
 
-**Fleiss κ**: not yet computed. The `analyses/score-summary.json` → `inter_rater` block currently holds `null` with a note that `analyses/panel-scores.jsonl` is not present. Once the three reviewers complete the [panel sitting](analyses/panel-instructions.md), rerunning `score_all.py` populates `inter_rater.fleiss_kappa` automatically from the score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0}.
+### 4.1 Round-1 panel-sitting outcome
+
+All 12 routed recs concentrate on a single cluster: the `HSBColor.uiColor` ↔ `HSBColor.nsColor` near-duplicate (Jaccard 0.71) inside `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`. The agent's recommendation across all (condition, trial) combinations is the same in substance — extract a private HSB-to-color helper, or use `#if canImport(UIKit)/#if canImport(AppKit)` conditional compilation, and decline the named taxonomy categories on the grounds that `UIColor` and `NSColor` are unrelated nominal types.
+
+Panel scoring assigned each routed pair one of two values:
+
+| Bound plant | Plant intent | Panel score | Rationale |
+|---|---|---|---|
+| Plant 5.1 (generic-parameterization) | `platformColor<Color: PlatformColor>` generic function unifying `uiColor` / `nsColor` | **0.3** ("wrong category but adjacent and defensible") | Agent saw the right cluster, cited the right symbols (`HSBColor`, `uiColor`, `nsColor`, `UIColor`, `NSColor` — matches `rationale_must_cite`), but dismissed the generic abstraction without considering a `PlatformColor` typealias/protocol bridge. Closest taxonomy fit is `extract-to-common`, rubric-adjacent to `generic-parameterization`. |
+| Plant 3.1 (default-implementation) | `HSBStorage` protocol with a default `init(hue:saturation:brightness:)` across HSBColor / AccentColor / HSBOffset | **0.0** (false binding) | The HSBColor uiColor/nsColor cluster is Plant 5.1's signal, not Plant 3.1's. The bind happened because `HSBColor.swift` appears in `Plant 3.1.source_files` (HSBColor is one of the three conformers), but the panel-routed cluster doesn't surface Plant 3.1's init-pattern signal. Agent's helper recommendation does not engage with Plant 3.1's refactor. |
+
+`promote_panel_scores` (new in this writeup; [`score_all.py`](score_all.py)) backfills these scores into `auto-scores.json::scored` before aggregation. Effect on the headline: Plant 5.1's best-across-trials moves from `max(0.0, 0.0, 0.0) = 0.0` to `max(0.3, 0.3, 0.3) = 0.3` in S1 (+0.015 to the 20-plant mean), and is unchanged in S2 (panel 0.3 ties existing auto-scored 0.3 cells). Plant 3.1's headline is unchanged in either condition — the 0.0 panel score doesn't promote anything.
+
+### 4.2 Binding-artifact finding
+
+The HSBColor cluster binding to both Plant 3.1 and Plant 5.1 surfaces a substring-match limitation in `bind_recs_to_plants` ([`score_all.py`](score_all.py)): a cluster touching one of a plant's `source_files` binds to that plant even when the cluster doesn't surface the plant's pre-registered signal shape. Round 1 lived with this — 6 false bindings concentrated on one cluster don't move the headline since the panel scores those as 0.0 — but round 2 should tighten binding so a cluster that matches a plant's source files but doesn't match the plant's `expected_substrate_signals` is filtered out before scoring.
+
+### 4.3 Inter-rater κ
+
+Round 1 used a single expert reviewer (`analyses/panel-scores-reviewer-1.jsonl`); the pre-registered design called for 3 (methodology §17 decision #3). The [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml) records the rationale: the 12 routed pairs reduce to two distinct judgements (Plant 5.1 binding adjacent-defensible; Plant 3.1 binding false-positive), so the methodology overhead of two more reviewers was disproportionate at this corpus size. Round 2 adds the missing reviewers — same `panel-routing.jsonl`, two new `panel-scores-reviewer-N.jsonl` files concatenated into the consolidated file, then `score_all.py` populates `inter_rater.fleiss_kappa` from the score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0}.
+
+The current `analyses/score-summary.json::inter_rater` block carries the structured panel-pending sentinel:
+
+```json
+{"fleiss_kappa": null, "n_items": 12, "n_raters": 1, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
+```
+
+Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decision rule pre-registered the recs that needed human judgement, and round 1 supplies one such judgement per rec.
 
 ## 5. Restraint plants — false-positive breakdown
 
@@ -93,7 +120,7 @@ A quick rationale check on Plant 1R's S2 recs: the agent's rationale cites that 
 
 Trial-to-trial variance is small. Per (condition, category) cell, the trial-1/trial-2/trial-3 canonical recall values agree to within 0.1 in 14 of 15 cells, and exactly in 11 of 15 cells. No V4-style batching-variance signature (methodology §14.4) is observed — the per-rec count and per-rec category mix are stable across trials, consistent with the substrate-emitted `cluster_id` (issue #5) prerequisite having landed before Phase D.
 
-The one cell with non-trivial trial variance: S2 default-implementation, where Plant 3.1 scored 1.0 in trial 1, 0.0 in trial 2, 1.0 in trial 3. The trial-2 dip is the "other"-category route — the agent chose the panel-route path in that trial and the rec scored 0 under the best-score-across-pairs aggregation.
+The one cell with non-trivial trial variance: S2 default-implementation, where Plant 3.1 scored 1.0 in trial 1, 0.0 in trial 2, 1.0 in trial 3. The trial-2 dip is genuine trial-to-trial agent variance — the agent didn't surface Plant 3.1's `init(hue:saturation:brightness:)` default-impl refactor on that pass (all 11 scored pairs for Plant 3.1 in S2 trial 2 land at 0.0, including the panel-resolved HSBColor "other" rec at 0.0 from the [§4.2 false binding](#42-binding-artifact-finding)).
 
 ## 7. Sensitivity to specifics-tolerance (round 1 scope)
 
@@ -107,7 +134,8 @@ For the round-1 headline numbers, the key-only assumption holds: every rec that 
 
 - **Plants 1.4 and 5.4 do not surface under either condition.** Their planted clusters' substring presence in V7 query outputs is the diagnostic — these two plants are placed in clusters the V7 substrate doesn't currently catalog. Round 2 either re-places them or extends the substrate to catalog the missing shape.
 - **Plant 1R restraint false-positive persists across conditions.** This is a prompt-side fix (sharpen the `is_test`/`is_mock` decision rule in the agent prompt), not a substrate-side gap. Logged as a round-2 prompt-tightening task.
-- **Inter-rater κ pending panel completion.** The `analyses/score-summary.json` → `inter_rater` block updates automatically once `analyses/panel-scores.jsonl` exists.
+- **Inter-rater κ undefined in round 1.** The pre-registered 3-reviewer panel ran with 1 expert reviewer in round 1 (see [§4.3](#43-inter-rater-κ) and the [`round1_deviation` block in reproducibility.yaml](reproducibility.yaml)). The `score-summary.json::inter_rater` block carries the panel-pending sentinel; round 2 recruits the missing two reviewers to populate a numeric κ over the same panel-routing artifact.
+- **Substring-match binding produces false positives.** The HSBColor cluster bound to both Plant 3.1 and Plant 5.1 because both plants list `HSBColor.swift` in their `source_files`. Round 2 should add an `expected_substrate_signals` filter to `bind_recs_to_plants` so a cluster only binds to a plant when the cluster's query is one the plant's manifest entry pre-registered. See [§4.2](#42-binding-artifact-finding).
 - **Auto-scorer over-credit risk (key-only specifics).** Spot-check load deferred to round 2; round-1 sample confirms the over-credit is bounded for the planted clusters in this corpus.
 
 ## 9. Reproducibility
@@ -118,10 +146,10 @@ All inputs to this writeup are pinned in [`reproducibility.yaml`](reproducibilit
 - `execution.model_versions.primary` = `claude-sonnet-4-6` (alias, pin documented in `reproducibility.yaml` comment block since Anthropic did not publish a date-pinned 4.6 variant by the trial window)
 - `execution.actual_spend_usd` = $39.46 (well under the §6.3 hard cap of $120)
 - `execution.trial_date_range` = 2026-05-15 (single-day Phase D run)
-- `execution.panel_composition` = 3 internal reviewers, blind to condition (per methodology §17 decision #3)
+- `execution.panel_composition` = 1 internal expert reviewer (round 1; pre-registered as 3 per methodology §17 decision #3 — see `round1_deviation` block)
 - `execution.rubric_modifications` = null (no post-hoc rubric edits in round 1)
 
-Re-running [`score_all.py`](score_all.py) against the same parsed cache reproduces [`analyses/auto-scores.json`](analyses/auto-scores.json) byte-for-byte (verified with `md5sum` across two consecutive runs).
+Re-running [`score_all.py`](score_all.py) against the same parsed cache + the committed `analyses/panel-scores.jsonl` reproduces [`analyses/auto-scores.json`](analyses/auto-scores.json) and [`analyses/score-summary.json`](analyses/score-summary.json) byte-for-byte (verified with `md5sum` across two consecutive runs). Reproducing the headline without panel scores: rename `analyses/panel-scores.jsonl` aside and rerun — `inter_rater` falls back to the "panel scores file not present" sentinel, and `promote_panel_scores` is a no-op so the headline reverts to the auto-scored-only `S1=0.255 / S2=0.615`.
 
 ## See also
 

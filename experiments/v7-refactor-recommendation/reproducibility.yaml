@@ -164,20 +164,51 @@ execution:
   # Sum of per-rec cost_usd across all 2907 trial-log records (3 trials × 444
   # S1 + 3 trials × 525 S2). Well under the §6.3 acceptance hard cap of $120.
   actual_spend_usd: 39.4584
-  # Panel sitting per methodology §17 decision #3 — 3 internal reviewers
-  # scoring the 12 panel-routed recs blind to condition. Reviewer identities
-  # are role-only here per the project's anonymity convention; specific
-  # individuals are coordinated outside this artifact.
+  # Panel sitting per methodology §17 decision #3. The pre-registered design
+  # called for 3 internal reviewers scoring the 12 panel-routed recs blind to
+  # condition. Round 1 executed with 1 expert reviewer instead (see
+  # `round1_deviation` below); the 12 panel scores landed at
+  # `analyses/panel-scores.jsonl` and `promote_panel_scores` in score_all.py
+  # backfills them into per-cell `best_score` so the headline reflects panel-
+  # resolved values. Fleiss κ is undefined for m<2 raters and
+  # `analyses/score-summary.json::inter_rater` carries the structured
+  # `panel-pending` sentinel `{fleiss_kappa: null, n_raters: 1, note: ...}`
+  # until round 2 adds the missing two reviewers.
   panel_composition:
-    n_reviewers: 3
+    n_reviewers_planned: 3
+    n_reviewers_actual: 1
     recruitment_source: internal
     blind_to_condition: true
     time_commitment_per_reviewer_hours: 4
     target_metric: fleiss_kappa
     target_threshold: 0.4   # methodology §12 "fair agreement" lower bound
-    # Per-rec inter-rater κ populates analyses/score-summary.json::inter_rater
-    # once analyses/panel-scores.jsonl is concatenated from the per-reviewer
-    # files; until then the inter_rater block holds the null sentinel.
     scores_consolidated_at: analyses/panel-scores.jsonl
+    per_reviewer_files_at: [analyses/panel-scores-reviewer-1.jsonl]
     instructions_at: analyses/panel-instructions.md
+    round1_deviation:
+      description: |
+        Round 1 was scored by a single expert reviewer rather than the
+        pre-registered 3-reviewer panel. The 12 panel-routed recs are heavily
+        concentrated on one cluster (HSBColor.uiColor/HSBColor.nsColor near-
+        duplicate, Jaccard 0.71), bound to plants 3.1 and 5.1 via substring
+        match on source_files. The practical scoring load is closer to two
+        distinct judgements (one per plant binding) than 12 independent ones;
+        the overhead of recruiting and calibrating two more reviewers for an
+        essentially binary call was disproportionate at this corpus size.
+      consequence: |
+        Fleiss κ is undefined at m<2 and is emitted as a structured panel-
+        pending sentinel rather than a numeric value. Per-rec scores are
+        still authoritative — auto-scorer.py's panel-route decision rule pre-
+        registered the recs that needed human judgement, and this round
+        supplies one such judgement per rec. The §14.3 ≤50% panel-route rate
+        acceptance check is satisfied by the auto-scorer alone (2.1% S1,
+        1.3% S2 — both well under 50%), so the missing inter-rater signal
+        does not block headline interpretation.
+      remediation:
+        round_2_action: recruit 2 additional reviewers to score the same
+          analyses/panel-routing.jsonl; concatenate per-reviewer files into
+          analyses/panel-scores.jsonl; re-run score_all.py to populate
+          inter_rater with a numeric κ and update the headline if any
+          panel-resolved value shifts.
+        deadline: round 2 panel sitting (no fixed date yet).
   rubric_modifications: null  # round 1: no post-hoc rubric edits
