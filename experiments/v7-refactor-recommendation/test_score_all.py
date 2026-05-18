@@ -632,19 +632,24 @@ class PromotePanelScoresTests(unittest.TestCase):
 
     def test_bool_score_in_panel_file_is_ignored(self):
         """Defensive: Python's bool is a subclass of int, so a stray `True`
-        would silently promote to score=1.0 without the bool-exclusion guard.
-        Confirm the guard keeps the entry at PANEL_ROUTE.
+        would silently promote to score=1.0 (and `False` to 0.0 — arguably
+        the worse failure mode since 0.0 is a valid bucket) without the
+        bool-exclusion guard. Confirm the guard keeps both at PANEL_ROUTE.
         """
-        with TemporaryDirectory() as td:
-            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
-            token = _token_for(entry)
-            doc = {"scored": [entry]}
-            path = Path(td) / "panel-scores.jsonl"
-            path.write_text(json.dumps(
-                {"rec_token": token, "reviewer": "r1", "score": True}
-            ) + "\n")
-            score_all.promote_panel_scores(doc, path)
-            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+        for bool_value in (True, False):
+            with self.subTest(bool_value=bool_value):
+                with TemporaryDirectory() as td:
+                    entry = _scored_entry(
+                        score=score_all.PANEL_ROUTE, match="other_routes_to_panel"
+                    )
+                    token = _token_for(entry)
+                    doc = {"scored": [entry]}
+                    path = Path(td) / "panel-scores.jsonl"
+                    path.write_text(json.dumps(
+                        {"rec_token": token, "reviewer": "r1", "score": bool_value}
+                    ) + "\n")
+                    score_all.promote_panel_scores(doc, path)
+                    self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
 
     def test_tokens_align_with_score_recommendations(self):
         """Integration: tokens produced by score_recommendations for panel-
