@@ -760,6 +760,8 @@ def attach_collapsed_panel_kappa(
       - panel_routed is empty (no rec_token → judgment mapping available)
       - fewer than 2 reviewers contributed scores
       - panel scores file is empty
+      - reviewer coverage is uneven across judgments (Fleiss κ requires every
+        item rated by exactly m raters)
     """
     if not panel_scores_path.exists():
         summary["inter_rater_collapsed"] = {
@@ -859,6 +861,35 @@ def attach_collapsed_panel_kappa(
         }
         return summary
 
+    # Fleiss κ's precondition is that every item is rated by exactly `m`
+    # raters — the per-item counts must sum to m. If some reviewer didn't
+    # cover some judgment, the canonical Fleiss formulation is undefined
+    # (the "incomplete-design" extension is a separate metric). Surface
+    # this as a sentinel rather than emitting a κ with a silently-wrong
+    # denominator.
+    uncovered_pairs = [
+        (j["plant_id"], reviewer)
+        for j in judgments
+        for reviewer in reviewers
+        if reviewer not in j["reviewer_medians"]
+    ]
+    if uncovered_pairs:
+        note = (
+            f"{len(uncovered_pairs)} (judgment, reviewer) pair(s) missing — "
+            "every reviewer must score every judgment for Fleiss κ to be defined"
+        )
+        if note_parts:
+            note = note + "; " + "; ".join(note_parts)
+        summary["inter_rater_collapsed"] = {
+            "fleiss_kappa": None,
+            "n_judgments": n_judgments,
+            "n_raters": m,
+            "judgments": judgments,
+            "within_reviewer_inconsistency_count": inconsistency_count,
+            "note": note,
+        }
+        return summary
+
     # 4. Build the (item × category-count) matrix Fleiss κ expects. Iterate
     #    `sorted(reviewers)` rather than the set itself so category-ordering is
     #    deterministic across runs (set iteration order depends on hashing).
@@ -867,8 +898,6 @@ def attach_collapsed_panel_kappa(
     for j in judgments:
         counts: dict[str, int] = defaultdict(int)
         for reviewer in sorted_reviewers:
-            if reviewer not in j["reviewer_medians"]:
-                continue  # reviewer didn't cover this judgment
             counts[_median_category(j["reviewer_medians"][reviewer])] += 1
         items.append(dict(counts))
 

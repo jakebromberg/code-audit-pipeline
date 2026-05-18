@@ -783,7 +783,9 @@ class AttachCollapsedPanelKappaTests(unittest.TestCase):
 
     def test_uneven_reviewer_duplicate_coverage(self):
         """Reviewers may cover different numbers of duplicates per judgment.
-        n_duplicates_per_reviewer is a per-reviewer dict so this stays legible."""
+        n_duplicates_per_reviewer is a per-reviewer dict so this stays legible.
+        As long as every reviewer covers the judgment at all, Fleiss κ stays
+        defined (it operates on the collapsed median, not the raw counts)."""
         with TemporaryDirectory() as td:
             scores = Path(td) / "panel-scores.jsonl"
             panel_routed = [_routing_row(f"pr-t{i}", "3.1", "hsbcolor", trial=i) for i in (1, 2, 3)]
@@ -803,6 +805,31 @@ class AttachCollapsedPanelKappaTests(unittest.TestCase):
             judgment = block["judgments"][0]
             self.assertEqual(judgment["n_duplicates_per_reviewer"]["alice"], 3)
             self.assertEqual(judgment["n_duplicates_per_reviewer"]["bob"], 2)
+
+    def test_uneven_reviewer_judgment_coverage_emits_sentinel(self):
+        """Fleiss κ requires every item rated by exactly m raters. If reviewer
+        coverage is uneven at the judgment level (alice scores both, bob only
+        one), the canonical κ denominator is undefined; surface a sentinel
+        rather than emit a silently-wrong number."""
+        with TemporaryDirectory() as td:
+            scores = Path(td) / "panel-scores.jsonl"
+            # 2 judgments, alice covers both, bob covers only plant 3.1
+            panel_routed = []
+            score_rows = []
+            for plant_id in ("3.1", "5.1"):
+                token = f"pr-{plant_id.replace('.', '')}"
+                panel_routed.append(_routing_row(token, plant_id, "hsbcolor"))
+                score_rows.append({"rec_token": token, "reviewer": "alice", "score": 0.3})
+            # bob only scores plant 3.1
+            score_rows.append({"rec_token": "pr-31", "reviewer": "bob", "score": 0.3})
+            _write_jsonl(scores, score_rows)
+            summary = {}
+            score_all.attach_collapsed_panel_kappa(summary, scores, panel_routed)
+            block = summary["inter_rater_collapsed"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_judgments"], 2)
+            self.assertEqual(block["n_raters"], 2)
+            self.assertIn("missing", block["note"])
 
 
 # ─── promote_panel_scores ─────────────────────────────────────────────────
