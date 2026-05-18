@@ -11,9 +11,11 @@ plant.source_files, calls `auto-scorer.py::score_recommendation` for every
   • `analyses/score-summary.json` — aggregates per (condition, category,
     trial) cell: canonical recall, restraint FPR, panel-route rate, plus the
     headline 2-D point (canonical recall × 1−FPR) per condition. Fleiss κ is
-    populated from `analyses/panel-scores.jsonl` if present; otherwise the
-    `inter_rater` block holds the literal `null` sentinel for the
-    panel-pending case.
+    populated from `analyses/panel-scores.jsonl` if present and ≥2 reviewers
+    are present; if the file is missing or holds <2 reviewers, `inter_rater`
+    is a structured panel-pending sentinel `{fleiss_kappa: null, n_items,
+    n_raters, note}` so downstream consumers can render "panel pending"
+    cleanly.
   • `analyses/panel-routing.jsonl` — opaque-tokenized one-per-line records
     for the panel sitting (per methodology §17 decision #3, 3 internal
     reviewers blind to condition).
@@ -150,6 +152,24 @@ def _opaque_token(*parts: str) -> str:
     return f"pr-{h[:12]}"
 
 
+def _token_parts(cluster_id, condition, trial, plant_id) -> tuple[str, str, str, str]:
+    """Normalize the four identity fields into the exact strings that
+    `_opaque_token` hashes. Both the panel-routing writer in
+    `score_recommendations` and the matching read in `promote_panel_scores`
+    MUST use this helper so the tokens round-trip — any asymmetry in how
+    None/missing fields are stringified silently breaks promotion.
+
+    Missing fields (None, missing keys) normalize to the empty string,
+    matching what JSON `null` looks like once serialized and re-loaded. A
+    plant_id that comes back from YAML as a float (e.g. `5.1`) is stringified
+    with Python's default repr so the token round-trips through scored
+    entries' `plant_id` field.
+    """
+    def _norm(v):
+        return "" if v is None else str(v)
+    return (_norm(cluster_id), _norm(condition), _norm(trial), _norm(plant_id))
+
+
 def _build_recommendation_dict(parsed: dict) -> dict:
     """Reshape a parsed.parsed dict into the auto-scorer's expected input."""
     return {
@@ -230,12 +250,12 @@ def score_recommendations(
             }
             scored.append(entry)
             if result.score == PANEL_ROUTE:
-                token = _opaque_token(
-                    str(rec.get("cluster_id")),
-                    str(rec.get("condition")),
-                    str(rec.get("trial")),
+                token = _opaque_token(*_token_parts(
+                    rec.get("cluster_id"),
+                    rec.get("condition"),
+                    rec.get("trial"),
                     plant_id,
-                )
+                ))
                 panel_routed.append({
                     "rec_token": token,
                     "plant_id": plant_id,
@@ -302,7 +322,7 @@ def promote_panel_scores(scored_doc: dict, panel_scores_path: Path) -> dict:
     if not panel_scores_path.exists():
         return scored_doc
     by_token: dict[str, list[float]] = defaultdict(list)
-    with panel_scores_path.open() as f:
+    with panel_scores_path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -317,12 +337,12 @@ def promote_panel_scores(scored_doc: dict, panel_scores_path: Path) -> dict:
     for entry in scored_doc["scored"]:
         if entry.get("score") != PANEL_ROUTE:
             continue
-        token = _opaque_token(
-            str(entry.get("cluster_id") or ""),
-            str(entry.get("condition") or ""),
-            str(entry.get("trial") or ""),
-            str(entry.get("plant_id") or ""),
-        )
+        token = _opaque_token(*_token_parts(
+            entry.get("cluster_id"),
+            entry.get("condition"),
+            entry.get("trial"),
+            entry.get("plant_id"),
+        ))
         scores = by_token.get(token, [])
         if not scores:
             continue
@@ -583,7 +603,7 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
         return summary
     by_token: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     reviewers: set[str] = set()
-    with panel_scores_path.open() as f:
+    with panel_scores_path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
