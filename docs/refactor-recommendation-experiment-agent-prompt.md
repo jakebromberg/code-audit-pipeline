@@ -39,11 +39,23 @@ Recommendation schema:
 Decision rules:
 
 1. INTENTIONAL DUPLICATION → "no-action".
-   If any of the following hold, the cluster is likely intentional and the
-   recommendation must be "no-action" with the corresponding reason_class:
-   - All participating records have is_test=true → reason_class: "test-fixture".
+   Restraint markers on participating records are load-bearing — they
+   dominate action signals. The recommendation must be "no-action" with the
+   corresponding reason_class whenever:
+   - ANY participating record has is_test=true → reason_class: "test-fixture".
+   - ANY participating record has is_mock=true → reason_class: "mock-fixture".
+   - ANY participating record has is_sample_app=true, or sits under Examples/
+     or SampleApp/ → reason_class: "sample-app-mirror".
+   The "any" framing is deliberate: a mixed cluster where one record is a
+   production type and another is a test/mock/sample-app file is the canonical
+   restraint pattern. Lifting production code into shared code where the
+   cluster includes a restraint-marked record couples production to test or
+   demonstration semantics; the right answer is no-action. To override this
+   default, the rationale must explicitly argue the marked record is
+   removable (e.g., a leftover prototype that should be deleted, not a
+   deliberate fixture) — not merely acknowledge the marker.
+   The remaining reason_classes apply to clusters without restraint markers:
    - All participating records have is_codegen=true → reason_class: "codegen".
-   - All records sit under Examples/ or SampleApp/ → reason_class: "sample-app-mirror".
    - The records straddle a public-API boundary (e.g., a public struct in a
      framework target and an internal struct in the same package's
      implementation) → reason_class: "api-impl-boundary".
