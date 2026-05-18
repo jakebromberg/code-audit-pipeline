@@ -103,6 +103,30 @@ To surface this, `score_all.py` emits **two** inter-rater blocks:
 
 A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer, judgment) cells where the reviewer's variance across duplicates was > 0. If this number is high, reviewers are sensitive to prose variation across trials — `inter_rater_collapsed` understates disagreement and `inter_rater` is the truer measure. If it's near zero (reviewers internally consistent across duplicates), `inter_rater_collapsed` is the truer measure of cross-reviewer agreement.
 
+### `inter_rater_collapsed` block schema
+
+```json
+{
+  "fleiss_kappa": 1.0,                      // null when m<2, uneven coverage, or sentinel path
+  "n_judgments": 2,                          // distinct (plant_id, cluster_id) cells
+  "n_raters": 3,                             // unique reviewer IDs seen in panel-scores
+  "judgments": [
+    {
+      "plant_id": "3.1",
+      "cluster_id": "function-duplicates-near:…",
+      "n_duplicates_per_reviewer": {"reviewer-1": 6, "reviewer-2": 6, "reviewer-3": 6},
+      "reviewer_medians": {"reviewer-1": 0.0, "reviewer-2": 0.0, "reviewer-3": 0.0},
+      "reviewer_variance": {"reviewer-1": 0.0, "reviewer-2": 0.0, "reviewer-3": 0.0}
+    },
+    …
+  ],
+  "within_reviewer_inconsistency_count": 0,  // # of (judgment, reviewer) cells with variance > 0
+  "note": null                                // populated on sentinel paths
+}
+```
+
+`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., one reviewer missed a row). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, or reviewer coverage is uneven at the judgment level (some reviewer didn't score some judgment at all — Fleiss κ requires every item rated by exactly m raters).
+
 ### How to interpret the two κs together
 
 | `inter_rater` κ | `inter_rater_collapsed` κ | Reading |
