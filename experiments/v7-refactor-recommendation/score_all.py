@@ -118,10 +118,17 @@ PANEL_ROUTE = "panel_route"  # mirrors auto_scorer.PANEL_ROUTE for downstream co
 
 
 def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[tuple[dict, list[str]]]:
-    """For each rec, return the (sorted) list of plant_ids whose source_files
-    appear as substrings of the rec's cluster_id. Cluster_id substring match
-    is the same strategy used by plant_recall_extended.py — kept consistent
-    so the two analyses agree on which recs are "planted."
+    """For each rec, return the (sorted) list of plant_ids that match the rec
+    on BOTH (a) source_files substring match against the rec's cluster_id, and
+    (b) the rec's `query` being in the plant's `expected_substrate_signals`
+    list. Substring match alone was the V7 round-1 strategy and produced false
+    bindings when a cluster from one cluster-query happened to mention a file
+    path another plant also owned (the HSBColor / Plant 3.1 case in round 1).
+
+    Fallback rule: if the rec has no usable `query` field (missing key, None,
+    or empty string), the signal-list gate is skipped and the rec binds purely
+    on substring match — preserves byte-stable behavior for any caller whose
+    parsed cache pre-dates the `query` field.
 
     parse_error rows are returned with their plant matches preserved, but
     callers should route them to the parse_errors bucket downstream rather
@@ -130,8 +137,12 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
     bindings: list[tuple[dict, list[str]]] = []
     for rec in parsed_records:
         cluster_id = rec.get("cluster_id") or ""
+        rec_query = rec.get("query") or ""
         matched: list[str] = []
         for plant in plants:
+            signals = plant.get("expected_substrate_signals") or []
+            if rec_query and rec_query not in signals:
+                continue  # rec's query isn't pre-registered for this plant
             paths = plant.get("source_files") or []
             for path in paths:
                 if path and path in cluster_id:

@@ -32,6 +32,7 @@ def _plant(
     category: str = "extract-to-common",
     restraint: bool = False,
     source_files: list[str] | None = None,
+    expected_substrate_signals: list[str] | None = None,
     primary_category: str | None = None,
     primary_specifics_required: list[str] | None = None,
     must_cite: list[str] | None = None,
@@ -40,11 +41,18 @@ def _plant(
 ) -> dict:
     """Build a synthetic plant entry."""
     primary_category = primary_category or ("no-action" if restraint else category)
+    # Default signals align with `_rec`'s default `query="exact-duplicates"` so
+    # existing tests keep binding through the §3.4 signal-list gate. Use an
+    # `is None` check rather than `or` so an explicit empty list is preserved
+    # (the gate's defense-in-depth path tests this case).
+    if expected_substrate_signals is None:
+        expected_substrate_signals = ["exact-duplicates"]
     return {
         "plant_id": plant_id,
         "category": category,
         "restraint": restraint,
         "source_files": source_files or [f"Pkg/Sources/{plant_id}.swift"],
+        "expected_substrate_signals": expected_substrate_signals,
         "primary_answer": {
             "category": primary_category,
             "specifics": {},
@@ -117,9 +125,76 @@ class BindRecsToPlantsTests(unittest.TestCase):
         bindings = score_all.bind_recs_to_plants([rec], [plant])
         # parse-error rows are returned but with an empty plant list AND flagged
         # in score_recommendations downstream — bind_recs_to_plants itself is
-        # permissive (it doesn't decide what to do with parse errors).
-        self.assertEqual(bindings, [(rec, ["A"])])
+        # not in the parse_error business.
+        self.assertEqual(bindings[0][1], ["A"])  # plant binding preserved on parse_error rec
 
+    def test_signal_gate_blocks_cross_query_binding(self):
+        # The motivating bug: a `pat-candidates`-query rec whose cluster_id
+        # mentions a Plant 3.1 source file would bind to Plant 3.1 under the
+        # old substring-only logic, even though Plant 3.1's
+        # expected_substrate_signals are `function-duplicates` and
+        # `default-impl-candidates`. The signal-list gate blocks the bind.
+        plant = _plant(
+            plant_id="3.1",
+            source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
+            expected_substrate_signals=["function-duplicates", "default-impl-candidates"],
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Shared/Color/Sources/Color/HSBColor.swift",
+            query="pat-candidates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, [])])
+
+    def test_signal_gate_admits_in_signal_binding(self):
+        # Companion to the cross-query block: same plant + matching path, but
+        # the rec's query is in the plant's signal list. Binding should fire.
+        plant = _plant(
+            plant_id="3.1",
+            source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
+            expected_substrate_signals=["function-duplicates", "default-impl-candidates"],
+        )
+        rec = _rec(
+            cluster_id="function-duplicates:Shared/Color/Sources/Color/HSBColor.swift",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, ["3.1"])])
+
+    def test_missing_rec_query_falls_back_to_legacy_behavior(self):
+        # Recs without a usable `query` field bypass the signal gate so the
+        # legacy substring-only behavior is preserved. Three input shapes
+        # exercise the `rec.get("query") or ""` normalization: key missing,
+        # explicit None, empty string.
+        plant = _plant(
+            plant_id="A",
+            source_files=["Pkg/Sources/A.swift"],
+            expected_substrate_signals=["function-duplicates"],  # would block "exact-duplicates" rec
+        )
+        cluster_id = "exact-duplicates:Pkg/Sources/A.swift+Other/B.swift"
+        cases: list[tuple[str, dict]] = [
+            ("key-missing", {k: v for k, v in _rec(cluster_id=cluster_id).items() if k != "query"}),
+            ("explicit-None", {**_rec(cluster_id=cluster_id), "query": None}),
+            ("empty-string", {**_rec(cluster_id=cluster_id), "query": ""}),
+        ]
+        for case_name, rec in cases:
+            with self.subTest(case=case_name):
+                bindings = score_all.bind_recs_to_plants([rec], [plant])
+                self.assertEqual(bindings, [(rec, ["A"])], msg=f"case={case_name}")
+
+    def test_signal_gate_skipped_for_empty_signal_list(self):
+        # Defense-in-depth: a plant with an empty expected_substrate_signals
+        # list never binds. The manifest validator rejects empty lists, so
+        # this is unreachable in production — but the safe-by-default behavior
+        # is pinned here in case the validator is bypassed in future fixtures.
+        plant = _plant(
+            plant_id="A",
+            source_files=["Pkg/Sources/A.swift"],
+            expected_substrate_signals=[],
+        )
+        rec = _rec(cluster_id="exact-duplicates:Pkg/Sources/A.swift", query="exact-duplicates")
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, [])])
 
 # ─── score_all (per-rec scoring) ──────────────────────────────────────────
 
@@ -788,6 +863,7 @@ class CLISmokeTests(unittest.TestCase):
                   - plant_id: A
                     category: extract-to-common
                     source_files: ["Pkg/A.swift"]
+                    expected_substrate_signals: ["exact-duplicates"]
                     primary_answer:
                       category: extract-to-common
                       specifics: {}
