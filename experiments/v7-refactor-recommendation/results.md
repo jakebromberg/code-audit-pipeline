@@ -90,17 +90,24 @@ The HSBColor cluster binding to both Plant 3.1 and Plant 5.1 surfaces a substrin
 
 The round-1 closeout ([round-1-closeout plan](../../plans/v7-phase-e-round1-closeout-plan.md)) shipped a *prefer-signal-match resolution rule* in `bind_recs_to_plants`: when a cluster substring-matches multiple plants, bind only to those whose `expected_substrate_signals` include the rec's `query`. This cleans up 24 incidental false bindings across the corpus (Plant 3.1 −3, Plant 3R −9, Plant 5.1 −3, Plant 5.3 −9) — none of which were in the panel-routed set, so the headline is unchanged. But the rule does NOT fix the Plant 3.1 ↔ 5.1 panel-routed co-binding for HSBColor: both plants legitimately list `function-duplicates` in their signals AND both have HSBColor.swift in their source_files, so the resolution is ambiguous at the (path, query) granularity. The proper fix is symbol-level matching — a new manifest field `expected_cluster_symbols` per plant — filed as round-2 work in the closeout plan §6.2.
 
-### 4.3 Inter-rater κ
+### 4.3 Inter-rater κ — two granularities
 
-Round 1 used a single expert reviewer (`analyses/panel-scores-reviewer-1.jsonl`); the pre-registered design called for 3 (methodology §17 decision #3). The [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml) records the rationale: the 12 routed pairs reduce to two distinct judgements (Plant 5.1 binding adjacent-defensible; Plant 3.1 binding false-positive), so the methodology overhead of two more reviewers was disproportionate at this corpus size. Round 2 adds the missing reviewers — same `panel-routing.jsonl`, two new `panel-scores-reviewer-N.jsonl` files concatenated into the consolidated file, then `score_all.py` populates `inter_rater.fleiss_kappa` from the score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0}.
+Round 1 used a single expert reviewer (`analyses/panel-scores-reviewer-1.jsonl`); the pre-registered design called for 3 (methodology §17 decision #3). The [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml) records the rationale: the 12 routed pairs reduce to two distinct judgements (Plant 5.1 binding adjacent-defensible; Plant 3.1 binding false-positive), so the methodology overhead of two more reviewers was disproportionate at this corpus size. Round 2 adds the missing reviewers — same `panel-routing.jsonl`, two new `panel-scores-reviewer-N.jsonl` files concatenated into the consolidated file, then `score_all.py` populates **both** `inter_rater.fleiss_kappa` (rec-level) and `inter_rater_collapsed.fleiss_kappa` (judgment-level).
 
-The current `analyses/score-summary.json::inter_rater` block carries the structured panel-pending sentinel:
+The 12 panel rows are not 12 independent items — they're 2 distinct (plant_id, cluster_id) judgments duplicated across 3 trials × 2 conditions on the same HSBColor cluster. The 6 rationale texts per plant are linguistically distinct (the agent re-phrases per trial) but semantically identical (all 6 propose the same private-helper refactor). A reviewer scoring on substance gives 6/6 the same value; a reviewer scoring on prose granularity might vary. Round-1 closeout therefore added a second κ measure to `score_all.py` — see [`analyses/panel-instructions.md` §6](analyses/panel-instructions.md#6-round-1-panel-coverage-and-the-correlated-items-caveat) for the interpretation rules:
+
+- **`inter_rater`** — Fleiss κ over the 12 rec rows × N raters. Methodology §8 / §12 literal measure. Inflated if reviewers give correlated scores across duplicates.
+- **`inter_rater_collapsed`** — Fleiss κ over 2 distinct judgments × N raters (per-(reviewer, judgment) median of the 6 duplicates). Cleaner for round-1's correlated set; low statistical power (N=2 items).
+- **`inter_rater_collapsed.within_reviewer_inconsistency_count`** — diagnostic: number of (reviewer, judgment) cells where the reviewer scored duplicates inconsistently. High → reviewers are prose-sensitive; low → reviewers are substance-only.
+
+The current `analyses/score-summary.json` blocks carry the structured panel-pending sentinels:
 
 ```json
 {"fleiss_kappa": null, "n_items": 12, "n_raters": 1, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
+{"fleiss_kappa": null, "n_judgments": 2, "n_raters": 1, "within_reviewer_inconsistency_count": 0, "note": "..."}
 ```
 
-Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decision rule pre-registered the recs that needed human judgement, and round 1 supplies one such judgement per rec.
+Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decision rule pre-registered the recs that needed human judgement, and round 1 supplies one such judgement per rec. Round 1's `within_reviewer_inconsistency_count == 0` (the single reviewer gave the same score across all 6 duplicates of each plant) confirms substance-only scoring at the corpus size — when round-2 reviewers land, divergence between the two κ values will quantify how much of round-1's inflation was correlation-driven.
 
 ## 5. Restraint plants — false-positive breakdown
 
