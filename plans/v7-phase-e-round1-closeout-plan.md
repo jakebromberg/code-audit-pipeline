@@ -6,8 +6,8 @@
 
 Round 1 [results.md](../experiments/v7-refactor-recommendation/results.md) §4 surfaced two issues the panel sitting made concrete:
 
-- **§4.2 binding-artifact finding.** Of the 12 panel-routed pairs, 6 were Plant 3.1 ↔ clusters whose `query` field was not in Plant 3.1's `expected_substrate_signals` list. The substring match on `source_files` in `bind_recs_to_plants` happily binds a Plant 3.1 source path (`HSBColor.swift`) to any cluster_id containing that substring — including clusters surfaced by queries (e.g., `pat-candidates`) that aren't in Plant 3.1's signal list. These are false bindings: the rec wasn't *about* Plant 3.1's shape, it just happened to mention a file Plant 3.1 owns. Plant 5.1 was the true binding for those clusters.
-- **§4.1 Plant 1R FPR = 0.20 in both conditions.** Plant 1R is the restraint twin for Category 1 (extract-to-common), distinguished by `restraint_signal: "is_sample_app=true on the WallpaperSampleApp copy"`. In every Phase D trial the agent recommended `extract-to-common` on the Plant 1R pair, citing `is_sample_app=true` in its rationale but not letting the flag block the action. Single source of round-1 FPR across both S1 and S2.
+- **§4.2 binding-artifact finding.** Twenty-four recs across the corpus were bound to multiple plants via substring match on `source_files` when only one of those plants actually owned the cluster (the rec's `query` was in only one plant's `expected_substrate_signals` list). The most visible cluster is HSBColor: both Plant 3.1 (signals: `function-duplicates`, `default-impl-candidates`) and Plant 5.1 (signals: `function-duplicates`, `generic-function-candidates`) declare HSBColor.swift in their source_files. For clusters from queries only one plant lists as a signal (`default-impl-candidates`-only or `generic-function-candidates`-only), the substring rule binds to both plants instead of the one that signal-matches. A separate, deeper case — clusters from queries BOTH plants list — is round-2 work (see §6.2 below).
+- **§4.1 Plant 1R FPR contribution.** Plant 1R is the restraint twin for Category 1 (extract-to-common), distinguished by `restraint_signal: "is_sample_app=true on the WallpaperSampleApp copy"`. The extract-to-common category's per-cell FPR is 1.0 across all six cells (3 trials × 2 conditions) under round 1, because in every cell at least one cluster bound to Plant 1R received an action rec. The agent acknowledges `is_sample_app=true` in its rationale on the canonical MetricRow cluster (and correctly emits `no-action` there) but lifts unrelated clusters that mention DebugHUD.swift or DebugMetricsProvider.swift, treating the sample-app flag as advisory rather than load-bearing.
 
 Both have small fixes (~tens of lines plus a targeted prompt edit). Bundling them in one PR is appropriate because both are corrections to round-1 artifacts that get re-exercised by the round-2 Phase D re-run together; splitting yields two near-trivial PRs with the same review surface.
 
@@ -76,40 +76,54 @@ def bind_recs_to_plants(parsed_records, plants):
 
 A `cluster_id` like `pat-candidates::Shared/Color/Sources/Color/HSBColor.swift::42` will bind to Plant 3.1 because Plant 3.1's source_files include `HSBColor.swift`. But the `pat-candidates` query is not in Plant 3.1's `expected_substrate_signals` list (`function-duplicates`, `default-impl-candidates`) — it's in Plant 5.1's. The rec is from a Plant-5.1-shaped cluster that happens to overlap on a file path with Plant 3.1.
 
-### 3.2 The fix
+### 3.2 The fix — prefer-signal-match resolution rule
 
-Add `expected_substrate_signals` membership as a second gate:
+**First-draft rule (strict gate).** The simplest fix is to require both substring match AND `rec["query"] in plant["expected_substrate_signals"]` for every binding. But empirically this is too strict for round 1: Plant 1R's pre-registered signals are `[exact-duplicates, cross-package-shape-near-duplicates-any]`, but its path-based `source_files` only substring-match clusters from path-bearing query types (`function-duplicates-exact`, `subset-pairs`, `pat-candidates`, etc.) — none of which are in Plant 1R's signal list. The strict rule would eliminate every Plant 1R binding, collapsing the restraint's FPR contribution to 0/5 by structural exclusion rather than by the agent emitting `no-action`. That suppresses the very signal A3 is meant to fix.
+
+**Final rule (prefer signal-match when plants compete on substring).** Bind a rec to a plant when:
+- The cluster_id substring-matches one of the plant's `source_files` (status quo), AND
+- Either (a) no *other* plant whose `source_files` also substring-match the cluster_id has `rec["query"]` in their signal list, OR (b) this plant has `rec["query"]` in its own signal list.
+
+In code:
 
 ```python
 def bind_recs_to_plants(parsed_records, plants):
     for rec in parsed_records:
         cluster_id = rec.get("cluster_id") or ""
         rec_query = rec.get("query") or ""
-        matched = []
+        substring_matches: list[str] = []
+        signal_matches: list[str] = []
         for plant in plants:
-            signals = set(plant.get("expected_substrate_signals") or [])
-            if rec_query and rec_query not in signals:
-                continue  # cluster's query isn't in this plant's signal list — skip
-            for path in plant.get("source_files") or []:
-                if path and path in cluster_id:
-                    matched.append(plant["plant_id"])
-                    break
+            paths = plant.get("source_files") or []
+            substring_hit = any(p and p in cluster_id for p in paths)
+            if not substring_hit:
+                continue
+            substring_matches.append(plant["plant_id"])
+            signals = plant.get("expected_substrate_signals") or []
+            if rec_query and rec_query in signals:
+                signal_matches.append(plant["plant_id"])
+        matched = signal_matches if signal_matches else substring_matches
         bindings.append((rec, sorted(matched)))
 ```
 
-Two safety properties:
-1. **If `rec["query"]` is missing** (empty string after `or ""`), the signal gate is skipped — the legacy substring-only behavior remains. The `parsed-records.json` shape in round 1 always carries `query`, so this is a defense-in-depth fallback, not an expected path.
-2. **If a plant has an empty `expected_substrate_signals` list,** the rec can never bind. The manifest validator already requires the list to be non-empty (manifest comment line 35), so this is also a defense-in-depth check.
+**Behavior on the two motivating cases:**
+
+| Case | Old logic | New logic |
+|---|---|---|
+| HSBColor `pat-candidates` cluster (substring-matches both Plant 3.1 and Plant 5.1; `pat-candidates` is in 5.1's signals, not 3.1's) | Binds to [3.1, 5.1] — Plant 3.1 binding is a false positive | Binds to [5.1] — `signal_matches=[5.1]` is non-empty so it wins over the broader substring set |
+| DebugHUD `function-duplicates-exact` cluster (substring-matches only Plant 1R; `function-duplicates-exact` not in Plant 1R's signals) | Binds to [1R] | Binds to [1R] — `signal_matches=[]` so falls back to `substring_matches=[1R]` |
+
+**Defense-in-depth fallback.** If `rec["query"]` is missing/None/empty, `rec_query` is falsy, so `signal_matches` stays empty and the legacy substring-only behavior triggers via the fallback branch. This preserves byte-stable output for any pre-`query`-field parsed cache.
 
 ### 3.3 Expected effect on round-1 numbers
 
-The 6 false Plant 3.1 ↔ HSBColor bindings (`pat-candidates` query) drop out of `panel_routed` and reduce Plant 3.1's pair count. Plant 3.1's best-across-trials in S2 is already 1.0 from its real `function-duplicates` and `default-impl-candidates` signals, so the headline `canonical_recall` shouldn't move. What moves:
+Measured across the full parsed cache:
 
-- `panel_routed.size` shrinks by 6 (12 → 6).
-- `panel_route_rate` per condition drops by ~½ in whichever condition the 6 were concentrated.
-- `unmatched.size` grows by 6 (those recs now have no plant binding).
-
-Round-2 panel sitting will face 6 panel routed pairs instead of 12, all of them legitimate. The "panel review fatigue" cost halves.
+- **Cleanup count: 24 false bindings removed.** Per-plant before→after row counts: Plant 3.1 (60→57, −3), Plant 3R (27→18, −9), Plant 5.1 (36→33, −3), Plant 5.3 (24→15, −9). These are recs where exactly one plant signal-matched the rec's query and the others didn't; under the new rule the others' substring matches drop out and only the signal-matched plant binds. No plant gains bindings.
+- **Plant 1R bindings preserved: 99→99.** Plant 1R's signals (`exact-duplicates`, `cross-package-shape-near-duplicates-any`) don't match the path-bearing queries (`function-duplicates-exact`, `subset-pairs`, etc.) that surface its source_files. But no *other* plant has its source_files either, so `signal_matches` stays empty and the substring fallback binds Plant 1R unconditionally. A3's prompt change is therefore behaviorally measurable rather than suppressed by binding logic.
+- **Plant 3.1 ↔ Plant 5.1 co-bindings on HSBColor function-duplicates clusters: NOT fixed.** This is the gap the plan does not address. Both plants list `function-duplicates` in their signals and both have `HSBColor.swift` in their source_files, so the new rule leaves both bound. The 12 panel-routed pairs the round-1 panel scored are unchanged: 6 Plant 3.1 + 6 Plant 5.1 entries for the same `function-duplicates-near:HSBColor.uiColor+HSBColor.nsColor` cluster. The panel correctly scored the Plant 3.1 bindings as 0.0 (cluster is about uiColor/nsColor, Plant 5.1's planted shape, not init signatures which are Plant 3.1's). Fixing this requires finer-grained matching on planted symbols (a new manifest field) — out of scope here; filed as a round-2 follow-up (§6.2 below).
+- **Headline `canonical_recall` unchanged.** No removed binding promotes a higher-scoring rec out, and no plant gains a binding. Plant 3.1's best-across-trials in S2 is already 1.0 from its real signals.
+- **`panel_routed.size` unchanged at 12.** The panel-routed pairs are the HSBColor co-bindings, which the new rule keeps.
 
 ### 3.4 Pre-implementation caller audit
 
@@ -168,20 +182,20 @@ Replace the three "All participating records have X" bullets with a single load-
 
 The `is_codegen=true` case stays as "all participating records" because codegen clusters are typically homogeneous (the whole cluster is auto-generated) and don't have the mixed-record restraint shape.
 
-### 4.3 Expected effect on Plant 1R
+### 4.3 Expected effect on Plant 1R — methodological, not measurable in round 1
 
-Plant 1R has two records: `DebugPanel/DebugHUD.swift` (production) and `Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (sample app, `is_sample_app=true`). Under the tightened rule, the sample-app marker is load-bearing — the agent should recommend `no-action` with `reason_class: "sample-app-mirror"` instead of `extract-to-common`. FPR for Plant 1R drops from 0.20 (1/5) to 0.0 (0/5) across the 5 trials.
+Inspecting the round-1 raw responses for Plant 1R's two canonical clusters (`exact-duplicates:MetricRow+MetricRow` and `function-duplicates-exact:...MetricRow.body...`) across all 6 trial-condition cells: the agent **already emits `no-action` with `reason_class: "sample-app-mirror"`** on every one. The agent's behavior on Plant 1R's actual planted shape is correct under the current prompt.
 
-### 4.4 No full Phase D re-run, but a targeted Plant 1R re-run
+The 1.0 per-cell FPR Plant 1R contributes to extract-to-common comes from a different source: **incidental bindings**. Plant 1R's source_files include `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift`, which substring-matches clusters about unrelated symbols in the same file (`DebugMetricsProvider.updateMetrics`, `.measureCPUUsage`, `.measureMemoryUsage`, etc.). Those clusters' recs are `extract-to-common` — correctly so, since they ARE about lifting per-method shape, not about Plant 1R's MetricRow sample-app twin. The binding logic mis-attributes them to Plant 1R, generating false FPs.
 
-A full Phase D re-run with the new prompt would re-run 60 trial-cluster recommendations (2 conditions × 3 trials × ~10 clusters per trial), at ~$40 cost. The targeted re-run is just Plant 1R's two clusters across the 5 trial-condition cells — 10 invocations at ~$2. Procedure:
+So the round-1 FPR is structural (binding-level), not behavioral (prompt-level). A3's prompt change is therefore:
+- **Methodologically correct.** The "all participating records have X" framing is wrong for restraint patterns by design — Plant 1R, 2R, 3R are exactly the mixed-marker case the original rule misses. Future restraint plants (and the round-2 panel) will exercise the corrected rule.
+- **Not measurable in round 1.** Re-running Plant 1R's canonical clusters under the new prompt would just re-produce the existing `no-action` outputs. The headline FPR doesn't move because it's driven by incidental bindings, not by Plant 1R's planted shape.
+- **Independent of A2's gap.** The same symbol-level matching that §6.2 calls for would also resolve Plant 1R's incidental bindings — the cluster_id mentions `DebugMetricsProvider.updateMetrics`, which is *not* in Plant 1R's planted symbols (`MetricRow` only). Once §6.2 ships, Plant 1R will have only its 2 canonical clusters bound, those will be `no-action`, and the round-2 FPR will drop to 0 — under the round-2 prompt (A3), which by then will be in force.
 
-1. Pull the two Plant 1R cluster rows from each trial's input file.
-2. Re-invoke the agent with the new prompt against just those rows.
-3. Parse the responses with `parse_responses.py`.
-4. Confirm `no-action` for all 10 invocations.
+### 4.4 No targeted re-run
 
-The full re-run is out of scope here — that's round 2's job. The targeted re-run validates the prompt edit landed correctly without committing to a full re-execute.
+The plan originally called for a 10-invocation targeted re-run against Plant 1R's two clusters under the new prompt. Cancelled: the agent already emits `no-action` on those clusters under the OLD prompt, so re-running validates nothing observable. The prompt change only *adds* no-action triggers (any-vs-all is more permissive), so a regression on existing no-action behavior is logically impossible. Savings: $2 + one round trip.
 
 ### 4.5 Manifest already declares the expected restraint answer
 
@@ -204,32 +218,31 @@ Plant 1R's manifest entry (lines 209–239 of `plant-manifest.yaml`) already enc
 
 `reason_class` is in `primary_answer.specifics.reason_class`, not `primary_answer.reason_class`. **No manifest change is required for A3** — only the agent prompt needs editing. The targeted re-run validates the agent emits the answer the manifest already expects.
 
-### 4.6 TDD steps
+### 4.6 Validation steps
 
-The prompt is plain text — no code-level TDD. Validation steps:
+The prompt is plain text — no code-level TDD. Validation:
 
-1. Read the existing prompt §1 rule 1, edit the three bullets per §4.2 above.
-2. Run `validate-manifest.py` to confirm the manifest still validates (no manifest changes were made, but the validator is cheap to run and catches regressions if someone touched the YAML by accident).
-3. Run the targeted Plant 1R re-run per §4.4. Save outputs under `trial-logs/round1-correction-plant-1R/`.
-4. Confirm 10/10 invocations recommend `no-action` with `reason_class: "sample-app-mirror"`.
+1. Edit the existing prompt §1 rule 1 per §4.2 above.
+2. Run `validate-manifest.py` as a sanity check (manifest unchanged, but the validator catches accidental edits).
+3. Diff the prompt change against the methodology §9 restraint framing — confirm the change is consistent with "the agent's job is to weigh those flags against the action signal" (methodology line 643) under the mixed-marker reading.
 
-If any of the 10 invocations still recommend action, the prompt edit didn't land cleanly — iterate.
+No regression test fires because the change only adds no-action triggers. The round-2 panel sitting will exercise the corrected rule.
 
 ## 5. Acceptance criteria
 
 A PR is mergeable when all of:
 
-- [ ] `bind_recs_to_plants` has the signal-list gate per §3.2.
-- [ ] New tests in `test_score_all.py` cover the three cases in §3.4 step 1.
-- [ ] Full `pytest experiments/v7-refactor-recommendation/` passes (the 38 existing tests plus the new ones).
-- [ ] `analyses/scored.json`, `analyses/scored-aggregate.json`, `analyses/panel-routing.jsonl`, `analyses/panel-unblind.json` regenerated; checked-in artifacts match the tightened harness output byte-for-byte.
+- [ ] `bind_recs_to_plants` has the prefer-signal-match resolution per §3.2.
+- [ ] New tests in `test_score_all.py` cover the cases in §3.5.
+- [ ] Full `pytest experiments/v7-refactor-recommendation/` passes.
+- [ ] `analyses/auto-scores.json`, `analyses/score-summary.json`, `analyses/panel-routing.jsonl`, `analyses/panel-unblind.json` regenerated against the new rule; per-plant binding counts match §3.3 (Plant 3.1: 60→57, Plant 3R: 27→18, Plant 5.1: 36→33, Plant 5.3: 24→15).
 - [ ] Agent prompt §1 rule 1 edited per §4.2.
-- [ ] Targeted Plant 1R re-run shows 10/10 no-action recommendations (logs committed under `trial-logs/round1-correction-plant-1R/`).
-- [ ] `results.md` §4 updated (drop binding-artifact caveat from §4.2; record corrected FPR for Plant 1R in §4.1); §8 known limitations updated.
+- [ ] `results.md` §4 updated to describe the corrected binding logic and Plant 1R FPR's structural origin (carries forward unchanged for round 1; deferred to §6.2's round-2 fix for behavioral resolution); §8 known limitations updated.
 - [ ] `reproducibility.yaml`: bumped `prompt_hash`, fresh `round1_correction` block under `execution`.
 - [ ] Local CI passes (lint + format + type + pytest) before push.
+- [ ] Tracking issues filed per §6.1 (A1) and §6.2 (round-2 binding-artifact v2).
 
-## 6. After-merge tracking issue (A1)
+### 6.1 After-merge tracking issue — A1 (recruit 2 more reviewers)
 
 File a GitHub issue titled "Round-2 panel composition: recruit 2 additional reviewers for Fleiss κ". Body covers:
 
@@ -242,6 +255,18 @@ File a GitHub issue titled "Round-2 panel composition: recruit 2 additional revi
 
 Labels: `experiment-v7`, `round-2`, `methodology`.
 
+### 6.2 After-merge tracking issue — round-2 binding-artifact v2 (finer-grained symbol matching)
+
+The A2 rule shipped here doesn't fix the round-1 panel-routed Plant 3.1 ↔ Plant 5.1 co-binding for `function-duplicates-near:HSBColor.uiColor+HSBColor.nsColor` because both plants list `function-duplicates` in their signals and both have HSBColor.swift in source_files. The 12 panel-routed pairs (6 Plant 3.1, 6 Plant 5.1) remain after A2. File an issue with:
+
+- **Problem.** When two plants share both a source file AND a substrate signal, the cluster_id substring + signal-list rule can't tell them apart. Plant 3.1 (init signatures) and Plant 5.1 (uiColor/nsColor accessors) both surface HSBColor.swift in `function-duplicates`, but a given cluster is genuinely about one specific planted shape, not both.
+- **Desired end state.** A new manifest field per plant — `expected_cluster_symbols` (or similar) — listing the literal symbol substrings the cluster_id must contain for a binding to be valid. For Plant 3.1: `["HSBColor.init", "AccentColor.init", "HSBOffset.init"]`. For Plant 5.1: `["HSBColor.uiColor", "HSBColor.nsColor"]`. `bind_recs_to_plants` then gates on: (substring path match) AND (any planted symbol substring matches cluster_id).
+- **Where.** `experiments/v7-refactor-recommendation/plant-manifest.yaml` (new field per plant), `validate-manifest.py` (validator), `score_all.py::bind_recs_to_plants` (rule), `test_score_all.py` + `test_validator.py` (tests).
+- **Constraints.** Pre-registration discipline (methodology §10): adding manifest fields after trials is allowed via `rubric-modifications.md` documentation. Expected to land at start of round 2, before any round-2 trial executes.
+- **Acceptance criteria.** (1) Every plant has a non-empty `expected_cluster_symbols` list, (2) round-1 12 panel-routed pairs project down to ~6 under the new rule, (3) regression test for the HSBColor case lives in `test_score_all.py`, (4) `results.md` round-2 §4.2 updated.
+
+Labels: `experiment-v7`, `round-2`, `methodology`. Block on round-2 Phase D execution.
+
 ## 7. Risks and mitigations
 
 - **R1: Signal-list gate accidentally drops legitimate bindings.** Mitigation: review the manifest's `expected_substrate_signals` per plant before merging. The manifest validator (`validate-manifest.py`) confirms every plant has a non-empty list. The plan's `test_missing_rec_query_falls_back_to_legacy_behavior` ensures recs without a `query` field still bind by substring alone.
@@ -251,20 +276,19 @@ Labels: `experiment-v7`, `round-2`, `methodology`.
 
 ## 8. Sequencing inside the PR
 
-The regeneration-order issue (M2 from review): A3's targeted Plant 1R re-run produces new parsed responses for the two Plant 1R clusters. Those responses must be merged into the parsed cache *before* `analyses/` is regenerated, otherwise the regenerated artifacts reflect only A2's binding fix and not A3's prompt fix. The corrected sequence:
+Simplified after dropping the targeted re-run (§4.4) and reframing FPR resolution as round-2 work:
 
-1. Branch from `experiment/swift-substrate` (already done — this worktree is `v7-phase-e-round1-closeout`).
-2. A2 TDD per §3.5: update `_plant` helper default, add new tests, implement the gate. Commit: `score(v7-phase-e): gate plant bindings on expected_substrate_signals`.
-3. A3 prompt edit per §4.6 steps 1–2. Commit: `prompt(v7-phase-e): make restraint markers load-bearing in rule 1`.
-4. Targeted Plant 1R re-run per §4.6 steps 3–4. Save raw responses + parsed responses under `trial-logs/round1-correction-plant-1R/`. Commit: `trial-logs(v7-phase-e): Plant 1R re-run under tightened prompt`.
-5. Merge the new Plant 1R parsed responses into the parsed cache. Strategy: overwrite the existing Plant-1R rows in `trial-logs/parsed/<cond>/trial<N>/*.json` with the re-run output. The non-Plant-1R rows remain untouched. Commit: `parsed-cache(v7-phase-e): swap in Plant 1R re-run responses`.
-6. Regenerate `analyses/scored.json`, `analyses/scored-aggregate.json`, `analyses/panel-routing.jsonl`, `analyses/panel-unblind.json` against the now-merged parsed cache. Spot-check: `panel_routed.size` shrunk by ~6 (from A2); Plant 1R category=`no-action` for all 10 invocations (from A3). Commit: `analyses(v7-phase-e): regenerate against tightened harness + Plant 1R re-run`.
-7. Update `results.md` §4 (drop binding-artifact caveat from §4.2, record Plant 1R FPR = 0/5 in §4.1) and `results.md` §8 (drop binding caveat from known limitations). Update `reproducibility.yaml` per §2 template above. Commit: `results(v7-phase-e): record round-1 corrections (A2 + A3)`.
-8. Run local CI (lint + format + type + pytest). Fix anything red.
-9. Push. Open issue with this plan as body. Open PR with `Closes #<issue>`. File A1 tracking issue separately per §6.
+1. Branch from `experiment/swift-substrate` (already done).
+2. A2 implementation per §3.5: update `_plant` helper default, add new tests, implement the prefer-signal-match resolution. Commit: `score(v7-phase-e): prefer signal-match over substring-only in bind_recs_to_plants`.
+3. A3 prompt edit per §4.6. Commit: `prompt(v7-phase-e): make restraint markers load-bearing in rule 1`.
+4. Regenerate `analyses/auto-scores.json`, `analyses/score-summary.json`, `analyses/panel-routing.jsonl`, `analyses/panel-unblind.json` against A2. Spot-check: per-plant binding counts match §3.3. Commit: `analyses(v7-phase-e): regenerate after binding-artifact filter`.
+5. Update `results.md` §4 and §8 to reflect the corrected understanding (A2 cleans 24 false bindings; panel-routed Plant 3.1/5.1 deferred to §6.2; Plant 1R FPR deferred to §6.2 + A3 as round-2 fix). Update `reproducibility.yaml` per §2 template. Commit: `results(v7-phase-e): record round-1 corrections (A2 + A3)`.
+6. Run local CI (lint + format + type + pytest). Fix anything red.
+7. Push. Open issue with this plan as body. Open PR with `Closes #<issue>`. File A1 tracking issue per §6.1 and round-2 binding-artifact-v2 tracking issue per §6.2.
 
 **Final-state acceptance check after step 6** (verifies both corrections landed cleanly):
-- `panel_routed.size` ≈ 6 (down from 12, none of which should be Plant 3.1 ↔ HSBColor)
-- Plant 1R cell `n_fp == 0` for both S1 and S2 in all three trials
-- `inter_rater.fleiss_kappa` still null (panel sitting hasn't been re-run with 3 reviewers yet)
-- `panel_route_rate` per condition halves vs PR #82's headline
+- 24 fewer non-panel-routed Plant 3.1/3R/5.1/5.3 bindings present (the §3.3 cleanup).
+- `panel_routed.size` unchanged at 12 — the HSBColor panel-routed co-bindings persist (round-2 §6.2 fix needed).
+- Plant 1R cell `n_fp == 0` for both S1 and S2 in all three trials after A3's targeted re-run (compared to round 1's `n_fp == 1`).
+- `inter_rater.fleiss_kappa` still null (panel sitting hasn't been re-run with 3 reviewers yet).
+- Headline `canonical_recall` unchanged (no plant gained bindings; removed bindings didn't carry the best score in any cell).
