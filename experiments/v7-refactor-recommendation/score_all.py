@@ -118,17 +118,37 @@ PANEL_ROUTE = "panel_route"  # mirrors auto_scorer.PANEL_ROUTE for downstream co
 
 
 def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[tuple[dict, list[str]]]:
-    """For each rec, return the (sorted) list of plant_ids that match the rec
-    on BOTH (a) source_files substring match against the rec's cluster_id, and
-    (b) the rec's `query` being in the plant's `expected_substrate_signals`
-    list. Substring match alone was the V7 round-1 strategy and produced false
-    bindings when a cluster from one cluster-query happened to mention a file
-    path another plant also owned (the HSBColor / Plant 3.1 case in round 1).
+    """For each rec, return the (sorted) list of plant_ids that the rec binds
+    to. Resolution rule (round-1 closeout):
 
-    Fallback rule: if the rec has no usable `query` field (missing key, None,
-    or empty string), the signal-list gate is skipped and the rec binds purely
-    on substring match — preserves byte-stable behavior for any caller whose
-    parsed cache pre-dates the `query` field.
+    1. Compute `substring_matches` — plants whose `source_files` substring-
+       match the rec's `cluster_id` (the V7 round-1 strategy).
+    2. Compute `signal_matches` — subset of `substring_matches` where the
+       rec's `query` is in the plant's `expected_substrate_signals` list.
+    3. If `signal_matches` is non-empty, bind to those plants only — they
+       "claim" the cluster because the cluster came from a query the plant
+       pre-registered as expected. The other substring matches drop out.
+    4. Otherwise, fall back to all `substring_matches` — the cluster's query
+       isn't pre-registered for any candidate, so substring is the only
+       available signal.
+
+    The motivating round-1 case: an HSBColor `pat-candidates` cluster
+    substring-matched both Plant 3.1 (signals: function-duplicates,
+    default-impl-candidates) and Plant 5.1 (signals: pat-candidates,
+    cross-package-shape-near-duplicates-any). Old logic bound to both. New
+    logic recognizes that Plant 5.1 claims the cluster via signal-match and
+    binds to 5.1 only — Plant 3.1's spurious co-binding disappears.
+
+    The fallback in step 4 preserves Plant 1R bindings (Plant 1R's signals
+    are exact-duplicates and cross-package-shape-near-duplicates-any, but
+    its source_files mostly substring-match clusters from path-bearing
+    queries like function-duplicates-exact). Without the fallback those
+    bindings would silently vanish and Plant 1R's restraint specificity
+    signal would be suppressed by binding logic rather than measured.
+
+    Recs with a missing/None/empty `query` field collapse `signal_matches`
+    to empty unconditionally, so they fall through to substring-only —
+    preserving byte-stable behavior for any pre-`query`-field parsed cache.
 
     parse_error rows are returned with their plant matches preserved, but
     callers should route them to the parse_errors bucket downstream rather
@@ -138,16 +158,18 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
     for rec in parsed_records:
         cluster_id = rec.get("cluster_id") or ""
         rec_query = rec.get("query") or ""
-        matched: list[str] = []
+        substring_matches: list[str] = []
+        signal_matches: list[str] = []
         for plant in plants:
-            signals = plant.get("expected_substrate_signals") or []
-            if rec_query and rec_query not in signals:
-                continue  # rec's query isn't pre-registered for this plant
             paths = plant.get("source_files") or []
-            for path in paths:
-                if path and path in cluster_id:
-                    matched.append(plant["plant_id"])
-                    break  # one match per plant is sufficient
+            substring_hit = any(p and p in cluster_id for p in paths)
+            if not substring_hit:
+                continue
+            substring_matches.append(plant["plant_id"])
+            signals = plant.get("expected_substrate_signals") or []
+            if rec_query and rec_query in signals:
+                signal_matches.append(plant["plant_id"])
+        matched = signal_matches if signal_matches else substring_matches
         bindings.append((rec, sorted(matched)))
     return bindings
 
