@@ -484,12 +484,12 @@ def _scored_entry(
 
 
 def _token_for(scored_entry: dict) -> str:
-    return score_all._opaque_token(
-        str(scored_entry["cluster_id"]),
-        str(scored_entry["condition"]),
-        str(scored_entry["trial"]),
-        str(scored_entry["plant_id"]),
-    )
+    return score_all._opaque_token(*score_all._token_parts(
+        scored_entry.get("cluster_id"),
+        scored_entry.get("condition"),
+        scored_entry.get("trial"),
+        scored_entry.get("plant_id"),
+    ))
 
 
 class PromotePanelScoresTests(unittest.TestCase):
@@ -589,6 +589,62 @@ class PromotePanelScoresTests(unittest.TestCase):
             self.assertEqual(doc["scored"][0]["match"], "primary_match_full")
             self.assertEqual(doc["scored"][1]["score"], 0.3)
             self.assertEqual(doc["scored"][1]["match"], "panel_promoted")
+            # Tighten: the appended note should record the exact reviewer count.
+            self.assertIn(
+                "panel_promoted_from_other_routes_to_panel_n_reviewers_1",
+                doc["scored"][1]["notes"],
+            )
+
+    def test_string_score_in_panel_file_is_ignored(self):
+        """Defensive: a panel-scores row whose `score` field is a string
+        (reviewer wrote text instead of a number, or the bucket name leaked
+        through) must not promote — the isinstance guard keeps the entry at
+        PANEL_ROUTE so a later round can supply a real numeric score.
+        """
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text(json.dumps(
+                {"rec_token": token, "reviewer": "r1", "score": "0.3"}
+            ) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+            self.assertEqual(doc["scored"][0]["match"], "other_routes_to_panel")
+
+    def test_null_score_in_panel_file_is_ignored(self):
+        """Defensive: a panel-scores row whose `score` field is JSON null
+        (Python None — e.g. a reviewer left a row in-progress) must not
+        promote.
+        """
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text(json.dumps(
+                {"rec_token": token, "reviewer": "r1", "score": None}
+            ) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
+            self.assertEqual(doc["scored"][0]["match"], "other_routes_to_panel")
+
+    def test_bool_score_in_panel_file_is_ignored(self):
+        """Defensive: Python's bool is a subclass of int, so a stray `True`
+        would silently promote to score=1.0 without the bool-exclusion guard.
+        Confirm the guard keeps the entry at PANEL_ROUTE.
+        """
+        with TemporaryDirectory() as td:
+            entry = _scored_entry(score=score_all.PANEL_ROUTE, match="other_routes_to_panel")
+            token = _token_for(entry)
+            doc = {"scored": [entry]}
+            path = Path(td) / "panel-scores.jsonl"
+            path.write_text(json.dumps(
+                {"rec_token": token, "reviewer": "r1", "score": True}
+            ) + "\n")
+            score_all.promote_panel_scores(doc, path)
+            self.assertEqual(doc["scored"][0]["score"], score_all.PANEL_ROUTE)
 
     def test_tokens_align_with_score_recommendations(self):
         """Integration: tokens produced by score_recommendations for panel-
@@ -618,6 +674,42 @@ class PromotePanelScoresTests(unittest.TestCase):
         self.assertEqual(len(panel_scored), 1)
         recomputed = _token_for(panel_scored[0])
         self.assertEqual(recomputed, panel_tokens[0])
+
+    def test_token_parts_normalize_none_to_empty_string(self):
+        """The writer (score_recommendations) and the reader (promote_panel_
+        scores) must agree on how to stringify a None/missing field. If they
+        diverge, the promoter recomputes a token the writer never emitted and
+        the panel-supplied score silently fails to promote. The shared
+        `_token_parts` helper is the single point of truth — assert it
+        normalizes None to the empty string, which matches how an empty
+        identity field round-trips through JSON.
+        """
+        # Direct: None and missing-key both normalize to "".
+        self.assertEqual(
+            score_all._token_parts(None, None, None, None),
+            ("", "", "", ""),
+        )
+        # Numbers (e.g. YAML-parsed trial ints, float plant_ids) stringify normally.
+        self.assertEqual(
+            score_all._token_parts("c", "s1", 1, "5.1"),
+            ("c", "s1", "1", "5.1"),
+        )
+        # End-to-end: a hypothetical scored entry with all-None identity fields
+        # still produces a token that round-trips through _token_for.
+        entry_with_nones = {
+            "cluster_id": None,
+            "condition": None,
+            "trial": None,
+            "plant_id": None,
+        }
+        token_a = score_all._opaque_token(*score_all._token_parts(
+            entry_with_nones["cluster_id"],
+            entry_with_nones["condition"],
+            entry_with_nones["trial"],
+            entry_with_nones["plant_id"],
+        ))
+        token_b = _token_for(entry_with_nones)
+        self.assertEqual(token_a, token_b)
 
 
 # ─── determinism ──────────────────────────────────────────────────────────
