@@ -128,27 +128,50 @@ class BindRecsToPlantsTests(unittest.TestCase):
         # not in the parse_error business.
         self.assertEqual(bindings[0][1], ["A"])  # plant binding preserved on parse_error rec
 
-    def test_signal_gate_blocks_cross_query_binding(self):
-        # The motivating bug: a `pat-candidates`-query rec whose cluster_id
-        # mentions a Plant 3.1 source file would bind to Plant 3.1 under the
-        # old substring-only logic, even though Plant 3.1's
-        # expected_substrate_signals are `function-duplicates` and
-        # `default-impl-candidates`. The signal-list gate blocks the bind.
-        plant = _plant(
+    def test_signal_match_wins_when_plants_compete(self):
+        # Motivating round-1 case: an HSBColor `pat-candidates` cluster
+        # substring-matched BOTH Plant 3.1 (signals exclude pat-candidates) and
+        # Plant 5.1 (signals include pat-candidates). Old logic bound to both.
+        # New logic recognizes Plant 5.1's signal-match as a claim and binds
+        # only there — Plant 3.1's spurious co-binding drops out.
+        plant_31 = _plant(
             plant_id="3.1",
             source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
             expected_substrate_signals=["function-duplicates", "default-impl-candidates"],
+        )
+        plant_51 = _plant(
+            plant_id="5.1",
+            source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
+            expected_substrate_signals=["pat-candidates"],
         )
         rec = _rec(
             cluster_id="pat-candidates:Shared/Color/Sources/Color/HSBColor.swift",
             query="pat-candidates",
         )
-        bindings = score_all.bind_recs_to_plants([rec], [plant])
-        self.assertEqual(bindings, [(rec, [])])
+        bindings = score_all.bind_recs_to_plants([rec], [plant_31, plant_51])
+        self.assertEqual(bindings, [(rec, ["5.1"])])
 
-    def test_signal_gate_admits_in_signal_binding(self):
-        # Companion to the cross-query block: same plant + matching path, but
-        # the rec's query is in the plant's signal list. Binding should fire.
+    def test_uncontested_substring_match_binds_even_without_signal(self):
+        # The Plant 1R case: the cluster substring-matches only one plant, but
+        # the rec's query isn't in that plant's signal list. The fallback
+        # branch binds anyway — uncontested substring matches survive so the
+        # restraint specificity signal isn't suppressed by binding logic.
+        plant = _plant(
+            plant_id="1R",
+            source_files=["Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"],
+            expected_substrate_signals=["exact-duplicates", "cross-package-shape-near-duplicates-any"],
+        )
+        rec = _rec(
+            cluster_id="function-duplicates-exact:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+...",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, ["1R"])])
+
+    def test_signal_match_admits_when_only_one_plant(self):
+        # Single plant whose signals include the rec's query — straightforward
+        # case, signal_match populates and substring match alone would have
+        # bound anyway. Pinning the no-regression behavior.
         plant = _plant(
             plant_id="3.1",
             source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
@@ -161,15 +184,15 @@ class BindRecsToPlantsTests(unittest.TestCase):
         bindings = score_all.bind_recs_to_plants([rec], [plant])
         self.assertEqual(bindings, [(rec, ["3.1"])])
 
-    def test_missing_rec_query_falls_back_to_legacy_behavior(self):
-        # Recs without a usable `query` field bypass the signal gate so the
-        # legacy substring-only behavior is preserved. Three input shapes
+    def test_missing_rec_query_falls_back_to_substring(self):
+        # Recs without a usable `query` field can't populate signal_matches,
+        # so the fallback substring-match branch governs. Three input shapes
         # exercise the `rec.get("query") or ""` normalization: key missing,
         # explicit None, empty string.
         plant = _plant(
             plant_id="A",
             source_files=["Pkg/Sources/A.swift"],
-            expected_substrate_signals=["function-duplicates"],  # would block "exact-duplicates" rec
+            expected_substrate_signals=["function-duplicates"],
         )
         cluster_id = "exact-duplicates:Pkg/Sources/A.swift+Other/B.swift"
         cases: list[tuple[str, dict]] = [
@@ -182,11 +205,12 @@ class BindRecsToPlantsTests(unittest.TestCase):
                 bindings = score_all.bind_recs_to_plants([rec], [plant])
                 self.assertEqual(bindings, [(rec, ["A"])], msg=f"case={case_name}")
 
-    def test_signal_gate_skipped_for_empty_signal_list(self):
+    def test_empty_signal_list_falls_back_to_substring(self):
         # Defense-in-depth: a plant with an empty expected_substrate_signals
-        # list never binds. The manifest validator rejects empty lists, so
-        # this is unreachable in production — but the safe-by-default behavior
-        # is pinned here in case the validator is bypassed in future fixtures.
+        # list still binds via the substring fallback (signal_matches stays
+        # empty so it's the fallback path). The manifest validator rejects
+        # empty lists, so this is unreachable in production — but the
+        # fallback semantic is pinned here in case the validator is bypassed.
         plant = _plant(
             plant_id="A",
             source_files=["Pkg/Sources/A.swift"],
@@ -194,7 +218,7 @@ class BindRecsToPlantsTests(unittest.TestCase):
         )
         rec = _rec(cluster_id="exact-duplicates:Pkg/Sources/A.swift", query="exact-duplicates")
         bindings = score_all.bind_recs_to_plants([rec], [plant])
-        self.assertEqual(bindings, [(rec, [])])
+        self.assertEqual(bindings, [(rec, ["A"])])
 
 # ─── score_all (per-rec scoring) ──────────────────────────────────────────
 
