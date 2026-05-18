@@ -10,12 +10,19 @@ plant.source_files, calls `auto-scorer.py::score_recommendation` for every
     plus per-rec buckets for unmatched (no plant) and parse_error rows.
   • `analyses/score-summary.json` — aggregates per (condition, category,
     trial) cell: canonical recall, restraint FPR, panel-route rate, plus the
-    headline 2-D point (canonical recall × 1−FPR) per condition. Fleiss κ is
-    populated from `analyses/panel-scores.jsonl` if present and ≥2 reviewers
-    are present; if the file is missing or holds <2 reviewers, `inter_rater`
-    is a structured panel-pending sentinel `{fleiss_kappa: null, n_items,
-    n_raters, note}` so downstream consumers can render "panel pending"
-    cleanly.
+    headline 2-D point (canonical recall × 1−FPR) per condition. Two
+    inter-rater κ blocks are populated from `analyses/panel-scores.jsonl`
+    when present and ≥2 reviewers are seen:
+      - `inter_rater` — Fleiss κ over the rec-level rows (one item per
+        rec_token). Sentinel `{fleiss_kappa: null, n_items, n_raters, note}`
+        when the file is missing or holds <2 reviewers.
+      - `inter_rater_collapsed` — Fleiss κ over distinct (plant_id,
+        cluster_id) judgments after median-collapsing each (reviewer,
+        judgment) cell. Sentinel `{fleiss_kappa: null, n_judgments, n_raters,
+        judgments[], within_reviewer_inconsistency_count, note}` on the same
+        missing/insufficient-reviewer paths and on uneven reviewer
+        coverage. See `analyses/panel-instructions.md` §6 for the two-κ
+        interpretation matrix.
   • `analyses/panel-routing.jsonl` — opaque-tokenized one-per-line records
     for the panel sitting (per methodology §17 decision #3, 3 internal
     reviewers blind to condition).
@@ -780,7 +787,7 @@ def attach_collapsed_panel_kappa(
             "n_raters": None,
             "judgments": [],
             "within_reviewer_inconsistency_count": 0,
-            "note": "no panel-routed rec rows; cannot map rec_token to judgment",
+            "note": "no panel-routed rec rows in the corpus run; nothing to collapse",
         }
         return summary
 
