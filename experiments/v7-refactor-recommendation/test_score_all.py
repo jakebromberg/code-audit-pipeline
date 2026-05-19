@@ -638,8 +638,8 @@ class ValueAwareSpecificsTests(unittest.TestCase):
         self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
         self.assertEqual(out["scored"][0]["match"], "primary_match_specifics_missing_keys")
 
-    def test_tolerance_flag_notes_surface_in_panel_routing(self):
-        """Plan §4 test #6: panel-routing notes carry the manifest's tolerance flags."""
+    def test_tolerance_flag_notes_attached_to_scored_entry(self):
+        """Plan §4 test #6 (scored view): scored entry carries the manifest's tolerance flags."""
         plant = self._pat_plant(
             primary_specifics={
                 "new_protocol": "Container",
@@ -666,6 +666,52 @@ class ValueAwareSpecificsTests(unittest.TestCase):
         out = score_all.score_recommendations([rec], [plant], self.rubric)
         notes = out["scored"][0]["notes"]
         flag_notes = [n for n in notes if n.startswith("tolerance_flag:")]
+        self.assertEqual(
+            flag_notes,
+            [
+                "tolerance_flag: associated_type_named_Item_or_synonym=True",
+                "tolerance_flag: type_slot_at_item_must_be_identified=True",
+            ],
+        )
+
+    def test_tolerance_flag_notes_carried_into_panel_routed_view(self):
+        """Regression: panel-routing.jsonl (built from `panel_routed`) must
+        carry the same `notes` as the scored view. Reviewers reading
+        `panel-routing.jsonl` per `panel-instructions.md` §3 case 2 rely on
+        these notes to apply the manifest's tolerance flags during rating;
+        if the notes are stripped from this view, the panel-routing artifact
+        becomes opaque to reviewers despite carrying a `match_reason`.
+        """
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            specifics_tolerance={
+                "associated_type_named_Item_or_synonym": True,
+                "type_slot_at_item_must_be_identified": True,
+            },
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Wrong",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            rationale="...",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(len(out["panel_routed"]), 1)
+        panel_notes = out["panel_routed"][0]["notes"]
+        # The per-key mismatch description is present.
+        self.assertTrue(any("new_protocol" in n and "Wrong" in n for n in panel_notes))
+        # The plant's tolerance flags are present, sorted alphabetically.
+        flag_notes = [n for n in panel_notes if n.startswith("tolerance_flag:")]
         self.assertEqual(
             flag_notes,
             [

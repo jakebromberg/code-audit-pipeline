@@ -153,6 +153,15 @@ def _values_structurally_equal(a, b) -> bool:
     must structurally equal a unique element of `b`). Dicts are compared by
     key-set equality plus recursive value equality. Scalars by `==`. Returns
     True iff `a` and `b` are structurally identical under these rules.
+
+    Note on asymmetry with top-level specifics matching: this comparator
+    enforces strict key-set equality on nested dicts (a nested rec dict with
+    rec-side extras returns False). The top-level superset-tolerance for
+    extras lives in `_specifics_values_match`, which iterates only the
+    rubric's `required` keys; this comparator's stricter rule applies to
+    *nested* dicts inside specifics values (e.g., `type_params[i]`). Manifest
+    authors pin nested shapes precisely, so a rec emitting extra fields
+    inside a nested dict is treated as out-of-tolerance and panel-routes.
     """
     if isinstance(a, list) and isinstance(b, list):
         if len(a) != len(b):
@@ -187,10 +196,10 @@ def _specifics_values_match(
     (`primary_specifics` is missing this key OR has it set to None): the
     scorer treats the manifest as not constraining that key's value and
     skips the comparison. Real production manifests pre-register values for
-    every required key (validator rule 9d enforces non-empty specifics +
-    rule 9.3.a enforces key superset); the relaxed precondition exists so
-    synthetic test fixtures with minimal plant shapes still exercise the
-    keys-only code path.
+    every required key (validate-manifest.py rule 9.d enforces non-empty
+    specifics + rule 10.a enforces key superset); the relaxed precondition
+    exists so synthetic test fixtures with minimal plant shapes still
+    exercise the keys-only code path.
 
     Returns (ok, problem_descriptions). problem_descriptions is a list of
     `"key={key} manifest={manifest_val!r} rec={rec_val!r}"` strings for each
