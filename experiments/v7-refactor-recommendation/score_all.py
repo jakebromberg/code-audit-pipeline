@@ -126,35 +126,39 @@ PANEL_ROUTE = "panel_route"  # mirrors auto_scorer.PANEL_ROUTE for downstream co
 
 def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[tuple[dict, list[str]]]:
     """For each rec, return the (sorted) list of plant_ids that the rec binds
-    to. Resolution rule (round-1 closeout):
+    to. Resolution rule (round-2 binding-artifact v2, #86):
 
     1. Compute `substring_matches` — plants whose `source_files` substring-
        match the rec's `cluster_id` (the V7 round-1 strategy).
-    2. Compute `signal_matches` — subset of `substring_matches` where the
-       rec's `query` is in the plant's `expected_substrate_signals` list.
-    3. If `signal_matches` is non-empty, bind to those plants only — they
-       "claim" the cluster because the cluster came from a query the plant
-       pre-registered as expected. The other substring matches drop out.
-    4. Otherwise, fall back to all `substring_matches` — the cluster's query
-       isn't pre-registered for any candidate, so substring is the only
-       available signal.
+    2. Compute `symbol_matches` — subset of `substring_matches` where at
+       least one entry in the plant's `expected_cluster_symbols` is a
+       substring of `cluster_id`. This is a HARD gate: a plant must
+       symbol-match to be a candidate for binding. Empty `expected_cluster_
+       symbols` (the manifest validator rejects this in production) falls
+       through to substring-only — preserves test-bypass paths.
+    3. Compute `signal_matches` — subset of `symbol_matches` where the rec's
+       `query` is in the plant's `expected_substrate_signals` list.
+    4. If `signal_matches` is non-empty, bind to those plants — they claim
+       the cluster via both symbol and signal. Otherwise bind to all
+       `symbol_matches` — the cluster's query isn't pre-registered but the
+       symbol gate confirms the cluster IS this plant's territory.
 
-    The motivating round-1 case: an HSBColor `pat-candidates` cluster
-    substring-matched both Plant 3.1 (signals: function-duplicates,
-    default-impl-candidates) and Plant 5.1 (signals: pat-candidates,
-    cross-package-shape-near-duplicates-any). Old logic bound to both. New
-    logic recognizes that Plant 5.1 claims the cluster via signal-match and
-    binds to 5.1 only — Plant 3.1's spurious co-binding disappears.
+    Round-1 closeout (PR #84) gated on signal-match only, with substring
+    fallback. Round 2 adds the symbol gate to fix two known round-1 gaps:
 
-    The fallback in step 4 preserves Plant 1R bindings (Plant 1R's signals
-    are exact-duplicates and cross-package-shape-near-duplicates-any, but
-    its source_files mostly substring-match clusters from path-bearing
-    queries like function-duplicates-exact). Without the fallback those
-    bindings would silently vanish and Plant 1R's restraint specificity
-    signal would be suppressed by binding logic rather than measured.
+    - **Plant 3.1 vs 5.1 disambiguation.** Both plants have HSBColor.swift
+      in source_files AND function-duplicates in signals. The round-1 rule
+      bound the HSBColor uiColor/nsColor cluster to BOTH, producing 6
+      false-binding panel routings. With symbol gating, only Plant 5.1
+      (symbols ["HSBColor.uiColor", "HSBColor.nsColor"]) matches the cluster_id.
+    - **Plant 1R structural FPR.** Plant 1R's DebugHUD.swift source file
+      substring-matched 16 unrelated DebugMetricsProvider clusters,
+      producing 1.0 per-cell FPR via incidental bindings. Plant 1R's
+      symbols (["MetricRow"]) don't appear in those clusters, so the
+      symbol gate blocks the incidental bindings.
 
     Recs with a missing/None/empty `query` field collapse `signal_matches`
-    to empty unconditionally, so they fall through to substring-only —
+    to empty unconditionally, so they fall through to symbol-match-only —
     preserving byte-stable behavior for any pre-`query`-field parsed cache.
 
     parse_error rows are returned with their plant matches preserved, but
@@ -165,18 +169,26 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
     for rec in parsed_records:
         cluster_id = rec.get("cluster_id") or ""
         rec_query = rec.get("query") or ""
-        substring_matches: list[str] = []
+        symbol_matches: list[str] = []
         signal_matches: list[str] = []
         for plant in plants:
             paths = plant.get("source_files") or []
             substring_hit = any(p and p in cluster_id for p in paths)
             if not substring_hit:
                 continue
-            substring_matches.append(plant["plant_id"])
+            symbols = plant.get("expected_cluster_symbols") or []
+            if symbols and not any(s and s in cluster_id for s in symbols):
+                # Hard symbol gate: plant has declared symbols but none of
+                # them substring-match cluster_id. Reject the binding.
+                continue
+            # Empty symbols list (validator rejects this in production) falls
+            # through to legacy substring-only behavior, preserving the
+            # defense-in-depth test path.
+            symbol_matches.append(plant["plant_id"])
             signals = plant.get("expected_substrate_signals") or []
             if rec_query and rec_query in signals:
                 signal_matches.append(plant["plant_id"])
-        matched = signal_matches if signal_matches else substring_matches
+        matched = signal_matches if signal_matches else symbol_matches
         bindings.append((rec, sorted(matched)))
     return bindings
 
