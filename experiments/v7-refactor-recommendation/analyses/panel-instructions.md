@@ -83,49 +83,53 @@ Each reviewer writes a JSONL file at `analyses/panel-scores-<reviewer-id>.jsonl`
 
 After all reviewers finish, concatenate to `analyses/panel-scores.jsonl` (one consolidated file). [`score_all.py`](../score_all.py)'s `attach_panel_kappa()` reads that consolidated file and computes Fleiss κ over the score buckets; rerun the scorer once the consolidated file lands and `analyses/score-summary.json` regenerates with the `inter_rater` block populated.
 
-## 6. Round-1 panel coverage and the correlated-items caveat
+## 6. Round-2 panel coverage (post-symbol-gate) and the correlated-items caveat
 
-The 12 panel-routed recs concentrate on two plants — both bound to the **same** HSBColor `function-duplicates-near` cluster:
+> **Round-2 update.** Round 1's `panel-routing.jsonl` carried 12 panel-routed recs split across Plant 3.1 (default-implementation, 6 rows) and Plant 5.1 (generic-parameterization, 6 rows), both bound to the same HSBColor `function-duplicates-near` cluster. The round-2 symbol-level binding fix ([`rubric-modifications.md`](../rubric-modifications.md), 2026-05-18) added a per-plant `expected_cluster_symbols` gate; Plant 3.1's symbols (`HSBColor.init(...)`, `AccentColor.init`, `HSBOffset.init`) don't appear in the panel cluster_id, so Plant 3.1's 6 rows dropped out as false bindings. The regenerated `panel-routing.jsonl` carries 6 rows, all Plant 5.1, and the 6 round-1 Plant 3.1 panel scores in `panel-scores-reviewer-1.jsonl` become orphan rec_tokens (filtered out by both `attach_panel_kappa` and `attach_collapsed_panel_kappa` and counted in the structured note).
 
-- **Plant 3.1** (default-implementation): 6 recs (3 in S1, 3 in S2 — one per trial each)
-- **Plant 5.1** (generic-parameterization): 6 recs (3 in S1, 3 in S2)
+The 6 surviving panel-routed recs concentrate on a single plant ↔ cluster judgment:
 
-Each reviewer scores all 12 recs. Total panel-pair count: 12 recs × 3 reviewers = 36 score rows.
+- **Plant 5.1** (generic-parameterization): 6 recs (3 in S1, 3 in S2 — one per trial each), all bound to `function-duplicates-near:…HSBColor.uiColor+…HSBColor.nsColor`.
+
+Each reviewer scores all 6 surviving recs. Total round-2 panel-pair count: 6 recs × N reviewers score rows.
 
 ### Two κ measures, two granularities
 
-The 12 items are NOT 12 independent judgments. Empirically, the 6 Plant 3.1 rec rationale texts are linguistically distinct (the agent re-phrases per trial) but **semantically identical** — all 6 propose the same private-helper refactor. Same for the 6 Plant 5.1 rows. A reviewer scoring on substance will likely give all 6 duplicates of a judgment the same score; a reviewer scoring on prose granularity might vary by 0.0–0.1.
+The 6 items are NOT 6 independent judgments. Empirically, the 6 Plant 5.1 rec rationale texts are linguistically distinct (the agent re-phrases per trial) but **semantically identical** — all 6 propose the same private-helper or `#if canImport(...)` refactor on the same cluster. A reviewer scoring on substance will likely give all 6 duplicates the same score; a reviewer scoring on prose granularity might vary by 0.0–0.1.
 
 To surface this, `score_all.py` emits **two** inter-rater blocks:
 
-- **`inter_rater`** — Fleiss κ over the 12 rec rows × N raters. Score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0} are the categories. This is the literal methodology §8 / §12 measure. **May be inflated** if reviewers give correlated scores across the duplicates (e.g., all 6 Plant 3.1 rows get the same score from every reviewer → looks like agreement on 6 items but is really agreement on 1 underlying call).
-- **`inter_rater_collapsed`** — Fleiss κ over the **2 distinct (plant_id, cluster_id) judgments** × N raters. Each (reviewer, judgment) cell reduces the 6 per-cell scores to a median, and κ is computed over those medians. This is the methodologically cleaner measure for round 1's correlated panel set — at the cost of N=2 items, which has very low statistical power.
+- **`inter_rater`** — Fleiss κ over the 6 surviving rec rows × N raters. Score buckets {-0.5, 0.0, 0.3, 0.5, 0.7, 1.0} are the categories. This is the literal methodology §8 / §12 measure. **May be inflated** if reviewers give correlated scores across the duplicates (all 6 rows get the same score from every reviewer → looks like agreement on 6 items but is really agreement on 1 underlying call).
+- **`inter_rater_collapsed`** — Fleiss κ over the **distinct (plant_id, cluster_id) judgments** × N raters. Each (reviewer, judgment) cell reduces the 6 per-cell scores to a median, and κ is computed over those medians. Under round 2's single distinct judgment (N=1), the κ value is mathematically defined but has essentially zero statistical power — it collapses to a function of how the single judgment's 3 reviewer medians agree, with no across-item variance to anchor `P_e`. Treat the value as a sanity check, not a measure; the diagnostic fields (`within_reviewer_inconsistency_count`, `reviewer_variance`) carry the actionable signal. A future round that introduces a second distinct panel judgment would restore the collapsed κ's interpretive value.
 
-A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer, judgment) cells where the reviewer's variance across duplicates was > 0. If this number is high, reviewers are sensitive to prose variation across trials — `inter_rater_collapsed` understates disagreement and `inter_rater` is the truer measure. If it's near zero (reviewers internally consistent across duplicates), `inter_rater_collapsed` is the truer measure of cross-reviewer agreement.
+A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer, judgment) cells where the reviewer's variance across duplicates was > 0. If this number is high, reviewers are sensitive to prose variation across trials — `inter_rater_collapsed`'s medians understate disagreement and `inter_rater` is the truer measure. If it's near zero (reviewers internally consistent across duplicates), the rec-level κ is inflated by item correlation and the collapsed diagnostics are the truer signal.
+
+### Orphan rec_tokens (round-2 consequence)
+
+`panel-scores-reviewer-1.jsonl` still carries the 6 Plant 3.1 panel scores from round 1 (the panel didn't know the gate would land). After regenerating `panel-routing.jsonl`, those 6 rec_tokens no longer map to any panel-routing row. Both κ functions (`attach_panel_kappa`, `attach_collapsed_panel_kappa`) filter them out and surface the orphan count in `inter_rater.note` / `inter_rater_collapsed.note`. `promote_panel_scores` silently skips orphans because there's no `score=PANEL_ROUTE` entry left to backfill (Plant 3.1's HSBColor pair is no longer in `scored`). Do NOT delete the orphan rows from `panel-scores-reviewer-1.jsonl` — they're audit-trail provenance and the filter handles them transparently.
 
 ### `inter_rater_collapsed` block schema
 
 ```json
 {
-  "fleiss_kappa": 1.0,                      // null when m<2, uneven coverage, or sentinel path
-  "n_judgments": 2,                          // distinct (plant_id, cluster_id) cells
-  "n_raters": 3,                             // unique reviewer IDs seen in panel-scores
+  "fleiss_kappa": null,                      // null when m<2, n_judgments<2, uneven coverage, or sentinel path
+  "n_judgments": 1,                           // distinct (plant_id, cluster_id) cells after orphan filter
+  "n_raters": 3,                              // unique reviewer IDs seen in panel-scores
   "judgments": [
     {
-      "plant_id": "3.1",
+      "plant_id": "5.1",
       "cluster_id": "function-duplicates-near:…",
       "n_duplicates_per_reviewer": {"reviewer-1": 6, "reviewer-2": 6, "reviewer-3": 6},
-      "reviewer_medians": {"reviewer-1": 0.0, "reviewer-2": 0.0, "reviewer-3": 0.0},
+      "reviewer_medians": {"reviewer-1": 0.3, "reviewer-2": 0.3, "reviewer-3": 0.3},
       "reviewer_variance": {"reviewer-1": 0.0, "reviewer-2": 0.0, "reviewer-3": 0.0}
-    },
-    …
+    }
   ],
-  "within_reviewer_inconsistency_count": 0,  // # of (judgment, reviewer) cells with variance > 0
-  "note": null                                // populated on sentinel paths
+  "within_reviewer_inconsistency_count": 0,   // # of (judgment, reviewer) cells with variance > 0
+  "note": "6 orphan rec_token(s) in panel-scores had no matching panel-routing row; skipped"
 }
 ```
 
-`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., one reviewer missed a row). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, or reviewer coverage is uneven at the judgment level (some reviewer didn't score some judgment at all — Fleiss κ requires every item rated by exactly m raters).
+`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., one reviewer missed a row). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, reviewer coverage is uneven at the judgment level (some reviewer didn't score some judgment at all — Fleiss κ requires every item rated by exactly m raters), or — for the collapsed κ — only one distinct judgment exists.
 
 ### How to interpret the two κs together
 
@@ -136,14 +140,14 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 | Low | High | Reviewers agree on the underlying calls but disagree on individual duplicates (prose-sensitive scoring). Calibration needed on prose vs substance — see `within_reviewer_inconsistency_count`. |
 | Low | Low | Reviewers genuinely disagree on the calls. Rubric needs round-2 work. |
 
-Round 2 (when this panel sitting completes) should populate both measures and report them together in `results.md` §4.3. If they disagree by more than ~0.2, that's a methodology gap to log in `rubric-modifications.md`.
+When the round-2 panel sitting completes, populate `inter_rater` and report it in `results.md` §4.3. `inter_rater_collapsed` will stay at the panel-pending sentinel under round 2's single-judgment configuration; the per-judgment diagnostics (`within_reviewer_inconsistency_count`, `reviewer_variance`) carry the cross-reviewer agreement signal. If `inter_rater` comes back surprisingly low while the diagnostics show consistent per-reviewer medians, that's a methodology gap to log in `rubric-modifications.md`.
 
-The concentration on Plants 3.1 and 5.1 is itself a finding: the agent consistently classifies these two plants' clusters as "other" rather than as their manifest-pinned categories. The plant manifest's category attribution may be too narrow for what the agent is seeing in these clusters, or the agent's prompt is steering it toward novel-category responses on these structural shapes. Worth a debrief discussion after panel scores land.
+The concentration on Plant 5.1 (after the round-2 symbol gate dropped Plant 3.1's false binding) is itself a finding: the agent consistently classifies HSBColor.uiColor / HSBColor.nsColor as "other" rather than as generic-parameterization. The plant manifest's category attribution may be too narrow for what the agent is seeing in this cluster, or the agent's prompt is steering it toward novel-category responses on this platform-bridging shape. Worth a debrief discussion after panel scores land.
 
 ## 7. Mechanical checklist
 
 1. [ ] Read the methodology + rubric pointers above.
-2. [ ] For each of the 12 rows in `analyses/panel-routing.jsonl`: read the `rec_*` fields, **do not** look at `unblind`, score, write a row to your `panel-scores-<id>.jsonl`.
-3. [ ] After scoring all 12, concatenate your file with the other two reviewers' files into `analyses/panel-scores.jsonl` (any order; the scorer sorts internally).
-4. [ ] Re-run `python3 experiments/v7-refactor-recommendation/score_all.py` so `analyses/score-summary.json` picks up the Fleiss κ.
-5. [ ] If your κ comes back below 0.4 ("fair" agreement), schedule a debrief: differences in interpretation of "other" are a calibration problem the rubric needs to absorb in round 2.
+2. [ ] For each of the 6 rows in `analyses/panel-routing.jsonl` (post-round-2 symbol gate, all Plant 5.1): read the `rec_*` fields, **do not** look at `unblind`, score, write a row to your `panel-scores-<id>.jsonl`.
+3. [ ] After scoring all 6, concatenate your file with the other reviewers' files into `analyses/panel-scores.jsonl` (any order; the scorer sorts internally).
+4. [ ] Re-run `python3 experiments/v7-refactor-recommendation/score_all.py` so `analyses/score-summary.json` picks up the Fleiss κ. Confirm the `inter_rater.note` reports `6 orphan rec_token(s) ... skipped` — that's the expected round-2 orphan-filter signal.
+5. [ ] If your κ comes back below 0.4 ("fair" agreement), schedule a debrief: differences in interpretation of "other" are a calibration problem the rubric needs to absorb in round 3.
