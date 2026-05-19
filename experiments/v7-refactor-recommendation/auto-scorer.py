@@ -36,17 +36,21 @@ Decision rule (methodology §8):
 
 `category == "other"` always routes to panel (case 6).
 
-MVP scope (explicit limitations):
+Scope notes:
 
-  • Specifics matching is KEY-ONLY, not value-aware. Case 1 fires when the
-    recommendation's `specifics` has all keys required by
-    `rubric.specifics_schemas[category]`; the values themselves are NOT
-    compared to `plant.primary_answer.specifics`, and the per-plant
-    `specifics_tolerance` field is UNREAD. A recommendation with correct keys
-    but wrong values (e.g., `new_protocol: "Wrong"`) will score 1.0 here.
-    Phase D's scoring path must add value-alignment if the methodology
-    requires it; this MVP is sufficient for the §20 worked examples because
-    their fixtures happen to agree on values.
+  • Specifics matching is VALUE-AWARE (round 2, issue #35 / PR closing the
+    `primary_match_specifics_*` paths). Case 1 fires when the recommendation's
+    `specifics` has all keys required by `rubric.specifics_schemas[category]`
+    AND the values structurally equal `plant.primary_answer.specifics` (lists
+    as multisets; dicts structurally; scalars by `==`). Missing required keys
+    panel-route as `primary_match_specifics_missing_keys`; value mismatches
+    panel-route as `primary_match_specifics_outside_tolerance`. The plant's
+    `specifics_tolerance` flags are NOT evaluated by the scorer; they are
+    surfaced as panel-guidance notes (`tolerance_flag: {key}={value}`) per
+    methodology §8 lines 626–631 — out-of-tolerance specifics route to panel
+    and the panel applies the flags when rating. See
+    `plans/v7-round2-value-aware-specifics-plan.md` and the round-2 entry in
+    `rubric-modifications.md` for the design rationale and projection data.
   • Extras-in-specifics are tolerated by the scorer (superset semantics: a
     recommendation may carry extra keys beyond `required` and still match).
     The validator (`validate-manifest.py`) stays closed-set — extras there
@@ -140,6 +144,87 @@ def _specifics_keys_match(rec_specifics: dict, schema_required: list[str]) -> tu
     if missing:
         problems.append(f"missing keys: {sorted(missing)}")
     return (not problems, problems)
+
+
+def _values_structurally_equal(a, b) -> bool:
+    """Verbatim structural equality used by `_specifics_values_match`.
+
+    Lists are compared as multisets (order-independent; each element of `a`
+    must structurally equal a unique element of `b`). Dicts are compared by
+    key-set equality plus recursive value equality. Scalars by `==`. Returns
+    True iff `a` and `b` are structurally identical under these rules.
+    """
+    if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            return False
+        remaining = list(b)
+        for ae in a:
+            for i, be in enumerate(remaining):
+                if _values_structurally_equal(ae, be):
+                    del remaining[i]
+                    break
+            else:
+                return False
+        return True
+    if isinstance(a, dict) and isinstance(b, dict):
+        if a.keys() != b.keys():
+            return False
+        return all(_values_structurally_equal(a[k], b[k]) for k in a)
+    return a == b
+
+
+def _specifics_values_match(
+    rec_specifics: dict, primary_specifics: dict, required_keys: list[str]
+) -> tuple[bool, list[str]]:
+    """Verbatim value comparison for each required key.
+
+    Scalars: == equality. Lists: multiset equality (order-independent; see
+    `_values_structurally_equal`). Dicts: structural equality (recursive).
+    Type mismatches (e.g., manifest expects list, rec provides string) are
+    mismatches, surfaced through the `!r` repr in the problem string.
+
+    Per-key behavior when the manifest doesn't pre-register a value
+    (`primary_specifics` is missing this key OR has it set to None): the
+    scorer treats the manifest as not constraining that key's value and
+    skips the comparison. Real production manifests pre-register values for
+    every required key (validator rule 9d enforces non-empty specifics +
+    rule 9.3.a enforces key superset); the relaxed precondition exists so
+    synthetic test fixtures with minimal plant shapes still exercise the
+    keys-only code path.
+
+    Returns (ok, problem_descriptions). problem_descriptions is a list of
+    `"key={key} manifest={manifest_val!r} rec={rec_val!r}"` strings for each
+    mismatched key.
+
+    Precondition: caller has confirmed every key in `required_keys` is
+    present in `rec_specifics` (via `_specifics_keys_match`).
+    """
+    problems: list[str] = []
+    for key in required_keys:
+        if key not in primary_specifics:
+            continue  # manifest doesn't constrain this key; vacuously in-tolerance
+        manifest_val = primary_specifics[key]
+        if manifest_val is None:
+            continue  # explicit "no value" sentinel in manifest; same as missing
+        rec_val = rec_specifics[key]
+        if not _values_structurally_equal(manifest_val, rec_val):
+            problems.append(
+                f"key={key!r} manifest={manifest_val!r} rec={rec_val!r}"
+            )
+    return (not problems, problems)
+
+
+def _tolerance_flag_notes(plant: dict) -> list[str]:
+    """Render `specifics_tolerance` flags as panel-guidance notes.
+
+    Returns a list of `"tolerance_flag: {key}={value}"` strings, one per
+    flag, sorted by key for byte-stable output in panel-routing.jsonl. Empty
+    list if the plant has no tolerance flags. The auto-scorer does not
+    evaluate the flags structurally — per methodology §8, outside-tolerance
+    specifics route to panel and the panel applies the flags when rating.
+    """
+    tol = plant.get("specifics_tolerance") or {}
+    return [f"tolerance_flag: {k}={tol[k]}" for k in sorted(tol.keys())]
 
 
 def _is_adjacent(rubric: dict, primary_cat: str, rec_cat: str) -> bool:
@@ -240,35 +325,50 @@ def score_recommendation(
         )
 
     # ── Case 1 / 1': primary match ────────────────────────────────────────
+    #
+    # Methodology §8 lines 626–631: out-of-tolerance specifics route to panel;
+    # only specifics within tolerance fire the auto-scored 1.0 / 0.5-weak path.
+    # The auto-scorer evaluates tolerance binary (verbatim match vs not); the
+    # plant's `specifics_tolerance` flags are panel guidance, not scorer inputs.
+    # See `plans/v7-round2-value-aware-specifics-plan.md` for the design
+    # discussion and the §3.3 pre-implementation projection.
     if rec_cat == primary_cat:
-        specifics_ok, specifics_problems = _specifics_keys_match(
+        primary_specifics = primary.get("specifics") or {}
+        keys_ok, key_problems = _specifics_keys_match(
             rec_specifics, primary_specifics_required
         )
+        if not keys_ok:
+            return ScoreResult(
+                plant_id, PANEL_ROUTE, "primary_match_specifics_missing_keys",
+                notes=key_problems + _tolerance_flag_notes(plant),
+            )
+        values_ok, value_problems = _specifics_values_match(
+            rec_specifics, primary_specifics, primary_specifics_required
+        )
+        if not values_ok:
+            return ScoreResult(
+                plant_id, PANEL_ROUTE, "primary_match_specifics_outside_tolerance",
+                notes=value_problems + _tolerance_flag_notes(plant),
+            )
         grounded, missing_citations = _rationale_cites_all(rec_rationale, must_cite)
-        if specifics_ok and grounded:
+        if grounded:
             return ScoreResult(
                 plant_id, 1.0, "primary_match_full",
                 notes=["all conditions met"],
             )
-        if specifics_ok and not grounded:
-            # Case 1': weak rationale. Apply weak_rationale_policy.
-            policy = rubric.get("weak_rationale_policy", "auto-score-0.5")
-            if policy == "auto-score-0.5":
-                return ScoreResult(
-                    plant_id, 0.5, "primary_match_weak_rationale",
-                    notes=[f"missing required citations: {missing_citations}"],
-                )
+        # Case 1': weak rationale. Apply weak_rationale_policy.
+        policy = rubric.get("weak_rationale_policy", "auto-score-0.5")
+        if policy == "auto-score-0.5":
             return ScoreResult(
-                plant_id, PANEL_ROUTE, "primary_match_weak_rationale_panel",
-                notes=[
-                    f"missing required citations: {missing_citations}",
-                    f"weak_rationale_policy={policy}",
-                ],
+                plant_id, 0.5, "primary_match_weak_rationale",
+                notes=[f"missing required citations: {missing_citations}"],
             )
-        # Right category, wrong specifics — §8 0.5 bucket.
         return ScoreResult(
-            plant_id, 0.5, "primary_category_wrong_specifics",
-            notes=specifics_problems,
+            plant_id, PANEL_ROUTE, "primary_match_weak_rationale_panel",
+            notes=[
+                f"missing required citations: {missing_citations}",
+                f"weak_rationale_policy={policy}",
+            ],
         )
 
     # ── Case 2: alternative-answer match ──────────────────────────────────
@@ -529,7 +629,8 @@ WORKED_EXAMPLES = [
 # `restraint_false_positive`, `other_routes_to_panel`). The branches below
 # (`breaking_action`, `adjacent_wrong_category`, `wrong_category_enumerated`,
 # `wrong_category_not_enumerated`, `no_action_grounded`,
-# `no_action_ungrounded`, `primary_category_wrong_specifics`) are live in
+# `no_action_ungrounded`, `primary_match_specifics_missing_keys`,
+# `primary_match_specifics_outside_tolerance`) are live in
 # score_recommendation() but not exercised by §20. The fixtures below close
 # that gap with synthetic recommendations bound to real manifest plants —
 # they are NOT methodology-asserted scores, but they pin scorer behavior so
@@ -540,7 +641,7 @@ WORKED_EXAMPLES = [
 
 SYNTHETIC_FIXTURES = [
     {
-        "label": "[synthetic] primary_category_wrong_specifics: Plant 4.1, missing 'replaces' key",
+        "label": "[synthetic] primary_match_specifics_missing_keys: Plant 4.1, missing 'replaces' key",
         "plant_id": "4.1-s8-example",
         "recommendation": {
             "category": "pat-introduction",
@@ -552,8 +653,24 @@ SYNTHETIC_FIXTURES = [
             },
             "rationale": "TrackContainer and ShowContainer can become a PAT. differs at Item.",
         },
-        "expected_score": 0.5,
-        "expected_match": "primary_category_wrong_specifics",
+        "expected_score": PANEL_ROUTE,
+        "expected_match": "primary_match_specifics_missing_keys",
+    },
+    {
+        "label": "[synthetic] primary_match_specifics_outside_tolerance: Plant 4.1, wrong new_protocol value",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "pat-introduction",
+            "specifics": {
+                "new_protocol": "WrongProtocolName",  # manifest says "Container"
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            "rationale": "TrackContainer and ShowContainer differ at Item.",
+        },
+        "expected_score": PANEL_ROUTE,
+        "expected_match": "primary_match_specifics_outside_tolerance",
     },
     {
         "label": "[synthetic] adjacent_wrong_category (0.3): Plant 4.1, protocol-inheritance against PAT",

@@ -29,8 +29,11 @@ rubric_version: "v7.A.4"
 # The `match` field below is DESCRIPTIVE prose, not a load-bearing identifier.
 # The auto-scorer hardcodes the decision rule in score_recommendation() and
 # emits its own (more granular) match strings — e.g., the 0.5 bucket here
-# corresponds to the scorer's `primary_match_weak_rationale` AND
-# `primary_category_wrong_specifics`; the 0.0 bucket corresponds to
+# corresponds to the scorer's `primary_match_weak_rationale`; out-of-tolerance
+# specifics (the rest of the 0.5 row) route to panel as
+# `primary_match_specifics_outside_tolerance` or
+# `primary_match_specifics_missing_keys` per methodology §8 lines 626–631
+# (round 2, issue #35). The 0.0 bucket corresponds to
 # `wrong_category_enumerated` AND `wrong_category_not_enumerated`. The rubric
 # captures the methodology's coarse table; the scorer captures the
 # implementation's branch identities. The data here is consumed for

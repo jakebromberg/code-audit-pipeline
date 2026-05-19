@@ -26,12 +26,14 @@ In one PR against `experiment/swift-substrate`:
 - **`auto-scorer.py` fixture updates**: existing `SYNTHETIC_FIXTURES[0]` (`primary_category_wrong_specifics: Plant 4.1, missing 'replaces' key`) flips `expected_score` from 0.5 to `PANEL_ROUTE` and `expected_match` from `"primary_category_wrong_specifics"` to `"primary_match_specifics_missing_keys"`. Add a new synthetic fixture for `primary_match_specifics_outside_tolerance` (correct keys + wrong values). §20.1–20.5 worked examples preserved (their values all match the manifest verbatim).
 - **`auto-scorer.py` docstring update**: drop the MVP-scope caveat about key-only matching; document the new value-comparison semantics.
 - **`score_all.py` integration**: confirm the panel-routing pipeline (`promote_panel_scores`, `attach_panel_kappa`, `attach_collapsed_panel_kappa`) handles the new `primary_match_specifics_outside_tolerance` and reclassified-from-0.5 `primary_match_specifics_missing_keys` match labels identically to existing panel-route paths. No new pipeline branches needed — these are just additional reasons to panel-route, and the existing `panel-routing.jsonl` writer is match-label-agnostic.
-- **Regenerate `analyses/`** against the new scorer. Document the score-distribution shift in `rubric-modifications.md` per the same template used for symbol-matching (expected vs actual table). Expected shifts:
-  - `primary_match_full` (currently 37): drops by the fraction whose values don't verbatim-match. Estimate: roughly half (~18) flip to panel-route, the rest stay 1.0. Tightened by §3.3 below.
-  - `primary_match_weak_rationale` (currently 65): same dynamic — fraction whose values don't verbatim-match flips to panel-route. Estimate: ~30 flip.
-  - `panel_routed.size` (currently 6): grows by the sum of the two above, plus any synthetic fixture promotions. Estimate: 6 → ~60.
-  - `headline.canonical_recall`: drops because the numerator (auto-scored credit) shrinks; the denominator (n_canonical_plants) is unchanged. Without panel sitting, these recommendations contribute nothing to recall. Methodologically this is more accurate — over-credit is removed — but the headline number falls. Estimate: S1 0.270 → 0.20–0.23, S2 0.615 → 0.45–0.55. Tightened by §3.3 below.
+- **Regenerate `analyses/`** against the new scorer. Document the score-distribution shift in `rubric-modifications.md` per the same template used for symbol-matching (expected vs actual table). **Empirical projection ran 2026-05-19 against the merged round-2 data** (see §3.3 below). Headline numbers:
+  - **All 102 rows in the (primary_match_full ∪ primary_match_weak_rationale) pool flip.** 100% flip rate.
+  - `primary_match_full` (currently 37) → 0 unless I'm missing something (every row had at least one value mismatch). All 37 become panel-route.
+  - `primary_match_weak_rationale` (currently 65) → 0 similarly. All 65 become panel-route.
+  - `panel_routed.size` (currently 6): 6 → ~108 (current 6 + 37 + 65 = 108). Note: I'll re-confirm during implementation; might be 102 + 6 if `weak_rationale_panel_policy` overlap.
+  - `headline.canonical_recall`: numerator drops by 37 × 1.0 + 65 × 0.5 = 69.5; recall denominators per-plant are unchanged but per-plant numerators drop hard. **Empirical estimate**: S1 0.270 → ~0.05, S2 0.615 → ~0.10. These numbers will need explicit framing in `results.md` and `rubric-modifications.md` as "round 1 was over-crediting; this is the corrected number."
   - `headline.one_minus_fpr`: unchanged (restraint plants don't go through this path).
+  - Mismatch breakdown (from §3.3 projection): 97 substantive (~95%; e.g., Plant 1.1 agent recs `target_package: "app:iOS"` when manifest says `"Shared/UI or a new Shared/Branding (must be upstream of both app:WatchXYC and app:iOS)"`), 5 trivial (~5%; Plant 3.4 manifest's parenthetical `"PlaylistEntry (already exists in Shared/Playlist)"` vs rec's `"PlaylistEntry"`).
 - **Update `results.md`**: §4 (auto-scoring numbers shift), §8 (drop the round-1 limitation entry about value-aware matching, replace with a round-2 entry about the §8 routing rule operationalization and panel-load surge), TL;DR (revised recall numbers).
 - **Update `reproducibility.yaml`**: bump `manifest_hash`, append a `round2_methodology_update_value_aware_specifics` block under `execution` describing the rubric-modifications.md addition.
 - **Update `panel-instructions.md`**: §1 (panel routes now include "specifics outside tolerance" cases), add a §1.bis subsection on how panel applies `specifics_tolerance` flags when reviewing `primary_match_specifics_outside_tolerance` rows.
@@ -150,6 +152,28 @@ To tighten the §2 estimates ("~half of primary_match_full flips"), run a one-ti
 6. **Record the projection in the implementation PR's commit message** so the empirical gate decision is auditable.
 
 This projection runs against round-2's already-merged data and doesn't require regenerating analyses. Result goes in the plan's §3.3 table here, and the implementation PR's commit message cites the empirical numbers.
+
+#### 3.3.1 Projection results (ran 2026-05-19)
+
+Pool: 102 rows (`primary_match_full` n=37, `primary_match_weak_rationale` n=65).
+
+| Classification | Count | Pct of pool | Notes |
+|---|---|---|---|
+| Substantive | 97 | 95.1% | Agent picked wrong identifier, wrong target package, wrong protocol name, or omitted required value (e.g., `type_params.constraint = null` where manifest expects `"Decodable"`). Methodologically these are exactly the §8 "specifics fall outside tolerance" cases. |
+| Trivial | 5 | 4.9% | All 5 are Plant 3.4 rows where the manifest's `protocol: "PlaylistEntry (already exists in Shared/Playlist)"` and `target_location: "Shared/Playlist/.../PlaylistEntry.swift (extension PlaylistEntry where Self: Decodable)"` carry parenthetical commentary that the agent's `"PlaylistEntry"` and bare path don't include. |
+| No-flip | 0 | 0% | Every row had at least one mismatched required key. |
+
+**Gate decision**: 4.9% trivial ≪ 30% threshold → **PROCEED**.
+
+Per-plant flip distribution (most-flipped first): Plant 1.1 (15 substantive, target_package + type_name), Plant 3.4 (10 substantive + 5 trivial), Plant 3.3 (14 substantive, protocol invented), Plant 3.2 (12 substantive, protocol invented), Plant 5.2 (9 substantive, agent unconstrained T), Plants 2.3/2.4 (6 each), Plants 2.1/2.2/4.2/4.3/4.4/5.3/5.4 (3 each), Plants 3.1/4.1 (2 each).
+
+Substantive examples (one per plant family):
+- **Plant 1.1** (extract-to-common, target_package): manifest `"Shared/UI or a new Shared/Branding (must be upstream of both app:WatchXYC and app:iOS)"`; rec `"app:iOS"`. Agent chose the consumer as the lift target — would create a downstream-of-self dependency. Real wrong-specifics.
+- **Plant 3.2** (default-implementation, protocol): manifest `"BlendMode (new shared protocol over the 16-case union, with displayName + blendMode requirements)"`; rec `"BlendModeConvertible"`. Agent invented a different protocol name. Substantive — the panel will judge whether the alternative name is acceptable per the tolerance flag `default_impl_must_be_in_protocols_own_package`.
+- **Plant 3.3** (default-implementation, protocol): manifest `"AudioProcessor (already exists in PlayerHeaderView)"`; rec `"NormalizationModeConfigurable"`. Agent invented a new protocol instead of using the existing one — semantically wrong per the tolerance flag `protocol_must_be_existing_AudioProcessor`.
+- **Plant 5.2** (generic-parameterization, type_params): manifest `[{name: "T", constraint: "Decodable"}]`; rec `[{name: "T", constraint: null}]`. Agent omitted the constraint; methodology cares because the tolerance flag `type_param_must_be_constrained_to_Decodable_or_codable_kin` says T must be constrained.
+
+All substantive examples are exactly the cases methodology §8 says belong on panel review.
 
 ### 3.4 Format of `_tolerance_flag_notes()`
 

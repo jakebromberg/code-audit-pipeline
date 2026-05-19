@@ -292,4 +292,51 @@ execution:
           (round 1's 0.3 adjacent-defensible) continue to promote correctly.
       manifest_hash_post_round2: 13b358dd7ba278cbe15bd32412199a7bcbdfb7cd8b710f5ee66a52a26d33b6c9
       manifest_hash_pre_round2: kept in top-level pre_registration.manifest_hash
+    round2_methodology_update_value_aware_specifics:
+      description: |
+        Round 2 added verbatim value comparison to the auto-scorer's primary-
+        match path. `auto-scorer.py::score_recommendation` now compares each
+        required key's value against `plant.primary_answer.specifics[key]`
+        (scalars by ==; lists as multisets; dicts structurally). Value
+        mismatches route to panel as `primary_match_specifics_outside_tolerance`;
+        missing required keys (previously auto-scored 0.5 as
+        `primary_category_wrong_specifics`) now route to panel as
+        `primary_match_specifics_missing_keys`. Methodology §8 lines 626-631
+        is the citation: "category matches but specifics fall outside
+        tolerance" routes to panel; the auto-scorer's role is binary
+        tolerance detection, not flag evaluation. The plant's `specifics_tolerance`
+        flags are surfaced as `tolerance_flag: <key>=<value>` panel-routing
+        notes (panel guidance, not scorer inputs). Documented as the second
+        round-2 entry in `rubric-modifications.md` per methodology §10;
+        resolves issue #35.
+      consequence: |
+        panel_routed: 6 -> 108 (37 primary_match_full + 65
+        primary_match_weak_rationale + existing 6 other-routes-to-panel all
+        flip; 100% of the 102-row primary-match pool had at least one
+        mismatched required value). Mismatch classification: 95.1% substantive
+        (different identifier, target package, or missing constraint), 4.9%
+        trivial (parenthetical commentary, all on Plant 3.4). headline
+        canonical_recall: S1 0.270 -> 0.070; S2 0.615 -> 0.110. 1-FPR:
+        unchanged at 1.000 in both conditions (restraint plants don't go
+        through the primary-match path). panel_route_rate: S1 1.6% -> 13.5%;
+        S2 0.9% -> 24.9% (still below the §14.3 50% acceptance bar).
+        Methodological correction, not regression: the round-2 binding-only
+        baseline was over-credit on value mismatches per §8 routing rules.
+      pre_implementation_projection:
+        ran_date: 2026-05-19
+        gate_threshold_trivial_pct: 30.0
+        observed_trivial_pct: 4.9
+        gate_outcome: PROCEED
+        script: temporary /tmp/v7-project-value-mismatches.py (not committed)
+        decision_log: |
+          Projection classified each (1.0 + 0.5-weak) row's flip as
+          substantive vs trivial. Trivial 4.9% << 30% threshold -> proceeded
+          with implementation. Substantive 95.1% confirms the methodological
+          correction is load-bearing (agents really do pick wrong specifics
+          values on substrate-helped clusters; round-1 key-only matching
+          masked this).
+      auto_scorer_sha256_post_round2: 08f86787fe445aea35bd968050182525f905aeedaa1408a107696ebd65a97daf
+      rubric_hash_post_round2_value_aware: 279027861301000e399624099de8c61f63f3117dfbfc203f2f18fa1c20cf730c
+      rubric_hash_pre_round2_value_aware: kept in top-level pre_registration.rubric_hash
+      issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/35
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md

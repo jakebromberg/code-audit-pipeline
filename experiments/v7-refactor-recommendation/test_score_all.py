@@ -36,6 +36,8 @@ def _plant(
     expected_cluster_symbols: list[str] | None = None,
     primary_category: str | None = None,
     primary_specifics_required: list[str] | None = None,
+    primary_specifics: dict | None = None,
+    specifics_tolerance: dict | None = None,
     must_cite: list[str] | None = None,
     alternative_categories: list[str] | None = None,
     wrong_categories: list[str] | None = None,
@@ -45,6 +47,13 @@ def _plant(
     SYNC: when changing this helper's schema, also update the baseline-
     corruption pattern in test_validator.py so the two test suites continue
     to agree on what a well-formed plant looks like.
+
+    `primary_specifics` populates `primary_answer.specifics`. If left as None,
+    defaults to an empty dict — the value-comparison path in auto-scorer.py
+    treats a missing manifest value as "manifest doesn't constrain this key,"
+    so legacy tests that pre-date round-2 value-aware matching keep working
+    without populating values. New tests exercising value-aware comparison
+    should pass `primary_specifics` explicitly.
     """
     primary_category = primary_category or ("no-action" if restraint else category)
     # Default signals align with `_rec`'s default `query="exact-duplicates"` so
@@ -73,9 +82,10 @@ def _plant(
         "expected_cluster_symbols": expected_cluster_symbols,
         "primary_answer": {
             "category": primary_category,
-            "specifics": {},
+            "specifics": primary_specifics if primary_specifics is not None else {},
             "rationale_must_cite": must_cite or [],
         },
+        "specifics_tolerance": specifics_tolerance or {},
         "alternative_answers": [{"category": c, "weight": 0.7} for c in (alternative_categories or [])],
         "wrong_answers": [{"category": c, "note": ""} for c in (wrong_categories or [])],
     }
@@ -463,6 +473,305 @@ class ScoreAllTests(unittest.TestCase):
         out = score_all.score_recommendations([rec], [plant], self.rubric)
         self.assertEqual(out["scored"][0]["score"], 0.0)
         self.assertEqual(out["scored"][0]["match"], "restraint_false_positive")
+
+
+# ─── value-aware specifics matching (round 2, issue #35) ──────────────────
+
+
+class ValueAwareSpecificsTests(unittest.TestCase):
+    """Methodology §8 lines 626–631: outside-tolerance specifics route to panel,
+    not auto-0.5. The auto-scorer's MVP key-only matching over-credited agents
+    whose specifics aligned in shape but disagreed in content. Round 2 adds
+    verbatim value comparison; mismatches route to panel with the manifest's
+    `specifics_tolerance` flags surfaced as panel guidance notes.
+    """
+
+    def setUp(self):
+        self.rubric = {
+            "weak_rationale_policy": "auto-score-0.5",
+            "specifics_schemas": {
+                "extract-to-common": {"required": ["target_package", "type_name", "remove_from"]},
+                "pat-introduction": {"required": ["new_protocol", "associated_type", "constraints", "replaces"]},
+                "no-action": {"required": ["reason_class"]},
+            },
+            "adjacent_categories": [],
+        }
+
+    def _pat_plant(self, *, primary_specifics, specifics_tolerance=None):
+        return _plant(
+            plant_id="4.1",
+            category="pat-introduction",
+            source_files=["Pkg/Container.swift"],
+            primary_category="pat-introduction",
+            primary_specifics_required=["new_protocol", "associated_type", "constraints", "replaces"],
+            primary_specifics=primary_specifics,
+            specifics_tolerance=specifics_tolerance,
+            must_cite=["TrackContainer", "ShowContainer"],
+        )
+
+    def test_primary_match_full_preserved_on_verbatim_value_match(self):
+        """Plan §4 test #1: verbatim match still scores 1.0 (regression guard)."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_full")
+
+    def test_outside_tolerance_on_scalar_value_mismatch(self):
+        """Plan §4 test #2: wrong scalar value → panel_route."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Wrong",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_specifics_outside_tolerance")
+        notes_blob = " ".join(out["scored"][0]["notes"])
+        self.assertIn("new_protocol", notes_blob)
+        self.assertIn("Container", notes_blob)
+        self.assertIn("Wrong", notes_blob)
+
+    def test_outside_tolerance_on_list_element_mismatch(self):
+        """Plan §4 test #3: wrong list element → panel_route."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "Other"],
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_specifics_outside_tolerance")
+
+    def test_list_set_equality_treats_reversed_order_as_match(self):
+        """Plan §4 test #4: list comparison is order-independent."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["ShowContainer", "TrackContainer"],  # reversed
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_full")
+
+    def test_missing_required_key_panel_routes(self):
+        """Plan §4 test #5: missing required key → panel_route (was 0.5 in round 1)."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                # `replaces` deliberately omitted
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_specifics_missing_keys")
+
+    def test_tolerance_flag_notes_surface_in_panel_routing(self):
+        """Plan §4 test #6: panel-routing notes carry the manifest's tolerance flags."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            specifics_tolerance={
+                "associated_type_named_Item_or_synonym": True,
+                "type_slot_at_item_must_be_identified": True,
+            },
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Wrong",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            rationale="...",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        notes = out["scored"][0]["notes"]
+        flag_notes = [n for n in notes if n.startswith("tolerance_flag:")]
+        self.assertEqual(
+            flag_notes,
+            [
+                "tolerance_flag: associated_type_named_Item_or_synonym=True",
+                "tolerance_flag: type_slot_at_item_must_be_identified=True",
+            ],
+        )
+
+    def test_restraint_plants_unaffected_by_value_comparison(self):
+        """Plan §4 test #7: restraint scoring is independent of the new path."""
+        plant = _plant(
+            plant_id="1R",
+            category="extract-to-common",
+            restraint=True,
+            source_files=["Pkg/R.swift"],
+            primary_category="no-action",
+            primary_specifics={"reason_class": "sample-app-mirror"},
+        )
+        rec = _rec(
+            cluster_id="exact-duplicates:Pkg/R.swift",
+            category="extract-to-common",
+            specifics={"target_package": "Shared/Core", "type_name": "X", "remove_from": []},
+            rationale="Extract this duplicate.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 0.0)
+        self.assertEqual(out["scored"][0]["match"], "restraint_false_positive")
+
+    def test_empty_tolerance_flag_dict_emits_no_flag_notes(self):
+        """Plan §4 test #8: plant without tolerance flags → no flag notes in panel-routing."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            specifics_tolerance={},
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Wrong",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            rationale="...",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        flag_notes = [n for n in out["scored"][0]["notes"] if n.startswith("tolerance_flag:")]
+        self.assertEqual(flag_notes, [])
+        # But the mismatch note should still be present.
+        self.assertTrue(any("new_protocol" in n for n in out["scored"][0]["notes"]))
+
+    def test_type_mismatch_routes_to_panel(self):
+        """Plan §4 test #9: list-vs-string type mismatch → panel_route."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": "TrackContainer",  # string where list expected
+            },
+            rationale="...",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_specifics_outside_tolerance")
+
+    def test_extras_in_specifics_still_tolerated(self):
+        """Plan §4 test #10: superset-key semantics preserved; extras don't break value-match."""
+        plant = self._pat_plant(
+            primary_specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            }
+        )
+        rec = _rec(
+            cluster_id="pat-candidates:Pkg/Container.swift+TrackContainer",
+            category="pat-introduction",
+            specifics={
+                "new_protocol": "Container",
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+                "notes": "extra commentary the scorer should ignore",
+            },
+            rationale="TrackContainer and ShowContainer differ at Item.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_full")
 
 
 # ─── aggregate summary ────────────────────────────────────────────────────
