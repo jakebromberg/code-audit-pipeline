@@ -278,10 +278,18 @@ execution:
           (round 1 scored them as 0.0 false-bindings) no longer map to any
           rec_token in the regenerated panel-routing.jsonl because Plant 3.1
           no longer routes to panel for the HSBColor cluster. The 6 scores
-          become orphan tokens, silently skipped by promote_panel_scores
-          (see attach_panel_kappa / attach_collapsed_panel_kappa semantics).
-          The 6 Plant 5.1 panel scores (round 1's 0.3 adjacent-defensible)
-          continue to promote correctly.
+          become orphan tokens. `promote_panel_scores` silently skips them
+          (no PANEL_ROUTE entry remains in `scored` to backfill, so the
+          continue branch on `by_token.get(token, [])` is a no-op).
+          `attach_panel_kappa` and `attach_collapsed_panel_kappa` filter the
+          orphan tokens against the in-memory `panel_routed` list and
+          surface the orphan count in their respective `note` fields
+          (`score-summary.json::inter_rater.note` and `::inter_rater_collapsed.note`).
+          Filtering matters because Fleiss κ's precondition is "every item
+          rated by exactly m raters" — counting orphans would leave them at
+          m=1 (only the round-1 reviewer's score) once round-2 reviewers
+          land, silently mis-computing κ. The 6 Plant 5.1 panel scores
+          (round 1's 0.3 adjacent-defensible) continue to promote correctly.
       manifest_hash_post_round2: 13b358dd7ba278cbe15bd32412199a7bcbdfb7cd8b710f5ee66a52a26d33b6c9
       manifest_hash_pre_round2: kept in top-level pre_registration.manifest_hash
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
