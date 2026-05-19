@@ -320,6 +320,13 @@ def score_recommendations(
                     "rec_evidence_quote": rec_dict.get("evidence_quote"),
                     "rec_confidence": rec_dict.get("confidence"),
                     "match_reason": result.match,
+                    # Notes carry the per-key mismatch description plus the
+                    # plant's `specifics_tolerance` flags (rendered as
+                    # `tolerance_flag: {key}={value}`). Panel reviewers consume
+                    # them per `analyses/panel-instructions.md` §3 case 2 to
+                    # judge whether the agent's value satisfies the structural
+                    # property described by the flag.
+                    "notes": list(result.notes),
                     # condition + trial deliberately omitted from this view;
                     # unblind map records them separately.
                     "unblind": {
