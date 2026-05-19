@@ -252,4 +252,36 @@ execution:
           regression on existing no-action behavior is logically impossible.
       prompt_hash_post_correction: a04a8360e7b514e9836c3035652787c5fb9e4c60fddc2483924dc056fc035c33
       prompt_hash_pre_correction: kept in top-level pre_registration.prompt_hash
-  rubric_modifications: null  # round 1: no post-hoc rubric edits
+    round2_methodology_update:
+      description: |
+        Round 2 added a per-plant `expected_cluster_symbols` manifest field
+        gating bindings on planted-symbol substring membership in cluster_id.
+        Validator `validate-manifest.py` rule 9j enforces non-empty list of
+        non-empty strings. `bind_recs_to_plants` adds a hard symbol gate
+        between substring-match and signal-prefer. Resolves both the panel-
+        routed Plant 3.1 / 5.1 co-binding on HSBColor and Plant 1R's
+        structural FPR — both were (path, query)-granularity ambiguity
+        cases that symbol-level matching disambiguates. Documented as the
+        first entry in `rubric-modifications.md` per methodology §10.
+      consequence: |
+        panel_routed: 12 -> 6 (Plant 3.1 false-binding routings drop;
+        Plant 5.1 legitimate routings persist). Plant 1R per-cell FPR:
+        1.0 -> 0.0 across all 6 (condition, trial) cells. Headline 1-FPR:
+        0.800 -> 1.000 in both conditions. canonical_recall unchanged at
+        S1=0.270 / S2=0.615. Plant 1R binding count went 99 -> 30 (not
+        the projected ~2 — the "MetricRow" symbol matches more legitimate
+        clusters than the plan estimated). All 30 received no-action;
+        methodological outcome preserved.
+      orphan_panel_scores:
+        description: |
+          The 6 Plant 3.1 panel scores in panel-scores-reviewer-1.jsonl
+          (round 1 scored them as 0.0 false-bindings) no longer map to any
+          rec_token in the regenerated panel-routing.jsonl because Plant 3.1
+          no longer routes to panel for the HSBColor cluster. The 6 scores
+          become orphan tokens, silently skipped by promote_panel_scores
+          (see attach_panel_kappa / attach_collapsed_panel_kappa semantics).
+          The 6 Plant 5.1 panel scores (round 1's 0.3 adjacent-defensible)
+          continue to promote correctly.
+      manifest_hash_post_round2: 8e46705d6e735da27e3d672499ebd3b3dbd139b3302df57d67451bb626cdffcf
+      manifest_hash_pre_round2: kept in top-level pre_registration.manifest_hash
+  rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
