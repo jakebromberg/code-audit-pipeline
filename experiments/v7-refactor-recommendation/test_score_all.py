@@ -33,13 +33,19 @@ def _plant(
     restraint: bool = False,
     source_files: list[str] | None = None,
     expected_substrate_signals: list[str] | None = None,
+    expected_cluster_symbols: list[str] | None = None,
     primary_category: str | None = None,
     primary_specifics_required: list[str] | None = None,
     must_cite: list[str] | None = None,
     alternative_categories: list[str] | None = None,
     wrong_categories: list[str] | None = None,
 ) -> dict:
-    """Build a synthetic plant entry."""
+    """Build a synthetic plant entry.
+
+    SYNC: when changing this helper's schema, also update the baseline-
+    corruption pattern in test_validator.py so the two test suites continue
+    to agree on what a well-formed plant looks like.
+    """
     primary_category = primary_category or ("no-action" if restraint else category)
     # Default signals align with `_rec`'s default `query="exact-duplicates"` so
     # existing tests keep binding through the §3.4 signal-list gate. Use an
@@ -47,12 +53,24 @@ def _plant(
     # (the gate's defense-in-depth path tests this case).
     if expected_substrate_signals is None:
         expected_substrate_signals = ["exact-duplicates"]
+    # Resolve source_files first so the default expected_cluster_symbols can
+    # reference whichever path the plant actually owns.
+    resolved_source_files = source_files or [f"Pkg/Sources/{plant_id}.swift"]
+    # Default cluster symbols: use the first source_file path. Cluster_ids
+    # constructed to substring-match source_files therefore also pass the
+    # symbol gate, making most tests transparent to the round-2 symbol gate.
+    # Tests that want to exercise the symbol-gate semantics override this
+    # parameter explicitly. `is None` check preserves explicit empty lists
+    # for defense-in-depth tests.
+    if expected_cluster_symbols is None:
+        expected_cluster_symbols = [resolved_source_files[0]]
     return {
         "plant_id": plant_id,
         "category": category,
         "restraint": restraint,
-        "source_files": source_files or [f"Pkg/Sources/{plant_id}.swift"],
+        "source_files": resolved_source_files,
         "expected_substrate_signals": expected_substrate_signals,
+        "expected_cluster_symbols": expected_cluster_symbols,
         "primary_answer": {
             "category": primary_category,
             "specifics": {},
@@ -138,11 +156,13 @@ class BindRecsToPlantsTests(unittest.TestCase):
             plant_id="3.1",
             source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
             expected_substrate_signals=["function-duplicates", "default-impl-candidates"],
+            expected_cluster_symbols=["HSBColor"],
         )
         plant_51 = _plant(
             plant_id="5.1",
             source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
             expected_substrate_signals=["pat-candidates"],
+            expected_cluster_symbols=["HSBColor"],
         )
         rec = _rec(
             cluster_id="pat-candidates:Shared/Color/Sources/Color/HSBColor.swift",
@@ -154,12 +174,13 @@ class BindRecsToPlantsTests(unittest.TestCase):
     def test_uncontested_substring_match_binds_even_without_signal(self):
         # The Plant 1R case: the cluster substring-matches only one plant, but
         # the rec's query isn't in that plant's signal list. The fallback
-        # branch binds anyway — uncontested substring matches survive so the
-        # restraint specificity signal isn't suppressed by binding logic.
+        # branch binds anyway — uncontested matches survive so the restraint
+        # specificity signal isn't suppressed by binding logic.
         plant = _plant(
             plant_id="1R",
             source_files=["Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"],
             expected_substrate_signals=["exact-duplicates", "cross-package-shape-near-duplicates-any"],
+            expected_cluster_symbols=["MetricRow"],
         )
         rec = _rec(
             cluster_id="function-duplicates-exact:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+...",
@@ -176,6 +197,7 @@ class BindRecsToPlantsTests(unittest.TestCase):
             plant_id="3.1",
             source_files=["Shared/Color/Sources/Color/HSBColor.swift"],
             expected_substrate_signals=["function-duplicates", "default-impl-candidates"],
+            expected_cluster_symbols=["HSBColor"],
         )
         rec = _rec(
             cluster_id="function-duplicates:Shared/Color/Sources/Color/HSBColor.swift",
@@ -219,6 +241,138 @@ class BindRecsToPlantsTests(unittest.TestCase):
         rec = _rec(cluster_id="exact-duplicates:Pkg/Sources/A.swift", query="exact-duplicates")
         bindings = score_all.bind_recs_to_plants([rec], [plant])
         self.assertEqual(bindings, [(rec, ["A"])])
+
+    # ─── Round-2 symbol gate (#86) ─────────────────────────────────────
+
+    def test_symbol_gate_blocks_incidental_bindings(self):
+        # Motivating Plant 1R case: cluster_id contains the plant's source
+        # file (DebugHUD.swift) but none of the plant's expected_cluster_symbols
+        # (MetricRow) — the cluster is about a different DebugHUD symbol
+        # (DebugMetricsProvider.updateMetrics).  The incidental binding is
+        # blocked by the symbol gate; rec goes to unmatched.
+        plant = _plant(
+            plant_id="1R",
+            source_files=["Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"],
+            expected_cluster_symbols=["MetricRow"],
+        )
+        # Cluster_id includes Plant 1R's source file (substring matches) but
+        # mentions a different symbol that's not in expected_cluster_symbols.
+        rec = _rec(
+            cluster_id="subset-pairs:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:200:DebugMetricsProvider.updateMetrics+...",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, [])])
+
+    def test_symbol_gate_admits_legitimate_binding(self):
+        # Same Plant 1R, but the cluster genuinely mentions MetricRow.
+        plant = _plant(
+            plant_id="1R",
+            source_files=["Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift"],
+            expected_cluster_symbols=["MetricRow"],
+        )
+        rec = _rec(
+            cluster_id="exact-duplicates:MetricRow+MetricRow",
+            query="exact-duplicates",
+        )
+        # Note: this cluster_id doesn't contain DebugHUD.swift, so substring
+        # path match fails. The binding shouldn't fire even with symbol match.
+        # We test the AND-gate by constructing a cluster_id with BOTH the
+        # path and the symbol.
+        rec_with_path = _rec(
+            cluster_id="function-duplicates-exact:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+...",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec_with_path], [plant])
+        self.assertEqual(bindings, [(rec_with_path, ["1R"])])
+
+    def test_symbol_disambiguates_shared_source_file(self):
+        # Plant 3.1 vs 5.1: both have HSBColor.swift in source_files, both
+        # list function-duplicates in signals. Pre-round-2 they'd both bind
+        # to the same cluster. The symbol gate disambiguates: only the
+        # plant whose symbol appears in cluster_id binds.
+        plant_31 = _plant(
+            plant_id="3.1",
+            source_files=["Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"],
+            expected_substrate_signals=["function-duplicates"],
+            expected_cluster_symbols=["HSBColor.init", "AccentColor.init", "HSBOffset.init"],
+        )
+        plant_51 = _plant(
+            plant_id="5.1",
+            source_files=["Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift"],
+            expected_substrate_signals=["function-duplicates"],
+            expected_cluster_symbols=["HSBColor.uiColor", "HSBColor.nsColor"],
+        )
+        # The panel-routed HSBColor cluster from round 1.
+        rec = _rec(
+            cluster_id="function-duplicates-near:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant_31, plant_51])
+        self.assertEqual(bindings, [(rec, ["5.1"])])
+
+    def test_no_symbol_match_no_binding(self):
+        # Cluster substring-matches a single plant's source_file but none of
+        # the plant's symbols appear → no binding.
+        plant = _plant(
+            plant_id="A",
+            source_files=["Pkg/Sources/A.swift"],
+            expected_cluster_symbols=["VeryUniqueSymbol"],
+        )
+        rec = _rec(
+            cluster_id="exact-duplicates:Pkg/Sources/A.swift+Other/B.swift",
+            query="exact-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, [])])
+
+    def test_symbol_gate_with_empty_signals_falls_back_to_substring_when_symbol_matches(self):
+        # Layered fallback: when expected_substrate_signals is empty (defense-
+        # in-depth path) but expected_cluster_symbols matches, the binding
+        # fires via the symbol_matches fallback inside the signal-prefer rule.
+        plant = _plant(
+            plant_id="A",
+            source_files=["Pkg/Sources/A.swift"],
+            expected_substrate_signals=[],
+            expected_cluster_symbols=["A.swift"],
+        )
+        rec = _rec(
+            cluster_id="exact-duplicates:Pkg/Sources/A.swift+...",
+            query="exact-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant])
+        self.assertEqual(bindings, [(rec, ["A"])])
+
+    def test_cross_lens_restraints_both_bind(self):
+        # Cross-lens restraints (Plants 3R and 5R) share both source_files
+        # and expected_cluster_symbols (both point at PlaylistStubs). The
+        # symbol gate admits both plants — methodology §9 says both score
+        # identically on any given rec, so cross-lens parity is preserved.
+        shared_symbols = ["Breakpoint.stub", "Talkset.stub", "_Plant_PlaycutStub", "PlaylistStubs"]
+        shared_signals = ["function-duplicates"]
+        shared_source = "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"
+        plant_3r = _plant(
+            plant_id="3R",
+            category="default-implementation",
+            restraint=True,
+            source_files=[shared_source],
+            expected_substrate_signals=shared_signals,
+            expected_cluster_symbols=shared_symbols,
+        )
+        plant_5r = _plant(
+            plant_id="5R",
+            category="generic-parameterization",
+            restraint=True,
+            source_files=[shared_source],
+            expected_substrate_signals=shared_signals,
+            expected_cluster_symbols=shared_symbols,
+        )
+        rec = _rec(
+            cluster_id=f"function-duplicates-near:Playlist:{shared_source}:58:Breakpoint.stub+Playlist:{shared_source}:75:Talkset.stub",
+            query="function-duplicates",
+        )
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["3R", "5R"])])
 
 # ─── score_all (per-rec scoring) ──────────────────────────────────────────
 
@@ -1168,6 +1322,7 @@ class CLISmokeTests(unittest.TestCase):
                     category: extract-to-common
                     source_files: ["Pkg/A.swift"]
                     expected_substrate_signals: ["exact-duplicates"]
+                    expected_cluster_symbols: ["Pkg/A.swift"]
                     primary_answer:
                       category: extract-to-common
                       specifics: {}
