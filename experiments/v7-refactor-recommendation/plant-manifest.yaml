@@ -33,6 +33,16 @@
 #
 # Phase A.3 schema (per `docs/refactor-recommendation-experiment-plant-manifest.md` and methodology §8 rubric):
 #   expected_substrate_signals  — non-empty list of query names the plant should surface in
+#   expected_cluster_symbols    — round-2 binding-artifact v2 (#86): non-empty list of non-empty literal
+#                                 substrings the cluster_id MUST contain for a (rec, plant) binding to be
+#                                 admitted. Acts as a hard gate between substring-match (on source_files)
+#                                 and signal-prefer (on expected_substrate_signals) in
+#                                 `score_all.py::bind_recs_to_plants`. Disambiguates plants that share a
+#                                 source_file but plant different symbol shapes (Plant 3.1 vs 5.1 on
+#                                 HSBColor.swift), and blocks incidental bindings where the cluster
+#                                 substring-matches a source_file but doesn't surface the plant's symbol
+#                                 (Plant 1R's DebugHUD.swift / DebugMetricsProvider bindings). Validator
+#                                 rule 9j enforces non-empty list of non-empty strings.
 #   primary_answer
 #     category                  — one of CATEGORIES ∪ {"no-action"} (no-action iff restraint=true)
 #     specifics                 — non-empty dict matching the per-category schema in

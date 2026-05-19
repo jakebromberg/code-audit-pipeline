@@ -7,6 +7,7 @@
 - `plant_id` matches the [§5 numbering in the methodology doc](refactor-recommendation-experiment-methodology.md#plant-design).
 - `source_type` names the real wxyc-ios-64 declaration the plant derives from (drawn from the isolated-source set per the [V6 procedure](wxyc-ios-64-experiment-plant-manifest.md#isolated-source-set)).
 - `expected_substrate_signals` is the set of query names the plant should surface in.
+- `expected_cluster_symbols` (round-2, [#86](https://github.com/jakebromberg/code-audit-pipeline/issues/86)) is the non-empty list of literal substrings that the rec's `cluster_id` MUST contain for a (rec, plant) binding to be admitted. Acts as a hard gate between substring-match (on `source_files`) and signal-prefer (on `expected_substrate_signals`) in `score_all.py::bind_recs_to_plants`. Disambiguates plants that share a source_file but plant different symbol shapes, and blocks incidental bindings where the cluster substring-matches a source_file but doesn't surface the plant's symbol. Validator rule 9j enforces non-empty list of non-empty strings.
 - `primary_answer`, `alternative_answers`, `wrong_answers` follow the [§8 rubric schema](refactor-recommendation-experiment-methodology.md#scoring-rubric).
 - `specifics_tolerance` defines what counts as "within tolerance" for the auto-scorer; missing fields are treated as required.
 
