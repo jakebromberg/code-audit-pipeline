@@ -60,14 +60,14 @@ The 4 plants missing in S2 (`1.2`, `1.3`, `1.4`, `5.1`) are a separate finding: 
 
 ## 4. Panel coverage + inter-rater stats
 
-[`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) holds 12 panel-routed (rec × plant) pairs. All 12 are `category: "other"` cases — agent declined the taxonomy and proposed a novel action. Concentrated on Plants 3.1 (default-implementation, 6 recs) and 5.1 (generic-parameterization, 6 recs); each plant routed in all 3 trials × both conditions.
+After round-2's symbol-level binding fix (see [§4.2](#42-binding-artifact-finding-resolved-in-round-2)), [`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) holds **6** panel-routed (rec × plant) pairs (down from 12 in round 1). All 6 are `category: "other"` cases — agent declined the taxonomy and proposed a novel action — and all 6 concentrate on Plant 5.1 (generic-parameterization), spanning 3 trials × both conditions on the `HSBColor.uiColor` / `HSBColor.nsColor` cluster. The 6 round-1 Plant 3.1 panel rows were dropped by the symbol gate (they were the false-binding co-attribution documented in §4.2).
 
-Auto-scoring rate (auto-scored fraction = 1 − panel-route fraction):
+Auto-scoring rate (auto-scored fraction = 1 − panel-route fraction), computed against the post-round-2 `scored` and `panel_routed` artifacts:
 
 | Condition | Scored pairs | Panel-routed | Auto-scoring rate |
 |---|---|---|---|
-| S1 | 291 | 6 | 97.9% |
-| S2 | 473 | 6 | 98.7% |
+| S1 | 192 | 3 | 98.4% |
+| S2 | 329 | 3 | 99.1% |
 
 Methodology §14.3 sets the acceptance bar at "auto-scored fraction ≥ 50%" (equivalently panel-route ≤ 50%). Both conditions pass with two orders of magnitude of headroom — the rubric covers what it intends to cover.
 
@@ -113,25 +113,25 @@ Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decis
 
 ## 5. Restraint plants — false-positive breakdown
 
-Per the methodology §9 restraint table, restraint plants score under their own rubric. The 5 restraint plants (1R, 2R, 3R, 4R, 5R) produced these per-condition outcomes:
+Per the methodology §9 restraint table, restraint plants score under their own rubric. The 5 restraint plants (1R, 2R, 3R, 4R, 5R) produced these per-condition outcomes under the round-2 symbol gate:
 
 | Plant | S1 best | S2 best | Action recs observed? |
 |---|---|---|---|
-| 1R (extract-to-common) | 0.5 (no-action ungrounded) | 0.5 (no-action ungrounded) | **Yes** — recommended `extract-to-common` on the sample-app mirror |
+| 1R (extract-to-common) | 0.5 (no-action ungrounded) | 0.5 (no-action ungrounded) | No (after round-2 symbol gate) |
 | 2R (protocol-inheritance) | (no recs in S1) | 1.0 (no-action grounded) | No |
 | 3R (default-implementation) | 0.5 | 0.5 | No |
 | 4R (pat-introduction) | 1.0 (no-action grounded) | 0.5 (no-action ungrounded) | No |
 | 5R (generic-parameterization) | 0.5 | 0.5 | No |
 
-**FPR = 1/5 = 0.200** under both conditions. The one false-positive is Plant 1R: the agent recommended `extract-to-common` on the `_Plant_CacheClientConfig.swift` / `_Plant_CacheClientConfigMock.swift` pair across multiple trials, ignoring the `is_test` / `_Plant_*Mock` context. This is the canonical context-blind failure mode methodology §14.2 flags (informed vs. context-blind FP).
+**FPR = 0/5 = 0.000** under both conditions after round 2 (see [§4.2](#42-binding-artifact-finding-resolved-in-round-2) and [rubric-modifications.md](rubric-modifications.md)). The round-1 headline of 0.200 came entirely from Plant 1R's incidental `DebugMetricsProvider` bindings on `DebugHUD.swift` — clusters that substring-matched Plant 1R's source file but did NOT surface its planted `MetricRow` symbol. The symbol gate (`expected_cluster_symbols: ["MetricRow"]`) blocks those bindings; the 30 remaining Plant 1R bindings all receive `no-action` from the agent, so the restraint's per-cell FPR is 0.0 in all 6 (condition, trial) cells.
 
-A quick rationale check on Plant 1R's S2 recs: the agent's rationale cites that one file is a mock copy of the other, but treats this as motivation to consolidate rather than as a restraint signal. The decision rule the prompt requires (`is_test == true` → factor against action) is partially observed (the agent acknowledges test-ness) but not load-bearing in the agent's recommendation. This is round-2 prompt-tightening work, not a substrate-side gap.
+The agent's behavior on Plant 1R's canonical `MetricRow` clusters was already correct in round 1 (no-action, `reason_class: "sample-app-mirror"`); the round-1 closeout's A3 prompt edit (`is_test=true | is_mock=true | is_sample_app=true` on ANY participating record now treated as load-bearing) is forward-looking methodology infrastructure whose measurable effect would land if a future restraint plant produces clusters the symbol gate doesn't reach.
 
 ## 6. Variance across trials
 
 Trial-to-trial variance is small. Per (condition, category) cell, the trial-1/trial-2/trial-3 canonical recall values agree to within 0.1 in 14 of 15 cells, and exactly in 11 of 15 cells. No V4-style batching-variance signature (methodology §14.4) is observed — the per-rec count and per-rec category mix are stable across trials, consistent with the substrate-emitted `cluster_id` (issue #5) prerequisite having landed before Phase D.
 
-The one cell with non-trivial trial variance: S2 default-implementation, where Plant 3.1 scored 1.0 in trial 1, 0.0 in trial 2, 1.0 in trial 3. The trial-2 dip is genuine trial-to-trial agent variance — the agent didn't surface Plant 3.1's `init(hue:saturation:brightness:)` default-impl refactor on that pass (all 11 scored pairs for Plant 3.1 in S2 trial 2 land at 0.0, including the panel-resolved HSBColor "other" rec at 0.0 from the [§4.2 false binding](#42-binding-artifact-finding)).
+The one cell with non-trivial trial variance: S2 default-implementation, where Plant 3.1 scored 1.0 in trial 1, 0.0 in trial 2, 1.0 in trial 3. The trial-2 dip is genuine trial-to-trial agent variance — the agent didn't surface Plant 3.1's `init(hue:saturation:brightness:)` default-impl refactor on that pass (both of Plant 3.1's S2-trial-2 scored pairs land at 0.0 under the round-2 symbol gate; the round-1 panel-resolved HSBColor "other" rec that previously contributed to this cell was a false binding now dropped by the gate per [§4.2](#42-binding-artifact-finding-resolved-in-round-2)).
 
 ## 7. Sensitivity to specifics-tolerance (round 1 scope)
 
@@ -143,11 +143,10 @@ For the round-1 headline numbers, the key-only assumption holds: every rec that 
 
 ## 8. Known limitations
 
-- **Plant 1.4 does not surface under either condition.** Its planted clusters' substring presence in V7 query outputs is the diagnostic — Plant 1.4 is placed in clusters the V7 substrate doesn't currently catalog. Round 3 either re-places it or extends the substrate to catalog the missing shape. (Plant 5.4 — previously listed alongside 1.4 — does surface: 2 clusters under the round-1 closeout rule, 6 under round 2's symbol gate, both pointing at `_Plant_IntCache` / `_Plant_StringCache`.)
+- **Plant 1.4 does not surface under either condition.** Pre-populated with `expected_cluster_symbols: ["SystemQualityClock", "SystemClock"]` per methodology §10 discipline, but its source files don't surface in any V7 cluster_id — the V7 substrate doesn't currently catalog the planted shape. Round-3 substrate work can re-place or replace it. (Plant 5.4 — previously listed alongside 1.4 — does surface: 2 clusters under the round-1 closeout rule, 6 under round 2's symbol gate, both pointing at `_Plant_IntCache` / `_Plant_StringCache`.)
 - **Plant 1R restraint false-positive (resolved in round 2).** Round-1 audit showed the agent already emits `no-action` with `reason_class: "sample-app-mirror"` on Plant 1R's two canonical clusters; the 1.0 per-cell FPR came from incidental bindings — `DebugMetricsProvider` clusters in `DebugHUD.swift` (Plant 1R's source file) that aren't about MetricRow. Round 2's symbol-level binding fix ([rubric-modifications.md](rubric-modifications.md)) gates Plant 1R bindings on the `MetricRow` symbol, eliminating the incidental DebugMetricsProvider bindings. Plant 1R per-cell FPR is 0.0 in all 6 cells. The round-1 closeout's A3 prompt edit (rule 1 of the agent prompt now treats `is_test=true | is_mock=true | is_sample_app=true` on ANY participating record as load-bearing) is forward-looking methodology infrastructure whose measurable effect would land if a future restraint plant produces clusters the symbol gate doesn't reach.
 - **Inter-rater κ undefined in round 1.** The pre-registered 3-reviewer panel ran with 1 expert reviewer in round 1 (see [§4.3](#43-inter-rater-κ) and the [`round1_deviation` block in reproducibility.yaml](reproducibility.yaml)). The `score-summary.json::inter_rater` block carries the panel-pending sentinel; round 2 recruits the missing two reviewers to populate a numeric κ over the same panel-routing artifact.
 - **Substring-match binding produces false positives (resolved in round 2).** The round-1 closeout's prefer-signal-match rule cleaned up 24 incidental false bindings. Round 2's `expected_cluster_symbols` gate closes the remaining gaps — the panel-routed Plant 3.1 / 5.1 co-binding on HSBColor and Plant 1R's structural FPR both stem from (path, query)-granularity ambiguity that symbol-level matching resolves. See [§4.2](#42-binding-artifact-finding-resolved-in-round-2) and [rubric-modifications.md](rubric-modifications.md).
-- **Plant 1.4 remains unexercised.** Pre-populated with `expected_cluster_symbols: ["SystemQualityClock", "SystemClock"]` per methodology §10 discipline, but its source files don't surface in any V7 cluster_id. Round-3 substrate work can re-place or replace it.
 - **Auto-scorer over-credit risk (key-only specifics).** Spot-check load deferred to round 2; round-1 sample confirms the over-credit is bounded for the planted clusters in this corpus.
 
 ## 9. Reproducibility
@@ -158,8 +157,8 @@ All inputs to this writeup are pinned in [`reproducibility.yaml`](reproducibilit
 - `execution.model_versions.primary` = `claude-sonnet-4-6` (alias, pin documented in `reproducibility.yaml` comment block since Anthropic did not publish a date-pinned 4.6 variant by the trial window)
 - `execution.actual_spend_usd` = $39.46 (well under the §6.3 hard cap of $120)
 - `execution.trial_date_range` = 2026-05-15 (single-day Phase D run)
-- `execution.panel_composition` = 1 internal expert reviewer (round 1; pre-registered as 3 per methodology §17 decision #3 — see `round1_deviation` block)
-- `execution.rubric_modifications` = null (no post-hoc rubric edits in round 1)
+- `execution.panel_composition` = 1 internal expert reviewer (round 1; pre-registered as 3 per methodology §17 decision #3 — see `round1_deviation` block); `panel_composition.round2_methodology_update` records the round-2 symbol-gate addition (see [rubric-modifications.md](rubric-modifications.md))
+- `execution.rubric_modifications` = [`experiments/v7-refactor-recommendation/rubric-modifications.md`](rubric-modifications.md) (round 2 added `expected_cluster_symbols`; round 1 carried no post-hoc edits)
 
 Re-running [`score_all.py`](score_all.py) against the same parsed cache + the committed `analyses/panel-scores.jsonl` reproduces [`analyses/auto-scores.json`](analyses/auto-scores.json) and [`analyses/score-summary.json`](analyses/score-summary.json) byte-for-byte (verified with `md5sum` across two consecutive runs). Reproducing the headline without panel scores: rename `analyses/panel-scores.jsonl` aside and rerun — `inter_rater` falls back to the "panel scores file not present" sentinel, and `promote_panel_scores` is a no-op so the headline reverts to the auto-scored-only `S1=0.255 / S2=0.615`.
 
