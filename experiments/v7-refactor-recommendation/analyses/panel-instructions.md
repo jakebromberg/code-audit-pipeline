@@ -112,7 +112,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 
 ```json
 {
-  "fleiss_kappa": null,                      // null when m<2, n_judgments<2, uneven coverage, or sentinel path
+  "fleiss_kappa": 1.0,                        // numeric when m≥2 and coverage is full; degenerate (1.0 or 0.0) at n_judgments=1; null on sentinel paths (see below)
   "n_judgments": 1,                           // distinct (plant_id, cluster_id) cells after orphan filter
   "n_raters": 3,                              // unique reviewer IDs seen in panel-scores
   "judgments": [
@@ -129,7 +129,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 }
 ```
 
-`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., one reviewer missed a row). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, reviewer coverage is uneven at the judgment level (some reviewer didn't score some judgment at all — Fleiss κ requires every item rated by exactly m raters), or — for the collapsed κ — only one distinct judgment exists.
+`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., one reviewer missed a row). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, or reviewer coverage is uneven at the judgment level (some reviewer didn't score some judgment at all — Fleiss κ requires every item rated by exactly m raters). At `n_judgments == 1` the canonical Fleiss formula is still defined and `score_all.py` returns a numeric κ — but the value is degenerate (no across-item variance to anchor `P_e`, so the (1 - P_e) == 0 branch returns 1.0 on full agreement or 0.0 otherwise) and should be read per the bullet above: a sanity check, not a measure.
 
 ### How to interpret the two κs together
 
@@ -140,7 +140,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 | Low | High | Reviewers agree on the underlying calls but disagree on individual duplicates (prose-sensitive scoring). Calibration needed on prose vs substance — see `within_reviewer_inconsistency_count`. |
 | Low | Low | Reviewers genuinely disagree on the calls. Rubric needs round-2 work. |
 
-When the round-2 panel sitting completes, populate `inter_rater` and report it in `results.md` §4.3. `inter_rater_collapsed` will stay at the panel-pending sentinel under round 2's single-judgment configuration; the per-judgment diagnostics (`within_reviewer_inconsistency_count`, `reviewer_variance`) carry the cross-reviewer agreement signal. If `inter_rater` comes back surprisingly low while the diagnostics show consistent per-reviewer medians, that's a methodology gap to log in `rubric-modifications.md`.
+When the round-2 panel sitting completes, populate `inter_rater` and report it in `results.md` §4.3. Under round 2's single-judgment configuration (N=1), `inter_rater_collapsed.fleiss_kappa` will be numeric but degenerate — read the per-judgment diagnostics (`within_reviewer_inconsistency_count`, `reviewer_variance`) for the cross-reviewer agreement signal rather than the κ value itself. If `inter_rater` comes back surprisingly low while the diagnostics show consistent per-reviewer medians, that's a methodology gap to log in `rubric-modifications.md`.
 
 The concentration on Plant 5.1 (after the round-2 symbol gate dropped Plant 3.1's false binding) is itself a finding: the agent consistently classifies HSBColor.uiColor / HSBColor.nsColor as "other" rather than as generic-parameterization. The plant manifest's category attribution may be too narrow for what the agent is seeing in this cluster, or the agent's prompt is steering it toward novel-category responses on this platform-bridging shape. Worth a debrief discussion after panel scores land.
 
