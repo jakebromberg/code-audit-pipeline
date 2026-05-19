@@ -650,6 +650,34 @@ class FleissKappaTests(unittest.TestCase):
 # ─── attach_panel_kappa (jsonl → summary integration) ────────────────────
 
 
+def _routing_row(rec_token: str, plant_id: str, cluster_id: str,
+                 condition: str = "s1", trial: int = 1) -> dict:
+    """Build a synthetic panel-routing row matching the shape
+    `score_recommendations` produces for `scored["panel_routed"]`.
+    `attach_collapsed_panel_kappa` reads only `rec_token`, `plant_id`, and
+    `unblind.cluster_id`; the rest of the fields are present for fidelity
+    with the real shape so the fixture exercises the contract `main()` uses.
+    """
+    return {
+        "rec_token": rec_token,
+        "plant_id": plant_id,
+        "plant_category": "default-implementation",
+        "plant_restraint": False,
+        "query": "function-duplicates",
+        "rec_category": "other",
+        "rec_specifics": {},
+        "rec_rationale": "",
+        "rec_evidence_quote": "",
+        "rec_confidence": 0.5,
+        "match_reason": "other_routes_to_panel",
+        "unblind": {"cluster_id": cluster_id, "condition": condition, "trial": trial},
+    }
+
+
+def _write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
 class AttachPanelKappaTests(unittest.TestCase):
     def test_missing_file_emits_panel_pending_sentinel(self):
         summary = {}
@@ -705,36 +733,86 @@ class AttachPanelKappaTests(unittest.TestCase):
             self.assertIsNone(block["fleiss_kappa"])
             self.assertEqual(block["n_items"], 0)
 
+    def test_orphan_token_filtered_when_panel_routed_supplied(self):
+        # Round-2 binding-artifact v2 (#86) regenerates panel-routing.jsonl
+        # against the symbol gate. Round-1 panel-scores-reviewer-1.jsonl
+        # still contains tokens for dropped (rec, plant) pairs. Those tokens
+        # MUST be skipped, otherwise a Fleiss κ computed across m round-2
+        # reviewers would silently mis-compute on orphan items (which only
+        # have the round-1 reviewer's score and so don't sum to m).
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            rows = [
+                # Two surviving tokens, fully covered by 2 reviewers.
+                {"rec_token": "pr-survivor1", "reviewer": "alice", "score": 1.0},
+                {"rec_token": "pr-survivor1", "reviewer": "bob",   "score": 1.0},
+                {"rec_token": "pr-survivor2", "reviewer": "alice", "score": 0.5},
+                {"rec_token": "pr-survivor2", "reviewer": "bob",   "score": 0.5},
+                # Orphan token only has the round-1 reviewer's score; if
+                # counted as an item, it'd have m=1 ratings against an
+                # observed m=2, breaking the Fleiss precondition.
+                {"rec_token": "pr-orphan", "reviewer": "alice", "score": 0.0},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            panel_routed = [
+                _routing_row("pr-survivor1", "5.1", "c1"),
+                _routing_row("pr-survivor2", "5.1", "c2"),
+            ]
+            summary = {}
+            score_all.attach_panel_kappa(summary, path, panel_routed)
+            block = summary["inter_rater"]
+            # Orphan dropped → 2 items, 2 raters. κ is computable.
+            self.assertEqual(block["n_items"], 2)
+            self.assertEqual(block["n_raters"], 2)
+            self.assertIsNotNone(block["fleiss_kappa"])
+            self.assertIn("1 orphan rec_token", block["note"])
+
+    def test_orphan_skip_surfaces_in_panel_pending_note(self):
+        # When the surviving rec_tokens are below the m≥2 threshold (only
+        # one reviewer), the orphan count must still surface in the note —
+        # methodology discipline says any data drop is reported.
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            rows = [
+                {"rec_token": "pr-survivor", "reviewer": "alice", "score": 1.0},
+                {"rec_token": "pr-orphan", "reviewer": "alice", "score": 0.0},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            panel_routed = [_routing_row("pr-survivor", "5.1", "c1")]
+            summary = {}
+            score_all.attach_panel_kappa(summary, path, panel_routed)
+            block = summary["inter_rater"]
+            self.assertIsNone(block["fleiss_kappa"])
+            self.assertEqual(block["n_items"], 1)
+            self.assertEqual(block["n_raters"], 1)
+            self.assertIn("requires ≥2", block["note"])
+            self.assertIn("1 orphan rec_token", block["note"])
+
+    def test_panel_routed_none_preserves_legacy_no_filter_behavior(self):
+        # When `panel_routed` is None (default), no orphan-filtering happens
+        # — preserves the legacy contract for callers that don't have the
+        # in-memory list available (or want the unfiltered count).
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores.jsonl"
+            rows = [
+                {"rec_token": "pr-aaaa", "reviewer": "alice", "score": 1.0},
+                {"rec_token": "pr-aaaa", "reviewer": "bob",   "score": 1.0},
+                # Same shape that would be "orphan" if filtering were on.
+                {"rec_token": "pr-orphan", "reviewer": "alice", "score": 0.0},
+                {"rec_token": "pr-orphan", "reviewer": "bob",   "score": 0.0},
+            ]
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+            summary = {}
+            score_all.attach_panel_kappa(summary, path)  # no panel_routed arg
+            block = summary["inter_rater"]
+            # Both tokens kept → 2 items.
+            self.assertEqual(block["n_items"], 2)
+            self.assertEqual(block["n_raters"], 2)
+            self.assertIsNotNone(block["fleiss_kappa"])
+            self.assertIsNone(block.get("note"))
+
 
 # ─── attach_collapsed_panel_kappa (judgment-level κ) ──────────────────────
-
-
-def _routing_row(rec_token: str, plant_id: str, cluster_id: str,
-                 condition: str = "s1", trial: int = 1) -> dict:
-    """Build a synthetic panel-routing row matching the shape
-    `score_recommendations` produces for `scored["panel_routed"]`.
-    `attach_collapsed_panel_kappa` reads only `rec_token`, `plant_id`, and
-    `unblind.cluster_id`; the rest of the fields are present for fidelity
-    with the real shape so the fixture exercises the contract `main()` uses.
-    """
-    return {
-        "rec_token": rec_token,
-        "plant_id": plant_id,
-        "plant_category": "default-implementation",
-        "plant_restraint": False,
-        "query": "function-duplicates",
-        "rec_category": "other",
-        "rec_specifics": {},
-        "rec_rationale": "",
-        "rec_evidence_quote": "",
-        "rec_confidence": 0.5,
-        "match_reason": "other_routes_to_panel",
-        "unblind": {"cluster_id": cluster_id, "condition": condition, "trial": trial},
-    }
-
-
-def _write_jsonl(path: Path, rows: list[dict]) -> None:
-    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
 
 
 class AttachCollapsedPanelKappaTests(unittest.TestCase):
