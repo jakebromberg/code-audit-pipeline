@@ -637,13 +637,33 @@ def fleiss_kappa(ratings_per_item: list[dict[str, int]], *, m: int) -> float:
     return (P_bar - P_e) / (1 - P_e)
 
 
-def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
+def attach_panel_kappa(
+    summary: dict,
+    panel_scores_path: Path,
+    panel_routed: list[dict] | None = None,
+) -> dict:
     """Load `panel-scores.jsonl` (one row per (rec_token, reviewer, score))
     and populate `summary["inter_rater"]` with Fleiss κ. The score buckets
     from methodology §8 form the rating categories.
 
     If `panel_scores_path` does not exist or is empty, leaves `inter_rater`
     as null with an explanatory note.
+
+    `panel_routed` is the in-memory list of panel-routing rows
+    (`scored["panel_routed"]` from `score_recommendations`). When supplied,
+    rec_tokens in `panel_scores_path` that no longer correspond to a panel-
+    routing row are dropped from the κ computation and counted in the
+    structured note. This is the round-2 binding-artifact v2 (#86)
+    consequence: regenerating panel-routing.jsonl against the symbol gate
+    can leave orphan rec_tokens in `panel-scores-reviewer-*.jsonl` (e.g.,
+    the 6 Plant 3.1 panel scores from round 1's `panel-scores-reviewer-1.
+    jsonl` no longer map after the gate). Counting orphans as items would
+    silently mis-compute κ when round-2 reviewers land: orphan items would
+    have m-1 fewer ratings than the surviving items, violating Fleiss κ's
+    "every item rated by exactly m raters" precondition.
+
+    Pass `None` (the default) to preserve legacy behavior — every distinct
+    rec_token in the panel-scores file counts as a Fleiss κ item.
     """
     if not panel_scores_path.exists():
         summary["inter_rater"] = {
@@ -653,8 +673,12 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
             "note": f"panel scores file not present at {panel_scores_path}; populate after panel sitting",
         }
         return summary
+    valid_tokens: set[str] | None = (
+        {row["rec_token"] for row in panel_routed} if panel_routed is not None else None
+    )
     by_token: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     reviewers: set[str] = set()
+    orphan_tokens: set[str] = set()
     with panel_scores_path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -663,26 +687,36 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
             row = json.loads(line)
             token = row["rec_token"]
             reviewer = row["reviewer"]
+            if valid_tokens is not None and token not in valid_tokens:
+                orphan_tokens.add(token)
+                continue
             score = str(row["score"])  # category bucket key
             by_token[token][score] += 1
             reviewers.add(reviewer)
     m = len(reviewers)
     items = [dict(counts) for counts in by_token.values()]
+    note_parts: list[str] = []
+    if orphan_tokens:
+        note_parts.append(
+            f"{len(orphan_tokens)} orphan rec_token(s) in panel-scores had no matching panel-routing row; skipped"
+        )
     if not items or m < 2:
         # Fleiss κ requires ≥2 raters per item to be defined. A 0- or
         # 1-reviewer file is a partial-panel state, not a κ value — emit a
         # structured sentinel so downstream consumers (results.md) can show
         # "panel pending" rather than crash on a ZeroDivisionError.
-        note = (
+        base_note = (
             "panel scores file is empty or has no reviewers"
             if not items
             else f"only {m} reviewer(s) present; Fleiss κ requires ≥2"
         )
+        if note_parts:
+            base_note = base_note + "; " + "; ".join(note_parts)
         summary["inter_rater"] = {
             "fleiss_kappa": None,
             "n_items": len(items),
             "n_raters": m,
-            "note": note,
+            "note": base_note,
         }
         return summary
     kappa = fleiss_kappa(items, m=m)
@@ -691,6 +725,7 @@ def attach_panel_kappa(summary: dict, panel_scores_path: Path) -> dict:
         "n_items": len(items),
         "n_raters": m,
         "score_buckets": sorted({k for counts in items for k in counts}),
+        "note": "; ".join(note_parts) if note_parts else None,
     }
     return summary
 
@@ -1034,7 +1069,14 @@ def main(argv: list[str] | None = None) -> int:
     scored = score_recommendations(parsed_records, plants, rubric)
     promote_panel_scores(scored, args.panel_scores)
     summary = aggregate_summary(scored, plants)
-    attach_panel_kappa(summary, args.panel_scores)
+    # Both κ functions receive the in-memory `panel_routed` list so they
+    # filter orphan rec_tokens identically — rows in panel-scores.jsonl
+    # whose tokens no longer appear in the regenerated panel-routing.jsonl
+    # (e.g., round-1 Plant 3.1 panel scores after the round-2 symbol gate
+    # drops Plant 3.1's binding to the HSBColor cluster). Counting orphans
+    # would silently mis-compute Fleiss κ once round-2 reviewers land,
+    # because orphan items would have fewer ratings than surviving items.
+    attach_panel_kappa(summary, args.panel_scores, scored["panel_routed"])
     # The collapsed-κ block reduces the panel-routed rec rows to distinct
     # (plant_id, cluster_id) judgments (round-1 panel is duplicated across
     # (condition, trial)) and computes κ over the median per judgment-reviewer
