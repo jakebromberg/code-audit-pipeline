@@ -29,6 +29,10 @@ Checks performed:
      i. wrong_answers convention enforcement: canonical plants must include 'no-action' as a
         wrong-answer (an agent emitting no-action on a canonical is a false negative); restraint
         plants must include the canonical's own category as a wrong-answer (the textbook FP mode).
+     j. expected_cluster_symbols is a non-empty list of non-empty strings. Round-2 binding-artifact
+        v2 (#86) gates plant ↔ cluster bindings on planted-symbol substring membership in cluster_id;
+        an empty list or empty-string entry would defeat the gate (an empty string substring-matches
+        every cluster_id), so both are rejected.
  10. Specifics-keys schema (Phase A.4, sub-issue #27 — catches schema drift from agent-prompt.md §2):
      a. primary_answer.specifics keys are a SUPERSET of `rubric.specifics_schemas[category].required`.
      b. primary_answer.specifics has NO unknown keys beyond the schema's required set (catches typos
