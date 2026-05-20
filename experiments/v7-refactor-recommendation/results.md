@@ -129,7 +129,7 @@ For reference, the current (pending) sentinels (note text shortened for readabil
 {"fleiss_kappa": null, "n_judgments": 1, "n_raters": 1, "within_reviewer_inconsistency_count": 0, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
 ```
 
-The current sentinel's `n_items: 6 / n_judgments: 1` reflects only the round-1 HSBColor judgment that the single reviewer scored — `score_all.py::attach_*_kappa` count over the SCORED subset of `panel-routing.jsonl`, not the full backlog. Once reviewer-1 extends to the 23 new judgments and reviewer-2/3 contribute, the sentinels promote to numeric κ over the full 29-judgment population. Round 1's `within_reviewer_inconsistency_count == 0` (single reviewer, scored all 6 duplicates of Plant 5.1's HSBColor judgment identically) confirms substance-only scoring at the round-1 corpus size; whether that holds at N=29 is one of the round-2 finalization's main signals.
+The current sentinel's `n_items: 6 / n_judgments: 1` reflects only the round-1 HSBColor judgment that the single reviewer scored — `score_all.py::attach_*_kappa` count over the SCORED subset of `panel-routing.jsonl`, not the full backlog. Once reviewer-1 extends to the remaining 28 judgments (29 distinct total − the 1 round-1 HSBColor judgment already scored) and reviewer-2/3 contribute, the sentinels promote to numeric κ over the full 29-judgment population. Round 1's `within_reviewer_inconsistency_count == 0` (single reviewer, scored all 6 duplicates of Plant 5.1's HSBColor judgment identically) confirms substance-only scoring at the round-1 corpus size; whether that holds at N=29 is one of the round-2 finalization's main signals.
 
 ## 5. Restraint plants — false-positive breakdown
 
