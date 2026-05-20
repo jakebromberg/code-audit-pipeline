@@ -29,6 +29,69 @@ from harness.checks import (  # noqa: E402
 )
 
 
+class TestExtractPromptBody(unittest.TestCase):
+    """`extract_prompt_body` returns (§1 instructions, §2+§2.1 specifics).
+
+    v1 has no §2.1 — specifics is byte-identical to the §2 JSON block.
+    v2 has §2.1 worked-example prose — appended to specifics under a
+    "Worked examples (synthetic, illustrative):" header so render() carries
+    them into the user-message body the agent sees at trial time. Without
+    this, the §2.1 pre-registered manipulation never reaches the agent.
+    """
+
+    DOC_V1 = (
+        "preamble\n"
+        "```\nINSTR\n```\n"
+        "between\n"
+        "```json\n{\"k\": \"v\"}\n```\n"
+        "## 3. Next\nfoo\n"
+    )
+    DOC_V2 = (
+        "preamble\n"
+        "```\nINSTR\n```\n"
+        "## 2. Schemas\n"
+        "```json\n{\"k\": \"v\"}\n```\n"
+        "## 2.1 Worked examples (synthetic, illustrative)\n\n"
+        "Example body paragraph.\n\n"
+        "## 3. Next\nfoo\n"
+    )
+
+    def test_v1_specifics_is_just_json_block(self):
+        instr, spec = prompt.extract_prompt_body(self.DOC_V1)
+        self.assertEqual(instr, "INSTR")
+        self.assertEqual(spec, '{"k": "v"}')
+        self.assertNotIn("Worked examples", spec)
+
+    def test_v2_specifics_appends_section_2_1(self):
+        instr, spec = prompt.extract_prompt_body(self.DOC_V2)
+        self.assertEqual(instr, "INSTR")
+        self.assertTrue(spec.startswith('{"k": "v"}'))
+        self.assertIn("Worked examples (synthetic, illustrative):", spec)
+        self.assertIn("Example body paragraph.", spec)
+
+    def test_v1_file_byte_identical_section_1(self):
+        v1 = (REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt.md").read_text()
+        v2 = (REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt-v2.md").read_text()
+        v1_instr, _ = prompt.extract_prompt_body(v1)
+        v2_instr, _ = prompt.extract_prompt_body(v2)
+        self.assertEqual(v1_instr, v2_instr,
+                         "v2 §1 must be byte-identical to v1 per the pre-registration")
+
+    def test_v2_file_carries_worked_example_identifiers(self):
+        v2 = (REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt-v2.md").read_text()
+        _, spec = prompt.extract_prompt_body(v2)
+        # Sentinels from the five §2.1 worked examples (one per action category).
+        for sentinel in (
+            "BridgeFoundation",     # extract-to-common
+            "MathReducer",          # protocol-inheritance
+            "BridgeTransport",      # default-implementation
+            "ScopedVault",          # pat-introduction
+            "MergeableMetric",      # generic-parameterization
+        ):
+            self.assertIn(sentinel, spec,
+                          f"{sentinel!r} from §2.1 must reach the rendered prompt")
+
+
 class TestFenceExtraction(unittest.TestCase):
     def test_bare_array(self):
         text = '[{"cluster_id": "x", "category": "no-action"}]'
