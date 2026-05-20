@@ -69,20 +69,22 @@ The 4 plants missing in S2 (`1.2`, `1.3`, `1.4`, `5.1`) are a separate finding: 
 
 ## 4. Panel coverage + inter-rater stats
 
-After round-2's symbol-level binding fix (see [§4.2](#42-binding-artifact-finding-resolved-in-round-2)), [`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) holds **6** panel-routed (rec × plant) pairs (down from 12 in round 1). All 6 are `category: "other"` cases — agent declined the taxonomy and proposed a novel action — and all 6 concentrate on Plant 5.1 (generic-parameterization), spanning 3 trials × both conditions on the `HSBColor.uiColor` / `HSBColor.nsColor` cluster. The 6 round-1 Plant 3.1 panel rows were dropped by the symbol gate (they were the false-binding co-attribution documented in §4.2).
+After round-2's symbol-level binding fix ([§4.2](#42-binding-artifact-finding-resolved-in-round-2)) and value-aware specifics matching ([§7](#7-sensitivity-to-specifics-tolerance-resolved-in-round-2)), [`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) holds **108** panel-routed (rec × plant) rows — 6 `other_routes_to_panel` cases (agent declined the taxonomy and proposed a novel action, all 6 on the round-1 Plant 5.1 HSBColor cluster preserved through both round-2 corrections) plus 102 `primary_match_specifics_outside_tolerance` cases new under value-aware scoring (agent identified the category correctly but emitted specifics values that disagreed verbatim with the manifest's `primary_answer.specifics`). The 108 rows span 17 plants and **29 distinct `(plant_id, cluster_id)` judgments**.
 
-Auto-scoring rate (auto-scored fraction = 1 − panel-route fraction), computed against the post-round-2 `scored` and `panel_routed` artifacts:
+Auto-scoring rate (auto-scored fraction = 1 − panel-route fraction), computed against the post-round-2 `scored` + `panel_routed` artifacts (denominator is `scored.size` per condition; numerator is `scored.size` − `panel_routed` count, consistent with the [TL;DR's](#tldr) panel-route rate column):
 
-| Condition | Scored pairs | Panel-routed | Auto-scoring rate |
+| Condition | Scored | Panel-routed | Auto-scoring rate |
 |---|---|---|---|
-| S1 | 192 | 3 | 98.4% |
-| S2 | 329 | 3 | 99.1% |
+| S1 | 192 | 26 | 86.5% |
+| S2 | 329 | 82 | 75.1% |
 
-Methodology §14.3 sets the acceptance bar at "auto-scored fraction ≥ 50%" (equivalently panel-route ≤ 50%). Both conditions pass with two orders of magnitude of headroom — the rubric covers what it intends to cover.
+Methodology §14.3 sets the acceptance bar at "auto-scored fraction ≥ 50%" (equivalently panel-route ≤ 50%). Both conditions pass; S2 carries the heavier panel load — value-aware specifics matching shifted most of the round-1 substrate-enrichment signal into the panel-routed bucket on the V7-only queries (per the [TL;DR](#tldr) and [§7](#7-sensitivity-to-specifics-tolerance-resolved-in-round-2)). The round-1 "two orders of magnitude of headroom" framing no longer applies — the headroom over the §14.3 threshold is now ~37 pp (S1) / ~25 pp (S2), respectable but no longer enormous.
 
-### 4.1 Round-1 panel-sitting outcome
+### 4.1 Round-1 panel-sitting outcome (historical — do not update)
 
-All 12 routed recs concentrate on a single cluster: the `HSBColor.uiColor` ↔ `HSBColor.nsColor` near-duplicate (Jaccard 0.71) inside `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`. The agent's recommendation across all (condition, trial) combinations is the same in substance — extract a private HSB-to-color helper, or use `#if canImport(UIKit)/#if canImport(AppKit)` conditional compilation, and decline the named taxonomy categories on the grounds that `UIColor` and `NSColor` are unrelated nominal types.
+Preserved for reproducibility-stack continuity per the same convention as [`analyses/panel-instructions.md`](analyses/panel-instructions.md) §6.1. The round-1 panel-routing artifact (12 rows, pre-symbol-gate) was scored under the [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml)'s single-reviewer regime; the scores below remain the round-1 truth for that artifact. Round-2 corrections rebuilt `panel-routing.jsonl` from the regenerated `scored`/`panel_routed` artifacts (see [§4](#4-panel-coverage--inter-rater-stats) preamble and [§4.3](#43-inter-rater-κ--two-granularities)); this subsection is not a description of the current panel-routing.jsonl.
+
+All 12 round-1 routed recs concentrated on a single cluster: the `HSBColor.uiColor` ↔ `HSBColor.nsColor` near-duplicate (Jaccard 0.71) inside `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`. The agent's recommendation across all (condition, trial) combinations was the same in substance — extract a private HSB-to-color helper, or use `#if canImport(UIKit)/#if canImport(AppKit)` conditional compilation, and decline the named taxonomy categories on the grounds that `UIColor` and `NSColor` are unrelated nominal types.
 
 Panel scoring assigned each routed pair one of two values:
 
@@ -103,22 +105,31 @@ The round-1 closeout ([round-1-closeout plan](../../plans/v7-phase-e-round1-clos
 
 ### 4.3 Inter-rater κ — two granularities
 
-Round 1 used a single expert reviewer (`analyses/panel-scores-reviewer-1.jsonl`); the pre-registered design called for 3 (methodology §17 decision #3). The [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml) records the rationale: the 12 round-1 routed pairs reduced to two distinct judgements (Plant 5.1 binding adjacent-defensible; Plant 3.1 binding false-positive), so the methodology overhead of two more reviewers was disproportionate at this corpus size. Round 2's symbol gate (§4.2) drops the Plant 3.1 panel rows; the regenerated `panel-routing.jsonl` carries 6 surviving rows (all Plant 5.1) and the 6 round-1 Plant 3.1 panel scores become orphan rec_tokens. Round 2 adds the missing reviewers — same regenerated `panel-routing.jsonl`, two new `panel-scores-reviewer-N.jsonl` files concatenated into the consolidated file, then `score_all.py` populates **both** `inter_rater.fleiss_kappa` (rec-level) and `inter_rater_collapsed.fleiss_kappa` (judgment-level). Both functions filter orphan rec_tokens identically and surface the orphan count in the structured note (see [score_all.py::attach_panel_kappa](score_all.py) and [::attach_collapsed_panel_kappa](score_all.py)).
+Round 1 used a single expert reviewer (`analyses/panel-scores-reviewer-1.jsonl`); the pre-registered design called for 3 (methodology §17 decision #3). The [`reproducibility.yaml` `round1_deviation` block](reproducibility.yaml) records the rationale: the 12 round-1 routed pairs reduced to two distinct judgements (Plant 5.1 binding adjacent-defensible; Plant 3.1 binding false-positive), so the methodology overhead of two more reviewers was disproportionate at the round-1 corpus size. Round 2's two corrections changed the picture meaningfully: the symbol gate (§4.2) dropped the Plant 3.1 panel rows, and value-aware specifics matching (§7) routed 102 new `primary_match_specifics_outside_tolerance` rows to panel — growing the backlog from 6 surviving rows / 1 distinct judgment to **108 rows / 29 distinct `(plant_id, cluster_id)` judgments**. Round 2 adds the missing reviewers — same regenerated `panel-routing.jsonl`, two new `panel-scores-reviewer-N.jsonl` files concatenated into the consolidated file, then `score_all.py` populates **both** `inter_rater.fleiss_kappa` (rec-level) and `inter_rater_collapsed.fleiss_kappa` (judgment-level). Both functions filter orphan rec_tokens identically and surface the orphan count in the structured note (see [score_all.py::attach_panel_kappa](score_all.py) and [::attach_collapsed_panel_kappa](score_all.py)).
 
-The 6 surviving panel rows are not 6 independent items — they're 1 distinct (plant_id, cluster_id) judgment (Plant 5.1 ↔ the HSBColor.uiColor / HSBColor.nsColor near-duplicate) duplicated across 3 trials × 2 conditions. The 6 rationale texts are linguistically distinct (the agent re-phrases per trial) but semantically identical (all 6 propose the same private-helper refactor). A reviewer scoring on substance gives 6/6 the same value; a reviewer scoring on prose granularity might vary. Round-1 closeout therefore added a second κ measure to `score_all.py` — see [`analyses/panel-instructions.md` §6](analyses/panel-instructions.md#6-round-2-panel-coverage-post-symbol-gate-and-the-correlated-items-caveat) for the interpretation rules:
+The 108 panel rows are not 108 independent items — they reduce to 29 distinct (plant_id, cluster_id) judgments. Within most judgments the rows are duplicates: the same cluster surfaced under multiple trials × conditions, and the agent re-phrases the rationale per trial but lands at the same substantive recommendation. A reviewer scoring on substance gives all duplicates of one judgment the same value; a reviewer scoring on prose granularity might vary. Round-1 closeout added a second κ measure to `score_all.py` for exactly this case — see [`analyses/panel-instructions.md` §6](analyses/panel-instructions.md#6-round-2-panel-coverage-post-symbol-gate-and-the-correlated-items-caveat) for the interpretation rules:
 
 - **`inter_rater`** — Fleiss κ over the surviving rec rows × N raters. Methodology §8 / §12 literal measure. Inflated if reviewers give correlated scores across duplicates.
-- **`inter_rater_collapsed`** — Fleiss κ over distinct (plant_id, cluster_id) judgments × N raters (per-(reviewer, judgment) median of the duplicates). Cleaner for round-1's correlated set, but under round 2's single distinct judgment (N=1) the κ value has essentially zero statistical power — treat the value as a sanity check and rely on the diagnostic fields (`within_reviewer_inconsistency_count`, `reviewer_variance`) for the actionable signal.
+- **`inter_rater_collapsed`** — Fleiss κ over distinct (plant_id, cluster_id) judgments × N raters (per-(reviewer, judgment) median of the duplicates). The intended primary measure for round 2: with **N=29 distinct judgments** post-#90 (vs round 1's degenerate N=1), the collapsed κ has real statistical power and is the actionable signal once the missing reviewers land.
 - **`inter_rater_collapsed.within_reviewer_inconsistency_count`** — diagnostic: number of (reviewer, judgment) cells where the reviewer scored duplicates inconsistently. High → reviewers are prose-sensitive; low → reviewers are substance-only.
 
-The current `analyses/score-summary.json` blocks carry the structured panel-pending sentinels (note text shortened for readability):
+#### Round-2 final state (placeholders — fill in when [#94](https://github.com/jakebromberg/code-audit-pipeline/issues/94) lands)
+
+`analyses/score-summary.json` still carries the round-1 sentinels — `score_all.py` computes κ over the *already-scored* panel rows, and the 102 new `primary_match_specifics_outside_tolerance` rows surfaced by #90 are awaiting [#85](https://github.com/jakebromberg/code-audit-pipeline/issues/85) reviewer recruitment. When all three reviewers have scored the regenerated `panel-routing.jsonl`, `attach_panel_kappa` / `attach_collapsed_panel_kappa` repopulate the blocks against N=108 rows / N=29 judgments × 3 raters:
+
+```json
+{"fleiss_kappa": <TBD>, "n_items": 108, "n_raters": 3, "note": null}
+{"fleiss_kappa": <TBD>, "n_judgments": 29, "n_raters": 3, "within_reviewer_inconsistency_count": <TBD>, "note": null}
+```
+
+For reference, the current (pending) sentinels (note text shortened for readability):
 
 ```json
 {"fleiss_kappa": null, "n_items": 6, "n_raters": 1, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
 {"fleiss_kappa": null, "n_judgments": 1, "n_raters": 1, "within_reviewer_inconsistency_count": 0, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
 ```
 
-Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decision rule pre-registered the recs that needed human judgement, and round 1 supplies one such judgement per rec. Round 1's `within_reviewer_inconsistency_count == 0` (the single reviewer gave the same score across all 6 duplicates of Plant 5.1's judgment) confirms substance-only scoring at the corpus size — when round-2 reviewers land, divergence between the two κ values will quantify how much of round-1's inflation was correlation-driven.
+The current sentinel's `n_items: 6 / n_judgments: 1` reflects only the round-1 HSBColor judgment that the single reviewer scored — `score_all.py::attach_*_kappa` count over the SCORED subset of `panel-routing.jsonl`, not the full backlog. Once reviewer-1 extends to the 23 new judgments and reviewer-2/3 contribute, the sentinels promote to numeric κ over the full 29-judgment population. Round 1's `within_reviewer_inconsistency_count == 0` (single reviewer, scored all 6 duplicates of Plant 5.1's HSBColor judgment identically) confirms substance-only scoring at the round-1 corpus size; whether that holds at N=29 is one of the round-2 finalization's main signals.
 
 ## 5. Restraint plants — false-positive breakdown
 
