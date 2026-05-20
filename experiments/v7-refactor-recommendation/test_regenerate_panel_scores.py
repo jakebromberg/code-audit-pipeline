@@ -64,6 +64,83 @@ class LoadReviewerFileTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, r":2:.*invalid JSON"):
                 rps.load_reviewer_file(path)
 
+    def test_null_score_raises(self):
+        """A null `score` would silently bucket as the string "None" in
+        score_all.py::attach_panel_kappa and corrupt the κ computation. The
+        consolidator validates upstream."""
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores-reviewer-1.jsonl"
+            path.write_text(
+                json.dumps({"rec_token": "pr-aaaa", "reviewer": "r1", "score": None}) + "\n"
+            )
+            with self.assertRaisesRegex(ValueError, r"null value in required field\(s\): score"):
+                rps.load_reviewer_file(path)
+
+    def test_null_reviewer_raises(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores-reviewer-1.jsonl"
+            path.write_text(
+                json.dumps({"rec_token": "pr-aaaa", "reviewer": None, "score": 1.0}) + "\n"
+            )
+            with self.assertRaisesRegex(ValueError, r"null value in required field\(s\): reviewer"):
+                rps.load_reviewer_file(path)
+
+    def test_null_rec_token_raises(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-scores-reviewer-1.jsonl"
+            path.write_text(
+                json.dumps({"rec_token": None, "reviewer": "r1", "score": 1.0}) + "\n"
+            )
+            with self.assertRaisesRegex(ValueError, r"null value in required field\(s\): rec_token"):
+                rps.load_reviewer_file(path)
+
+
+class LoadPanelRoutingTokensTests(unittest.TestCase):
+    """Direct coverage for load_panel_routing_tokens to round out the
+    pure-function test layer (load_reviewer_file / consolidate /
+    write_consolidated already have direct tests)."""
+
+    def test_returns_rec_token_set(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-routing.jsonl"
+            _write_jsonl(
+                path,
+                [
+                    {"rec_token": "pr-aaaa", "plant_id": "5.1"},
+                    {"rec_token": "pr-bbbb", "plant_id": "3.2"},
+                    {"rec_token": "pr-cccc", "plant_id": "5.1"},
+                ],
+            )
+            self.assertEqual(
+                rps.load_panel_routing_tokens(path),
+                {"pr-aaaa", "pr-bbbb", "pr-cccc"},
+            )
+
+    def test_skips_blank_lines(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-routing.jsonl"
+            path.write_text(
+                json.dumps({"rec_token": "pr-aaaa"})
+                + "\n\n  \n"
+                + json.dumps({"rec_token": "pr-bbbb"})
+                + "\n"
+            )
+            self.assertEqual(
+                rps.load_panel_routing_tokens(path), {"pr-aaaa", "pr-bbbb"}
+            )
+
+    def test_dedupes_repeated_tokens(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "panel-routing.jsonl"
+            _write_jsonl(
+                path,
+                [
+                    {"rec_token": "pr-aaaa", "plant_id": "5.1"},
+                    {"rec_token": "pr-aaaa", "plant_id": "5.1", "trial": 2},
+                ],
+            )
+            self.assertEqual(rps.load_panel_routing_tokens(path), {"pr-aaaa"})
+
 
 class ConsolidateTests(unittest.TestCase):
     def test_single_reviewer_pass_through(self):
