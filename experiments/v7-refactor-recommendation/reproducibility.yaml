@@ -339,4 +339,48 @@ execution:
       rubric_hash_post_round2_value_aware: 279027861301000e399624099de8c61f63f3117dfbfc203f2f18fa1c20cf730c
       rubric_hash_pre_round2_value_aware: kept in top-level pre_registration.rubric_hash
       issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/35
+    round2_methodology_update_cluster_lens:
+      description: |
+        Round 2 added an explicit `cluster_lens` field to plants that share
+        a substrate cluster with another plant of a different `category`
+        (cross-lens cluster-sharing). Plants 3R and 5R migrated to declare
+        `cluster_lens: default-implementation` and `cluster_lens:
+        generic-parameterization` respectively. The validator (`validate-
+        manifest.py` rule 11) enforces value enum, sharing-group presence,
+        and sharing-group uniqueness. The auto-scorer's binding layer
+        (`score_all.py::bind_recs_to_plants`) applies a new post-filter
+        `_apply_cluster_lens_routing` that narrows the candidate plant list
+        to exactly the one whose lens matches the rec's `category` for
+        action recs in-lens, or falls through to round-1 fan-out (no-action,
+        outside-lens, undeclared-lens). Methodology §9 rewritten to
+        supersede the round-1 cross-lens FPR-inflation caveat with the
+        structural routing rule. Documented as the third round-2 entry in
+        `rubric-modifications.md` per methodology §10; resolves issue #33.
+      consequence: |
+        No scored-row movement on round-1 data because all 45 currently-
+        bound 3R+5R rows are `no-action` recs that bypass the lens filter
+        per the §9 restraint-table-dominates branch. `auto-scores.json`
+        byte-diff vs PR #90 is empty. headline canonical_recall (S1 0.070,
+        S2 0.110), 1-FPR (1.000, 1.000), and panel_routed.size (108) all
+        unchanged. The structural change matters for round 2 if/when
+        action-category recs land against the shared cluster — those would
+        attribute to a single plant (the matching-lens one) instead of
+        inflating the FPR by binding both. Round-1 results stand as
+        documented in results.md; round 2 fixes the rule going forward.
+      sharing_group_audit: |
+        The validator's `_sharing_groups` heuristic (source_files ∩ +
+        expected_cluster_symbols ∩ + distinct category) surfaced one
+        cross-lens pair (3R/5R, both declaring `cluster_lens` post-
+        migration) and zero unflagged candidates in the full 25-plant
+        manifest. The heuristic also surfaced a same-category sharing
+        pair (Plants 2.3/2.4 — both protocol-inheritance on overlapping
+        AudioPlayerProtocol clusters), correctly excluded by condition
+        (3) of `_sharing_groups`. Same-category cluster-sharing is a
+        separate manifest-design concern outside #33's scope; handled
+        by the auto-scorer's existing per-plant independent scoring.
+      manifest_hash_post_round2_cluster_lens: db181ca45b4253c5faa26e7372d4ed04c757a6cdeb8b94bc8dbef9485f612e8c
+      score_all_sha256_post_round2_cluster_lens: 6a4a52c98257a4f13dd95438be1b3e2c76044470470028e8d0dd7f5db3d410db
+      validate_manifest_sha256_post_round2_cluster_lens: 6b5a39a1ffc9cddd45ab42aabb5e1ada3f4a477b899c279c4a50d87abbe8bbc5
+      auto_scorer_sha256_unchanged: 013e85777b2e80be70cd4abd347fac5f4c1a3bb69b190edd51cf70959965bc90
+      issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/33
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
