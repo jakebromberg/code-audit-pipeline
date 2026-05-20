@@ -39,6 +39,14 @@ Checks performed:
         like `target_pkg` for `target_package`). If a category legitimately needs optional keys in the
         future, extend the schema with an explicit `optional` list rather than relaxing this check.
      c. For category 'no-action', specifics.reason_class ∈ the documented enum.
+ 11. Round-2 cross-lens routing (#33) — `cluster_lens` field on plants that share a substrate cluster:
+     a. `cluster_lens` value (when present) ∈ CATEGORIES (the MVP refactor-category enum).
+     b. Sharing-group presence: two plants share a cluster iff their source_files overlap AND their
+        expected_cluster_symbols overlap (the methodology §9 condition, encoded structurally without
+        running the substrate). Every plant in a sharing-group of size ≥ 2 MUST declare `cluster_lens`.
+     c. Sharing-group uniqueness: all members of a sharing-group must declare DISTINCT `cluster_lens`
+        values. The scorer routes recommendations to the plant whose lens matches the rec's category;
+        duplicate lenses break the routing.
 
 Usage
 -----
@@ -99,6 +107,8 @@ KNOWN_KEYS = {
     "wrong_answers",
     # Round-2 binding-artifact v2 (#86): per-plant cluster_id symbol gate
     "expected_cluster_symbols",
+    # Round-2 cross-lens routing (#33): per-plant lens declaration for shared clusters
+    "cluster_lens",
 }
 
 # Categories valid as a primary/alternative/wrong-answer recommendation. Mirrors the agent-prompt taxonomy
@@ -353,6 +363,141 @@ def validate_rubric(
                     )
 
 
+def _sharing_groups(plants: list[dict]) -> list[set[str]]:
+    """Group plants by **cross-lens** cluster-sharing (methodology §9).
+
+    Two plants are in the same group iff ALL THREE conditions hold:
+      (1) their source_files lists overlap, AND
+      (2) their expected_cluster_symbols lists overlap, AND
+      (3) their `category` values differ.
+
+    Conditions (1) + (2) encode the §9 cluster-sharing structural condition
+    (PR #89's symbol gate at bind-time ensures that source-file overlap
+    alone does NOT imply cluster-id overlap, so both overlaps are needed).
+    Condition (3) narrows to the §9 *cross-lens* case specifically: the
+    `cluster_lens` routing rule (#33) only disambiguates when plants test
+    distinct refactor-category lenses. Same-category cluster-sharing is a
+    distinct manifest-design concern (e.g., Plants 2.3/2.4 both test
+    protocol-inheritance on overlapping AudioPlayerProtocol clusters) that
+    cluster_lens routing cannot resolve — the auto-scorer's existing per-
+    plant independent scoring handles it correctly under the canonical
+    rubric.
+
+    The relation is transitive over plants of distinct categories: if
+    A↔B↔C and the trio spans ≥ 2 categories, all three end up in one
+    group. Implemented via union-find; performance is irrelevant at 25
+    plants.
+
+    Returns one set of plant_ids per group of size ≥ 2; singletons are
+    elided. Empty list if no plant pairs satisfy all three conditions.
+
+    Round-2 (#33) escalation path: conditions (1) + (2) approximate the
+    substrate's cluster_id overlap. If post-round-2 trials reveal real
+    cluster_ids diverge from the heuristic (false negatives — plants
+    share a substrate cluster but the heuristic doesn't flag them;
+    false positives — flagged but real cluster_ids disjoint), escalate
+    via a separate plan to wire substrate cluster outputs directly into
+    the check. Until that lands, the §9 fallback semantics still apply
+    so false negatives degrade gracefully to round-1 fan-out behavior.
+    """
+    parent: dict[str, str] = {}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(x: str, y: str) -> None:
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[rx] = ry
+
+    for p in plants:
+        pid = p.get("plant_id")
+        if isinstance(pid, str):
+            parent[pid] = pid
+
+    for i, a in enumerate(plants):
+        a_id = a.get("plant_id")
+        if not isinstance(a_id, str):
+            continue
+        a_files = set(a.get("source_files") or [])
+        a_symbols = set(a.get("expected_cluster_symbols") or [])
+        a_cat = a.get("category")
+        for b in plants[i + 1:]:
+            b_id = b.get("plant_id")
+            if not isinstance(b_id, str):
+                continue
+            b_cat = b.get("category")
+            # Condition (3): cross-lens only. Same-category sharing is out of scope.
+            if a_cat == b_cat:
+                continue
+            b_files = set(b.get("source_files") or [])
+            b_symbols = set(b.get("expected_cluster_symbols") or [])
+            if a_files & b_files and a_symbols & b_symbols:
+                union(a_id, b_id)
+
+    groups_by_root: dict[str, set[str]] = {}
+    for pid in parent:
+        root = find(pid)
+        groups_by_root.setdefault(root, set()).add(pid)
+    return [g for g in groups_by_root.values() if len(g) >= 2]
+
+
+def _validate_cluster_lens(plants: list[dict], errors: list[str]) -> None:
+    """Round-2 (#33) check 11 — `cluster_lens` schema.
+
+    Three clauses:
+      11a. `cluster_lens` value (when declared) ∈ CATEGORIES. Fires on
+           any plant that declares the field, including singletons.
+      11b. Every plant in a sharing-group must declare `cluster_lens`.
+      11c. All members of a sharing-group must declare DISTINCT `cluster_lens`
+           values (so the scorer can route by lens unambiguously).
+    """
+    # 11a: value enum (singletons + sharing-group members alike).
+    for plant in plants:
+        lens = plant.get("cluster_lens")
+        if lens is None:
+            continue
+        if lens not in CATEGORIES:
+            pid = plant.get("plant_id", "<unknown>")
+            errors.append(
+                f"plant {pid}: cluster_lens {lens!r} not in {sorted(CATEGORIES)}"
+            )
+
+    # 11b + 11c: sharing-group presence and uniqueness.
+    plants_by_id = {p.get("plant_id"): p for p in plants if isinstance(p.get("plant_id"), str)}
+    for group in _sharing_groups(plants):
+        sorted_ids = sorted(group)
+        missing: list[str] = []
+        declared: dict[str, list[str]] = {}  # lens value → plant_ids declaring it
+        for pid in sorted_ids:
+            plant = plants_by_id.get(pid)
+            if plant is None:
+                continue
+            lens = plant.get("cluster_lens")
+            if lens is None:
+                missing.append(pid)
+            else:
+                declared.setdefault(lens, []).append(pid)
+        # 11b: each missing member is its own error so the operator sees
+        # exactly which plant_ids need migration.
+        for pid in missing:
+            errors.append(
+                f"plant {pid}: cluster_lens required — plant is in sharing-group "
+                f"{sorted_ids} (overlapping source_files + expected_cluster_symbols "
+                f"with at least one other plant)"
+            )
+        # 11c: any lens value declared by more than one member breaks routing.
+        for lens, claimants in declared.items():
+            if len(claimants) > 1:
+                errors.append(
+                    f"sharing-group {sorted_ids}: cluster_lens values must be distinct "
+                    f"but plants {sorted(claimants)} all declare {lens!r}"
+                )
+
+
 def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -461,6 +606,11 @@ def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
         validate_rubric(plant, prefix, is_restraint, plants_by_id, errors)
         # Phase A.4 specifics-keys allowlist (sub-issue #27)
         validate_specifics_keys(plant, prefix, rubric, errors)
+
+    # Round-2 cross-lens routing (#33): cluster_lens schema check.
+    # Runs once over the full plant list (needs cross-plant sharing-group
+    # detection); errors are attributed to specific plant_ids inside.
+    _validate_cluster_lens(plants, errors)
 
     if warnings:
         print(f"{len(warnings)} warning(s):", file=sys.stderr)

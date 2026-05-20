@@ -419,6 +419,40 @@ def corrupt_rule_10c(doc: dict) -> None:
     r["primary_answer"]["specifics"]["reason_class"] = "fictional-reason"
 
 
+# ─── Rule 11: cluster_lens schema (round-2 cross-lens routing, #33) ──────────
+
+
+def _find_3r(plants: list[dict]) -> dict:
+    for p in plants:
+        if p.get("plant_id") == "3R":
+            return p
+    raise RuntimeError("plant 3R not found")
+
+
+def _find_5r(plants: list[dict]) -> dict:
+    for p in plants:
+        if p.get("plant_id") == "5R":
+            return p
+    raise RuntimeError("plant 5R not found")
+
+
+def corrupt_rule_11a_invalid_value(doc: dict) -> None:
+    """Set 3R's cluster_lens to a value outside CATEGORIES."""
+    _find_3r(doc["plants"])["cluster_lens"] = "not-a-real-category"
+
+
+def corrupt_rule_11b_missing_on_sharing_member(doc: dict) -> None:
+    """Strip cluster_lens from 3R — 3R+5R are a sharing-group, so 3R's
+    declaration is required."""
+    _find_3r(doc["plants"]).pop("cluster_lens", None)
+
+
+def corrupt_rule_11c_duplicate_lens(doc: dict) -> None:
+    """Set 5R's cluster_lens to match 3R's — uniqueness within the
+    sharing-group is violated."""
+    _find_5r(doc["plants"])["cluster_lens"] = "default-implementation"
+
+
 # ─── Fixture registry (rule numbers track validate-manifest.py docstring) ────
 
 
@@ -535,6 +569,24 @@ FIXTURES: list[Fixture] = [
     Fixture("10a", "specifics missing required key", corrupt_rule_10a, "missing required keys"),
     Fixture("10b", "specifics has unknown key (typo)", corrupt_rule_10b, "unknown keys"),
     Fixture("10c", "no-action reason_class outside enum", corrupt_rule_10c, "reason_class"),
+    Fixture(
+        "11a (invalid value)",
+        "cluster_lens value outside CATEGORIES",
+        corrupt_rule_11a_invalid_value,
+        "cluster_lens",
+    ),
+    Fixture(
+        "11b (missing on sharing-group)",
+        "cluster_lens stripped from 3R (3R+5R sharing-group)",
+        corrupt_rule_11b_missing_on_sharing_member,
+        "sharing-group",
+    ),
+    Fixture(
+        "11c (duplicate within sharing-group)",
+        "5R cluster_lens duplicates 3R's",
+        corrupt_rule_11c_duplicate_lens,
+        "distinct",
+    ),
 ]
 
 

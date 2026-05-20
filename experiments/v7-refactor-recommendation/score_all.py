@@ -124,6 +124,51 @@ PANEL_ROUTE = "panel_route"  # mirrors auto_scorer.PANEL_ROUTE for downstream co
 # ─── plant ↔ rec binding ──────────────────────────────────────────────────
 
 
+def _apply_cluster_lens_routing(
+    rec: dict, matched_plant_ids: list[str], plants_by_id: dict[str, dict]
+) -> list[str]:
+    """Round-2 (#33) cluster_lens post-filter on a candidate plant list.
+
+    The methodology §9 cross-lens caveat (round-1) is superseded by the
+    structural `cluster_lens` field: when a recommendation lands on a
+    cluster shared by multiple plants of distinct refactor-category lenses,
+    the post-filter attributes the rec to the single plant whose lens
+    matches the rec's `category`. This eliminates the bounded FPR inflation
+    from round-1's fan-out behavior on cross-lens clusters.
+
+    Pass-through cases (return the candidate list unchanged):
+      - Fewer than 2 candidates (no disambiguation needed).
+      - Any candidate lacks a `cluster_lens` declaration (partial-lens
+        state — the validator rejects this in production, but synthetic
+        test fixtures may bypass; preserve round-1 fan-out as the safe
+        default).
+      - `rec.category` is `no-action` (§9 restraint table scores no-action
+        identically across lens-sharing plants — all candidates score the
+        rec correctly).
+      - `rec.category` does not match exactly one candidate's `cluster_lens`
+        (either no match, or duplicate matches — the latter is impossible
+        post-validator check 11c but defended in code for robustness).
+
+    Narrowing case:
+      - `rec.category` matches exactly one candidate's `cluster_lens` →
+        return that single plant_id. The lens claim is unambiguous.
+    """
+    if len(matched_plant_ids) < 2:
+        return matched_plant_ids
+    lenses = [plants_by_id[pid].get("cluster_lens") for pid in matched_plant_ids]
+    if any(lens is None for lens in lenses):
+        return matched_plant_ids
+    rec_category = (rec.get("parsed") or {}).get("category")
+    if rec_category == "no-action":
+        return matched_plant_ids
+    lens_matches = [
+        pid for pid, lens in zip(matched_plant_ids, lenses) if lens == rec_category
+    ]
+    if len(lens_matches) == 1:
+        return lens_matches
+    return matched_plant_ids
+
+
 def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[tuple[dict, list[str]]]:
     """For each rec, return the (sorted) list of plant_ids that the rec binds
     to. Resolution rule (round-2 binding-artifact v2, #86):
@@ -142,6 +187,11 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
        the cluster via both symbol and signal. Otherwise bind to all
        `symbol_matches` — the cluster's query isn't pre-registered but the
        symbol gate confirms the cluster IS this plant's territory.
+    5. Round-2 (#33) post-filter: `_apply_cluster_lens_routing` narrows the
+       candidate list when the rec's category matches exactly one plant's
+       declared `cluster_lens`. Pass-through in all other cases (preserves
+       round-1 fan-out for no-action, outside-lens, and undeclared-lens
+       paths).
 
     Round-1 closeout (PR #84) gated on signal-match only, with substring
     fallback. Round 2 adds the symbol gate to fix two known round-1 gaps:
@@ -165,6 +215,7 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
     callers should route them to the parse_errors bucket downstream rather
     than scoring them.
     """
+    plants_by_id = {p["plant_id"]: p for p in plants}
     bindings: list[tuple[dict, list[str]]] = []
     for rec in parsed_records:
         cluster_id = rec.get("cluster_id") or ""
@@ -189,6 +240,7 @@ def bind_recs_to_plants(parsed_records: list[dict], plants: list[dict]) -> list[
             if rec_query and rec_query in signals:
                 signal_matches.append(plant["plant_id"])
         matched = signal_matches if signal_matches else symbol_matches
+        matched = _apply_cluster_lens_routing(rec, matched, plants_by_id)
         bindings.append((rec, sorted(matched)))
     return bindings
 

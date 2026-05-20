@@ -34,6 +34,7 @@ def _plant(
     source_files: list[str] | None = None,
     expected_substrate_signals: list[str] | None = None,
     expected_cluster_symbols: list[str] | None = None,
+    cluster_lens: str | None = None,
     primary_category: str | None = None,
     primary_specifics_required: list[str] | None = None,
     primary_specifics: dict | None = None,
@@ -73,7 +74,7 @@ def _plant(
     # for defense-in-depth tests.
     if expected_cluster_symbols is None:
         expected_cluster_symbols = [resolved_source_files[0]]
-    return {
+    plant: dict = {
         "plant_id": plant_id,
         "category": category,
         "restraint": restraint,
@@ -89,6 +90,9 @@ def _plant(
         "alternative_answers": [{"category": c, "weight": 0.7} for c in (alternative_categories or [])],
         "wrong_answers": [{"category": c, "note": ""} for c in (wrong_categories or [])],
     }
+    if cluster_lens is not None:
+        plant["cluster_lens"] = cluster_lens
+    return plant
 
 
 def _rec(
@@ -353,11 +357,12 @@ class BindRecsToPlantsTests(unittest.TestCase):
         bindings = score_all.bind_recs_to_plants([rec], [plant])
         self.assertEqual(bindings, [(rec, ["A"])])
 
-    def test_cross_lens_restraints_both_bind(self):
+    def test_cross_lens_restraints_both_bind_under_round1_fallback(self):
         # Cross-lens restraints (Plants 3R and 5R) share both source_files
-        # and expected_cluster_symbols (both point at PlaylistStubs). The
-        # symbol gate admits both plants — methodology §9 says both score
-        # identically on any given rec, so cross-lens parity is preserved.
+        # and expected_cluster_symbols (both point at PlaylistStubs). With
+        # NO `cluster_lens` declared on either plant, round-2 routing falls
+        # through to round-1 fan-out behavior — both plants bind, scored
+        # identically by §9 restraint table. This test pins that fallback.
         shared_symbols = ["Breakpoint.stub", "Talkset.stub", "_Plant_PlaycutStub", "PlaylistStubs"]
         shared_signals = ["function-duplicates"]
         shared_source = "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"
@@ -383,6 +388,135 @@ class BindRecsToPlantsTests(unittest.TestCase):
         )
         bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
         self.assertEqual(bindings, [(rec, ["3R", "5R"])])
+
+
+# ─── bind_recs_to_plants — cluster_lens routing (round-2, #33) ────────────
+
+
+class ClusterLensRoutingTests(unittest.TestCase):
+    """Round-2 #33: cluster_lens post-filter on candidate plant lists.
+
+    The post-filter narrows multi-plant candidate sets when the rec's
+    category matches exactly one candidate's `cluster_lens`. Other cases
+    (no-action recs, outside-lens recs, single-candidate sets, undeclared-
+    lens fallback) preserve round-1 fan-out behavior.
+    """
+
+    SHARED_SYMBOLS = ["Breakpoint.stub", "Talkset.stub", "_Plant_PlaycutStub", "PlaylistStubs"]
+    SHARED_SIGNALS = ["function-duplicates"]
+    SHARED_SOURCE = "Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift"
+
+    def _make_pair_with_lenses(self, lens_3r: str | None, lens_5r: str | None) -> tuple[dict, dict]:
+        plant_3r = _plant(
+            plant_id="3R",
+            category="default-implementation",
+            restraint=True,
+            source_files=[self.SHARED_SOURCE],
+            expected_substrate_signals=self.SHARED_SIGNALS,
+            expected_cluster_symbols=self.SHARED_SYMBOLS,
+            cluster_lens=lens_3r,
+        )
+        plant_5r = _plant(
+            plant_id="5R",
+            category="generic-parameterization",
+            restraint=True,
+            source_files=[self.SHARED_SOURCE],
+            expected_substrate_signals=self.SHARED_SIGNALS,
+            expected_cluster_symbols=self.SHARED_SYMBOLS,
+            cluster_lens=lens_5r,
+        )
+        return plant_3r, plant_5r
+
+    def _make_rec(self, category: str) -> dict:
+        return _rec(
+            cluster_id=(
+                f"function-duplicates-near:Playlist:{self.SHARED_SOURCE}:58:Breakpoint.stub"
+                f"+Playlist:{self.SHARED_SOURCE}:75:Talkset.stub"
+            ),
+            query="function-duplicates",
+            category=category,
+        )
+
+    def test_action_rec_in_matching_lens_routes_to_one_plant(self):
+        """Rec category matches exactly one candidate's lens — only that
+        plant is returned. The §9 FPR inflation is eliminated for this
+        case: action rec against the 3R+5R shared cluster gets attributed
+        to whichever plant's lens claims it (5R for generic-parameterization)."""
+        plant_3r, plant_5r = self._make_pair_with_lenses(
+            "default-implementation", "generic-parameterization"
+        )
+        rec = self._make_rec(category="generic-parameterization")
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["5R"])])
+
+    def test_action_rec_in_matching_lens_routes_to_three_r(self):
+        # Symmetric to above — rec category matches 3R's lens.
+        plant_3r, plant_5r = self._make_pair_with_lenses(
+            "default-implementation", "generic-parameterization"
+        )
+        rec = self._make_rec(category="default-implementation")
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["3R"])])
+
+    def test_action_rec_outside_all_lenses_routes_to_all(self):
+        """Rec category matches no candidate's lens — fall through to
+        round-1 fan-out. Per §9, the restraint table makes both plants
+        score 0.0 anyway; the bounded inflation is the round-1 baseline."""
+        plant_3r, plant_5r = self._make_pair_with_lenses(
+            "default-implementation", "generic-parameterization"
+        )
+        rec = self._make_rec(category="protocol-inheritance")
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["3R", "5R"])])
+
+    def test_no_action_rec_routes_to_all_lens_sharing_plants(self):
+        """`no-action` recs are scored universally under the §9 restraint
+        table regardless of lens. Bind to all candidates so each plant's
+        per-cell FPR denominator increments correctly."""
+        plant_3r, plant_5r = self._make_pair_with_lenses(
+            "default-implementation", "generic-parameterization"
+        )
+        rec = self._make_rec(category="no-action")
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["3R", "5R"])])
+
+    def test_routing_skipped_for_single_candidate(self):
+        """A rec that binds to exactly one plant — the lens post-filter
+        is a no-op. The plant's lens declaration is preserved but irrelevant
+        because there's no other candidate to disambiguate against."""
+        plant_3r, _ = self._make_pair_with_lenses("default-implementation", "generic-parameterization")
+        # Construct a rec whose cluster_id doesn't match 5R's signature
+        # (so only 3R is a candidate) — use 3R's plant-specific source file
+        # but a different cluster that only 3R substring-matches. Simpler:
+        # pass only 3R to bind_recs_to_plants.
+        rec = self._make_rec(category="generic-parameterization")  # outside 3R's lens
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r])
+        # No filtering — 3R binds because it's the only candidate.
+        self.assertEqual(bindings, [(rec, ["3R"])])
+
+    def test_routing_skipped_when_no_candidate_declares_lens(self):
+        """Both candidates lack `cluster_lens` — round-1 fallback. Already
+        covered by test_cross_lens_restraints_both_bind_under_round1_fallback
+        above, this duplicate explicitly anchors the post-filter's pass-
+        through branch."""
+        plant_3r, plant_5r = self._make_pair_with_lenses(None, None)
+        rec = self._make_rec(category="generic-parameterization")  # would match 5R if lens declared
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        self.assertEqual(bindings, [(rec, ["3R", "5R"])])
+
+    def test_routing_skipped_when_only_one_candidate_declares_lens(self):
+        """Partial-lens declaration — the post-filter falls through to
+        round-1 fan-out. Lens routing requires the FULL candidate set to
+        declare so attribution is unambiguous; a missing lens on any
+        candidate means we can't safely narrow."""
+        plant_3r, plant_5r = self._make_pair_with_lenses(
+            "default-implementation", None
+        )
+        rec = self._make_rec(category="default-implementation")
+        bindings = score_all.bind_recs_to_plants([rec], [plant_3r, plant_5r])
+        # Falls through — both bind.
+        self.assertEqual(bindings, [(rec, ["3R", "5R"])])
+
 
 # ─── score_all (per-rec scoring) ──────────────────────────────────────────
 
