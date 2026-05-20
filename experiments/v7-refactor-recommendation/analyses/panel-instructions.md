@@ -1,6 +1,6 @@
 # Panel review instructions — V7 round 2
 
-For three internal reviewers. Time commitment: ~10–14 hours each (108 rows × ~6–8 min/row — `primary_match_specifics_outside_tolerance` rows require reading the plant manifest entry to judge tolerance-flag satisfaction; round 1's ~4 h estimate applied to the pre-PR-#90 6-row corpus and is preserved in §6.1). Reviewers are blind to which substrate condition (S1 vs S2) produced each recommendation.
+For three internal reviewers. Time commitment: ~10–14 hours each (108 rows × ~6–8 min/row — `primary_match_specifics_outside_tolerance` rows require reading the plant manifest entry to judge tolerance-flag satisfaction; round 1's ~4 h estimate applied to the round-1 12-row corpus and is preserved in §6.1). Reviewers are blind to which substrate condition (S1 vs S2) produced each recommendation.
 
 ## 1. Background you need before starting
 
@@ -14,7 +14,7 @@ You do not need to read the parsed bodies or the raw API responses; the panel-ro
 
 ## 2. What's in front of you
 
-[`analyses/panel-routing.jsonl`](panel-routing.jsonl) — one JSONL row per recommendation routed to panel by [`auto-scorer.py`](../auto-scorer.py)'s methodology-§8 decision rule. Phase D's parsed corpus had 2907 recs total; 764 bound to one or more plants. Round 2 has **108 routed to panel** (~14% of bound recs) across **17 plants and 29 distinct `(plant_id, cluster_id)` judgments**. Round 1's run produced only 6 routed rows — round 2's value-aware specifics matching ([rubric-modifications.md](../rubric-modifications.md), resolves #35) added two new routing reasons (`primary_match_specifics_outside_tolerance` and `primary_match_specifics_missing_keys`), which is where the 102-row delta lives.
+[`analyses/panel-routing.jsonl`](panel-routing.jsonl) — one JSONL row per recommendation routed to panel by [`auto-scorer.py`](../auto-scorer.py)'s methodology-§8 decision rule. Phase D's parsed corpus had 2907 recs total; 764 bound to one or more plants. Round 2 has **108 routed to panel** (~14% of bound recs) across **17 plants and 29 distinct `(plant_id, cluster_id)` judgments**. The corpus reached its current shape in three steps: round 1 originally produced 12 routed rows (Plant 3.1 ×6 + Plant 5.1 ×6, all `category: "other"`); PR #89's `expected_cluster_symbols` gate dropped Plant 3.1 as a false binding, reducing the corpus to 6 rows; PR #90's value-aware specifics matching ([rubric-modifications.md](../rubric-modifications.md), resolves #35) then added two new routing reasons (`primary_match_specifics_outside_tolerance` and `primary_match_specifics_missing_keys`), bringing the corpus to its current 108 rows. §6.1 carries the historical detail.
 
 Round-2 routing breakdown by `match_reason`:
 
@@ -130,7 +130,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 
 ### Orphan rec_tokens
 
-`panel-scores-reviewer-1.jsonl` carries 12 round-1 rows. Six of those rec_tokens still match current `panel-routing.jsonl` (Plant 5.1, the surviving `other_routes_to_panel` rows) and contribute to κ. The other six (Plant 3.1, false bindings the round-2 symbol gate eliminated) no longer map to any panel-routing row and are filtered out as **orphans** by both `attach_panel_kappa` and `attach_collapsed_panel_kappa`; the orphan count surfaces in `inter_rater.note` / `inter_rater_collapsed.note`. `promote_panel_scores` silently skips orphans because there's no `score=PANEL_ROUTE` entry left to backfill (Plant 3.1's HSBColor pair is no longer in `scored`). Do NOT delete the orphan rows from `panel-scores-reviewer-1.jsonl` — they're audit-trail provenance and the filter handles them transparently. Reviewer-2 and reviewer-3 score against the current 108-row `panel-routing.jsonl` and won't generate orphans.
+`panel-scores-reviewer-1.jsonl` carries 12 round-1 rows. Six of those rec_tokens — the Plant 5.1 / HSBColor rows — still match current `panel-routing.jsonl` (PR #89's symbol gate preserved them, and PR #90 didn't disturb them since they remain `other_routes_to_panel` rather than entering the new specifics-tolerance routing case) and contribute to κ. The other six (Plant 3.1, false bindings PR #89's symbol gate eliminated) no longer map to any panel-routing row and are filtered out as **orphans** by both `attach_panel_kappa` and `attach_collapsed_panel_kappa`; the orphan count surfaces in `inter_rater.note` / `inter_rater_collapsed.note`. `promote_panel_scores` silently skips orphans because there's no `score=PANEL_ROUTE` entry left to backfill (Plant 3.1's HSBColor pair is no longer in `scored`). Do NOT delete the orphan rows from `panel-scores-reviewer-1.jsonl` — they're audit-trail provenance and the filter handles them transparently. Reviewer-2 and reviewer-3 score against the current 108-row `panel-routing.jsonl` and won't generate orphans.
 
 ### `inter_rater_collapsed` block schema
 
