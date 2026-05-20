@@ -435,7 +435,37 @@ execution:
     issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/77
     drift_check_motivating_issue: https://github.com/jakebromberg/code-audit-pipeline/issues/66
     # Execution-time fields populated as PRs 2-4 land. Leave null until then.
-    drift_check_results: null         # PR 2: pass/fail per metric + measured values
+    drift_check_results:              # PR 2 (executed 2026-05-20)
+      run_date: "2026-05-20"
+      output_file: experiments/v7-refactor-recommendation/analyses-v2/drift-check.json
+      decision: proceed
+      actual_spend_usd: 0.4367
+      captured_response_models:
+        claude-sonnet-4-6: 30
+      metrics:
+        category_disagreement:
+          count: 1
+          of_total: 30
+          pct: 3.33
+          threshold_max_count: 6
+          pass: true
+        specifics_key_drift:
+          avg_pct: 3.33
+          threshold_max_avg_pct: 30.0
+          pass: true
+        panel_route:
+          round2_panel_count: 2
+          drift_panel_count: 3
+          delta_pp: 3.33
+          threshold_max_abs_pp: 10.0
+          pass: true
+      # Substrate divergence note: drift-check ran against a regenerated
+      # substrate that differs from `pre_registration.plant_tree_sha` by
+      # 1 swift file in 485 (0.2%). Cluster rows are looked up by
+      # cluster_id, not row_index, so the 30 sampled cluster_ids resolve
+      # cleanly under the regenerated catalogs. See scripts/drift_check.py
+      # `substrate_notes` field and analyses-v2/drift-check.json for the
+      # full record.
     v2_trial_date_range: null         # PR 3: {start, end} ISO timestamps
     v2_actual_spend_usd: null         # PR 3: sum of per-rec cost_usd over v2 trial logs
     v2_response_model_capture: null   # PR 3: distinct `model` values from /v1/messages responses
