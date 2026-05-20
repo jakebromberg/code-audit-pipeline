@@ -301,6 +301,24 @@ class TestLoadClusterRow(unittest.TestCase):
             drift_check.load_cluster_row("test-query:zzz", "test-query", "s1", self.root)
 
 
+class TestPreRegisteredConstants(unittest.TestCase):
+    """Pin the pre-registered constants so a casual edit can't silently drift
+    the model alias, the sampling seed, or the three drift-check thresholds.
+    These values are frozen by PR 1's merge per methodology §10 and live in
+    `experiments/v7-refactor-recommendation/rubric-modifications.md` round-3."""
+
+    def test_model_alias_is_sonnet_4_6(self):
+        self.assertEqual(drift_check.MODEL_ALIAS, "claude-sonnet-4-6")
+
+    def test_sampling_seed_is_pinned(self):
+        self.assertEqual(drift_check.SAMPLING_SEED, 20260520)
+
+    def test_thresholds_match_plan_3_2(self):
+        self.assertEqual(drift_check.THRESHOLD_CATEGORY_DISAGREEMENT_MAX_COUNT, 6)
+        self.assertEqual(drift_check.THRESHOLD_SPECIFICS_KEY_DRIFT_MAX_AVG_PCT, 30.0)
+        self.assertEqual(drift_check.THRESHOLD_PANEL_ROUTE_DELTA_MAX_PP, 10.0)
+
+
 class TestStratifiedSampleAgainstRealCorpus(unittest.TestCase):
     """Smoke test against the actual auto-scores.json to confirm the strata
     have ≥ per_stratum candidates each. Skips if the file is absent (e.g.,

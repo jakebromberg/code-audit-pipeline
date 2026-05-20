@@ -61,6 +61,12 @@ PLANT_CATEGORIES = (
 CONDITIONS = ("s1", "s2")
 SAMPLE_SIZE = len(PLANT_CATEGORIES) * len(CONDITIONS) * PER_STRATUM
 
+# Pin the model alias explicitly so a future change to harness_api.DEFAULT_MODEL
+# does NOT silently retarget the drift-check. Plan §3.2 names Sonnet 4.6 as the
+# model the round-2 control was rendered against; this constant freezes that
+# decision in the script that consumes it.
+MODEL_ALIAS = "claude-sonnet-4-6"
+
 THRESHOLD_CATEGORY_DISAGREEMENT_MAX_COUNT = 6
 THRESHOLD_SPECIFICS_KEY_DRIFT_MAX_AVG_PCT = 30.0
 THRESHOLD_PANEL_ROUTE_DELTA_MAX_PP = 10.0
@@ -422,7 +428,10 @@ def run_drift_check(
             response_model = None
             cost = 0.0
         else:
-            payload = harness_api.build_payload(user_message)
+            # Pass MODEL_ALIAS explicitly rather than relying on harness_api's
+            # default — the drift-check's pre-registration pins the model, so
+            # a future harness-side default change must not silently rotate it.
+            payload = harness_api.build_payload(user_message, model=MODEL_ALIAS)
             resp = harness_api.call_messages(payload, api_key)
             if resp.status != 200:
                 err_body = resp.body
@@ -480,7 +489,7 @@ def run_drift_check(
         "per_stratum": PER_STRATUM,
         "categories": list(PLANT_CATEGORIES),
         "conditions": list(CONDITIONS),
-        "model_alias": harness_api.DEFAULT_MODEL,
+        "model_alias": MODEL_ALIAS,
         "captured_response_models": dict(response_models),
         "total_cost_usd": total_cost,
         "thresholds": {
