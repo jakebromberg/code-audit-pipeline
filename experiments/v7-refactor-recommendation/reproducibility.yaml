@@ -383,4 +383,61 @@ execution:
       validate_manifest_sha256_post_round2_cluster_lens: 6b5a39a1ffc9cddd45ab42aabb5e1ada3f4a477b899c279c4a50d87abbe8bbc5
       auto_scorer_sha256_unchanged: 013e85777b2e80be70cd4abd347fac5f4c1a3bb69b190edd51cf70959965bc90
       issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/33
+  # Round-3 sub-experiment per plans/v7-round2-prompt-sensitivity-plan.md.
+  # Tests H1 (prompt vagueness) vs H0a (model capability ceiling) for the
+  # 94.4% panel-route rate observed under round-2's value-aware specifics
+  # matching (PR #90). Single variable: prompt v2 vs prompt v1 (byte-identical
+  # §1; §2 sharpened structural constraints; §2.1 added non-corpus worked
+  # examples). Rubric, manifest, model alias, model parameters, and harness
+  # telemetry schema are all held fixed. Parameters in this block are frozen
+  # by PR 1 merge — they cannot be edited after observing v2 outcomes.
+  prompt_sensitivity_sub_experiment:
+    description: |
+      Pre-registered round-3 sub-experiment per plans/v7-round2-prompt-
+      sensitivity-plan.md. Tests prompt-vagueness (H1) vs model-capability-
+      ceiling (H0a) explanations for the 94.4% panel-route rate observed
+      under round-2's value-aware specifics matching. Rubric over-strictness
+      (H0b) is explicitly out of scope; a separate sub-experiment would
+      test it if H1 fails and the headline finding still needs interpretation.
+    plan: plans/v7-round2-prompt-sensitivity-plan.md
+    plan_sha256: 0853d4465961696adc647ee3ca86b470b44a04b599b849cf004e0e46a9fd8715
+    v2_prompt: docs/refactor-recommendation-experiment-agent-prompt-v2.md
+    v2_prompt_sha256: 22f53bfa1f5c8b27671c1b26c052c5e138a923905ae7349f07677757a29ea19d
+    overlap_check_script: scripts/check_example_overlap.py
+    overlap_check_script_sha256: 305aba5e0eab4a5b291d48edeac4ccf0fd84fce7add76ba565af7577088b880f
+    # Drift-check protocol per plan §3.2. Pre-rerun calibration to detect
+    # alias-snapshot drift that would invalidate round-2 as a v2 control.
+    drift_check:
+      sample_size: 30
+      sampling_seed: 20260520
+      stratification: 5 plant categories × balanced S1/S2 conditions
+      tolerance_category_disagreement_pct: 20
+      tolerance_specifics_key_drift_pct: 30
+      tolerance_panel_route_rate_pp: 10  # ± 10 percentage points
+      output_file: experiments/v7-refactor-recommendation/analyses-v2/drift-check.json
+      failure_action: |
+        Halt; file follow-up issue per plan §3.2 halt-recovery protocol.
+        Do not pre-commit to recovery option in this block — the follow-up
+        issue decides among (a) re-control rerun (~$78), (b) abort, or
+        (c) await alias re-pinning per issue #66.
+    # Acceptance threshold per plan §3.4. Panel-route rate drop on v2 rerun
+    # vs v1 control. Threshold gates interpretation (H1 supported vs H0a
+    # supported), not reporting — the actual delta is reported in results.md
+    # §10 regardless of which side of the threshold it falls on.
+    acceptance_threshold_pct: 50  # panel-route rate drops by ≥ 50%
+    # Budget envelope per plan §3.3. Comfortably under methodology §16's
+    # $50-110 sub-experiment envelope and §6.3's main-trial $80 headroom.
+    budget_envelope_usd:
+      v2_full_rerun: 39
+      drift_check: 0.40
+      total: 40
+    # Cross-references.
+    issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/77
+    drift_check_motivating_issue: https://github.com/jakebromberg/code-audit-pipeline/issues/66
+    # Execution-time fields populated as PRs 2-4 land. Leave null until then.
+    drift_check_results: null         # PR 2: pass/fail per metric + measured values
+    v2_trial_date_range: null         # PR 3: {start, end} ISO timestamps
+    v2_actual_spend_usd: null         # PR 3: sum of per-rec cost_usd over v2 trial logs
+    v2_response_model_capture: null   # PR 3: distinct `model` values from /v1/messages responses
+    sub_experiment_outcome: null      # PR 4: "H1 supported" | "H0a supported" | "halted"
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
