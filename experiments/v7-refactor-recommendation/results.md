@@ -114,8 +114,8 @@ The 6 surviving panel rows are not 6 independent items — they're 1 distinct (p
 The current `analyses/score-summary.json` blocks carry the structured panel-pending sentinels (note text shortened for readability):
 
 ```json
-{"fleiss_kappa": null, "n_items": 6, "n_raters": 1, "note": "only 1 reviewer(s) present; ...; 6 orphan rec_token(s) in panel-scores had no matching panel-routing row; skipped"}
-{"fleiss_kappa": null, "n_judgments": 1, "n_raters": 1, "within_reviewer_inconsistency_count": 0, "note": "only 1 reviewer(s) present; ...; 6 orphan rec_token(s) ...; skipped"}
+{"fleiss_kappa": null, "n_items": 6, "n_raters": 1, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
+{"fleiss_kappa": null, "n_judgments": 1, "n_raters": 1, "within_reviewer_inconsistency_count": 0, "note": "only 1 reviewer(s) present; Fleiss κ requires ≥2"}
 ```
 
 Per-rec panel scores remain authoritative — auto-scorer.py's panel-route decision rule pre-registered the recs that needed human judgement, and round 1 supplies one such judgement per rec. Round 1's `within_reviewer_inconsistency_count == 0` (the single reviewer gave the same score across all 6 duplicates of Plant 5.1's judgment) confirms substance-only scoring at the corpus size — when round-2 reviewers land, divergence between the two κ values will quantify how much of round-1's inflation was correlation-driven.

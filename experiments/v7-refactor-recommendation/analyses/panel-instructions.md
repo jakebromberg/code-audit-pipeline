@@ -130,7 +130,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 
 ### Orphan rec_tokens
 
-`panel-scores-reviewer-1.jsonl` carries 12 round-1 rows. Six of those rec_tokens — the Plant 5.1 / HSBColor rows — still match current `panel-routing.jsonl` (PR #89's symbol gate preserved them, and PR #90 didn't disturb them since they remain `other_routes_to_panel` rather than entering the new specifics-tolerance routing case) and contribute to κ. The other six (Plant 3.1, false bindings PR #89's symbol gate eliminated) no longer map to any panel-routing row and are filtered out as **orphans** by both `attach_panel_kappa` and `attach_collapsed_panel_kappa`; the orphan count surfaces in `inter_rater.note` / `inter_rater_collapsed.note`. `promote_panel_scores` silently skips orphans because there's no `score=PANEL_ROUTE` entry left to backfill (Plant 3.1's HSBColor pair is no longer in `scored`). Do NOT delete the orphan rows from `panel-scores-reviewer-1.jsonl` — they're audit-trail provenance and the filter handles them transparently. Reviewer-2 and reviewer-3 score against the current 108-row `panel-routing.jsonl` and won't generate orphans.
+`panel-scores-reviewer-1.jsonl` originally carried 12 round-1 rows. Six (Plant 5.1 / HSBColor — the `other_routes_to_panel` rows) still match the current `panel-routing.jsonl` and contribute to κ; PR #89's symbol gate preserved them, and PR #90 didn't disturb them. The other six (Plant 3.1, false bindings PR #89's symbol gate eliminated) no longer map to any panel-routing row. Per the round-2 augment decision (#94), those 6 orphan rows have been **dropped** from `panel-scores-reviewer-1.jsonl`: the file is now 6 rows of Plant 5.1 / `other_routes_to_panel` scores, and reviewer-1's round-2 augment task is to append 102 new score rows covering the post-PR-#90 tolerance-flag corpus. `attach_panel_kappa` and `attach_collapsed_panel_kappa` retain their orphan-filter logic as a belt-and-suspenders safety net: if any future corpus regenesis re-creates orphans, the filter handles them transparently and surfaces the count in `inter_rater.note` / `inter_rater_collapsed.note`. Reviewer-2 and reviewer-3 score against the current 108-row `panel-routing.jsonl` and won't generate orphans.
 
 ### `inter_rater_collapsed` block schema
 
@@ -150,7 +150,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
     // …28 more entries…
   ],
   "within_reviewer_inconsistency_count": 3,   // # of (judgment, reviewer) cells with variance > 0
-  "note": "6 orphan rec_token(s) in panel-scores had no matching panel-routing row; skipped"
+  "note": null                                // populated only when a sentinel fires (uneven coverage, orphan tokens, etc.)
 }
 ```
 
@@ -183,7 +183,7 @@ Two PRs subsequently reshaped the panel corpus:
 
 At PR #89's state, the collapsed κ was degenerate at N=1 distinct judgment: mathematically defined but with no across-item variance to anchor `P_e`, so it returned 1.0 on full reviewer agreement or 0.0 otherwise. The "two κs, two granularities" framing in this section was originally written for that state, where collapsed κ was a sanity check rather than a measure. PR #90 restored its interpretive value by raising N from 1 to 29.
 
-Reviewer-1's 12 round-1 scores were written against the pre-PR-#89 12-row corpus. The 6 Plant 3.1 scores became orphans at PR #89; the 6 Plant 5.1 scores remain valid in the current corpus.
+Reviewer-1's 12 round-1 scores were written against the pre-PR-#89 12-row corpus. The 6 Plant 3.1 scores became orphans at PR #89; the 6 Plant 5.1 scores remain valid in the current corpus. Per the round-2 augment decision (#94, 2026-05-20), the 6 orphan rows have been dropped from `panel-scores-reviewer-1.jsonl`; the file is now 6 rows and reviewer-1's round-2 task is to append 102 new scores for the post-PR-#90 tolerance-flag corpus.
 
 ## 7. Mechanical checklist
 
@@ -191,6 +191,6 @@ Reviewer-1's 12 round-1 scores were written against the pre-PR-#89 12-row corpus
 2. [ ] Read §3 case 2 fully, including the Plant 3.2 / `pr-026f65dd0e85` worked example — that's your calibration anchor for the 102 `primary_match_specifics_outside_tolerance` rows.
 3. [ ] **Suggested chunking:** score by plant. Open `panel-routing.jsonl`, filter to one plant_id at a time, score that plant's 2–15 rows in one sitting, then move on. Doing it plant-by-plant lets you read the manifest entry once per batch instead of 108 times. Plant order doesn't matter; the scorer sorts internally.
 4. [ ] For each of the 108 rows: read the `rec_*` fields and the `notes` array (for `primary_match_specifics_outside_tolerance` rows), **do not** look at `unblind`, score, write a row to your `panel-scores-<reviewer-id>.jsonl`. Use the §4 main scoring table; restraint table does not apply to round 2.
-5. [ ] After scoring all 108, concatenate your file with the other reviewers' files into `analyses/panel-scores.jsonl` (any order; the scorer sorts internally).
-6. [ ] Re-run `python3 experiments/v7-refactor-recommendation/score_all.py` so `analyses/score-summary.json` picks up the Fleiss κ. Confirm the `inter_rater.note` reports `6 orphan rec_token(s) ... skipped` — that's the expected round-1 → round-2 orphan-filter signal (from reviewer-1's pre-PR-#89 Plant 3.1 scores).
+5. [ ] After scoring all 108, run `python3 experiments/v7-refactor-recommendation/regenerate_panel_scores.py` to consolidate the per-reviewer files into `analyses/panel-scores.jsonl` (sorted by (rec_token, reviewer); validates uniqueness and corpus membership).
+6. [ ] Re-run `python3 experiments/v7-refactor-recommendation/score_all.py` so `analyses/score-summary.json` picks up the Fleiss κ. Confirm `inter_rater.n_items` is 108, `inter_rater.n_raters` is 3, and both `inter_rater.fleiss_kappa` and `inter_rater_collapsed.fleiss_kappa` are populated (not null). The round-1 orphan-filter signal has been resolved by the #94 augment drop, so `inter_rater.note` should be null — if it reports orphans now, that's a regression, not the round-1 signature.
 7. [ ] Report `inter_rater_collapsed.fleiss_kappa` as the primary κ in `results.md` §4.3; report `inter_rater.fleiss_kappa` as the secondary κ with the item-correlation caveat. If the collapsed κ comes back below 0.4 ("fair" agreement), schedule a debrief: judgments with high cross-reviewer score variance flag specific tolerance-flag interpretations that need rubric tightening in round 3.
