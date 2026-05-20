@@ -26,7 +26,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from harness.prompt import extract_prompt_body, normalize_row, render
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PROMPT_DOC = REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt.md"
+# Prompt-version → file path. v1 is the round-2 production prompt and stays the
+# default. v2 is the experimental arm of the prompt-sensitivity sub-experiment
+# (plan: `plans/v7-round2-prompt-sensitivity-plan.md`).
+PROMPT_DOCS = {
+    "v1": REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt.md",
+    "v2": REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt-v2.md",
+}
 EXP_DIR = REPO_ROOT / "experiments" / "v7-refactor-recommendation"
 
 
@@ -38,6 +44,8 @@ def main() -> int:
     parser.add_argument("--condition", choices=("s1", "s2"), default="s2")
     parser.add_argument("--check-only", action="store_true",
                         help="Print diagnostics to stderr; suppress prompt on stdout.")
+    parser.add_argument("--prompt-version", choices=tuple(PROMPT_DOCS.keys()), default="v1",
+                        help="which agent-prompt file to render (default: v1).")
     args = parser.parse_args()
 
     cluster_path = EXP_DIR / f"clusters-{args.condition}" / f"{args.query}.jsonl"
@@ -56,7 +64,8 @@ def main() -> int:
     raw = json.loads(lines[args.row])
     normalized = normalize_row(raw)
 
-    doc_text = PROMPT_DOC.read_text()
+    prompt_doc_path = PROMPT_DOCS[args.prompt_version]
+    doc_text = prompt_doc_path.read_text()
     instructions, specifics = extract_prompt_body(doc_text)
     rendered = render(instructions, specifics, normalized)
 

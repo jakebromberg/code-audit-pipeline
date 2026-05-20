@@ -68,7 +68,14 @@ from harness.gates import is_token_overrun
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXP_DIR = REPO_ROOT / "experiments" / "v7-refactor-recommendation"
-PROMPT_DOC = REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt.md"
+# Prompt-version → file path. v1 is the round-2 production prompt and stays the
+# default. v2 is the experimental arm of the prompt-sensitivity sub-experiment
+# (plan: `plans/v7-round2-prompt-sensitivity-plan.md`). The flag is consumed
+# at the CLI; `harness.prompt.extract_prompt_body` is version-agnostic.
+PROMPT_DOCS = {
+    "v1": REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt.md",
+    "v2": REPO_ROOT / "docs" / "refactor-recommendation-experiment-agent-prompt-v2.md",
+}
 DEFAULT_OUT = EXP_DIR / "trial-logs"
 
 
@@ -181,6 +188,10 @@ def main() -> int:
                         help="don't pause on signature-check fires; log only")
     parser.add_argument("--dry-run", action="store_true",
                         help="skip API calls; just normalize, render, and report")
+    parser.add_argument("--prompt-version", choices=tuple(PROMPT_DOCS.keys()), default="v1",
+                        help="which agent-prompt file to render (default: v1, the "
+                             "round-2 production prompt). v2 is the experimental arm of "
+                             "the prompt-sensitivity sub-experiment.")
     args = parser.parse_args()
 
     out_root: Path = args.out.resolve()
@@ -213,7 +224,9 @@ def main() -> int:
     ]
     _log(f"pending after resume filter: {len(pending_full)} rows")
 
-    prompt_doc_text = PROMPT_DOC.read_text()
+    prompt_doc_path = PROMPT_DOCS[args.prompt_version]
+    _log(f"prompt-version: {args.prompt_version} -> {prompt_doc_path.relative_to(REPO_ROOT)}")
+    prompt_doc_text = prompt_doc_path.read_text()
     instructions, specifics = extract_prompt_body(prompt_doc_text)
 
     budget = BudgetState(budget_usd=args.budget_usd)
