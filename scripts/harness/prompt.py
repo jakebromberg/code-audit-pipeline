@@ -19,6 +19,13 @@ def extract_prompt_body(doc_text: str) -> tuple[str, str]:
     """Return (instructions_block, specifics_block) verbatim from agent-prompt.md.
 
     §1 is the first plain fenced block. §2 is the json-tagged fenced block.
+    Optional §2.1 (a Markdown section with worked-example prose paragraphs
+    between the `## 2.1` header and the `## 3.` header) is appended to the
+    specifics block when present so `render()` carries it into the user
+    message. v1 has no §2.1 and v1's specifics block is byte-identical to its
+    §2 JSON; v2 (prompt-sensitivity sub-experiment) has §2.1 and its specifics
+    block is the §2 JSON followed by a "Worked examples (synthetic, illustrative)"
+    header and the §2.1 prose body.
     """
     plain_blocks = re.findall(r"```\n(.*?)\n```", doc_text, re.DOTALL)
     json_blocks = re.findall(r"```json\n(.*?)\n```", doc_text, re.DOTALL)
@@ -26,7 +33,19 @@ def extract_prompt_body(doc_text: str) -> tuple[str, str]:
         raise ValueError("§1 instructions block not found in agent-prompt.md")
     if not json_blocks:
         raise ValueError("§2 specifics block not found in agent-prompt.md")
-    return plain_blocks[0], json_blocks[0]
+    specifics = json_blocks[0]
+    section_2_1 = re.search(
+        r"^## 2\.1\b[^\n]*\n+(.*?)\n+## 3\.",
+        doc_text, re.MULTILINE | re.DOTALL,
+    )
+    if section_2_1:
+        worked_examples = section_2_1.group(1).strip()
+        specifics = (
+            specifics
+            + "\n\nWorked examples (synthetic, illustrative):\n\n"
+            + worked_examples
+        )
+    return plain_blocks[0], specifics
 
 
 def normalize_decl(decl: dict, context_flags: dict | None = None) -> dict:
