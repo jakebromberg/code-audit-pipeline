@@ -143,9 +143,9 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
     {
       "plant_id": "3.2",
       "cluster_id": "function-duplicates-exact:Wallpaper:…/MaterialBlendMode.swift:62:…",
-      "n_duplicates_per_reviewer": {"reviewer-1": 0, "reviewer-2": 6, "reviewer-3": 6},
-      "reviewer_medians": {"reviewer-2": 0.7, "reviewer-3": 0.5},
-      "reviewer_variance": {"reviewer-2": 0.0, "reviewer-3": 0.04}
+      "n_duplicates_per_reviewer": {"reviewer-1": 6, "reviewer-2": 6, "reviewer-3": 6},
+      "reviewer_medians": {"reviewer-1": 0.7, "reviewer-2": 0.7, "reviewer-3": 0.5},
+      "reviewer_variance": {"reviewer-1": 0.0, "reviewer-2": 0.0, "reviewer-3": 0.04}
     }
     // …28 more entries…
   ],
@@ -154,7 +154,7 @@ A diagnostic field, `within_reviewer_inconsistency_count`, counts the (reviewer,
 }
 ```
 
-`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., reviewer-1's round-1 scores cover only the 6 Plant 5.1 surviving rows, so for the other 28 round-2 judgments `n_duplicates_per_reviewer["reviewer-1"]` is 0). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, or reviewer coverage is uneven at the judgment level — Fleiss κ requires every item rated by exactly m raters. Because reviewer-1 only covers Plant 5.1 (the surviving 6 of their original 12 scores), the collapsed κ will treat the other 28 judgments as covered by m=2 raters (reviewer-2 and reviewer-3); if reviewer-1 does not back-score the new judgments, `score_all.py` will either compute κ at m=2 on those 28 judgments or emit the coverage sentinel — confirm which by reading `inter_rater_collapsed.note` after the rerun and decide whether to ask reviewer-1 to back-score before final reporting.
+`n_duplicates_per_reviewer` is per-reviewer because reviewers can cover different numbers of duplicates per judgment (e.g., reviewer-1's round-1 scores cover only the 6 Plant 5.1 surviving rows, so for the other 28 round-2 judgments the `"reviewer-1"` key is absent from `n_duplicates_per_reviewer` / `reviewer_medians` / `reviewer_variance` — the per-judgment dicts only carry keys for reviewers that actually scored at least one duplicate of that judgment). `fleiss_kappa` is null and `note` is populated when: panel-scores is missing/empty, fewer than 2 reviewers contributed, or reviewer coverage is uneven at the judgment level — Fleiss κ requires every item rated by exactly m raters, where m is the total number of distinct reviewer IDs that contributed any score (so if reviewer-1, reviewer-2, and reviewer-3 all submit scores anywhere in the corpus, m=3 globally and every judgment must be covered by all 3 or the sentinel fires). Because reviewer-1 only covers Plant 5.1 (the surviving 6 of their original 12 scores), the other 28 round-2 judgments are covered by reviewer-2 and reviewer-3 only; under the current `attach_collapsed_panel_kappa` implementation this is exactly the "uneven coverage" case and `score_all.py` will emit the coverage sentinel (`fleiss_kappa: null` plus a `(judgment, reviewer) pair(s) missing` note) rather than computing a sub-m κ on the covered subset. To get a numeric collapsed κ, reviewer-1 must back-score the 28 new judgments before the final rerun.
 
 ### How to interpret the two κs together
 
