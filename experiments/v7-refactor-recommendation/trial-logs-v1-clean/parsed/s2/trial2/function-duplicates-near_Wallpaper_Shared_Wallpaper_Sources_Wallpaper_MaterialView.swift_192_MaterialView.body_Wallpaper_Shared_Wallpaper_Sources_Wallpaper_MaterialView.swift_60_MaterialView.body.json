@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"kind\": \"computed-property\", \"line\": 60, \"name\": \"MaterialView.body\"",
+    "rationale": "Both members share the name `MaterialView.body`, are `computed-property` kind, reside in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, and carry a Jaccard similarity of 0.833 \u2014 indicating near-identical implementations. Having two `body` computed properties in the same file almost certainly means either two `struct MaterialView` declarations or two `extension MaterialView` blocks each defining `body`, which is either a compile error masked by conditional compilation or a latent bug. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so this is live production code that warrants consolidation.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration \u2014 likely by deleting the duplicate at line 192 and merging any distinct logic into the canonical `body` at line 60. If the two declarations represent intentionally different `MaterialView` types (e.g., parameterised differently via `#if` or generic constraints), add a comment explaining the divergence and suppress the lint signal.",
+      "why_no_category_fits": "Both records are the same computed property name (`MaterialView.body`) in the same file (`MaterialView.swift`) and same package (`Wallpaper`), just at different line numbers (60 and 192). This is not a cross-file or cross-package duplication amenable to 'extract-to-common', nor a protocol/subclass/generic pattern. The most likely cause is an accidental duplicate type or extension declaration within one file, which requires an intra-file merge or deletion rather than any of the standard refactor categories. 'extension-consolidation' is the closest named category but that schema targets consolidating extensions across multiple files, not resolving a within-file duplicate `body` property."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 2
+}

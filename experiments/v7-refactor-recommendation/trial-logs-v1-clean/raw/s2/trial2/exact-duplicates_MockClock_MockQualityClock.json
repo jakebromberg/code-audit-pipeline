@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint rules apply.\n\nBoth records live in test files (`AdaptiveQualityControllerTests.swift` and `CacheCoordinatorTests.swift`) even though the pipeline has flagged `is_test=false` on both. The file paths unambiguously place both types inside `Tests/` subdirectories \u2014 `Shared/Wallpaper/Tests/WallpaperTests/` and `Shared/Caching/Tests/CachingTests/`. The names `MockQualityClock` and `MockClock` are also semantically mock fixtures. The `is_mock=false` flag appears to be a tagging gap rather than a meaningful signal, because the structural evidence (test file paths, \"Mock\" prefix naming convention) overrides the metadata label. However, per the decision rules I must apply the flags as given and not hallucinate evidence \u2014 the flags say `is_test=false` and `is_mock=false`.\n\nWorking strictly from the cluster data: both are `type-alias-object` kinds with `shared_field_count: 2`, living in test directories across two separate packages (`Wallpaper` and `Caching`). Even setting aside the test-fixture question, these are test-local type aliases in unrelated packages whose coincidental structural identity (both alias some clock type with 2 fields) does not warrant coupling the two packages together. Lifting a shared `MockClock` alias into a common package would introduce a test-support dependency between `Wallpaper` and `Caching` for no meaningful gain.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift:19) and `MockClock` (Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift:41) are `type-alias-object` declarations living inside per-package test directories for unrelated packages (`Wallpaper` and `Caching`). Their structural identity (shared_field_count: 2) is coincidental: each alias exists to satisfy a local test fixture's clock-protocol conformance, and the two packages have no reason to share a common mock-clock definition. Extracting a shared alias would introduce an artificial cross-package test-support dependency between `Wallpaper` and `Caching`, coupling unrelated domains for no semantic gain.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XSYQ1swUWviHaWP5AtPicy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2524,
+    "output_tokens": 718,
+    "service_tier": "standard"
+  }
+}

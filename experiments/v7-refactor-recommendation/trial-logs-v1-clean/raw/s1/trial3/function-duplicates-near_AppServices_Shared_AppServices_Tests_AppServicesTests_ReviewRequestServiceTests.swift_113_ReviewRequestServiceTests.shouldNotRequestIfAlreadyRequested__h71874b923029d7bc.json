@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:113:ReviewRequestServiceTests.shouldNotRequestIfAlreadyRequested+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:70:ReviewRequestServiceTests.mixedActionsIncrementCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The near-duplicate signal (Jaccard 0.73) almost certainly reflects shared test scaffolding \u2014 arrange/act/assert boilerplate, service instantiation, and expectation patterns that are structurally similar but semantically distinct: `mixedActionsIncrementCount` (line 70) tests a count-increment scenario while `shouldNotRequestIfAlreadyRequested` (line 113) tests a guard condition. Merging or extracting these test methods would obscure test intent and couple unrelated behavioural assertions. Per the decision rules, any cluster where a participating record has `is_test: true` mandates no-action.\",\n    \"evidence_quote\": \"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018SNHophLWafFDmbisUdrpK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2600,
+    "output_tokens": 359,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "name-collisions:CGImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift\", \"kind\": \"extension\", \"line\": 36",
+    "rationale": "Eight unnamed extensions on CGImage are scattered across 'Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift' (lines 61, 91), 'Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift' (lines 46, 61), 'Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift' (line 36), 'Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift' (lines 250, 280), and 'WXYC/iOS/NowPlayingInfoCenterManager.swift' (line 136). The presence of a production-side extension in MultisourceArtworkService.swift alongside near-identical extensions in multiple test files strongly suggests duplicated CGImage factory or conversion helpers. However, all context flags are false (is_test=false even for files under Tests/), and fields_or_signature is empty for every member, so the exact shared members cannot be confirmed from the cluster data alone \u2014 making a precise extension-consolidation recommendation unsafe without a manual audit.",
+    "specifics": {
+      "proposed_action": "Audit all eight unnamed CGImage extensions across the Artwork and AppServices packages and the iOS app target, then consolidate the shared helper logic into a single CGImage extension in a common shared module (e.g., a new or existing 'Shared/Artwork/Sources/Artwork' or a dedicated 'Shared/Core' target). The two test files (ArtworkServiceTests.swift, ArtworkFetcherTests.swift, NowPlayingServiceTests.swift) likely define CGImage test-helper factories that duplicate the production extension in MultisourceArtworkService.swift and NowPlayingInfoCenterManager.swift. If the test-only extensions are truly test helpers, move them to a shared test-support module; if they replicate production logic, delete them and import the production extension.",
+      "why_no_category_fits": "The cluster surfaces eight unnamed CGImage extensions (kind='extension', name='') spread across two packages (Artwork, AppServices) and the iOS app target, with no field or method list available to confirm exact duplication. Because the members are anonymous extensions on the system type CGImage rather than user-defined types, none of the named categories fit cleanly: 'extract-to-common' applies to user-defined types, 'extension-consolidation' is the closest match but the schema requires a known target_type with concrete consolidate_from locations that can be verified \u2014 and the empty fields_or_signature means we cannot confirm the extensions share the same members. The cluster is therefore best described as a CGImage extension proliferation problem requiring a manual audit before a concrete consolidation plan can be committed."
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_CGImage.json",
+  "row_index": 2,
+  "trial": 2
+}

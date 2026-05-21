@@ -1,0 +1,27 @@
+{
+  "cluster_id": "generic-function-candidates:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "PlayerState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive",
+    "rationale": "Both `PlayerState.isActive` (line 72, `Shared/Playback/Sources/PlaybackCore/PlayerState.swift`) and `PlaybackState.isActive` (line 96, `Shared/Playback/Sources/PlaybackCore/PlaybackState.swift`) are computed properties of the same name and shape within the same `Playback` package, with a Jaccard similarity of 0.71. Rather than a generic function (which doesn't apply cleanly to computed properties on distinct types), the idiomatic Swift approach is to introduce a protocol `ActiveStateRepresentable` with a required `var isActive: Bool { get }` declaration in the `PlaybackCore` module. Both `PlayerState` and `PlaybackState` can then conform, enabling call-site polymorphism and a single point of documentation for what 'active' means in the playback domain. No restraint markers are present on either record, so refactoring is safe.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [],
+      "new_protocol": "ActiveStateRepresentable",
+      "replaces": [
+        "PlayerState.isActive",
+        "PlaybackState.isActive"
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Playback_Shared_Playback_Sources_PlaybackCore_PlaybackState.swift_96_PlaybackState.isActive_Playback_Shared_Playback_Sources_PlaybackCore_PlayerState.swift_72_PlayerState.isActive.json",
+  "row_index": 26,
+  "trial": 2
+}

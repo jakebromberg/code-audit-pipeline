@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` in the `app:iOS` package. The names differ only in direction ('Previous' vs 'Next'), strongly suggesting the bodies differ only in a sign or index offset. No restraint markers are set on either record (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. Introducing a shared `navigateTheme(offset:)` or `navigateTheme(direction:)` helper removes the duplicated logic while preserving the semantic intent of both call sites.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method, e.g. `navigateTheme(direction: ThemeDirection)` or `navigateTheme(offset: Int)`, where the direction/offset parameter (+1 / -1) encodes which way to step through the theme list. The two public call-site methods can then become one-line wrappers \u2014 or be removed entirely in favour of the parameterised form \u2014 eliminating the near-duplicate body (Jaccard 0.75).",
+      "why_no_category_fits": "The two members are concrete methods on the same class in the same file, not separate types or protocols, so 'extract-to-common', 'protocol-inheritance', 'default-implementation', 'pat-introduction', 'generic-parameterization', 'subclass-lift', 'macro-synthesis', 'composition', and 'extension-consolidation' do not apply. The duplication is a straightforward parameter-extraction refactor within a single method pair, which none of the named categories capture precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 3
+}

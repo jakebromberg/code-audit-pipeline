@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MainActorNotificationMessageSequence` (line 129 of `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `Shared/Core/Sources/Core/Observation/AsyncMessage.swift`) resolve to the same underlying type alias target. If they do, retain the more semantically precise name (likely `MainActorNotificationMessageSequence`, given its actor-isolation intent) and replace all uses of the other with a `typealias` re-export or a deprecation alias pointing to the canonical one, then delete the redundant declaration. If the two aliases intentionally differ in their right-hand-side type (e.g., one is `@MainActor`-constrained and the other is not), add a clarifying comment to each and recommend no-action.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-object` kinds with no fields (`fields_or_signature: []`). The cluster signals exact structural duplication (`shared_field_count: 3` on the alias metadata, `differing_slots: null`), but the correct resolution is not a classic extract, protocol, generic, or macro refactor \u2014 it is a deduplication of two type aliases within the same package (`Core`) that may or may not be semantically equivalent. The right mechanical action (collapse one alias into the other or add a deprecation forwarder) does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are `type-alias-object` records in the same `Core` package with `differing_slots: null` and `shared_field_count: 3`, indicating the pipeline found no structural difference between them. They live in adjacent files (`MainActorMessage.swift` and `AsyncMessage.swift`) under the same `Shared/Core/Sources/Core/Observation/` directory, suggesting they evolved in parallel rather than by design. No restraint markers are set on either record, so intentional duplication is not indicated. The names differ in actor-isolation semantics (`MainActor` vs. plain `Async`), which warrants a quick inspection before collapsing, but the structural evidence strongly suggests one is redundant.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": null, \\\"shared_field_count\\\": 3\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the right-hand-side of `MainActorNotificationMessageSequence` carries an explicit `@MainActor` constraint while `AsyncNotificationMessageSequence` does not, the two aliases encode distinct concurrency semantics despite identical structural shape, making the duplication intentional and the correct answer no-action with reason_class 'coincidental'.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HE5FCe6tB77jWeR4VgWXEg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2514,
+    "output_tokens": 757,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they can be unified into a single generic or defaulted-parameter function. If the differing behaviour is purely in one or two parameters (e.g., a cache policy, expiry duration, or key strategy), introduce a single `cachedFetch` with default-argument values for those parameters and delete the redundant overload. If the two overloads differ in their async/throwing signature, consider a single generic implementation that accepts a closure typed `() async throws -> T` and let call-sites that do not throw simply pass a non-throwing closure.\",\n      \"why_no_category_fits\": \"The cluster signals near-duplicate functions (Jaccard 0.7) that live in the same file and package, so 'extract-to-common' does not apply (they are already co-located). The signatures are not provided (`fields_or_signature` is empty for both records), so there is no evidence of a protocol, associated type, or subclass relationship that would make 'default-implementation', 'pat-introduction', 'generic-parameterization', or 'subclass-lift' the primary recommendation. The most likely fix is parameter consolidation or overload elimination within the existing file, which does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"Both records are production code (all context flags false) in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift`, package `Caching`, with the same name `cachedFetch` at lines 45 and 92. A Jaccard similarity of 0.7 indicates substantial but not total overlap, consistent with two overloads that share most of their body but diverge in one or two parameters or effect specifiers. Because both functions are in the same file there is no extraction target; the right action is to consolidate them in-place, most likely by merging into one function with default arguments or a single generic signature.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Sendable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two overloads differ primarily in the type of value they cache or return, a single generic `cachedFetch<T: Sendable>` could replace both, eliminating the duplication while preserving type safety. This is only viable once the actual signatures are inspected and confirmed to differ only in a concrete type parameter.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Vz8tEoyNYXKQVTxBmk4uvD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2565,
+    "output_tokens": 811,
+    "service_tier": "standard"
+  }
+}

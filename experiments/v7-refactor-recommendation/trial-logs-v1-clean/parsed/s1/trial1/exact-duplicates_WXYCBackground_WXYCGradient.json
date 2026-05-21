@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:WXYCBackground+WXYCGradient",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"shared_field_count\": 2 ... \"differing_slots\": null",
+    "rationale": "Both `WXYCBackground` (`BackgroundGradient.swift:13`) and `WXYCGradient` (`WXYCGradient.swift:14`) are `type-alias-object` records in the same `WXUI` package with `shared_field_count: 2` and no differing slots (`differing_slots: null`), strongly suggesting they alias the same concrete type. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so this is live production duplication. Because both already reside in `WXUI`, extraction to a common package is not applicable; the fix is a within-package alias consolidation or an explicit documented split.",
+    "specifics": {
+      "proposed_action": "Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are, delete one alias and replace all call-sites with the surviving name \u2014 preferring `WXYCGradient` as the more semantically precise identifier \u2014 or, if both names carry distinct semantic intent (background vs. gradient), add a comment to each alias file explicitly documenting the distinction to prevent future confusion and re-duplication.",
+      "why_no_category_fits": "Both records are `type-alias-object` kinds with zero fields (`fields_or_signature: []`) and `shared_field_count: 2` in the structural evidence, meaning the aliases themselves share two structural slots (likely the same aliased type and the same access level). This is not a case of extracting a shared concrete type (the aliases already live in the same package, `WXUI`), nor of introducing a protocol, generic, or default implementation. The actionable decision is purely a naming/deduplication judgment: either collapse to one alias or document the intentional split. None of the named refactor categories model 'decide between two type aliases for the same underlying type.'"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_WXYCBackground_WXYCGradient.json",
+  "row_index": 51,
+  "trial": 1
+}

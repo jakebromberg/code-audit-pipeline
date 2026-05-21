@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"protocol-inheritance\",\n    \"specifics\": {\n      \"parent\": \"NotificationMessage\",\n      \"children\": [\"AsyncNotificationMessage\", \"MainActorNotificationMessage\"],\n      \"moved_members\": [\n        \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n        \"name:Notification.Name\"\n      ],\n      \"reuse_existing_swift_protocol\": false\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) share exactly 3 fields, of which 2 are identical: `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name`. The sole differing slot is the `makeMessage` signature \u2014 `AsyncNotificationMessage` takes a plain `Notification` while `MainActorNotificationMessage` takes a `sending Notification`, reflecting their distinct concurrency contexts (async vs. MainActor). Introducing a base protocol `NotificationMessage` in the same `Core` package that carries the two shared members allows each child protocol to retain only its concurrency-specific `makeMessage` variant, eliminating the structural duplication without conflating the two execution contexts. Neither record carries any restraint marker, making this a clean production refactor.\",\n    \"evidence_quote\": \"shared_field_count: 3\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"NotificationMessage\",\n        \"associated_type\": \"Subject\",\n        \"constraints\": [],\n        \"replaces\": [\"AsyncNotificationMessage\", \"MainActorNotificationMessage\"]\n      },\n      \"rationale\": \"If `Subject` is already an associated type on both protocols (implied by `object: Subject?` in `makeNotification`), a single PAT `NotificationMessage` with `associatedtype Subject` could unify both protocols entirely, with call-sites constrained by the concurrency requirement of the `makeMessage` variant they need. This is more aggressive than protocol-inheritance and risks conflating the async/MainActor distinction, so protocol-inheritance is preferred as the primary recommendation.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SacQ1uKj82BtadqSCuEmyn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2696,
+    "output_tokens": 635,
+    "service_tier": "standard"
+  }
+}

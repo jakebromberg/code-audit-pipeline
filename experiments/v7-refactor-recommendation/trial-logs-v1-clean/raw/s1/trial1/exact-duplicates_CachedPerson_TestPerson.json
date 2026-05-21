@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records live under `Shared/Caching/Tests/CachingTests/` \u2014 test files by path, even though `is_test` is flagged `false`.\n- Both are `type-alias-object` kinds with 0 declared fields but `shared_field_count: 2`, meaning they alias the same underlying type with the same shape.\n- The names `TestPerson` and `CachedPerson` are test-fixture names (one is literally prefixed \"Test\"), and both files are in a `Tests/CachingTests/` directory.\n- Despite `is_test: false` on both records (likely a metadata gap \u2014 the files are unambiguously in a test target by path), the domain is clearly test scaffolding. Merging them into production code would couple production to test semantics. The right call is no-action, but I'll note the consolidation opportunity within the test target as an alternative.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CachedPerson+TestPerson\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) reside under `Shared/Caching/Tests/CachingTests/`, making them unambiguous test-target fixtures despite the `is_test: false` metadata flag \u2014 the directory path is the authoritative signal. Both are `type-alias-object` records with `shared_field_count: 2` and no declared fields of their own, meaning they are thin aliases used to satisfy generic constraints in their respective test files. Merging them into a shared production type would couple the `Caching` package's production surface to test-only naming and semantics. The distinct names (`TestPerson` vs `CachedPerson`) also suggest each alias was coined to communicate intent within its specific test file, so the duplication is intentional fixture design.\",\n    \"evidence_quote\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Caching\",\n        \"type_name\": \"PersonFixture\",\n        \"remove_from\": [\n          \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\",\n          \"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a future audit confirms that `TestPerson` and `CachedPerson` alias exactly the same concrete type (consistent with `shared_field_count: 2` and identical `kind: type-alias-object`), they could be consolidated into a single `PersonFixture` type-alias declared in a shared test-support file within the `Caching` test target, eliminating the duplication without touching production code. This is only warranted if the two aliases are confirmed to be interchangeable and neither name carries load-bearing semantic distinction within its test file.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014rjtkkeMvaYcV48eaLrF7Z",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2516,
+    "output_tokens": 787,
+    "service_tier": "standard"
+  }
+}

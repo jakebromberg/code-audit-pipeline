@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"NormalizationModeConfigurable (proposed; or whichever shared protocol FFTProcessor, RMSProcessor, and AverageProcessor already conform to that declares setNormalizationMode)\",\n      \"method\": \"setNormalizationMode(_:)\",\n      \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/NormalizationModeConfigurable.swift (new file, or inline in the protocol's existing declaration file)\",\n      \"conformers_simplified\": [\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline has flagged `FFTProcessor.setNormalizationMode` (line 189), `RMSProcessor.setNormalizationMode` (line 61), and `AverageProcessor.setNormalizationMode` (line 60) as default-impl-candidates, meaning all three implementations share the same shape and are therefore collapsible into a single protocol extension default. All three files live in the same package (`PlayerHeaderView`) and the same source directory (`Shared/PlayerHeaderView/Sources/PlayerHeaderView/`), so there is no cross-package boundary concern. Providing a default implementation on the shared protocol eliminates the three parallel concrete implementations and ensures any future processor type gets the behaviour for free. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are present on any participating record.\",\n    \"evidence_quote\": \"FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Strategy\", \"constraint\": \"NormalizationModeConfigurable\" }\n        ],\n        \"new_name\": \"AudioProcessor\",\n        \"replaces\": [\"FFTProcessor\", \"RMSProcessor\", \"AverageProcessor\"]\n      },\n      \"rationale\": \"If the three processor types differ only in their normalization strategy and a handful of other orthogonal behaviours, a single generic `AudioProcessor<Strategy>` parameterised over a strategy protocol could replace all three concrete types entirely. However, this is a heavier refactor and is only warranted if the rest of each type's surface area is also largely shared; the default-implementation path is lower-risk and more idiomatic for the narrow `setNormalizationMode` overlap identified here.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QNeAc6Ma9wQQHxUrN3rVTv",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2349,
+    "output_tokens": 880,
+    "service_tier": "standard"
+  }
+}

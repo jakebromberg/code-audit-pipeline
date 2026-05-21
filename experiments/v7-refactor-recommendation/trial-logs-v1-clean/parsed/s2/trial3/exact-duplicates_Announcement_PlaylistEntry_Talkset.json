@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\", \"kind\": \"type-alias-object\", \"name\": \"Announcement\"",
+    "rationale": "All three members live in the same `Playlist` package and share `shared_field_count: 4` with no differing slots, indicating structural identity. `Announcement` is a `type-alias-object` in `_Plant_Announcement.swift` \u2014 the `_Plant_` prefix strongly suggests a transitional or codegen-migration artifact rather than a deliberate domain type. `Talkset` is likewise a `type-alias-object` in `PlaylistEntry.swift` at line 90, co-located with the `PlaylistEntry` interface at line 22. The most likely situation is that both aliases point to `PlaylistEntry`, making them candidates for removal or explicit documentation, not extraction.",
+    "specifics": {
+      "proposed_action": "Investigate whether `Announcement` (line 13, `_Plant_Announcement.swift`) and `Talkset` (line 90, `PlaylistEntry.swift`) are type aliases for `PlaylistEntry` (line 22, `PlaylistEntry.swift`). If so, consolidate the canonical definition into `PlaylistEntry` and retain the aliases only where they serve a meaningful semantic or API-compatibility purpose. If the aliases are vestigial or internal scaffolding (note the `_Plant_` prefix on `Announcement`'s file, suggesting a generated or transitional artifact), remove them and update all call sites within the `Playlist` package to reference `PlaylistEntry` directly. The `_Plant_` prefix on `_Plant_Announcement.swift` is a strong signal that this file may be a leftover code-generation or migration artifact that should be deleted rather than preserved.",
+      "why_no_category_fits": "The cluster contains two `type-alias-object` kinds (`Announcement`, `Talkset`) and one `interface` kind (`PlaylistEntry`), all sharing 4 fields and residing in the same `Playlist` package. This is not a straightforward extract-to-common (they are already co-located), not a protocol-inheritance or default-implementation situation (the aliases are not protocols), and not a generic-parameterization opportunity. The correct action is to audit the alias relationships and either delete the aliases or document their semantic intent \u2014 a pattern that does not map cleanly to any named refactor category."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial3/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 3
+}

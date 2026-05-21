@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount` (line 22) and `ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 carry `is_test: true` in their context flags. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Although the two test methods share a similar shape (Jaccard 0.75), they exercise distinct user-action paths (`recordPlaybackStarted` vs. `recordSongAddedToLibrary`), and collapsing them into a generic helper would obscure the intent of each individual test case and couple unrelated behavioral assertions.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CrjniLuo8kH9qYK5NL343z",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 349,
+    "service_tier": "standard"
+  }
+}

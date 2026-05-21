@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:20:WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.72,
+    "evidence_quote": "WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight",
+    "rationale": "Both `WXYCBackground.wxycBackgroundLight` (line 20 of `BackgroundGradient.swift`) and `WXYCGradient.wxycBackgroundLight` (line 21 of `WXYCGradient.swift`) are exact-duplicate computed properties living in the same `WXUI` package with no restraint markers. The duplication suggests that `WXYCBackground` and `WXYCGradient` are either the same conceptual type split across files, or that `BackgroundGradient.swift` is a vestigial file that predates `WXYCGradient.swift`. The canonical home for gradient-related computed properties is `WXYCGradient.swift`; the duplicate in `BackgroundGradient.swift` should be removed and any callers referencing `WXYCBackground.wxycBackgroundLight` redirected to `WXYCGradient.wxycBackgroundLight`. If `WXYCBackground` and `WXYCGradient` are genuinely distinct types, the shared property body should be extracted into a protocol extension or free function in `WXYCGradient.swift` and both types made to conform.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/WXUI/Sources/WXUI/BackgroundGradient.swift",
+        "Shared/WXUI/Sources/WXUI/WXYCGradient.swift"
+      ],
+      "target_type": "WXYCGradient"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_WXUI_Shared_WXUI_Sources_WXUI_BackgroundGradient.swift_20_WXYCBackground.wxycBackgroundLight_WXUI_Shared_WXUI_Sources_WXUI_WXYCGradient.swift_21_WXYCGradient.wxycBackgroundLight.json",
+  "row_index": 17,
+  "trial": 3
+}

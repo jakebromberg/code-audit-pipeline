@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:71:AudioPlayerCoreStateTests.stopTransitionsToIdle+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:88:AudioPlayerCoreStateTests.isPlayingFalseAfterStop\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` in their context flags. The two methods \u2014 `AudioPlayerCoreStateTests.stopTransitionsToIdle` (line 71) and `AudioPlayerCoreStateTests.isPlayingFalseAfterStop` (line 88) \u2014 live in the same test file `Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift` and are distinct behavioral assertions about the audio player's stop semantics. Although their Jaccard similarity is high (0.778), each test encodes a separate observable postcondition (state transition to idle vs. `isPlaying` becoming false), so the structural overlap is intentional and load-bearing for test clarity. Merging or extracting them would obscure which specific behavior is under test.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0176XQZA1ucn7se9tPdZ31u4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2628,
+    "output_tokens": 375,
+    "service_tier": "standard"
+  }
+}

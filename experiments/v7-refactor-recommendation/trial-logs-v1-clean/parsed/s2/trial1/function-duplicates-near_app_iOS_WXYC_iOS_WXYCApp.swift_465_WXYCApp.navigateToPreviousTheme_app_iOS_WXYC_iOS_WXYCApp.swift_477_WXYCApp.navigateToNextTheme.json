@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "The structural evidence reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package. The names differ only in the direction token ('Previous' vs 'Next'), strongly suggesting the bodies differ only in a sign or index offset. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate. Merging the shared body into a single `navigateToTheme(offset:)` or `navigateToTheme(direction:)` helper eliminates the duplication while preserving readable call sites.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single parameterized helper, e.g. `navigateToTheme(offset: Int)` or `navigateToTheme(direction: ThemeNavigationDirection)`, where `navigateToPreviousTheme()` becomes `navigateToTheme(offset: -1)` and `navigateToNextTheme()` becomes `navigateToTheme(offset: +1)`. The two public call-site wrappers can be kept as one-liner forwarding methods if the call sites require distinct names, but the shared body should live in the single helper to eliminate the near-duplicate logic.",
+      "why_no_category_fits": "Both methods live in the same file and same type (`WXYCApp`) in the same package (`app:iOS`), so 'extract-to-common' (cross-file/package extraction) is not the right frame. They are not a protocol, struct, or class pair, so 'generic-parameterization', 'protocol-inheritance', or 'subclass-lift' do not apply. The duplication is a within-type, within-file near-duplicate body that is best resolved by introducing a direction/offset parameter \u2014 a standard refactor that none of the named categories capture precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveArtist",
+    "rationale": "Both participating records carry the type name `MockDiscogsEntityResolver.resolveArtist` \u2014 the `Mock` prefix is a canonical Swift test-fixture naming convention \u2014 and both files reside under test directories: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`. Although the pipeline has emitted `is_test: false` and `is_mock: false` for both records (likely a flag-extraction gap for test-support types that are not themselves `XCTestCase` subclasses), the file paths and type name constitute unambiguous literal evidence that these are test-fixture mock implementations. Consolidating them into a shared target would couple two independent test suites (`Metadata` and `app:iOS`) through a shared mock, which is an anti-pattern that makes test isolation harder to maintain. The duplication is intentional: each test file owns its own local mock to remain self-contained.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_35_MockDiscogsEntityResolver.resolveArtist_app_iOS_WXYC_iOS_Tests_WXYCTes__hfb3339d4fff50555.json",
+  "row_index": 26,
+  "trial": 1
+}

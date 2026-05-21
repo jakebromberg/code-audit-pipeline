@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nThe context flags on all four records show `is_test: false`, `is_mock: false`, `is_sample_app: false`, `is_codegen: false`. However, the file path is `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and the type names are nested inside test classes (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`). The structural pipeline has apparently not flagged these as `is_test=true` despite the clear test-file location and test-class nesting \u2014 but the decision rules say I must rely on the flags as given, not infer from naming.\n\nWith no restraint markers, I should evaluate the actual duplication. All four are `type-alias-object` kinds with empty `fields_or_signature`, living in the same file, with the same local name `SequentialMockSession` nested under different test-suite classes. The `shared_field_count: 1` and `jaccard: null` confirm structural identity. The right action is to extract a single shared `SequentialMockSession` type alias at the file or module scope, removing the per-suite duplicates.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four records are `type-alias-object` declarations named `SequentialMockSession`, each nested inside a different test-suite type (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests` \u2014 the last appearing twice at lines 317 and 363), yet all four live in the single file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package. The `shared_field_count: 1` and identical `kind` confirm they are structurally exact duplicates. Hoisting a single `private typealias SequentialMockSession = \u2026` to file scope (or to a shared test-support file within the same package) would eliminate all four redundant nested declarations while remaining within the `Artwork` package boundary.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"iTunesArtworkServiceTests.SequentialMockSession\\\"\\n\\\"name\\\": \\\"LastFMArtworkServiceTests.SequentialMockSession\\\"\\n\\\"name\\\": \\\"DiscogsArtworkServiceTests.SequentialMockSession\\\"\\n\\\"file\\\": \\\"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Although the pipeline did not set `is_test: true` on any record, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the enclosing type names (all suffixed `Tests`) strongly suggest these are test fixtures. If the pipeline's flag omission is a tagging gap rather than a semantic signal, the correct ruling under the restraint rules would be no-action with reason_class 'test-fixture', since lifting test-internal type aliases into shared scope couples test infrastructure in a way that may not be desirable.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MbufrzXcRrAQTKVXv7dvT1",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2878,
+    "output_tokens": 981,
+    "service_tier": "standard"
+  }
+}

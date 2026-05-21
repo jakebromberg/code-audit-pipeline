@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the participating records carefully.\n\nThe cluster ID encodes the two participants:\n1. `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback` \u2014 this is in a file named `MockStructuredAnalytics.swift` inside a path segment `AnalyticsTesting`, strongly indicating a mock/test fixture.\n2. `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent` \u2014 this is production code in `PlaybackCore`.\n\nThe `members` array is empty, so I cannot inspect field lists directly. However, the cluster ID itself is the primary evidence: the first record lives in `AnalyticsTesting/MockStructuredAnalytics.swift` and is named `MockStructuredAnalytics.CPUSessionEventProxy+Playback`, which is unambiguously a mock fixture (both the directory name `AnalyticsTesting` and the type prefix `Mock` signal this). The Jaccard similarity of 0.875 confirms the near-duplicate shape, which is expected \u2014 mocks intentionally mirror the shape of the production types they stand in for.\n\nLifting the shared shape into common code would couple production `PlaybackCore` semantics to test/analytics-testing infrastructure, which is the canonical restraint pattern described in rule 1.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` declared in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 both the `AnalyticsTesting` path segment and the `Mock` type-name prefix are unambiguous mock-fixture markers. The high Jaccard similarity of 0.875 is expected and intentional: the mock is designed to mirror the shape of the production `CPUSessionEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` so that test code can substitute it. Extracting shared structure would couple `PlaybackCore` production semantics to test-infrastructure semantics, which is precisely the anti-pattern the restraint rule guards against. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Hpt8dG5hx2WdHbTwadG85J",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 738,
+    "service_tier": "standard"
+  }
+}

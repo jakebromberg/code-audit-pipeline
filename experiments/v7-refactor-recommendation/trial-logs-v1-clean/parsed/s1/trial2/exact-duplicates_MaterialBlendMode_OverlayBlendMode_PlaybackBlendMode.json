@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.88,
+    "evidence_quote": "\"shared_field_count\": 16",
+    "rationale": "All three members \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` declarations in the same `Wallpaper` package, all at line 21 of their respective files, and share exactly 16 fields with no differing slots (Jaccard not applicable, `differing_slots: null`). This is a textbook case of role-specific type aliases wrapping an identical underlying union type. The correct Swift idiom is to define a single canonical `BlendMode` type in the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode.swift`) and replace the three aliases with `typealias PlaybackBlendMode = BlendMode`, `typealias MaterialBlendMode = BlendMode`, and `typealias OverlayBlendMode = BlendMode` \u2014 or, if the call-site names are not part of a public API contract, remove the aliases entirely and migrate callers to `BlendMode` directly. No restraint markers are present on any record.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "BlendMode"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MaterialBlendMode_OverlayBlendMode_PlaybackBlendMode.json",
+  "row_index": 17,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift",
+    "rationale": "Both records reside under 'Shared/Metadata/Tests/MetadataTests/' \u2014 'PlaycutMetadataServiceCachingTests.swift' and 'DiscogsAPIEntityResolverCachingTests.swift' \u2014 and carry 'Mock' in their names ('MetadataMockWebSession', 'EntityResolverMockWebSession'), making them test fixtures by path and naming convention despite the pipeline's is_test=false tagging. Each alias is scoped to a distinct test suite testing different subsystems (playcut metadata caching vs. Discogs entity resolver caching); consolidating them into a shared alias would introduce an artificial coupling between two independent test files. The structural coincidence (shared_field_count=2, differing_slots=null) reflects that both are thin type-alias wrappers over the same underlying mock session type, not a meaningful duplication that warrants extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 2
+}

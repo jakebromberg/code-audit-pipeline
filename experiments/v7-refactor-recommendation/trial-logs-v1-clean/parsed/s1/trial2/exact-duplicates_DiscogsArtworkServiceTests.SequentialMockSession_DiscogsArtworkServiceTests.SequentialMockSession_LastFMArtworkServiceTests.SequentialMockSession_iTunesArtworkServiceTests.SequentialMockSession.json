@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"DiscogsArtworkServiceTests.SequentialMockSession\", \"package\": \"Artwork\"",
+    "rationale": "All four records are `type-alias-object` declarations named `SequentialMockSession`, all residing in the single file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package, at lines 84, 211, 317, and 363. They are nested redundantly under `iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, and `DiscogsArtworkServiceTests` (the last appearing twice). Because they share identical shape (`shared_field_count: 1`, `differing_slots: null`, `jaccard: null`) and live in the same file, a single file-scoped or test-helper-scoped `typealias SequentialMockSession` would eliminate all four duplicates. The two `DiscogsArtworkServiceTests.SequentialMockSession` entries at lines 317 and 363 are a direct exact duplicate within the same enclosing scope and should be reduced to one regardless.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift"
+      ],
+      "target_package": "Artwork",
+      "type_name": "SequentialMockSession"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_DiscogsArtworkServiceTests.SequentialMockSession_DiscogsArtworkServiceTests.SequentialMockSession_LastFMArtworkServiceTests.SequentialMockSession_iTunesArtworkServiceTests.SequentialMockSession.json",
+  "row_index": 12,
+  "trial": 2
+}

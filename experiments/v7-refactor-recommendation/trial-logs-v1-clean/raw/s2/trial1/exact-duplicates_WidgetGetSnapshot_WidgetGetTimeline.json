@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:WidgetGetSnapshot+WidgetGetTimeline\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `WidgetGetSnapshot` and `WidgetGetTimeline` are `type-alias-object` declarations in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`, lines 92 and 102) with empty `fields_or_signature` arrays. The structural signal is that they share shape (both are empty type aliases), but they encode distinct domain concepts \u2014 snapshotting a widget vs. fetching its timeline \u2014 whose structural coincidence is purely a consequence of both being zero-field event marker types. Merging or extracting them would conflate two semantically separate analytics events that exist to be distinguished in event streams. No restraint markers are present, but the coincidental-shape reason dominates here.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"WidgetGetSnapshot\\\" ... \\\"name\\\": \\\"WidgetGetTimeline\\\" ... \\\"fields_or_signature\\\": [] ... \\\"fields_or_signature\\\": [] ... \\\"shared_field_count\\\": 1\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01ENmtnsMZVA3S1Y87WDHDfa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2504,
+    "output_tokens": 323,
+    "service_tier": "standard"
+  }
+}

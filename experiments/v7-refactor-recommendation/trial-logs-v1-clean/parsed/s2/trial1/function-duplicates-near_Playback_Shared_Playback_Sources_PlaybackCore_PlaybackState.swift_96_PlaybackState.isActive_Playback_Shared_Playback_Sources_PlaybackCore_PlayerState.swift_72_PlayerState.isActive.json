@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `PlayerState.isActive` (line 72) and `PlaybackState.isActive` (line 96) are computed properties in the same `Playback` package with a Jaccard similarity of 0.714, indicating near-identical implementations. Since both types live in `Shared/Playback/Sources/PlaybackCore/` and share no restraint markers (all context flags false), the idiomatic Swift approach is to introduce a protocol (e.g., `ActiveStateProviding`) with a default `isActive` implementation in a protocol extension, allowing both `PlayerState` and `PlaybackState` to conform and drop their individual implementations. This eliminates the duplication while preserving the distinct type identities that likely justify having two separate state types.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Playback/Sources/PlaybackCore/PlayerState.swift",
+        "Shared/Playback/Sources/PlaybackCore/PlaybackState.swift"
+      ],
+      "method": "var isActive: Bool { get }",
+      "protocol": "ActiveStateProviding",
+      "target_location": "Shared/Playback/Sources/PlaybackCore/PlaybackState.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Playback_Shared_Playback_Sources_PlaybackCore_PlaybackState.swift_96_PlaybackState.isActive_Playback_Shared_Playback_Sources_PlaybackCore_PlayerState.swift_72_PlayerState.isActive.json",
+  "row_index": 139,
+  "trial": 1
+}

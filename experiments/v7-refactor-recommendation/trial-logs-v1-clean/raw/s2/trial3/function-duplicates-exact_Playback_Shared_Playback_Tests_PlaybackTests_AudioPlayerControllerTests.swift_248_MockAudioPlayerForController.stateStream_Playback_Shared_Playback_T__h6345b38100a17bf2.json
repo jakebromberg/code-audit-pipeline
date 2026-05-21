@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint markers apply.\n\nBoth records have `is_test=false`, `is_mock=false`, `is_sample_app=false`, and `is_codegen=false`. However, the file path is `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` \u2014 this is unambiguously a test file (it lives under `Tests/PlaybackTests/` and is named `AudioPlayerControllerTests.swift`), and the type is `MockAudioPlayerForController`, which is a mock type by naming convention. The context flags appear to be mislabeled (both `is_test` and `is_mock` are `false` despite the file path and type name strongly indicating otherwise).\n\nThe decision rules say restraint markers on participating records are load-bearing, but they also say I must not hallucinate \u2014 I can only cite what's in the cluster row. The file path itself is literal evidence: `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift`. The path contains `Tests/PlaybackTests/`, which is structural evidence of test context even if the flag is `false`. The type name `MockAudioPlayerForController` is also literal evidence of mock intent. I can cite these as evidence without hallucinating.\n\nGiven that both properties (`stateStream`, `eventStream`) live inside a mock type in a test file, any refactor that consolidates them would couple test/mock infrastructure \u2014 no production benefit accrues. The duplication is also within a single file, making extraction low-value even if warranted.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) reside in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift`, a file whose path places it squarely inside the `Tests/PlaybackTests/` directory. The owning type `MockAudioPlayerForController` is a test-local mock by name and location. Although the pipeline's `is_test` and `is_mock` flags are both `false`, the file path and type name are literal evidence of test-fixture intent that overrides the flag mislabeling. Consolidating two structurally similar computed properties inside a single mock type in a single test file yields no production benefit and risks coupling test infrastructure unnecessarily.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GePevVi3GQwcpaFLdbh4pv",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2587,
+    "output_tokens": 736,
+    "service_tier": "standard"
+  }
+}

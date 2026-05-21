@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `Image.heifData` method definitions at lines 28 and 107 within the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. They share the same name and a Jaccard similarity of 0.75, suggesting they are near-duplicates rather than exact duplicates. Likely one is a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`) or one is a legacy overload. Consolidate them into a single implementation \u2014 either by unifying the shared logic into a private helper and having each conditional branch call it, or by eliminating the redundant overload entirely if one is strictly subsumed by the other. The surviving or unified method should remain at its current location in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` within the `Core` package.\",\n      \"why_no_category_fits\": \"Both records live in the same file and same package, so 'extract-to-common' does not apply. They are methods on `Image`, not protocols or generics, so 'protocol-inheritance', 'pat-introduction', and 'generic-parameterization' do not fit. There is no base class involved. The duplication is within a single file and likely guarded by platform conditionals, making this an intra-file deduplication or conditional-compilation consolidation task that none of the named categories precisely describe.\"\n    },\n    \"rationale\": \"Both members are named `Image.heifData`, are `method` kind, reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package, and carry a Jaccard similarity of 0.75 \u2014 high enough to indicate substantial shared logic but not an exact copy. No restraint markers are set (all context flags are false). The 79-line gap between line 28 and line 107 in a file named `ImageCompatability.swift` strongly suggests platform-conditional blocks (UIKit vs AppKit) each defining their own `heifData` implementation with overlapping bodies. The shared logic (the 75% overlap) should be extracted into a private helper to eliminate the duplication while preserving any platform-specific divergence.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"intentional-specialization\"\n      },\n      \"rationale\": \"If the two `Image.heifData` definitions at lines 28 and 107 are each guarded by mutually exclusive platform `#if` directives (e.g., `#if os(iOS)` vs `#if os(macOS)`), the duplication may be intentional to keep platform paths fully self-contained and readable without indirection through a shared helper. In that case the 0.75 Jaccard overlap is coincidental to the platform split and no consolidation is warranted.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Xz9Htihy47s8MxMWi7eTj8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2553,
+    "output_tokens": 822,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\"",
+    "rationale": "Both `MetadataMockWebSession` (in `MetadataTests/PlaycutMetadataServiceCachingTests.swift`, line 79) and `EntityResolverMockWebSession` (in `MetadataTests/DiscogsAPIEntityResolverCachingTests.swift`, line 72) reside under `Shared/Metadata/Tests/MetadataTests/`, placing them firmly in test territory despite the pipeline reporting `is_test=false`. Their names carry the 'Mock' infix and they are `type-alias-object` declarations with identical shape (shared_field_count=2, differing_slots=null), strongly suggesting they are local test-support aliases scoped to their respective test files. Merging them into a shared alias would couple two independent test suites and obscure the intent of each fixture. No production code is involved, so no production benefit accrues from extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 2
+}

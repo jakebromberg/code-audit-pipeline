@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"ShaderDirectiveNamed\",\n      \"method\": \"humanReadableName() -> String\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) live in the same `Wallpaper` package and share a Jaccard similarity of 0.8, indicating nearly identical implementations. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). The idiomatic Swift resolution is to introduce a protocol (e.g., `ShaderDirectiveNamed`) with a default implementation of `humanReadableName` in a protocol extension housed alongside the core type in `ShaderDirectiveStore.swift`, allowing `ShaderDirectiveControlsDisclosure` to drop its own copy by simply conforming to the protocol.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ShaderDirectiveNameFormatting\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If the two types do not share a meaningful semantic relationship suitable for a protocol, the shared logic could instead be extracted into a free function or namespace type (e.g., `ShaderDirectiveNameFormatting`) within the `Wallpaper` package's Core layer, and both call sites updated to delegate to it. This avoids introducing a protocol solely for one method but is less idiomatic Swift than a protocol with a default implementation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01YExvK46DWA46b18vtdmfu3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2637,
+    "output_tokens": 712,
+    "service_tier": "standard"
+  }
+}

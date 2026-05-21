@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline detected a near-duplicate function pair with a Jaccard similarity of 0.706: `encodeCGImageAsHEIF` in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (package `Artwork`) and `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`). Both are production code (all context flags false) performing HEIF image encoding. The canonical home for shared image-compatibility utilities is already established in `Core`'s `ImageCompatability.swift`, which already contains `Image.heifData`. The `Artwork` package almost certainly already depends on `Core`, so `CachingArtworkFetcher` can call `Image.heifData` directly, eliminating the standalone `encodeCGImageAsHEIF` function and the duplication.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"N/A \u2014 see rationale\",\n        \"method\": \"heifData() -> Data?\",\n        \"target_location\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n        ]\n      },\n      \"rationale\": \"If HEIF encoding needs to be extensible across image types, a protocol with a default implementation in a `Core` extension could replace both the free function `encodeCGImageAsHEIF` and the method `Image.heifData`. However, since the existing `Image.heifData` method in `Core` already provides a concrete implementation, a simple call-site redirect (extract-to-common) is more idiomatic and less over-engineered.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FL49F8dXqEDrhb3Vdq9Qt9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 655,
+    "service_tier": "standard"
+  }
+}

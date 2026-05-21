@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.714 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. A similarity this high on two methods whose names differ only in grow/shrink direction is strong evidence that the bodies share the same capacity-check-and-copy skeleton, differing only in the predicate and target-size expression. Consolidating that skeleton into a single private helper eliminates the risk of the two methods drifting out of sync when buffer-management logic changes. No restraint markers are present on either record, so the refactor is safe to pursue.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private closure-parameterised method \u2014 that both callers delegate to. The two methods differ only in the direction of the capacity check and the target capacity computation (grow vs. shrink), which are the natural parameters to inject. This keeps the buffer-management invariant in one place without introducing a public API change.",
+      "why_no_category_fits": "The two methods live in the same file and the same type (`_DequeStorage`), so 'extract-to-common' (cross-package/file move) is not the right frame. They are concrete methods on a private storage class, not protocol requirements, so 'default-implementation', 'pat-introduction', and 'protocol-inheritance' do not apply. They are not types, so 'generic-struct' or 'subclass-lift' are irrelevant. The duplication is a classic grow/shrink mirror pattern best addressed by a private parameterised helper \u2014 a refactor that fits none of the named categories precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 3
+}

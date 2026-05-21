@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries no member records (members: []) and no field-level evidence \u2014 differing_slots, shared_ancestor, and shared_field_count are all null. The only signal is a Jaccard similarity of 0.75 between ThemeTipView (Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18) and SiriTipView (WXYC/iOS/Views/Root/SiriTipView.swift:21). Without knowing which fields or methods are shared, it is impossible to determine whether the structural overlap reflects a genuine abstraction opportunity or merely coincidental SwiftUI tip-view boilerplate (e.g., both being small TipKit/popover wrappers). Recommending an extraction or protocol without grounded member evidence risks coupling unrelated domain concepts \u2014 theme picking vs. Siri suggestions \u2014 that happen to share view shape.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      },\n      \"rationale\": \"If a future investigation of the actual member lists confirms that ThemeTipView and SiriTipView share a meaningful set of layout/configuration members (consistent with the 0.75 Jaccard score), extracting a generic TipView base into the Shared/Wallpaper package \u2014 or a more neutral shared UI package \u2014 would eliminate the duplication. This alternative should only be pursued once member-level evidence is available.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01D4KjkZeG96bJZXZUVqRwBe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2321,
+    "output_tokens": 599,
+    "service_tier": "standard"
+  }
+}

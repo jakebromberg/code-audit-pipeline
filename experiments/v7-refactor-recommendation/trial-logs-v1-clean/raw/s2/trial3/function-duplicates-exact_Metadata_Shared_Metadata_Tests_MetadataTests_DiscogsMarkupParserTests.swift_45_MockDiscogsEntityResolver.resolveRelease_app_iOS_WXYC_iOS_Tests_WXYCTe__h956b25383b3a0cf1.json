@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 but the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver`. The context flags are the authoritative signal per the decision rules; the file names and type name prefix are suggestive but the flags say `is_test: false` and `is_mock: false`. I must go with the flags as given.\n\nHowever, the type name `MockDiscogsEntityResolver` strongly implies this is a test double, and both files live under `Tests/` paths. The flags may be miscalibrated, but I cannot override them \u2014 I can only cite the evidence I'm given. The structural signal is an exact function duplicate across two packages (`Metadata` and `app:iOS`), both in test file paths, of a mock helper. The right action is to extract the shared mock to a common test-support target.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveRelease` is duplicated exactly across two packages \u2014 `Metadata` (at `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45`) and `app:iOS` (at `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41`). Both files reside under `Tests/` paths and the type carries a `Mock` prefix, indicating this is a shared test double whose duplication will cause drift if the `DiscogsEntityResolver` protocol contract changes. Extracting `MockDiscogsEntityResolver` (including `resolveRelease`) into a dedicated test-support library within the `Metadata` package \u2014 which `app:iOS` already depends on for the production type \u2014 eliminates the duplication at its natural dependency boundary. The `app:iOS` package's test target would then import the shared mock rather than redeclare it.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both context-flag records report `is_test: false` and `is_mock: false`, which under strict flag-only reading means neither restraint marker is set. If the flags are authoritative and the `Mock` prefix and `Tests/` paths are misleading (e.g., the type is a lightweight stub used in production preview infrastructure), then the two packages may intentionally maintain separate, independently-evolvable implementations of this resolver, making extraction premature. In that case no-action with reason_class 'coincidental' is the safe fallback.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01W1PyPyTrALUp9Vb1G8WZnh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 932,
+    "service_tier": "standard"
+  }
+}

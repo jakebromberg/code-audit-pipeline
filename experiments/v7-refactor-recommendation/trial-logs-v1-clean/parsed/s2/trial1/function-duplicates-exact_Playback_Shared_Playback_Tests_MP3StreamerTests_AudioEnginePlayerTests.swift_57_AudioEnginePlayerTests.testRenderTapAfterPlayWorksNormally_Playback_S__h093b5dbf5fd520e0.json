@@ -1,0 +1,23 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:57:AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:75:AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:75:AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay",
+    "rationale": "Both participating records are methods named with the 'test' prefix \u2014 `AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally` (line 57) and `AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay` (line 75) \u2014 residing in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift` within the `Playback` package. Although the pipeline's context flags report `is_test: false`, the file path (`Tests/`), the enclosing class name (`AudioEnginePlayerTests`), and the `test`-prefixed method names unambiguously identify these as XCTest test methods. The structural similarity is almost certainly coincidental test-setup boilerplate (e.g., shared arrange/act/assert scaffolding for render-tap scenarios) rather than a production abstraction opportunity. Merging or extracting these would conflate two intentionally distinct test scenarios \u2014 one covering post-play tap registration and one covering pre-play multiple tap calls \u2014 reducing test clarity and isolation.",
+    "specifics": {
+      "no-action": {
+        "reason_class": "test-fixture"
+      }
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_57_AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally_Playback_S__h093b5dbf5fd520e0.json",
+  "row_index": 18,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaylistService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"file\": \"Shared/Playlist/Sources/Playlist/PlaylistService.swift\" ... \"kind\": \"extension\" ... \"file\": \"Shared/AppServices/Sources/AppServices/PreviewFixtures.swift\"",
+    "rationale": "The two records share the name 'PlaylistService' but are structurally distinct kinds: one is a 'type-alias-object' in 'Shared/Playlist/Sources/Playlist/PlaylistService.swift' (package: Playlist) and the other is an 'extension' in 'Shared/AppServices/Sources/AppServices/PreviewFixtures.swift' (package: AppServices). Both have empty fields_or_signature lists and no structural evidence (jaccard, shared_field_count, shared_ancestor are all null), meaning the pipeline found no shared shape \u2014 only a name collision. The extension in PreviewFixtures.swift is almost certainly extending PlaylistService for preview/convenience purposes within AppServices, which is a normal cross-package extension pattern in Swift and not a duplication problem.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_PlaylistService.json",
+  "row_index": 36,
+  "trial": 3
+}

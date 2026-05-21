@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in package `Playback` share four fields identically \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, `pageToken:String?`, and `item` \u2014 differing only in the concrete type of `item` (`Show` vs `Track`). This is the canonical PAT pattern: a single protocol with `associatedtype Item` captures the shared shape, and the two existing protocols either become typealiased conformances or are removed entirely. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Introducing `ContainerProtocol<Item>` eliminates the structural duplication and makes the relationship between the two container abstractions explicit in the type system.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"item:Show\\\"], \\\"b\\\": [\\\"item:Track\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale\", \"lastRefreshedAt\", \"pageToken\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If call-sites already reference `ShowContainerProtocol` and `TrackContainerProtocol` by name and a PAT would require widespread generic propagation, a non-generic base protocol `ContainerProtocol` carrying `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` could be introduced as a parent, with each child adding its concrete `item` property. This avoids the type-erasure complexity of a PAT but leaves the `item` slot unshared.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011L1s9Y612eUooSTdefhqRg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2682,
+    "output_tokens": 648,
+    "service_tier": "standard"
+  }
+}

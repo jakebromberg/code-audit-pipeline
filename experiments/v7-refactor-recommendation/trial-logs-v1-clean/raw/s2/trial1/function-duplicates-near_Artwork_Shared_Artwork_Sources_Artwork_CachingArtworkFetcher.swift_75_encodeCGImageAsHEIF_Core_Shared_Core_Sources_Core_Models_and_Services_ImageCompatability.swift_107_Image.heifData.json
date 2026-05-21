@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline detected near-duplicate HEIF-encoding logic between `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (line 107) and `encodeCGImageAsHEIF` in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (line 75), with a Jaccard similarity of 0.706. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). `Core` is the natural canonical home because it already owns `ImageCompatability.swift`, which is the appropriate layer for image-format utilities; `Artwork` already depends on `Core` (or can reasonably do so), so `CachingArtworkFetcher` can simply call `Image.heifData` and the standalone `encodeCGImageAsHEIF` function can be deleted.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\",\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n        ]\n      },\n      \"rationale\": \"If the two implementations differ in subtle ways (e.g., `encodeCGImageAsHEIF` operates on a raw `CGImage` while `Image.heifData` wraps a higher-level `Image` type), the right move may be to consolidate both into a single `extension Image` (or `extension CGImage`) in `ImageCompatability.swift` rather than a straight deletion, preserving any distinct overload while still eliminating the duplication in `CachingArtworkFetcher`.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017Jaqk29J7P2iJycK9n8ZtB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 657,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"structural_evidence\": {\n    \"differing_slots\": null,\n    \"jaccard\": null,\n    \"shared_ancestor\": null,\n    \"shared_field_count\": null\n  }",
+    "rationale": "Both records in this cluster carry all context flags set to false and have empty `fields_or_signature` lists, providing no structural evidence to act on. The cluster's `structural_evidence` block is entirely null (no Jaccard similarity, no shared field count, no shared ancestor, no differing slots), meaning the pipeline surfaced a name-collision signal but could not substantiate it with shape overlap. One record is a `type-alias-object` in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` and the other is an `extension` in `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift`; these are structurally distinct kinds with no recoverable member lists, so any refactor recommendation would be invented rather than grounded. Without concrete field or method evidence, the coincidence of the name 'Talkset' across these two declarations is insufficient to justify a code change.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_Talkset.json",
+  "row_index": 42,
+  "trial": 1
+}

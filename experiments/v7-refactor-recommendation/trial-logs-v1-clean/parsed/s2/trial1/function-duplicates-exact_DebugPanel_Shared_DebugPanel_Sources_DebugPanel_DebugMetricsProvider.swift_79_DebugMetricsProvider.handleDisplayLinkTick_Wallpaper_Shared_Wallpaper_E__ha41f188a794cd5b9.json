@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One of the two participating records resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory \u2014 a canonical sample-application path. Even though `is_sample_app` is recorded as `false`, the file path is the authoritative signal per the decision rules. The duplicate `DebugMetricsProvider.handleDisplayLinkTick` in the sample app is almost certainly a local copy introduced to make the demo self-contained without taking a hard dependency on the `DebugPanel` package. Extracting the shared implementation into a common location would couple production `DebugPanel` code to sample-app semantics, which is the exact anti-pattern the restraint rule guards against.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_79_DebugMetricsProvider.handleDisplayLinkTick_Wallpaper_Shared_Wallpaper_E__ha41f188a794cd5b9.json",
+  "row_index": 12,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private generic/closure-parameterised method \u2014 that both callers delegate to. The two methods differ only in the direction of the capacity check and the target capacity computation (grow vs. shrink), which are the natural parameters to inject. This keeps the buffer-management invariant in one place without introducing a public API change.\",\n      \"why_no_category_fits\": \"The two methods live in the same file and the same type (`_DequeStorage`), so 'extract-to-common' (cross-package/file extraction) is not the right frame. They are not protocols, generics, macros, or subclass hierarchies. The closest named category would be 'generic-parameterization' of a function, but the duplication is better described as a classic Extract-Method refactor within a single class \u2014 parameterising the differing logic via a closure or enum rather than a type parameter. None of the named categories cleanly capture an intra-type Extract-Method with closure parameterisation, so 'other' is the most honest fit.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.714 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package, with no restraint markers (all context flags false). The high token overlap strongly suggests the two methods share the same capacity-reallocation skeleton and differ only in the direction of the threshold comparison and the new-capacity formula. Consolidating the shared skeleton into a single private helper eliminates the risk of the two diverging silently when buffer-management logic is updated.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"_resizeIfNeeded\",\n        \"replaces\": [\"_DequeStorage._growIfNeeded\", \"_DequeStorage._shrinkIfNeeded\"]\n      },\n      \"rationale\": \"If the differing logic is purely numeric (threshold predicate and capacity formula), a single private function `_resizeIfNeeded` parameterised by two `(Int) -> Bool` / `(Int) -> Int` closures \u2014 rather than a true generic type parameter \u2014 could replace both methods. This is technically a 'generic-parameterization' of a function in spirit, though the Swift mechanism is closure injection rather than a `<T>` type parameter.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UujxgEX2Bzrf6BWf7opjHq",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2558,
+    "output_tokens": 830,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records \u2014 `ProcessInfo.ThermalState.description` in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 carries `is_sample_app: true`, which is a restraint marker that dominates action signals per the decision rules. Although the production-side computed property `PerformanceControls.thermalStateLabel` in `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift` is a legitimate refactor candidate on its own, lifting the shared logic into a common location would couple production code to sample-app semantics. The Jaccard similarity of 0.75 confirms near-duplication, but the mixed cluster composition (sample-app + production) is precisely the canonical restraint pattern; no extraction is warranted without first establishing that the sample-app copy is a removable leftover rather than a deliberate fixture.\",\n    \"evidence_quote\": \"is_sample_app\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ProcessInfo.ThermalState.description\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample-app copy in DebugHUD.swift is confirmed to be a redundant prototype rather than an intentional fixture, the near-duplicate logic (Jaccard 0.75) could be extracted as an extension on `ProcessInfo.ThermalState` within the `Wallpaper` package, allowing both `DebugHUD` and `PerformanceControls` to consume a single canonical implementation. This would only be appropriate after verifying the sample-app record is removable.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Dn1qPDTgNE9Pujc7xcpGhE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2641,
+    "output_tokens": 686,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+    "rationale": "Both members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192 respectively, with a Jaccard similarity of 0.8333. Having two `body` properties with near-identical structure in the same file strongly suggests either two accidental `MaterialView` type declarations or a stale copy of the `body` implementation that was never removed after editing. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so this is live production code that should be reconciled. The correct fix is an intra-file consolidation rather than any cross-package extraction.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView: View` declarations in the same file, each with its own `body` computed property at line 60 and line 192). If so, collapse the two declarations into one, extracting any differing sub-views into private helper `View` types or `@ViewBuilder` helper methods within the single `MaterialView` definition. The surviving `body` should live at the earlier declaration site (line 60) and the duplicate at line 192 should be removed.",
+      "why_no_category_fits": "Both records are the same computed-property name (`MaterialView.body`) in the same file (`MaterialView.swift`) at two distinct line numbers (60 and 192) with a Jaccard similarity of 0.83. This is not a cross-file extraction problem (`extract-to-common`), not a protocol/default-implementation issue, and not a generic-parameterization candidate. The most likely cause is an accidental duplicate type declaration or a copy-paste remnant within a single file, which requires an intra-file consolidation that none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 3
+}

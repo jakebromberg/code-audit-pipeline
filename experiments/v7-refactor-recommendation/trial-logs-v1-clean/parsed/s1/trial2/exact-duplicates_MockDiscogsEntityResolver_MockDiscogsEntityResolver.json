@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"",
+    "rationale": "Both participating records live under test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`) \u2014 making them test fixtures by location even though the `is_test` flag is not set to true. The type `MockDiscogsEntityResolver` is a mock helper (its name carries the `Mock` prefix) used independently by two distinct test suites testing different concerns (`DiscogsMarkupParser` vs `DiscogsFormatter`). Consolidating these into a shared target would couple two separate test packages through a shared mock dependency, which is undesirable and fragile. The duplication is intentional: each test file owns its own lightweight mock definition scoped to its own test context.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 2
+}

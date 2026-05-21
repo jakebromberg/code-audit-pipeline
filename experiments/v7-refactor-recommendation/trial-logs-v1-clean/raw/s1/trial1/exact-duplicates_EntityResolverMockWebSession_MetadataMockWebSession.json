@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records live under `Shared/Metadata/Tests/MetadataTests/` \u2014 they are in test files by path, even though `is_test` is marked `false`.\n- However, the decision rules are explicit: restraint markers on the records **as given** dominate. Neither record carries `is_test=true`, `is_mock=true`, or `is_sample_app=true`.\n- Both are `type-alias-object` kinds with empty `fields_or_signature` and `shared_field_count: 2`, meaning they are structurally identical type aliases.\n- They live in the same package (`Metadata`) and differ only in name (`MetadataMockWebSession` vs `EntityResolverMockWebSession`), suggesting they are test-support aliases that were independently defined per test file rather than shared.\n- Despite the path evidence strongly suggesting test fixtures, the flags say otherwise. Per the rules, I must not hallucinate beyond the cluster row. The path alone is suggestive but the flags are the authoritative signal. I'll recommend extract-to-common as the primary action (since the flags permit it), but note the path evidence in the rationale and offer no-action as the alternative given the likely-test-fixture nature.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockWebSession\",\n      \"remove_from\": [\n        \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n        \"Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `MetadataMockWebSession` (line 79, PlaycutMetadataServiceCachingTests.swift) and `EntityResolverMockWebSession` (line 72, DiscogsAPIEntityResolverCachingTests.swift) are `type-alias-object` records in the same `Metadata` package with identical structure (`shared_field_count: 2`, empty `fields_or_signature`), differing only in their per-file names. Neither record carries any restraint marker (`is_test=false`, `is_mock=false`, `is_sample_app=false`), so consolidation is permitted under the decision rules. Extracting a single shared `MockWebSession` type alias into a test-support file within the `Metadata` package (e.g., `Shared/Metadata/Tests/MetadataTests/TestSupport/MockWebSession.swift`) would eliminate the duplication and give both test files a single source of truth. The divergent names (`MetadataMockWebSession` vs `EntityResolverMockWebSession`) appear to be incidental per-file naming rather than intentional semantic distinction, given the structural identity confirmed by `jaccard: null` and `differing_slots: null`.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 2\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Although `is_test` is marked `false` on both records, both files reside under `Shared/Metadata/Tests/MetadataTests/`, strongly suggesting these are test-fixture type aliases whose flags may be mis-classified by the pipeline. If the aliases are intentionally scoped to their respective test files to avoid cross-test coupling, or if the flag values are unreliable for test-directory files, no consolidation should be performed \u2014 the structural coincidence would then be an artefact of both files needing a local mock session alias rather than a shared abstraction.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01B3vRojtRnBEg4BSwtDgKaN",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 942,
+    "service_tier": "standard"
+  }
+}

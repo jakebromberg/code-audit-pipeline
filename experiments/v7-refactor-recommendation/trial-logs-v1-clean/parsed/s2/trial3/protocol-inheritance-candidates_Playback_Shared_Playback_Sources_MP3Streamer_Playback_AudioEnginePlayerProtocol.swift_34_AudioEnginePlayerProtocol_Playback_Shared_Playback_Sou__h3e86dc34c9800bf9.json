@@ -1,0 +1,32 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift:34:AudioEnginePlayerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.62,
+    "evidence_quote": "installRenderTap:()\n        \"isPlaying:Bool\"\n        \"removeRenderTap:()\"\n        \"stop:()\"",
+    "rationale": "Both `AudioEnginePlayerProtocol` (Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayerProtocol.swift:34) and `TimeShiftablePlayer` (Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20) share the members `installRenderTap:()`, `removeRenderTap:()`, `isPlaying:Bool`, and `stop:()`, which represent a minimal common behavioral contract for any audio player in the `Playback` package. Extracting these four members into a new `AudioPlayerCore` base protocol \u2014 housed in a shared location within the `Playback` package (e.g., `Shared/Playback/Sources/PlaybackCore/Protocols/AudioPlayerCore.swift`) \u2014 removes the implicit duplication without conflating the two protocols' distinct responsibilities: `AudioEnginePlayerProtocol` remains a low-level engine contract (buffer scheduling, volume, render-tap streams) while `TimeShiftablePlayer` remains a high-level time-shifting contract. Both child protocols would declare conformance to `AudioPlayerCore`, making the shared surface explicit and enabling code that only needs basic playback control to depend on the narrower type. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the refactor is safe.",
+    "specifics": {
+      "children": [
+        "AudioEnginePlayerProtocol",
+        "TimeShiftablePlayer"
+      ],
+      "moved_members": [
+        "installRenderTap:()",
+        "removeRenderTap:()",
+        "isPlaying:Bool",
+        "stop:()"
+      ],
+      "parent": "AudioPlayerCore",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial3/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_MP3Streamer_Playback_AudioEnginePlayerProtocol.swift_34_AudioEnginePlayerProtocol_Playback_Shared_Playback_Sou__h3e86dc34c9800bf9.json",
+  "row_index": 4,
+  "trial": 3
+}

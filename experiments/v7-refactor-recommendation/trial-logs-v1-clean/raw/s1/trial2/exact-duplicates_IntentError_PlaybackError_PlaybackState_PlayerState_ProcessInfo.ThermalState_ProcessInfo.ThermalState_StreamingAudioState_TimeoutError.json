@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the members and their context flags.\n\nKey observations:\n1. The file `Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift` \u2014 despite `is_test: false` in the flags, it lives under a `Tests/` directory path. However, the flags are authoritative per the decision rules, so I must treat it as non-test.\n2. The file `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 it sits under `Examples/WallpaperSampleApp/`, which the decision rules explicitly call out as a sample-app path (`Examples/` or `SampleApp/`). The rule states: \"ANY participating record... sits under Examples/ or SampleApp/ \u2192 reason_class: 'sample-app-mirror'\". This is a restraint marker that dominates action signals.\n3. The `is_sample_app` flag is `false` on that record, but the decision rules explicitly include path-based detection (`sits under Examples/ or SampleApp/`) as a restraint marker independent of the flag value.\n\nSince one record sits under `Examples/WallpaperSampleApp/`, the restraint rule applies and no-action is warranted. The cluster also spans unrelated domain concepts (IntentError, ThermalState extensions, PlaybackState, TimeoutError) across multiple packages, suggesting the structural similarity is largely coincidental (empty `fields_or_signature`, `shared_field_count: 1`).\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:IntentError+PlaybackError+PlaybackState+PlayerState+ProcessInfo.ThermalState+ProcessInfo.ThermalState+StreamingAudioState+TimeoutError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record \u2014 `ProcessInfo.ThermalState` extension at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: Wallpaper) \u2014 sits under the `Examples/WallpaperSampleApp/` path, which is an explicit restraint-marker path per the decision rules. This alone is sufficient to block any extraction action. Beyond that restraint, the cluster spans four unrelated packages (Playback, DebugPanel, Wallpaper, Intents) and eight structurally distinct domain concepts (IntentError, PlaybackError, PlaybackState, PlayerState, ProcessInfo.ThermalState \u00d72, StreamingAudioState, TimeoutError), all with empty `fields_or_signature` and a `shared_field_count` of only 1, indicating the similarity is coincidental shape (empty extensions or trivial type aliases) rather than shared semantics. Lifting any of these into a common location would couple unrelated domains and drag sample-app demonstration code into production targets.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Even setting aside the sample-app path marker, the eight members span packages Playback, DebugPanel, Wallpaper, and Intents with entirely unrelated domain semantics (intent errors, thermal state display, audio streaming state, playback errors). The structural_evidence shows shared_field_count of 1 and null Jaccard/differing_slots, confirming the overlap is purely coincidental empty-body shape rather than meaningful shared logic.\"\n    },\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019w6WCBBW2QypdsY7HYpXso",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3331,
+    "output_tokens": 904,
+    "service_tier": "standard"
+  }
+}

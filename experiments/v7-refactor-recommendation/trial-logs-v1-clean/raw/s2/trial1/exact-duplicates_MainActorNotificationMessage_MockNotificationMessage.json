@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) carry all four context flags as false, so no restraint marker applies. However, the two types serve structurally distinct roles: `MainActorNotificationMessage` is a production interface in the Core observation layer, while `MockNotificationMessage` lives in a `CoreTesting` source group and carries the `_Plant_` prefix convention typical of generated or planted test-support types. Their shared field count of 3 with an empty `fields_or_signature` list provides no concrete member evidence to justify extraction, and the names encode unrelated domain concepts (a main-actor-dispatched notification contract vs. a testing stand-in). Merging or extracting them would conflate production and test-support semantics without a demonstrated shared abstraction.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the 3 shared fields represent a genuine shared contract (e.g., a message identifier, payload, and timestamp), a common `NotificationMessage` protocol could be introduced in `Shared/Core/Sources/Core/Observation/` so that `MainActorNotificationMessage` refines it with `@MainActor` constraints and `MockNotificationMessage` conforms for testing. This is only defensible if the shared fields are confirmed to be semantically equivalent, which the empty `fields_or_signature` list does not currently support.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NK7j2k3ykwWbMEEB4jSJJZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2501,
+    "output_tokens": 548,
+    "service_tier": "standard"
+  }
+}

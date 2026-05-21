@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"NowPlayingWidgetEntryView\",\n      \"remove_from\": [\n        \"WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift\",\n        \"WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `SmallNowPlayingWidgetEntryView.body` (line 17 in SmallNowPlayingWidgetEntryView.swift) and `MediumNowPlayingWidgetEntryView.body` (line 17 in MediumNowPlayingWidgetEntryView.swift) are near-duplicate computed properties with a Jaccard similarity of 0.714, both residing in the same `app:iOS` package under `WXYC/iOS/NowPlayingWidget/Views/`. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The structural near-duplication at the same line number across both files strongly suggests the two `body` implementations share a common layout that differs only in widget family sizing, which is a natural candidate for a single parameterized SwiftUI view that accepts a `widgetFamily` or size parameter, eliminating the duplicated view logic.\",\n    \"evidence_quote\": \"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Family\", \"constraint\": \"null\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\n          \"SmallNowPlayingWidgetEntryView\",\n          \"MediumNowPlayingWidgetEntryView\"\n        ]\n      },\n      \"rationale\": \"Rather than extracting a shared helper, the two widget entry view structs could be collapsed into a single `NowPlayingWidgetEntryView` parameterized on widget family (e.g., via a `WidgetFamily` environment value or a generic/enum parameter), keeping the divergent layout logic in a single `body` with a conditional branch. This is idiomatic for WidgetKit views where small/medium differences are minor, but is secondary to a clean extraction because it may conflate unrelated layout concerns if the two bodies diverge further in the future.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LTcKxwP7YuAEJnQcQwfxAV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2646,
+    "output_tokens": 775,
+    "service_tier": "standard"
+  }
+}

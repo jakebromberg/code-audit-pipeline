@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"TipView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n          \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `ThemeTipView` (in `Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift`, line 18) and `SiriTipView` (in `WXYC/iOS/Views/Root/SiriTipView.swift`, line 21), indicating substantial structural overlap across two packages. Neither record carries any restraint markers (is_test, is_mock, is_sample_app are all absent/false), so the duplication is unintentional production code. A shared, parameterised `TipView` (accepting the tip content and icon as arguments) placed in the `Shared/Wallpaper` package \u2014 which the iOS app target already depends on \u2014 would eliminate the near-duplicate shape while keeping each call-site's domain-specific configuration local. The 0.75 Jaccard score leaves room for a small number of diverging slots that can be surfaced as initialiser parameters rather than subclasses.\",\n    \"evidence_quote\": \"cross-package-shape-near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"TipViewRepresentable\",\n        \"children\": [\"ThemeTipView\", \"SiriTipView\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the two views must remain separate SwiftUI `View` structs for domain-clarity reasons, a shared `TipViewRepresentable` protocol with a default-implementation extension could centralise the common layout logic (the ~75 % shared shape) without merging the types. This is slightly less idiomatic than a single parameterised view but avoids any cross-package type dependency on a concrete struct.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KVS2uQm5xxyFrfHWTxQ6qk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2321,
+    "output_tokens": 752,
+    "service_tier": "standard"
+  }
+}

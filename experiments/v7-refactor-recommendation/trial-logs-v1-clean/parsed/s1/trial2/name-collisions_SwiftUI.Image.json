@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:SwiftUI.Image",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.52,
+    "evidence_quote": "\"file\": \"WXYC/WatchXYC/PlayerPage.swift\"\n      \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "Two unnamed extensions on SwiftUI.Image exist in separate packages \u2014 `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift, line 190) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift, line 27). Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate to evaluate. Because the two targets are distinct app targets (watchOS vs. iOS/widget), full consolidation into a single file may not be feasible without a shared framework dependency; however, the extensions should at minimum be moved out of non-extension files (PlayerPage.swift is a page-level UI file, not an extension home) and into dedicated, per-target extension files, or \u2014 if the extension bodies are identical \u2014 into a shared Swift package that both targets already depend on. The empty `fields_or_signature` lists mean the bodies are not visible here, so the confidence is moderate.",
+    "specifics": {
+      "consolidate_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_type": "SwiftUI.Image"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_SwiftUI.Image.json",
+  "row_index": 41,
+  "trial": 2
+}

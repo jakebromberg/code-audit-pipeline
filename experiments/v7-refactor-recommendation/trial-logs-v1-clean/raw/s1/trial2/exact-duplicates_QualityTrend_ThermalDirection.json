@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze two `type-alias-union` declarations in the same file (`QualitySignal.swift`) within the `Wallpaper` package: `QualityTrend` at line 191 and `ThermalDirection` at line 208. Both share 3 fields (per `shared_field_count: 3`), neither has any restraint markers, and they live in the same file and package.\n\nThe signal is `exact-duplicates` with `shared_field_count: 3` and no `differing_slots`, meaning these two type aliases have structurally identical union shapes. However, they carry distinct domain names \u2014 `QualityTrend` and `ThermalDirection` \u2014 which are semantically different concepts (one describes a quality signal trend, the other a thermal direction). The coincidence is structural: both happen to be unions over the same 3 cases (likely something like `.increasing`, `.decreasing`, `.stable` or similar), but they model different domain concepts in the throttling subsystem. Merging them into a single type would conflate distinct semantic roles, making call sites ambiguous and losing the self-documenting value of the separate names.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:QualityTrend+ThermalDirection\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `QualityTrend` (line 191) and `ThermalDirection` (line 208) are `type-alias-union` declarations in `Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift` within the `Wallpaper` package, and they share `shared_field_count: 3` with no `differing_slots`. Despite the identical structure, the names encode distinct domain concepts in the throttling subsystem \u2014 quality trend direction versus thermal state direction \u2014 whose structural coincidence (both being 3-case unions) is incidental. Collapsing them into a single shared type would erase meaningful semantic distinctions at every call site and couple unrelated concerns within the throttling model.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityTrend\\\", \\\"kind\\\": \\\"type-alias-union\\\", \\\"line\\\": 191 ... \\\"name\\\": \\\"ThermalDirection\\\", \\\"kind\\\": \\\"type-alias-union\\\", \\\"line\\\": 208 ... \\\"shared_field_count\\\": 3\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0186DJUyLPYETH8XFs1jTJxX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2530,
+    "output_tokens": 619,
+    "service_tier": "standard"
+  }
+}

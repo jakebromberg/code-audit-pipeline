@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nBoth records have `is_test: false` according to their `context_flags`. However, both files are located under `Tests/PlayerHeaderViewTests/` \u2014 `VisualizerDataSourceTests.swift` and `PlayerHeaderViewTests.swift` \u2014 and both type names end in `Tests` (`VisualizerConstantsTests`, `PlayerHeaderViewTests`). The pipeline has not flagged `is_test: true`, but the file paths and type names are unambiguous test fixtures. The decision rules say to use the cluster row's context flags, and both show `is_test: false`, so I must work from the data as given.\n\nDespite the `is_test: false` flags, the file paths (`Tests/PlayerHeaderViewTests/`) and class names (`VisualizerConstantsTests`, `PlayerHeaderViewTests`) make it evident these are test methods. The duplication of `visualizerConstantsDefaults` across two test classes in the same test target is a classic test-helper extraction opportunity \u2014 but since the restraint rule is flag-driven and both flags read `false`, I'll recommend the action while noting the test-path evidence. The appropriate action is to extract the shared helper into a common test utility within the same test target.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"PlayerHeaderView\",\n      \"type_name\": \"visualizerConstantsDefaults\",\n      \"remove_from\": [\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift\",\n        \"Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `VisualizerConstantsTests.visualizerConstantsDefaults` (line 305 of `VisualizerDataSourceTests.swift`) and `PlayerHeaderViewTests.visualizerConstantsDefaults` (line 16 of `PlayerHeaderViewTests.swift`) are exact-duplicate methods in the same package (`PlayerHeaderView`) under the same test directory (`Tests/PlayerHeaderViewTests/`). The pipeline reports `query: function-duplicates-exact` with no differing slots, confirming identical bodies. Extracting the method into a shared test helper file (e.g., `VisualizerTestHelpers.swift`) within the same `Tests/PlayerHeaderViewTests/` group eliminates the duplication while keeping it co-located with its consumers. Both records carry `is_test: false` per the context flags, so no restraint marker blocks this action, though the file paths and type names strongly suggest test context.\",\n    \"evidence_quote\": \"VisualizerConstantsTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Both files reside under `Tests/PlayerHeaderViewTests/` and their containing types are named `VisualizerConstantsTests` and `PlayerHeaderViewTests`, strongly indicating test fixtures despite `is_test: false` in the context flags. If the flag is a pipeline tagging gap rather than a true production classification, the restraint rule for test-fixtures would apply and no action should be taken.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017eNBpnSFQ4ceux3eQFDtRG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2615,
+    "output_tokens": 978,
+    "service_tier": "standard"
+  }
+}

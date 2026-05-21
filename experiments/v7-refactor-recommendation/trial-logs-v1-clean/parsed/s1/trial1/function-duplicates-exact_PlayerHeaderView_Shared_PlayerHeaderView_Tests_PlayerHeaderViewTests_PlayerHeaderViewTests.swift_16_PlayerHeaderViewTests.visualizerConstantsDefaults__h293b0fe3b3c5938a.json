@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift:16:PlayerHeaderViewTests.visualizerConstantsDefaults+PlayerHeaderView:Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/VisualizerDataSourceTests.swift:305:VisualizerConstantsTests.visualizerConstantsDefaults",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/PlayerHeaderViewTests.swift",
+    "rationale": "Both participating records reside under `Shared/PlayerHeaderView/Tests/PlayerHeaderViewTests/` \u2014 one in `PlayerHeaderViewTests.swift` (type `PlayerHeaderViewTests`) and one in `VisualizerDataSourceTests.swift` (type `VisualizerConstantsTests`). Despite the context flags reporting `is_test: false`, the file paths and enclosing type names unambiguously identify these as test-target fixtures. The duplicated method `visualizerConstantsDefaults` is a test helper shared across two test classes within the same test target; extracting it into shared production code would couple production infrastructure to test semantics. If deduplication is desired, the correct scope is a private test utility within the `PlayerHeaderView` test target, not a cross-package extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_Tests_PlayerHeaderViewTests_PlayerHeaderViewTests.swift_16_PlayerHeaderViewTests.visualizerConstantsDefaults__h293b0fe3b3c5938a.json",
+  "row_index": 36,
+  "trial": 1
+}

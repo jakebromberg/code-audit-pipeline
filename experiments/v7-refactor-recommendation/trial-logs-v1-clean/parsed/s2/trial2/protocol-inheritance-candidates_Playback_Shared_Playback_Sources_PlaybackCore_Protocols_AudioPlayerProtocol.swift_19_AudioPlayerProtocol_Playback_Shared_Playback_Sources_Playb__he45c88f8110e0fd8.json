@@ -1,0 +1,35 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/Protocols/AudioPlayerProtocol.swift:19:AudioPlayerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27:PlaybackController",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.72,
+    "evidence_quote": "installRenderTap:()\nisPlaying:Bool\nmakeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>\nplay:()\nremoveRenderTap:()\nstop:()",
+    "rationale": "Both `PlaybackController` (line 27) and `AudioPlayerProtocol` (line 19) in `Shared/Playback/Sources/PlaybackCore/Protocols/` share six structurally identical or near-identical members: `installRenderTap:()`, `removeRenderTap:()`, `isPlaying:Bool`, `makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>`, `play:()` (modulo the `reason:` label), and `stop:()` (modulo the `reason:` label). Extracting these into a common parent protocol `AudioPlaybackCore` eliminates the duplication while allowing `PlaybackController` to extend it with its higher-level members (`isLoading`, `toggle`, `state:PlaybackState`) and `AudioPlayerProtocol` to extend it with its lower-level members (`eventStream`, `stateStream`, `state:PlayerState`). Both protocols live in the same package (`Playback`) and the same directory, so no cross-package dependency changes are required. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), making this a clean production refactor.",
+    "specifics": {
+      "children": [
+        "PlaybackController",
+        "AudioPlayerProtocol"
+      ],
+      "moved_members": [
+        "installRenderTap:()",
+        "isPlaying:Bool",
+        "makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>",
+        "play:()",
+        "removeRenderTap:()",
+        "state",
+        "stop:()"
+      ],
+      "parent": "AudioPlaybackCore",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_PlaybackCore_Protocols_AudioPlayerProtocol.swift_19_AudioPlayerProtocol_Playback_Shared_Playback_Sources_Playb__he45c88f8110e0fd8.json",
+  "row_index": 1,
+  "trial": 2
+}

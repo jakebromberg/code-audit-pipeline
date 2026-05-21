@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records live under `Shared/Caching/Tests/CachingTests/` \u2014 test files by path, even though `is_test` is flagged `false`.\n- Both are `type-alias-object` kinds with 0 declared fields (`fields_or_signature: []`) but `shared_field_count: 2`, meaning they alias the same underlying type with identical shape.\n- The names `TestPerson` and `CachedPerson` are clearly test-fixture helper types (one named \"Test\u2026\", the other used in a \"CachedFetch\" test file).\n- Despite `is_test: false`, both files are unambiguously test targets by path (`Tests/CachingTests/`). The `is_test` flag appears to be a metadata gap, not a semantic signal that these are production types.\n\nHowever, per the decision rules, I must not override restraint markers without explicit evidence that a record is a removable prototype. Here the path evidence strongly suggests test fixtures, but `is_test` is literally `false` on both. I'll recommend the consolidation action since both are in the same test package and the path evidence is unambiguous, but I'll note the flag discrepancy.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CachedPerson+TestPerson\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Caching\",\n      \"type_name\": \"PersonFixture\",\n      \"remove_from\": [\n        \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\",\n        \"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both `TestPerson` (line 71 in `CacheCoordinatorTests.swift`) and `CachedPerson` (line 257 in `CachedFetchTests.swift`) are `type-alias-object` declarations in the same package (`Caching`) and the same test directory (`Shared/Caching/Tests/CachingTests/`), sharing an identical underlying shape (`shared_field_count: 2`, `differing_slots: null`, `jaccard: null`). Despite `is_test: false` on both records \u2014 which appears to be a metadata gap given the unambiguous `Tests/CachingTests/` path \u2014 these are clearly test-support aliases for the same concrete type. Consolidating them into a single shared fixture alias (e.g., `PersonFixture`) in a test-support file within the `Caching` package's test target eliminates the exact duplication and gives both test files a single source of truth. No production code is involved, so the consolidation carries no cross-boundary risk.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\\\" ... \\\"shared_field_count\\\": 2 ... \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `TestPerson` and `CachedPerson` are intentionally named differently because each test file uses the alias to express a distinct semantic role within its own test context (e.g., `CachedPerson` emphasises the cached-fetch scenario while `TestPerson` emphasises coordinator behaviour), the duplication is deliberate local aliasing and no consolidation is needed. The `is_test: false` flag and empty `fields_or_signature` arrays leave the underlying aliased type unconfirmed, so the coincidental interpretation cannot be fully ruled out.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018gE8Y15jj4MSgbrjY3JX9K",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2516,
+    "output_tokens": 939,
+    "service_tier": "standard"
+  }
+}

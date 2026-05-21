@@ -1,0 +1,25 @@
+{
+  "cluster_id": "cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+    "rationale": "The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68), meaning roughly 5 of 6 structural slots are shared across two sibling `Shared/` packages. Neither record carries any restraint marker (is_test, is_mock, is_sample_app), so the duplication is unintentional. Because `StreamingService` already exists as a named, dedicated type in `Shared/Metadata`, the canonical home is that package; `MusicShareKit` should import `Shared/Metadata` and replace `MusicServiceIdentifier` with a typealias or direct use of `StreamingService`. The one differing slot (Jaccard < 1.0) should be reviewed to determine whether it belongs on the shared type or is a `MusicShareKit`-specific extension.",
+    "specifics": {
+      "remove_from": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift"
+      ],
+      "target_package": "Shared/Metadata",
+      "type_name": "StreamingService"
+    }
+  },
+  "query": "cross-package-shape-near-duplicates-any",
+  "raw_response_path": "raw/s1/trial1/cross-package-shape-near-duplicates-any_Metadata_Shared_Metadata_Sources_Metadata_StreamingService.swift_13_StreamingService_MusicShareKit_Shared_MusicShareKit_Sources_MusicSh__he5a75086055eaaaf.json",
+  "row_index": 2,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheLoadable\",\n      \"associated_type\": \"Payload\",\n      \"constraints\": [],\n      \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n    },\n    \"rationale\": \"Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single protocol with an `associatedtype Payload` and a `load:() async throws -> Payload` requirement would unify both interfaces without loss of type safety. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the refactor is safe. The new protocol should live in a shared package (e.g., a new `Shared/CacheCore` or the existing `Caching` package if `Metadata` already depends on it) so both packages can conform without a circular dependency.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4, \\\"differing_slots\\\": [{\\\"a\\\": [\\\"load:() async throws -> Data\\\"], \\\"b\\\": [\\\"load:() async throws -> PlaycutMetadata\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"CacheLoader\",\n        \"children\": [\"MetadataLoader\"],\n        \"moved_members\": [\"cacheKey:String\", \"invalidate:() async\", \"lastLoadedAt:Date?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If introducing a PAT is considered too heavyweight, `CacheLoader` could be promoted to a base protocol holding the three shared members, with `MetadataLoader` inheriting from it and narrowing `load` to return `PlaycutMetadata`. However, this approach forces `Metadata` to depend on `Caching`, which may be an undesirable coupling, making the PAT approach preferable.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EWB8HPmhBErbtCHpY1gCnC",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2692,
+    "output_tokens": 640,
+    "service_tier": "standard"
+  }
+}

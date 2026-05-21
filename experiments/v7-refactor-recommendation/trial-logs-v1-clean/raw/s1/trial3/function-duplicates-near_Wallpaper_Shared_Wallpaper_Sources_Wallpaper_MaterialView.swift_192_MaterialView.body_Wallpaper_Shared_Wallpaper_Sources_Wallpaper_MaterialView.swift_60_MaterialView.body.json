@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration \u2014 likely by identifying which of the two (line 60 vs. line 192) is the canonical one, deleting the near-duplicate, and extracting any differing logic into a private helper method or a conditional branch within the single `body`. The target location for the unified implementation is `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package.\",\n      \"why_no_category_fits\": \"Both records are the same computed property name (`MaterialView.body`) in the same file and package, differing only by line number (60 vs. 192) with a Jaccard similarity of 0.83. This is not a cross-type or cross-package duplication that fits 'extract-to-common', 'protocol-inheritance', 'default-implementation', or 'generic-parameterization'. It is most likely an accidental double definition or a stale copy of a `body` property within the same source file. The correct fix is an in-file consolidation/deletion, which none of the named categories precisely describe. 'extension-consolidation' is the closest named category but that schema targets extension declarations across multiple locations, not two near-identical computed-property bodies within a single file.\"\n    },\n    \"rationale\": \"Both cluster members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 60 and 192 respectively. Their Jaccard similarity of 0.8333 indicates the two implementations are nearly identical but not exact, suggesting one is a drifted copy of the other. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so this is live production code. Having two near-identical `body` definitions in the same file is almost certainly unintentional and risks silent shadowing or compiler ambiguity depending on how the type is structured.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` properties live in separate `extension MaterialView` blocks within the same file, extension-consolidation is the appropriate mechanical fix: merge the two extensions into one, keeping the canonical `body` implementation and deleting the near-duplicate at line 192 (or line 60 if the later one is preferred). This is a weaker fit than 'other' because the schema targets multi-location extensions, but it captures the intent of merging the two declarations.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BKtFe12UGx41VgX55ZQUth",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 972,
+    "service_tier": "standard"
+  }
+}

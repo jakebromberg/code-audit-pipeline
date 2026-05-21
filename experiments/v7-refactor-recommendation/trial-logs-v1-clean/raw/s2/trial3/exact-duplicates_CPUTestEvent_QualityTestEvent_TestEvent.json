@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nThe context flags show `is_test: false` on all three records, but the file path is `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`. The names are `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 all clearly test fixtures by name and by their location under a `Tests/AnalyticsTests/` directory. The structural pipeline did not set `is_test=true`, but the file path unambiguously places these in a test target. The names themselves (`TestEvent`, `QualityTestEvent`, `CPUTestEvent`) are test-fixture type aliases with no fields (`fields_or_signature: []`), used to exercise analytics event name logic in tests.\n\nThese are intentional test-fixture duplicates: three minimal, empty type aliases defined in the same test file to serve as distinct concrete types for parameterized test cases. Merging or extracting them would destroy their purpose as independent named stubs.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CPUTestEvent+QualityTestEvent+TestEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All three records \u2014 `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 are `type-alias-object` declarations with empty `fields_or_signature` residing in `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`. Despite the pipeline reporting `is_test: false`, the file path places them squarely inside a test target (`Tests/AnalyticsTests/`), and their names are self-evidently test fixtures. They exist as distinct named stubs so that `AnalyticsEventNameTests` can exercise event-name logic against multiple concrete types independently; collapsing or extracting them would eliminate the semantic distinction the tests rely on.\",\n    \"evidence_quote\": \"Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BGCWCgjfWykT2F9uAUhELf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2648,
+    "output_tokens": 530,
+    "service_tier": "standard"
+  }
+}

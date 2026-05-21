@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift:69:CompositeWallpaperView.buildShader+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift:48:StitchableWallpaperView.buildShader\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"WallpaperRendererView\",\n      \"method\": \"buildShader()\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Renderers/WallpaperRendererView.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `StitchableWallpaperView.buildShader` (line 48) and `CompositeWallpaperView.buildShader` (line 69) live in the same `Wallpaper` package under the same `Renderers/` directory and exhibit a Jaccard similarity of 0.875, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The idiomatic Swift approach is to introduce a shared protocol \u2014 e.g., `WallpaperRendererView` \u2014 and provide the shared `buildShader()` body as a protocol extension default implementation, allowing both view types to drop their individual overrides unless they genuinely diverge.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.875\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"WallpaperShaderBuilder\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n        ]\n      },\n      \"rationale\": \"If `StitchableWallpaperView` and `CompositeWallpaperView` do not share a protocol hierarchy, the shared logic could instead be extracted into a standalone `WallpaperShaderBuilder` helper type within the same `Wallpaper` package, and both views could delegate to it. This avoids introducing a new protocol but is less idiomatic Swift than a protocol default implementation when the two types already share a conceptual role.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SPMnpGRGAbjRD6vcgMcWKV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2641,
+    "output_tokens": 747,
+    "service_tier": "standard"
+  }
+}

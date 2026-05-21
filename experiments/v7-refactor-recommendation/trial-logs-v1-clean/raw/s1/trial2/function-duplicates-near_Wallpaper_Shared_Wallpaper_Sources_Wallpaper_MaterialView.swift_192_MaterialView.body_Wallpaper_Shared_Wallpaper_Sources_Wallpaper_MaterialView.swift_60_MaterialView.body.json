@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView: View` declarations in the same file, each with its own `body` computed property at line 60 and line 192). If so, consolidate into a single `MaterialView` type with a single `body` implementation, extracting any differing sub-views into private helper `View` types or `@ViewBuilder` helper methods within the same file. If the two declarations are intentional conditional variants (e.g., `#if` branches), ensure they are wrapped in a single conditional block rather than duplicated top-level declarations.\",\n      \"why_no_category_fits\": \"Both records are the same computed property name (`MaterialView.body`) in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at different lines (60 and 192) with a Jaccard similarity of 0.83. This is not a cross-file extraction problem (`extract-to-common` does not apply), not a protocol/subclass hierarchy issue, and not a generic-parameterization candidate. The most likely root cause is either a duplicate type declaration or a near-duplicate `body` implementation that should be unified within the file \u2014 a within-file deduplication that none of the named categories precisely describe.\"\n    },\n    \"rationale\": \"The cluster surfaces two `MaterialView.body` computed-property declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192, with a Jaccard similarity of 0.83, indicating substantial but not identical content. Both records belong to the `Wallpaper` package and carry no restraint flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Having two `body` implementations for what appears to be the same type in one file is almost certainly unintentional duplication or a structural artifact (e.g., two type declarations) that should be resolved by merging into a single `body` with shared logic extracted into private helpers.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"kind\\\": \\\"computed-property\\\", \\\"line\\\": 60, \\\"name\\\": \\\"MaterialView.body\\\" ... \\\"line\\\": 192, \\\"name\\\": \\\"MaterialView.body\\\" ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` declarations live in separate `extension MaterialView` blocks within the same file, consolidating them into a single extension (or the primary type declaration) and merging the `body` logic would resolve the near-duplication. This is a weaker fit because SwiftUI's `View` protocol only permits one `body` conformance, making the existence of two a likely compile-time error rather than a style issue \u2014 hence `other` is preferred.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Npgx49vCnvXRoS2aH7A45S",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 928,
+    "service_tier": "standard"
+  }
+}

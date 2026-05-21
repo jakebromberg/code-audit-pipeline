@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.52,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+    "rationale": "The method `MockDiscogsEntityResolver.resolveRelease` appears as an exact duplicate in two separate packages: `Metadata` (at `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45`) and `app:iOS` (at `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41`). The `query` field confirms `function-duplicates-exact`, meaning the implementations are identical. Because `app:iOS` already depends on (or can depend on) the `Metadata` package \u2014 which is the natural home for Discogs-related types \u2014 the canonical definition should live in `Metadata` and the `app:iOS` copy should be removed. Note: all four context flags are `false` on both records per the cluster data, so no restraint-marker override applies; however, the file paths and type name (`MockDiscogsEntityResolver`) strongly suggest these are test-support types, and the consuming team should verify that consolidating them does not inadvertently couple test infrastructure across packages in an undesirable way.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_45_MockDiscogsEntityResolver.resolveRelease_app_iOS_WXYC_iOS_Tests_WXYCTe__h956b25383b3a0cf1.json",
+  "row_index": 21,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Tag",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"file\": \"Shared/Playback/Tests/MP3StreamerTests/MP3StreamerTests.swift\", \"kind\": \"extension\", \"fields_or_signature\": [], \"name\": \"\"",
+    "rationale": "All four participating records are unnamed extensions (name is empty string) with empty fields_or_signature lists, located in test files under paths such as 'Shared/Playback/Tests/MP3StreamerTests/MP3StreamerTests.swift', 'Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift', and 'Shared/MusicShareKit/Tests/MusicShareKitTests/AuthNetworkClientE2ETests.swift'. The cluster carries no structural evidence (jaccard, shared_field_count, shared_ancestor, and differing_slots are all null), meaning the pipeline surfaced these solely on the 'Tag' name signal with no substantive shape overlap to act on. Although the context flags do not formally mark these records as is_test=true, the file paths unambiguously place every record inside a Tests/ directory, and the complete absence of any field or method information makes any refactoring recommendation impossible to ground. The coincidence of the 'Tag' label across anonymous, empty extensions in disparate test files is structural noise, not a meaningful duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_Tag.json",
+  "row_index": 7,
+  "trial": 2
+}

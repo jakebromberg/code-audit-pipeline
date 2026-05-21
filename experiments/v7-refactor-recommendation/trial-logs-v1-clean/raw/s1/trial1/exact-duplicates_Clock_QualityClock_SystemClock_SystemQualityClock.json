@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Clock+QualityClock+SystemClock+SystemQualityClock\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Caching\",\n      \"type_name\": \"Clock\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two structurally identical interface/type-alias-object pairs: `Clock` + `SystemClock` in package `Caching` (Shared/Caching/Sources/Caching/Clock.swift) and `QualityClock` + `SystemQualityClock` in package `Wallpaper` (Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift). The `shared_field_count: 1` and `exact-duplicates` query confirm the shapes are identical. Since `Caching` already owns the canonical `Clock` protocol and its `SystemClock` concrete alias, the `Wallpaper` package should import and reuse those types rather than maintaining its own parallel definitions. `QualityClock` and `SystemQualityClock` in AdaptiveQualityController.swift should be deleted and replaced with a `typealias QualityClock = Clock` / `typealias SystemQualityClock = SystemClock` (or direct usage) pointing at the `Caching` module, provided `Wallpaper` already depends on or can acceptably depend on `Caching`.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityClock\\\", \\\"package\\\": \\\"Wallpaper\\\" ... \\\"name\\\": \\\"Clock\\\", \\\"package\\\": \\\"Caching\\\" ... \\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract both `Clock`/`SystemClock` out of `Caching` into a new thin `ClockKit` (or `Core`) package that both `Caching` and `Wallpaper` depend on, keeping neither package dependent on the other.\",\n        \"why_no_category_fits\": \"If introducing a `Caching` \u2192 `Wallpaper` (or reverse) dependency is architecturally undesirable, neither existing package is the right home; a shared utility package would be the correct target, which is a variant of extract-to-common but requires creating a new package not currently listed in the cluster.\"\n      },\n      \"rationale\": \"If `Wallpaper` must not import `Caching` for layering reasons, a dedicated lightweight package (e.g., `Core` or `ClockKit`) that both packages already depend on \u2014 or could depend on without a cycle \u2014 would be the cleaner extraction target, avoiding an undesirable cross-package dependency.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Qa32txUi9zcx4jCcG5Md44",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2788,
+    "output_tokens": 740,
+    "service_tier": "standard"
+  }
+}

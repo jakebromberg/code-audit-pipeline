@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:View",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"WXUI\" ... \"package\": \"Wallpaper\" ... \"package\": \"PartyHorn\" ... \"package\": \"PlayerHeaderView\" ... \"package\": \"MusicShareKit\" ... \"package\": \"app:iOS\"",
+    "rationale": "All 15 members are unnamed extensions (name: \"\") on SwiftUI's `View` type, spread across six unrelated packages (WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, app:iOS) and covering entirely distinct domain concerns: glass-effect compatibility, overlay sheets, blend modes, gesture handling, accent-color environments, HUD views, share-extension views, playcut rows, and status-bar styling. The structural signal is purely a name collision on the implicit `View` extension target \u2014 there is no shared field list, no shared ancestor, and no Jaccard similarity reported (`jaccard: null`, `shared_field_count: null`). Consolidating these extensions would couple unrelated packages and violate the single-responsibility boundaries that motivated the per-package split in the first place.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_View.json",
+  "row_index": 0,
+  "trial": 1
+}

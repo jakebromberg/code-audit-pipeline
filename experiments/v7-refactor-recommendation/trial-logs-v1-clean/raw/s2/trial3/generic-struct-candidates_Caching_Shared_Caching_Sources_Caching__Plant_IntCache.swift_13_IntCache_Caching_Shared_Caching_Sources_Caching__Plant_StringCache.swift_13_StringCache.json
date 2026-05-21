@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        {\n          \"name\": \"Key\",\n          \"constraint\": \"Hashable\"\n        }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift`) and `IntCache` (in `_Plant_IntCache.swift`) within the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[K: CacheEntry]` \u2014 differing only in the key type of `storage` (`String` vs `Int`). The `_Plant_` filename prefix signals these were machine-generated as concrete specializations of a single generic concept. Replacing both with a single generic struct `Cache<Key: Hashable>` eliminates the duplication entirely, and `StringCache` / `IntCache` can be preserved as simple typealiases (`typealias StringCache = Cache<String>`) for backward compatibility if needed. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so no no-action override applies.\",\n    \"evidence_quote\": \"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"codegen\"\n      },\n      \"rationale\": \"The `_Plant_` prefix on both filenames (`_Plant_StringCache.swift`, `_Plant_IntCache.swift`) may indicate these files are outputs of a code-generation tool that intentionally emits concrete specializations rather than generics (e.g., for performance or ABI-stability reasons). If the generator is authoritative and re-runs would overwrite a hand-authored generic, the correct action is to update the generator template rather than manually introduce a generic struct \u2014 making the immediate refactor a no-action until the generator is addressed.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NqhknQm7RJiXeijHteZU9r",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2690,
+    "output_tokens": 632,
+    "service_tier": "standard"
+  }
+}

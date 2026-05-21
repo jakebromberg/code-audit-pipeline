@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift:39:EntityResolverMockCache.set+Metadata:Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift:40:PlaycutMetadataMockCache.set",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true ... PlaycutMetadataMockCache.set ... EntityResolverMockCache.set",
+    "rationale": "Both participating records carry is_test=true \u2014 `PlaycutMetadataMockCache.set` in `PlaycutMetadataServiceCachingTests.swift` and `EntityResolverMockCache.set` in `DiscogsAPIEntityResolverCachingTests.swift` are test-only mock cache implementations within the Metadata package. Per the decision rules, any cluster where even one record is test-marked warrants no-action; here both are. Consolidating these near-duplicate `set` methods into shared test infrastructure would couple two independent test suites and risk obscuring the distinct caching contracts each test file is exercising. The Jaccard similarity of 0.7 is notable but insufficient to override the test-fixture restraint.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsAPIEntityResolverCachingTests.swift_39_EntityResolverMockCache.set_Metadata_Shared_Metadata_Tests___hf831b0c45bf31bbc.json",
+  "row_index": 153,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the no-action restraint rules apply.\n\nThe file path is `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` \u2014 this is clearly a test file (it lives under `Tests/WallpaperTests/` and the type is named `QualitySignalTests`). However, the `context_flags` on both records show `is_test: false`. This is a data anomaly: the file path and type name are unambiguous test indicators, but the flags say otherwise.\n\nDecision rule 1 says restraint markers on participating records are load-bearing. The flags as provided do not carry `is_test: true`. However, the evidence from the cluster row itself \u2014 the file path `Tests/WallpaperTests/QualitySignalTests.swift` and the enclosing type `QualitySignalTests` \u2014 makes the test nature of these methods unambiguous from the cluster output alone. I can cite this as literal evidence without hallucinating. The spirit of the rule is to avoid coupling production code to test semantics; here both records are in the same test file. I'll recommend no-action citing the file path evidence, noting the flag discrepancy.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both methods \u2014 `QualitySignalTests.hysteresisHeatingEntry` (line 295) and `QualitySignalTests.hysteresisHeatingExit` (line 312) \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift`, a file whose path and enclosing type name (`QualitySignalTests`) unambiguously identify it as a test target. Although the cluster row records `is_test: false` on both entries (likely a flag-extraction gap for this file), the file path evidence in the cluster row itself is sufficient to classify these as test fixtures. The two methods represent the entry and exit arms of a hysteresis heating scenario \u2014 intentionally distinct test cases that happen to share structural shape \u2014 and merging or extracting them would obscure the semantic distinction between the two test scenarios without any production benefit.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CgkBYiRM1P6sBUATkh8cib",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2623,
+    "output_tokens": 699,
+    "service_tier": "standard"
+  }
+}

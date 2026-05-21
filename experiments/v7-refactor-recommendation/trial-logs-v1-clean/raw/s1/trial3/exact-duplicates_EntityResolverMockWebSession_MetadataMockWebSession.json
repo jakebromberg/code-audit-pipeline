@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records live under `Shared/Metadata/Tests/MetadataTests/` \u2014 clearly test files by path, even though the pipeline did not set `is_test=true` on either record.\n- The names `MetadataMockWebSession` and `EntityResolverMockWebSession` both contain \"Mock\", and both are `type-alias-object` kinds with identical shape (`shared_field_count: 2`, `differing_slots: null`).\n- The files are `PlaycutMetadataServiceCachingTests.swift` and `DiscogsAPIEntityResolverCachingTests.swift` \u2014 both clearly test fixtures by filename convention.\n- Despite `is_mock=false` and `is_test=false` flags (likely a pipeline tagging gap), the path and naming evidence is unambiguous: these are mock web session type aliases defined inside test files for two different test suites.\n- Merging them into a single shared alias would couple two independent test suites and could mask divergence if one mock needs to evolve differently from the other.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MetadataMockWebSession` (in `PlaycutMetadataServiceCachingTests.swift`, line 79) and `EntityResolverMockWebSession` (in `DiscogsAPIEntityResolverCachingTests.swift`, line 72) are `type-alias-object` declarations residing under `Shared/Metadata/Tests/MetadataTests/`. Although the pipeline flags `is_test=false` and `is_mock=false` on both records \u2014 likely a tagging gap \u2014 the file paths and the 'Mock' infix in both names make their test-fixture nature unambiguous. Each alias serves a distinct test suite (`PlaycutMetadataServiceCachingTests` vs. `DiscogsAPIEntityResolverCachingTests`), and consolidating them into a single shared alias would couple two independent test suites, risking silent breakage if either mock needs to diverge. The structural identity (`shared_field_count: 2`, `differing_slots: null`) reflects coincidental shape parity between two purpose-built test doubles, not a production abstraction opportunity.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012VAEo9yH8kSKbabD3G5Ss8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 639,
+    "service_tier": "standard"
+  }
+}

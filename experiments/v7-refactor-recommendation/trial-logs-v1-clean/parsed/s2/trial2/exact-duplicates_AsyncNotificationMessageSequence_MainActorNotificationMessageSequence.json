@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"MainActorNotificationMessageSequence\" ... \"name\": \"AsyncNotificationMessageSequence\" ... \"differing_slots\": null, \"jaccard\": null",
+    "rationale": "Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with empty `fields_or_signature` lists. Despite sharing 3 structural slots (Jaccard and differing_slots are null, suggesting the pipeline matched on shape alone), their names encode meaningfully distinct semantics: one is scoped to `MainActor` dispatch and the other is a general async notification sequence. Collapsing or extracting them risks erasing that semantic distinction. No restraint markers are present, but the structural evidence is too thin \u2014 null Jaccard, null differing_slots \u2014 to confidently assert the aliases are truly interchangeable rather than coincidentally shaped.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_AsyncNotificationMessageSequence_MainActorNotificationMessageSequence.json",
+  "row_index": 31,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `Image.heifData` method definitions at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. They share a Jaccard similarity of 0.75, suggesting near-duplicate implementations in the same file. Determine whether one is a platform-conditional variant (e.g., `#if os(macOS)` vs `#if os(iOS)`) or a legacy overload that was never removed. If they are platform guards, ensure they are clearly delimited and documented; if one is a dead duplicate, delete it. If both are legitimately needed but share a common body, extract the shared logic into a private helper method within the same file and have both call it.\",\n      \"why_no_category_fits\": \"Both records live in the exact same file (`ImageCompatability.swift`) and the same package (`Core`), so 'extract-to-common' does not apply. There is no protocol, subclass, or generic parameterization involved \u2014 these are two near-identical method definitions on `Image` within one file. The most likely cause is either a platform-conditional split or an accidental duplication, neither of which maps cleanly to the named categories. A within-file private-helper extraction or dead-code deletion is the appropriate action, which falls under 'other'.\"\n    },\n    \"rationale\": \"Both members are named `Image.heifData`, are `method` kind, reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in package `Core`, and carry a Jaccard similarity of 0.75 \u2014 high enough to indicate substantial shared logic but not identical, implying a platform branch or incremental drift. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). The 79-line gap between line 28 and line 107 in a single file strongly suggests either a `#if` platform split whose bodies have converged, or a stale duplicate that was never cleaned up. The right fix is within-file: either unify via a private helper or delete the redundant definition.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 28 ... \\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 107 ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28\",\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107\"\n        ]\n      },\n      \"rationale\": \"If the two `Image.heifData` definitions are split across separate `extension Image` blocks within the same file (a common pattern for `#if os(...)` guards), consolidating them into a single extension block with clearly marked conditional compilation sections would improve readability and make the duplication explicit and intentional.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UgEvDMa4Frf6Dzbe8Dwrcj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2553,
+    "output_tokens": 873,
+    "service_tier": "standard"
+  }
+}

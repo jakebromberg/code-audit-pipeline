@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the members and their context flags.\n\nKey observations:\n1. The file `Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift` \u2014 despite `is_test: false` in the flags, it lives under a `Tests/` directory path. However, the flags are authoritative per the decision rules, so I must treat it as non-test.\n2. The file `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 it lives under `Examples/WallpaperSampleApp/`, which the decision rules explicitly call out as a sample-app path trigger for `reason_class: \"sample-app-mirror\"`, regardless of the `is_sample_app: false` flag value. Wait \u2014 re-reading the rules: \"ANY participating record has is_sample_app=true, **or sits under Examples/ or SampleApp/**\". The path contains `Examples/WallpaperSampleApp/`, so this record qualifies as a sample-app record by path, triggering the restraint.\n\nThis means the cluster contains a record sitting under `Examples/`, which per the decision rules triggers `no-action` with `reason_class: \"sample-app-mirror\"`. The mixed cluster (production types + sample-app path) is the canonical restraint pattern \u2014 lifting shared code here would couple production to demonstration semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:IntentError+PlaybackError+PlaybackState+PlayerState+ProcessInfo.ThermalState+ProcessInfo.ThermalState+StreamingAudioState+TimeoutError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record \u2014 the `ProcessInfo.ThermalState` extension at line 236 of `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 sits under an `Examples/WallpaperSampleApp/` path, which the decision rules treat as a sample-app record regardless of the `is_sample_app` flag value. Per the restraint rules, a mixed cluster containing even one sample-app-path record must be left alone, because extracting the shared shape into a common location would couple production packages (`DebugPanel`, `Playback`, `Intents`) to demonstration-only semantics. The remaining members span three unrelated packages and represent structurally coincidental empty-body extensions on domain-specific types, further reducing the value of any extraction.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MJnTGZKev5rnVhCPUeSiEc",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3331,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"WXYC/WatchXYC/RootTabView.swift\" ... \"package\": \"app:WatchXYC\" ... \"file\": \"WXYC/iOS/Views/Root/RootTabView.swift\" ... \"package\": \"app:iOS\" ... \"fields_or_signature\": [] ... \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the structural evidence is essentially nil \u2014 there are no shared fields, no Jaccard score, and no shared ancestor reported. The two files live in entirely separate app targets (`app:WatchXYC` at `WXYC/WatchXYC/RootTabView.swift` and `app:iOS` at `WXYC/iOS/Views/Root/RootTabView.swift`), which are platform-specific entry points (watchOS vs. iOS) whose root tab views are expected to differ in layout, navigation model, and available content. Sharing the name `RootTabView` is a natural naming convention for a root navigation container, not evidence of extractable logic. No restraint markers are set, but the platform divergence makes any extraction inadvisable without concrete shared field or method evidence, which is absent.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 3
+}

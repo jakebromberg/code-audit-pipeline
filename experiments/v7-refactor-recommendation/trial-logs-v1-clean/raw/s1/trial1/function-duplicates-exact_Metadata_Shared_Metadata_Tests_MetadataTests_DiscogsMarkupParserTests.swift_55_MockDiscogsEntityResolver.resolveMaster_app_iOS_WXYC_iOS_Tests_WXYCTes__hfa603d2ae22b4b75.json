@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver` \u2014 a mock type living inside test files. The context flags say `is_mock: false` and `is_test: false`, but the file paths and type name strongly indicate these are test fixtures. The pipeline's flag assignment appears to have missed these, but I must not hallucinate \u2014 I can only use what the cluster row provides.\n\nPer the rules, the flags as given are `is_test: false` and `is_mock: false` for both records. However, the file paths (`...Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `...Tests/WXYCTests/DiscogsFormatterTests.swift`) and the type name (`MockDiscogsEntityResolver`) are literal evidence from the cluster row that these are test-support mock types. The decision rules say restraint markers \"dominate action signals\" \u2014 but the markers here are `false`. Still, the type name `MockDiscogsEntityResolver` and the `Tests/` path segments are grounded evidence that this is intentional test-fixture duplication. I'll recommend `no-action` with `reason_class: \"coincidental\"` is not quite right \u2014 the duplication is real but the correct framing is that these are test-support mocks whose duplication is intentional across test targets, which fits `\"coincidental\"` poorly. The most honest answer is `no-action` citing the test-file evidence, but since the flags say `is_test: false`, I should note the discrepancy and still recommend the conservative path.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live under test-file paths \u2014 'Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' and 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift' \u2014 and the shared type name is 'MockDiscogsEntityResolver', a mock collaborator. Although the pipeline emitted is_test=false and is_mock=false for both records, the file paths contain 'Tests/' path segments and the type carries the 'Mock' prefix, which are literal evidence from the cluster row that these are test-fixture helpers. Consolidating them into a shared production target would couple test-support semantics into a non-test package, and any shared test-support target would need to be evaluated for dependency-graph impact across the 'Metadata' and 'app:iOS' packages. The conservative and correct action is no-action until the flag discrepancy is resolved by the pipeline.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the pipeline flag discrepancy is confirmed to be a tagging error and both records are genuinely non-test production helpers, the identical 'MockDiscogsEntityResolver.resolveMaster' method in two separate packages ('Metadata' and 'app:iOS') could be extracted into a shared test-support module within the 'Metadata' package, since 'app:iOS' already depends on 'Metadata'. This would eliminate the exact duplicate and give both test suites a single authoritative mock. However, this alternative should only be pursued after verifying the is_test/is_mock flags are incorrect.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013HtjjUbgsxBgpcumR8Tzn5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 1092,
+    "service_tier": "standard"
+  }
+}

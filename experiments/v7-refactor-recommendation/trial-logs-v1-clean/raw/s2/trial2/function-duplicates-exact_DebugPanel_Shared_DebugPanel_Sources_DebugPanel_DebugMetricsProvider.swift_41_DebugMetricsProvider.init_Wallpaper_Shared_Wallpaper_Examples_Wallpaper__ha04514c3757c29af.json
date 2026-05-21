@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have all context flags set to `false` \u2014 including `is_sample_app: false`. However, the second record's **file path** is `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The decision rules explicitly call out files that \"sit under Examples/ or SampleApp/\" as triggering the `sample-app-mirror` no-action reason, regardless of the `is_sample_app` flag value. The path contains both `Examples/` and `WallpaperSampleApp/`, which is unambiguous.\n\nThe canonical restraint pattern applies: one record is production (`DebugPanel` package, `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`) and the other is a sample-app file (`Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`). Lifting the shared initializer into common code would couple production semantics to a demonstration/example context.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under both 'Examples/' and 'WallpaperSampleApp/' in the path \u2014 a canonical sample-app location. Per the restraint rules, any cluster where a record resides under Examples/ or SampleApp/ triggers sample-app-mirror no-action regardless of the is_sample_app flag value. Consolidating the duplicate 'DebugMetricsProvider.init' initializer would couple the production 'DebugPanel' package to demonstration-context semantics in the 'Wallpaper' sample app, which is the exact anti-pattern the restraint rule is designed to prevent. No override is warranted because there is no evidence in the cluster row that the sample-app record is a leftover prototype slated for deletion rather than a deliberate fixture.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019Du7wmhgXU5GySiYvFX84G",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2609,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

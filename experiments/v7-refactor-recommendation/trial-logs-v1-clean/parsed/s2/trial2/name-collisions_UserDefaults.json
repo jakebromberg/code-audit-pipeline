@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:UserDefaults",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift\"\n      \"file\": \"Shared/Caching/Sources/Caching/DefaultsStorage.swift\"\n      \"kind\": \"extension\"",
+    "rationale": "Both records are unnamed `extension` declarations on (presumably) `UserDefaults` within the same `Caching` package, surfaced by the name-collisions query. Having two separate files in `Shared/Caching/Sources/Caching/` extend the same type fragments the API surface and makes it harder to reason about the full set of members added to `UserDefaults`. Consolidating both extensions into `UserDefaults+WXYC.swift` (the file whose name already signals its purpose) eliminates the collision signal while keeping the extension scoped to the `Caching` package. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift",
+        "Shared/Caching/Sources/Caching/DefaultsStorage.swift"
+      ],
+      "target_type": "UserDefaults"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_UserDefaults.json",
+  "row_index": 45,
+  "trial": 2
+}

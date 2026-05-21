@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"ActiveStateProviding\",\n      \"method\": \"var isActive: Bool { get }\",\n      \"target_location\": \"Shared/Playback/Sources/PlaybackCore/PlaybackState.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Playback/Sources/PlaybackCore/PlayerState.swift\",\n        \"Shared/Playback/Sources/PlaybackCore/PlaybackState.swift\"\n      ]\n    },\n    \"rationale\": \"Both `PlayerState.isActive` (line 72) and `PlaybackState.isActive` (line 96) are computed properties in the same `Playback` package with a Jaccard similarity of 0.71, indicating near-identical implementation bodies. Since both types live in `Shared/Playback/Sources/PlaybackCore/` and share no restraint markers (all context flags false), the duplication is unintentional. The idiomatic Swift resolution is to introduce a protocol (e.g., `ActiveStateProviding`) with a default `isActive` implementation in a protocol extension, allowing both `PlayerState` and `PlaybackState` to conform and delete their individual implementations. This keeps the logic in one place within the existing `PlaybackCore` module without requiring a new package dependency.\",\n    \"evidence_quote\": \"PlayerState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playback\",\n        \"type_name\": \"isActive\",\n        \"remove_from\": [\n          \"Shared/Playback/Sources/PlaybackCore/PlayerState.swift\",\n          \"Shared/Playback/Sources/PlaybackCore/PlaybackState.swift\"\n        ]\n      },\n      \"rationale\": \"If `PlayerState` and `PlaybackState` do not share a natural protocol relationship, the shared `isActive` logic could instead be extracted into a free function or a shared helper within the `Playback` package's `PlaybackCore` module, called by both computed properties. This avoids introducing a new protocol abstraction at the cost of slightly less idiomatic Swift.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013dWrh1PzJcjNQuAThcfKfK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2570,
+    "output_tokens": 654,
+    "service_tier": "standard"
+  }
+}

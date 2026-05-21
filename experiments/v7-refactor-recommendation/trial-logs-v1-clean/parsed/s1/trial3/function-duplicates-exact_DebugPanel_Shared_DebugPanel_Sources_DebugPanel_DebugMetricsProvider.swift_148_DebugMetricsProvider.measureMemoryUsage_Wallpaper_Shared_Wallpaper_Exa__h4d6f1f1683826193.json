@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path hierarchy \u2014 a sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app boolean value. The duplicate of 'DebugMetricsProvider.measureMemoryUsage' in that file is almost certainly a self-contained debug utility copied into the sample app so it can run without depending on the production 'DebugPanel' package. Consolidating it into 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' would introduce a production-package dependency into a demonstration target, coupling sample-app semantics to production infrastructure. No refactor is warranted under the restraint rules.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_148_DebugMetricsProvider.measureMemoryUsage_Wallpaper_Shared_Wallpaper_Exa__h4d6f1f1683826193.json",
+  "row_index": 15,
+  "trial": 3
+}

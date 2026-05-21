@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift",
+    "rationale": "Both participating records reside under `Tests/` directories (`Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) and carry `Mock`-prefixed type names (`MockHLSAVPlayer.play`, `MockPlayer.play`), making them test-fixture mock stubs despite the pipeline reporting `is_mock=false` and `is_test=false`. The `fields_or_signature` arrays are empty and all structural evidence fields (`jaccard`, `shared_ancestor`, `shared_field_count`, `differing_slots`) are `null`, so there is no grounded basis on which to propose a shared extraction. Consolidating two mock `play` stubs that serve distinct test doubles (`MockHLSAVPlayer` vs `MockPlayer`) would couple unrelated test fixtures and risk obscuring intentional per-mock behavioural differences. Preferring no-action is the correct conservative stance given the fixture context and absence of structural evidence.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 2
+}

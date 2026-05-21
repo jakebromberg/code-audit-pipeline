@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayerController",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\"",
+    "rationale": "All three members share the name 'RadioPlayerController' but represent structurally distinct declarations within the same package ('Playback'): a type-alias-object at line 23 in 'RadioPlayerController.swift', an extension on that type at line 286 in the same file, and a separate extension at line 63 in 'RadioPlayerControllerTests.swift'. The test file path ('Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift') strongly implies the third member is a test extension on the production type \u2014 a normal Swift pattern where test files extend the subject under test. No structural evidence (jaccard, shared_field_count, differing_slots) was provided to suggest meaningful duplication, and all fields_or_signature arrays are empty, leaving no actionable overlap to consolidate.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_RadioPlayerController.json",
+  "row_index": 13,
+  "trial": 2
+}

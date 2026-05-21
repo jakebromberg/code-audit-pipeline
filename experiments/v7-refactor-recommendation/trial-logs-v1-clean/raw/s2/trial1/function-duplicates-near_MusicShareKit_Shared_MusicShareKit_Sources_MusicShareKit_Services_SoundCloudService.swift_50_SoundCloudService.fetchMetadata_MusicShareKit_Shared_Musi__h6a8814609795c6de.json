@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"MusicMetadataFetchable\",\n      \"method\": \"fetchMetadata()\",\n      \"target_location\": \"Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicMetadataFetchable.swift\",\n      \"conformers_simplified\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift\",\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift\"\n      ]\n    },\n    \"rationale\": \"Both `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64) live in the same package `MusicShareKit` and exhibit a high structural similarity (Jaccard 0.8077), indicating the two implementations share the overwhelming majority of their logic. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). The idiomatic Swift resolution is to introduce a protocol `MusicMetadataFetchable` with a default implementation of `fetchMetadata()` in a protocol extension, allowing each service to conform and delete its redundant body, retaining only service-specific overrides if any exist.\",\n    \"evidence_quote\": \"jaccard\\\": 0.8076923076923077\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"MusicMetadataFetchable\",\n        \"associated_type\": \"Metadata\",\n        \"constraints\": [],\n        \"replaces\": [\n          \"SoundCloudService.fetchMetadata\",\n          \"YouTubeMusicService.fetchMetadata\"\n        ]\n      },\n      \"rationale\": \"If the return type of `fetchMetadata` differs between `SoundCloudService` and `YouTubeMusicService` (e.g., service-specific metadata models), a PAT with an associated `Metadata` type would be more appropriate than a plain protocol with a default implementation, allowing each conformer to specialise the return type while sharing the structural contract.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0191t48K5eHo1ooBg1tVd7oN",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2610,
+    "output_tokens": 652,
+    "service_tier": "standard"
+  }
+}

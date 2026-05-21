@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"HumanReadableNamed\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\n        \"ShaderDirectiveStore.humanReadableName\",\n        \"ShaderDirectiveControlsDisclosure.humanReadableName\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71 of `ShaderDirectiveStore.swift`) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102 of `ShaderDirectiveControls.swift`) are methods with the same name and a high structural similarity (Jaccard 0.8) living in the same `Wallpaper` package. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Rather than a generic free function, the idiomatic Swift approach is to introduce a protocol `HumanReadableNamed` with a `humanReadableName` requirement so that both types declare conformance, enabling call-site polymorphism and a single point of documentation. A default implementation can be added in a protocol extension if the bodies are sufficiently similar, further reducing duplication.\",\n    \"evidence_quote\": \"ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"HumanReadableNamed\" }\n        ],\n        \"new_name\": \"humanReadableName\",\n        \"replaces\": [\n          \"ShaderDirectiveStore.humanReadableName\",\n          \"ShaderDirectiveControlsDisclosure.humanReadableName\"\n        ]\n      },\n      \"rationale\": \"If the two implementations share enough logic, a single generic free function `humanReadableName<T: HumanReadableNamed>(_ value: T) -> String` in the `Wallpaper` package could replace both instance methods. However, a protocol requirement is more idiomatic Swift for this pattern because it preserves method-call syntax and integrates naturally with SwiftUI and other protocol-oriented APIs already present in the package.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FbrHnJVite7PNRVC3CEBHv",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2635,
+    "output_tokens": 747,
+    "service_tier": "standard"
+  }
+}

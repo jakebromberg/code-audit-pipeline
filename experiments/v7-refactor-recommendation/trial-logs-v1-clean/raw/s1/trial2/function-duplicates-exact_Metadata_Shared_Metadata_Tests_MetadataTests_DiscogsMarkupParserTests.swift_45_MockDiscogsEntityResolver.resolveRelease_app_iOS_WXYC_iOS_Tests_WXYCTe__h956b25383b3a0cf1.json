@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 but the file paths are telling: both files are under `Tests/` directories (`MetadataTests/DiscogsMarkupParserTests.swift` and `WXYCTests/DiscogsFormatterTests.swift`), and the type name is `MockDiscogsEntityResolver`, which is a mock type living inside test files. The context flags, however, are the authoritative signal per the decision rules \u2014 and both records explicitly have `is_test: false` and `is_mock: false`.\n\nDespite the naming and path evidence strongly suggesting these are test/mock fixtures, the flags say otherwise. I must not hallucinate \u2014 I cannot override the flags based on inferred semantics. However, the `fields_or_signature` arrays are both empty (`[]`), meaning there is no method signature evidence to ground a concrete refactor recommendation. The structural evidence fields are all null as well.\n\nGiven the empty signatures, I cannot name parameters, return types, or effect specifiers needed for a precise `default-implementation` or `extract-to-common` specifics block. The safest grounded recommendation is `extract-to-common` (the method is an exact duplicate across two packages), but the lack of signature data limits precision. I'll proceed with `extract-to-common` as the primary, noting the file-path/naming evidence as supporting context.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveRelease` appears as an exact duplicate in two separate packages: `Metadata` (at `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45`) and `app:iOS` (at `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41`). The `query` field confirms `function-duplicates-exact`, meaning the implementations are identical. Because `app:iOS` already depends on (or can depend on) the `Metadata` package \u2014 which is the natural home for Discogs-related types \u2014 the canonical definition should live in `Metadata` and the `app:iOS` copy should be removed. Note: all four context flags are `false` on both records per the cluster data, so no restraint-marker override applies; however, the file paths and type name (`MockDiscogsEntityResolver`) strongly suggest these are test-support types, and the consuming team should verify that consolidating them does not inadvertently couple test infrastructure across packages in an undesirable way.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both records carry `is_test: false` and `is_mock: false` per the cluster flags, yet the file paths (`MetadataTests/DiscogsMarkupParserTests.swift`, `WXYCTests/DiscogsFormatterTests.swift`) and the type name prefix `Mock` are canonical markers of test-fixture code. If the flags are incorrect or the mock is intentionally scoped per-package to avoid cross-package test dependencies, no action is warranted. The empty `fields_or_signature` arrays also mean no concrete signature can be verified, making a safe consolidation impossible to fully specify without inspecting the source.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011JFZw35NysfqQMGxytEt7s",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 1049,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "SwiftUI.Image.background\n      \"package\": \"app:WatchXYC\"\n    },\n    {\n      \"context_flags\": {\n        \"is_codegen\": false,\n        \"is_mock\": false,\n        \"is_sample_app\": false,\n        \"is_test\": false\n      },\n      \"fields_or_signature\": [],\n      \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\",\n      \"kind\": \"computed-property\",\n      \"line\": 47,\n      \"name\": \"SwiftUI.Image.background\",\n      \"package\": \"app:iOS\"",
+    "rationale": "Both `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:210) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift:47) define an identical `SwiftUI.Image.background` computed property, flagged as `function-duplicates-exact` with no restraint markers (all context flags false). The duplication is purely structural with no test, mock, codegen, or sample-app justification. The canonical home should be a shared extensions file \u2014 ideally a new `WXYC/Shared/Extensions/Image+Background.swift` or within an existing shared module both targets already depend on \u2014 so both targets can import a single definition. The copy in `PlayerPage.swift` is particularly misplaced since it mixes a view-level file with a utility extension.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 1
+}

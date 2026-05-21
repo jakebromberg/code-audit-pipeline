@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MetadataMockWebSession` (in `MetadataTests/PlaycutMetadataServiceCachingTests.swift`, line 79) and `EntityResolverMockWebSession` (in `MetadataTests/DiscogsAPIEntityResolverCachingTests.swift`, line 72) reside under `Shared/Metadata/Tests/MetadataTests/`, placing them firmly in test territory despite the pipeline reporting `is_test=false`. Their names carry the 'Mock' infix and they are `type-alias-object` declarations with identical shape (shared_field_count=2, differing_slots=null), strongly suggesting they are local test-support aliases scoped to their respective test files. Merging them into a shared alias would couple two independent test suites and obscure the intent of each fixture. No production code is involved, so no production benefit accrues from extraction.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockWebSession\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a future audit confirms these two type-alias declarations are truly identical in resolved type and neither test file requires its own distinct alias name for clarity, a single `MockWebSession` type-alias could be extracted to a shared test-support file within the `Metadata` test target, eliminating the duplication. However, the distinct names (`MetadataMockWebSession` vs `EntityResolverMockWebSession`) suggest intentional per-suite scoping, making this alternative low-priority.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018DFmDTK6wwySVaXTsdQ1jP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 581,
+    "service_tier": "standard"
+  }
+}

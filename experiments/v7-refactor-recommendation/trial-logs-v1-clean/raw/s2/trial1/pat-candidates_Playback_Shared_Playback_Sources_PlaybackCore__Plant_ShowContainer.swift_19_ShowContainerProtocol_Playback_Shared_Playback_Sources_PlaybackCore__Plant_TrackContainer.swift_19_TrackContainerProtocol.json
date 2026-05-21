@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in package `Playback` share four fields identically (`isStale:Bool`, `lastRefreshedAt:Date?`, `pageToken:String?`, and `item`) and differ only in the concrete type of `item` \u2014 `Show` vs `Track`. This is the canonical PAT pattern: a single protocol with `associatedtype Item` captures the shared shape, and the two existing protocols either become typealiased conformances or are removed entirely. The `_Plant_` filename prefix on both files suggests these were already identified as candidates for structural consolidation. No restraint markers are present on either record.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"item:Show\\\"], \\\"b\\\": [\\\"item:Track\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale\", \"lastRefreshedAt\", \"pageToken\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If callers already hold references typed as `ShowContainerProtocol` or `TrackContainerProtocol` and a breaking change to a PAT is undesirable, a non-generic parent protocol `ContainerProtocol` carrying the three invariant members (`isStale`, `lastRefreshedAt`, `pageToken`) could be introduced, with the two existing protocols inheriting from it and each declaring their own `item` property. This avoids the type-erasure complexity that PATs introduce at call sites, at the cost of not unifying the `item` slot.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0197woUqvHKB3TtUzKAi8zPR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2682,
+    "output_tokens": 620,
+    "service_tier": "standard"
+  }
+}

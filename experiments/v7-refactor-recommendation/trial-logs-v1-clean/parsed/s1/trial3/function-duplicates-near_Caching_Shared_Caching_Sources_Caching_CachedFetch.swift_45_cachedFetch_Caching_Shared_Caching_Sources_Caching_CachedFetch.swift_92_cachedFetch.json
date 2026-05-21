@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both members are named `cachedFetch` in `Shared/Caching/Sources/Caching/CachedFetch.swift` within the `Caching` package, at lines 45 and 92, with a Jaccard similarity of 0.7 \u2014 indicating substantial but not identical bodies. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional production code. Because `fields_or_signature` is empty for both records, the precise parameter differences cannot be determined from the cluster data alone, preventing a fully specified generic-parameterization or default-implementation recommendation. The safest grounded action is to consolidate the shared ~70 % logic into a private helper within the same file, leaving only the genuinely distinct portions in each public overload.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is limited to a small number of call-site parameters (e.g., a cache policy, expiry duration, or key strategy), unify them into a single generic or defaulted-parameter function, removing the near-duplicate body. If the two overloads are genuinely distinct entry points that happen to share ~70 % of their logic, extract the shared logic into a private `_cachedFetch(...)` implementation function and have both public overloads delegate to it.",
+      "why_no_category_fits": "The cluster signals near-duplicate functions (Jaccard 0.7) within the same file and package, which is a consolidation concern rather than a cross-boundary extraction, protocol, or generic-parameterization concern. The `fields_or_signature` arrays are empty, so the exact parameter differences are unknown; without knowing whether the divergence is in type parameters, argument labels, or logic branches, neither `generic-parameterization` (which requires knowing the type slots) nor `default-implementation` (which requires a protocol) can be precisely specified. The most accurate recommendation is a targeted intra-file refactor whose exact shape depends on the actual signatures, making `other` the most honest category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 3
+}

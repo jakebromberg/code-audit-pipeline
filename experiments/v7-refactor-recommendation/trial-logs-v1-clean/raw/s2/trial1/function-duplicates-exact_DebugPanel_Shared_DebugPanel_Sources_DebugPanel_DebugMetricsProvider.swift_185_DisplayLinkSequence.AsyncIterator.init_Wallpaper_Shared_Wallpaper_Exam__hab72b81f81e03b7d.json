@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory. Decision rule 1 is explicit: any record under `Examples/` triggers `reason_class: \"sample-app-mirror\"` and the recommendation must be `no-action`. Although `is_sample_app` is flagged `false` on that record, the file path itself is the authoritative signal per the rule (\"sits under Examples/ or SampleApp/\"). The mixed cluster (one production record in `DebugPanel`, one sample-app record in `Wallpaper/Examples`) is precisely the canonical restraint pattern described in rule 1 \u2014 lifting the shared initializer into common code would couple production `DebugPanel` semantics to a demonstration/sample-app fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The other record is a production initializer in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). Extracting the shared 'DisplayLinkSequence.AsyncIterator.init' to a common location would couple production DebugPanel code to a demonstration fixture, which is the canonical anti-pattern described by the restraint rule. The duplication is expected: the sample app independently replicates the display-link machinery for self-contained demonstration purposes.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01M6FWc9McSMTaVHCuarybLs",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2617,
+    "output_tokens": 644,
+    "service_tier": "standard"
+  }
+}

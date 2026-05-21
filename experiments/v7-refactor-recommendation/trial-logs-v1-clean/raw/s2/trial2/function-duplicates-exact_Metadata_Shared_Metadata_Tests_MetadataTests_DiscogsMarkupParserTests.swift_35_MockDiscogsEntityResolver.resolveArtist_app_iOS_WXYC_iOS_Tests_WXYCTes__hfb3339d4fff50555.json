@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have all context flags set to `false` \u2014 including `is_test: false` and `is_mock: false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver`. The context flags are the authoritative signal per the decision rules, not the file name. The flags say these are not test fixtures and not mocks.\n\nThat said, the names `MockDiscogsEntityResolver` and `*Tests.swift` are strong semantic indicators that these are test-support types that the pipeline has simply not flagged. The method `resolveArtist` on a `MockDiscogsEntityResolver` living in two separate test files is a classic test-double duplication pattern. The `fields_or_signature` is empty, so I cannot verify the implementation is truly identical beyond the name match. The structural evidence fields are all null.\n\nGiven the file paths are both under `Tests/` directories, the type name begins with `Mock`, and the pipeline's own context flags may be miscalibrated (the files are clearly test files by path and naming convention), I should note this tension. However, per the decision rules, flags dominate \u2014 and both flags say `is_test: false`, `is_mock: false`. I cannot override that with inferred evidence. But I *can* note the coincidental/structural-only nature and recommend extraction, or I can treat the naming as strong enough evidence to flag as a likely test fixture.\n\nThe safest grounded recommendation: the duplication is real and actionable \u2014 extract `MockDiscogsEntityResolver` (including `resolveArtist`) to a shared test-support target. The `Metadata` package already has a `Tests` target; a shared test helper module is the right home.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveArtist` appears identically in two separate test files \u2014 `DiscogsMarkupParserTests.swift` in the `Metadata` package and `DiscogsFormatterTests.swift` in the `app:iOS` package \u2014 with no differing slots and an exact-duplicate signal. Both context-flag sets report `is_test: false` and `is_mock: false`, so the restraint-marker rule does not formally apply; however, the file paths (both under `Tests/` directories) and the `Mock` prefix on the type name strongly suggest this is a shared test double that has been copy-pasted across packages. The correct resolution is to extract `MockDiscogsEntityResolver` (including `resolveArtist`) into a dedicated test-support module within the `Metadata` package (e.g., `Shared/Metadata/Tests/MetadataTestSupport/`) so that `app:iOS` tests can import it rather than redeclare it. This eliminates the drift risk if the `DiscogsEntityResolver` protocol signature changes.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the two `MockDiscogsEntityResolver` types are intentionally scoped to their respective test targets and the `app:iOS` package must not take a test-support dependency on the `Metadata` package's test target (e.g., due to module visibility or build-graph constraints), keeping them separate is acceptable. The `fields_or_signature` arrays are both empty, so the full implementation identity cannot be confirmed from the cluster data alone, leaving open the possibility that the bodies differ in ways not captured by the name-match signal.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012H2RNLfyrMuSEkS5MZq82n",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 1143,
+    "service_tier": "standard"
+  }
+}

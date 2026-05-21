@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AsyncStream",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift",
+    "rationale": "Both participating records reside under test file paths \u2014 'Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift' (line 444) and 'Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift' (line 579) \u2014 within the Playback package's test suite. These are unnamed extensions (name: \"\") that almost certainly provide AsyncStream test-helper utilities scoped to their respective test files. Consolidating them would couple unrelated test fixtures together and risk polluting test namespaces. The restraint rule applies: any record under a Tests/ path is treated as a test fixture, and both records here qualify.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_AsyncStream.json",
+  "row_index": 16,
+  "trial": 3
+}

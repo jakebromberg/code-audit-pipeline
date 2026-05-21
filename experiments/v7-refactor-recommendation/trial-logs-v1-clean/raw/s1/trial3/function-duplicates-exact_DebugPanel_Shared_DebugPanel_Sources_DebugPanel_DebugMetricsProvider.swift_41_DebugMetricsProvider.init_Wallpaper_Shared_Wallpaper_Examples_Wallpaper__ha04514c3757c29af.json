@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/` \u2014 this is a sample-app location. Although the `is_sample_app` context flag is recorded as `false`, the decision rules explicitly call out records that \"sit under Examples/ or SampleApp/\" as triggering the `sample-app-mirror` restraint, independent of the flag value. The path evidence is unambiguous: `Examples/WallpaperSampleApp/Sources/DebugHUD.swift` is a sample application file.\n\nLifting the production `DebugMetricsProvider.init` from `DebugPanel` into shared code because a sample-app copy exists would couple production semantics to demonstration/example semantics \u2014 exactly the anti-pattern the restraint rule is designed to prevent.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a sample-application location that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The production initializer in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel) and the sample-app copy in package Wallpaper serve different purposes: one is a real framework entry point, the other is a demonstration harness. Consolidating them would couple production DebugPanel semantics to sample-app demonstration code, which is the canonical anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017SEcuhBJGjpfT48UaqHR5k",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2609,
+    "output_tokens": 629,
+    "service_tier": "standard"
+  }
+}

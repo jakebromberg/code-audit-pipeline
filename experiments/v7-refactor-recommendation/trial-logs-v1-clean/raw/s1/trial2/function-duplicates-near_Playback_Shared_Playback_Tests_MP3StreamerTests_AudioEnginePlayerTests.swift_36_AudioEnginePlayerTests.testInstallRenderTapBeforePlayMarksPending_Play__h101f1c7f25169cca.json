@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:36:AudioEnginePlayerTests.testInstallRenderTapBeforePlayMarksPending+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:395:AudioEnginePlayerTests.testRenderTapReinstalledAfterRecovery\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster carry `is_test: true` and reside in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift`. The two methods \u2014 `testInstallRenderTapBeforePlayMarksPending` (line 36) and `testRenderTapReinstalledAfterRecovery` (line 395) \u2014 are distinct test scenarios for render-tap behaviour: one verifies that installing a tap before play marks it pending, the other verifies tap reinstallation after recovery. Despite a high structural similarity (Jaccard 0.78), their semantic intent diverges enough that merging them would obscure test intent and violate the one-assertion-per-test principle. Per the decision rules, any cluster where all participating records are test fixtures must be treated as intentional duplication.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UaFx9UV3uGziFsztPbpo18",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2640,
+    "output_tokens": 388,
+    "service_tier": "standard"
+  }
+}

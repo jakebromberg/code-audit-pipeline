@@ -1,0 +1,33 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.78,
+    "evidence_quote": "\"shared_field_count\": 1",
+    "rationale": "All three types \u2014 `PlaybackBlendModeKey`, `MaterialBlendModeKey`, and `OverlayBlendModeKey` \u2014 are `type-alias-object` declarations at exactly line 89 in their respective files within the `Wallpaper` package, with zero differing slots and a shared field count of 1, indicating structurally identical bodies. Since they differ only in the blend-mode domain they name, a single generic `BlendModeKey<BlendMode>` type parameterised on the concrete blend-mode type would eliminate all three duplicates while preserving type safety. All three files live under `Shared/Wallpaper/Sources/Wallpaper/Core/`, so the consolidated type can be placed in a new `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKey.swift` within the same package with no cross-package dependency changes. No restraint markers are present on any record.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "BlendModeKey",
+      "replaces": [
+        "PlaybackBlendModeKey",
+        "MaterialBlendModeKey",
+        "OverlayBlendModeKey"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "BlendMode"
+        }
+      ]
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_MaterialBlendModeKey_OverlayBlendModeKey_PlaybackBlendModeKey.json",
+  "row_index": 19,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the no-action restraint rules apply.\n\nThe file path is `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` \u2014 this is clearly a test file (the path contains `Tests/WallpaperTests/` and the class is named `ThemePickerPersistenceTests`). However, the `context_flags` on both records show `is_test: false`, which is a metadata inconsistency. The file path and class name are unambiguous structural evidence that these are test methods.\n\nDespite the `is_test: false` flag, the file path `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` and the containing class `ThemePickerPersistenceTests` make it evident these are test fixtures. The decision rules say restraint markers on participating records are load-bearing \u2014 but the path itself is the ground truth here. Even setting that aside, two test methods (`recordsPickerUsage` and `recordPickerUsageIdempotent`) that test different behavioral properties (basic recording vs. idempotency) are intentionally distinct test cases that happen to share structural shape; collapsing them would destroy test clarity and independence.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:34:ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both methods reside in `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` inside the class `ThemePickerPersistenceTests`, which is unambiguously a test class despite the `is_test: false` metadata flag. The two methods \u2014 `recordsPickerUsage` (line 34) and `recordPickerUsageIdempotent` (line 43) \u2014 test distinct behavioral properties: basic recording of picker usage versus idempotency of that recording. Their structural similarity is expected and intentional in a test suite covering related but separate invariants. Merging or extracting them would obscure test intent and couple independent assertions.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VZwAHWLf9DA5jmq6WsyKv9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2647,
+    "output_tokens": 685,
+    "service_tier": "standard"
+  }
+}

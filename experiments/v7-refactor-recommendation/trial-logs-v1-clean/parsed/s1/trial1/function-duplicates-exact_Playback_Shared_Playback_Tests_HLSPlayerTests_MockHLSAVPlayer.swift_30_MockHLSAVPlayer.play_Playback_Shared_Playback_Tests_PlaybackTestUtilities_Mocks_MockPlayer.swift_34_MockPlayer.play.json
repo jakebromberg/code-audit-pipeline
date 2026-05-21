@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+    "rationale": "Both `MockHLSAVPlayer.play` (line 30 in `Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift`) and `MockPlayer.play` (line 34 in `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) are mock stub implementations living under `Tests/` directories, as evidenced by their file paths and `Mock`-prefixed type names. Although the pipeline's context flags report `is_mock=false` and `is_test=false` for both records, the file paths and naming conventions make clear these are test-support fixtures for distinct mock types serving different test targets (`HLSPlayerTests` vs `PlaybackTestUtilities`). The structural coincidence \u2014 both `play` methods having an empty signature \u2014 reflects the trivial no-op stub pattern common to all mock players, not a shared domain concept worth extracting. Merging or deduplicating them would couple two independent mock hierarchies and undermine their separate test-isolation purposes.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 1
+}

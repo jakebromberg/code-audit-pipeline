@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:301:AudioEnginePlayerTests.testRecoveryFromStall+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:466:AudioEnginePlayerTests.testBatchSchedulingTriggersRecovery\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have is_test=true, placing them squarely under the test-fixture restraint rule. The methods `AudioEnginePlayerTests.testRecoveryFromStall` (line 301) and `AudioEnginePlayerTests.testBatchSchedulingTriggersRecovery` (line 466) live in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift` within the `Playback` package. Although the Jaccard similarity of 0.7619 is high, the structural overlap between two test methods is expected when they exercise related recovery scenarios; each test encodes a distinct behavioural assertion (stall recovery vs. batch-scheduling-triggered recovery) and must remain independently readable and independently runnable. Merging or extracting shared body logic into a helper would be a test-internal refactor decision, not a production-code concern, and the restraint marker dominates.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0169T6hvXRXviJG5deTVxiWt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2622,
+    "output_tokens": 402,
+    "service_tier": "standard"
+  }
+}

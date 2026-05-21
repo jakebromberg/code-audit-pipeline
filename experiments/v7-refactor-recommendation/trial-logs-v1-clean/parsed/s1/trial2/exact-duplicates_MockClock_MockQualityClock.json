@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift",
+    "rationale": "Both `MockQualityClock` (Wallpaper package, `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift:19`) and `MockClock` (Caching package, `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift:41`) are `type-alias-object` declarations that live exclusively inside per-package test directories. Although the pipeline's `is_test` flags are `false`, the file paths place both unambiguously in `Tests/` subtrees, and their names follow the canonical mock-fixture naming convention. Extracting a shared clock alias into a common production target would introduce test scaffolding into non-test infrastructure and couple two otherwise independent packages (`Wallpaper`, `Caching`) for no domain reason. The structural coincidence \u2014 `shared_field_count: 2` with no differing slots \u2014 reflects that both are thin aliases to the same underlying clock type, not a sign of duplicated business logic that warrants consolidation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 2
+}

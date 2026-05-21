@@ -1,0 +1,31 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.88,
+    "evidence_quote": "\"cacheKey:(for id: Int) -> String\",\n        \"entityKind:String\",\n        \"lastSync:Date?\"",
+    "rationale": "Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 differing only in the return type of their `resolve` method (`Artist` vs `Release`). Extracting those three shared members into a common parent protocol `MetadataRepository` eliminates the duplication and makes the structural contract explicit. The `resolve` method can either remain in each child protocol with its concrete return type, or be lifted via an associated type (see alternative). Neither record carries any restraint marker, so refactoring is safe.",
+    "specifics": {
+      "children": [
+        "ArtistRepository",
+        "ReleaseRepository"
+      ],
+      "moved_members": [
+        "cacheKey:(for id: Int) -> String",
+        "entityKind:String",
+        "lastSync:Date?"
+      ],
+      "parent": "MetadataRepository",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Metadata_Shared_Metadata_Sources_Metadata__Plant_ArtistRepository.swift_19_ArtistRepository_Metadata_Shared_Metadata_Sources_Metadata__Plant_ReleaseRepository.swift_19_ReleaseRepository.json",
+  "row_index": 6,
+  "trial": 2
+}

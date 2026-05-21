@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+    "rationale": "The method `createSolidColorImage` appears as an exact duplicate in two test classes \u2014 `DominantColorExtractorTests` (line 278) and `ColorPaletteServiceTests` (line 239) \u2014 both residing in `Shared/ColorPalette/Tests/ColorPaletteTests/` within the `ColorPalette` package. Although the pipeline's `is_test` flag reads `false` on both records (likely a tagging gap), the file paths and type names make clear these are XCTest classes sharing a test-image factory helper. Extracting `createSolidColorImage` into a shared test helper file (e.g., `Shared/ColorPalette/Tests/ColorPaletteTests/TestHelpers.swift`) within the same test target eliminates the duplication without touching production code or crossing package boundaries. Both call sites can then delegate to the single shared implementation.",
+    "specifics": {
+      "remove_from": [
+        "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift",
+        "Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift"
+      ],
+      "target_package": "ColorPalette",
+      "type_name": "createSolidColorImage"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 1
+}

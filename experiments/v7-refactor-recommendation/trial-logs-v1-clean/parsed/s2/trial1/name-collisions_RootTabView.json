@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning there is no shared structural body to extract \u2014 each is a thin type alias living in a distinct app target (`app:WatchXYC` at `WXYC/WatchXYC/RootTabView.swift` and `app:iOS` at `WXYC/iOS/Views/Root/RootTabView.swift`). The two targets serve fundamentally different platforms (watchOS vs. iOS), so the name collision is coincidental: both need a root tab view concept but their concrete implementations are necessarily platform-specific. No `structural_evidence` fields (jaccard, shared_field_count, shared_ancestor) carry any signal, confirming there is no shared shape to consolidate. Merging or extracting these into a common package would couple platform-divergent UI code without benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 1
+}

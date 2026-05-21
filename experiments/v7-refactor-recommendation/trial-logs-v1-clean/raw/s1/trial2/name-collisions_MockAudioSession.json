@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the file paths carefully. All four members are located under `Tests/` directories:\n\n- `Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift`\n- `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift` (lines 18 and 99)\n- `Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift`\n\nDespite the context flags all reading `is_test: false` and `is_mock: false`, the file paths are unambiguous: these are test files (under `Tests/`) and mock files (under `Mocks/`). The structural pipeline appears to have failed to set the restraint markers correctly for these records, but the file paths themselves are the ground truth. The `MockAudioSession.swift` path explicitly names it a mock, and all files reside in test targets. Lifting or consolidating these would couple production code to test/mock semantics.\n\nAdditionally, the cluster has no `name` populated on any member, no `fields_or_signature`, and no `structural_evidence` (all nulls), making it impossible to ground a concrete action recommendation without hallucinating.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockAudioSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four participating records reside under test target directories: 'Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift', 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' (two declarations), and 'Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift'. Although the pipeline emitted is_test=false and is_mock=false on every record, the file paths are authoritative: the Mocks/ subdirectory and Tests/ parent directories confirm these are test-fixture and mock-fixture declarations. Consolidating or extracting these type-alias-objects would couple production or shared infrastructure to test/mock semantics. Furthermore, all structural_evidence fields are null and no name or fields_or_signature are populated, making any concrete action recommendation impossible to ground without hallucination.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AfRp65cTvPuvwQ3atoLjw3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2765,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

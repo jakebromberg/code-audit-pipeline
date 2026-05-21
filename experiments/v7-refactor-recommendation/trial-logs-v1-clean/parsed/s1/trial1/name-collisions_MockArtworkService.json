@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockArtworkService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift",
+    "rationale": "Both participating records reside under test directories \u2014 'Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift' (package: Artwork) and 'Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift' (package: AppServices) \u2014 making these local test-scoped type aliases that are intentionally defined per-package to avoid cross-package test dependencies. The structural evidence is entirely null (no Jaccard, no shared fields, no differing slots), and both records carry empty name and fields_or_signature values, providing no grounded shape signal to justify extraction. Consolidating test-local mock aliases across package boundaries would couple the AppServices test target to the Artwork test target, which is an anti-pattern in modular Swift package layouts.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MockArtworkService.json",
+  "row_index": 27,
+  "trial": 1
+}

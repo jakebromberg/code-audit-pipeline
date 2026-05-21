@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift:69:CompositeWallpaperView.buildShader+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift:48:StitchableWallpaperView.buildShader\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"WallpaperView\",\n      \"method\": \"buildShader()\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Renderers/WallpaperView.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `StitchableWallpaperView.buildShader` (line 48) and `CompositeWallpaperView.buildShader` (line 69) live in the same `Wallpaper` package under the `Renderers/` directory and exhibit a Jaccard similarity of 0.875, indicating the implementations are nearly identical. Since neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), the duplication is unintentional. The idiomatic Swift resolution is to introduce a shared protocol (e.g., `WallpaperView`) with a default implementation of `buildShader()` in a protocol extension, allowing both view types to inherit the shared logic while retaining the ability to override it if their rendering strategies ever diverge.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.875\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BaseWallpaperView\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n        ]\n      },\n      \"rationale\": \"If `StitchableWallpaperView` and `CompositeWallpaperView` are both classes (rather than structs or SwiftUI views), a shared base class `BaseWallpaperView` in the same `Wallpaper` package could host the single `buildShader()` implementation. However, a protocol with a default implementation is more idiomatic in Swift and avoids the rigidity of class inheritance, making it the secondary option.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CnQ7VeHj1tUSat8HDLfK6A",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2641,
+    "output_tokens": 757,
+    "service_tier": "standard"
+  }
+}

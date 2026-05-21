@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:IntentError+PlaybackError+PlaybackState+PlayerState+ProcessInfo.ThermalState+ProcessInfo.ThermalState+StreamingAudioState+TimeoutError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One participating record \u2014 the `ProcessInfo.ThermalState` extension at line 236 of `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 sits under an `Examples/WallpaperSampleApp/` path, which the decision rules treat as a sample-app record regardless of the `is_sample_app` flag value. Per the restraint rules, a mixed cluster containing even one sample-app-path record must be left alone, because extracting the shared shape into a common location would couple production packages (`DebugPanel`, `Playback`, `Intents`) to demonstration-only semantics. The remaining members span three unrelated packages and represent structurally coincidental empty-body extensions on domain-specific types, further reducing the value of any extraction.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_IntentError_PlaybackError_PlaybackState_PlayerState_ProcessInfo.ThermalState_ProcessInfo.ThermalState_StreamingAudioState_TimeoutError.json",
+  "row_index": 1,
+  "trial": 2
+}

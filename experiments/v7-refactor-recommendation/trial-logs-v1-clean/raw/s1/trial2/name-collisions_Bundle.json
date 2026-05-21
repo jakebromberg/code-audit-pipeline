@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:Bundle\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records are unnamed `extension` declarations on `Bundle`, one in `Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift` (package: Playlist) and one in `Shared/Caching/Sources/Caching/CacheMigrationManager.swift` (package: Caching). The structural evidence carries no shared fields (`shared_field_count: null`, `jaccard: null`), so the only signal is that both extend the same Foundation type. Extensions on `Bundle` in separate packages are a standard Swift pattern for scoping bundle-resource accessors to their owning module; the coincidence of extending the same type does not imply shared logic. Neither record carries any restraint marker, but the domain concepts (playlist resources vs. cache migration) are unrelated, making this a structural-only coincidence. Merging or extracting these extensions would couple two independent packages without benefit.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift\\\", \\\"package\\\": \\\"Playlist\\\" ... \\\"file\\\": \\\"Shared/Caching/Sources/Caching/CacheMigrationManager.swift\\\", \\\"package\\\": \\\"Caching\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WvYrUZsUmfmi57ffqbhZuG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2482,
+    "output_tokens": 364,
+    "service_tier": "standard"
+  }
+}

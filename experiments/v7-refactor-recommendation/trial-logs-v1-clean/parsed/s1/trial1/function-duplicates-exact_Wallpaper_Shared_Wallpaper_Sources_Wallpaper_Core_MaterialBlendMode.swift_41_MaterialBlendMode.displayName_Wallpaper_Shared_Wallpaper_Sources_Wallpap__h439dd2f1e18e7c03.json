@@ -1,0 +1,30 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.82,
+    "evidence_quote": "function-duplicates-exact",
+    "rationale": "All three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently defines an identical `displayName` computed property at exactly line 41 of their respective files. Because the implementations are exact duplicates (query: `function-duplicates-exact`) and all context flags are false, there is no restraint marker preventing consolidation. The idiomatic Swift solution is to introduce a protocol `BlendModeDisplayable` with a default implementation of `displayName` in a protocol extension, likely constrained to `RawRepresentable where RawValue == String` given the naming pattern of blend-mode enums, so all three conformers inherit the implementation without any per-type boilerplate.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [
+        "RawRepresentable where RawValue == String"
+      ],
+      "new_protocol": "BlendModeDisplayable",
+      "replaces": [
+        "MaterialBlendMode.displayName",
+        "PlaybackBlendMode.displayName",
+        "OverlayBlendMode.displayName"
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_MaterialBlendMode.swift_41_MaterialBlendMode.displayName_Wallpaper_Shared_Wallpaper_Sources_Wallpap__h439dd2f1e18e7c03.json",
+  "row_index": 1,
+  "trial": 1
+}

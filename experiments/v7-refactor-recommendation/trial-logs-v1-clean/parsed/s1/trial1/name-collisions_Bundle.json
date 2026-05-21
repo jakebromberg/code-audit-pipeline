@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Bundle",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"file\": \"Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift\" ... \"file\": \"Shared/Caching/Sources/Caching/CacheMigrationManager.swift\"",
+    "rationale": "Both records are unnamed `extension` declarations on `Bundle`, one in `Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift` (package: Playlist) and one in `Shared/Caching/Sources/Caching/CacheMigrationManager.swift` (package: Caching). The structural evidence carries no Jaccard similarity, no shared fields, and no shared ancestor \u2014 the cluster was surfaced purely because both files extend the same Foundation type. Each extension serves a distinct domain purpose (playlist resource lookup vs. cache migration), and merging them would couple two unrelated packages. No restraint markers are present, but the coincidence is purely structural with no evidence of shared logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_Bundle.json",
+  "row_index": 18,
+  "trial": 1
+}

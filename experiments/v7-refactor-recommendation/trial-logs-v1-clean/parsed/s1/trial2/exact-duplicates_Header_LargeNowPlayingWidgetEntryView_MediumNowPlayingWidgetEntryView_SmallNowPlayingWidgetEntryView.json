@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Header+LargeNowPlayingWidgetEntryView+MediumNowPlayingWidgetEntryView+SmallNowPlayingWidgetEntryView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": [], \"shared_field_count\": 2, \"differing_slots\": null, \"jaccard\": null",
+    "rationale": "All four members are `type-alias-object` declarations with empty `fields_or_signature` lists, meaning the structural signal is limited to the alias shape itself rather than any meaningful shared logic. The names `LargeNowPlayingWidgetEntryView`, `MediumNowPlayingWidgetEntryView`, `SmallNowPlayingWidgetEntryView`, and `Header` are intentionally distinct widget-size variants and a layout sub-component living in `WXYC/iOS/NowPlayingWidget/Views/`; each alias almost certainly resolves to a different concrete SwiftUI view type sized for its WidgetKit family. The `shared_field_count: 2` with `differing_slots: null` and `jaccard: null` confirms the detector matched on alias boilerplate rather than on substantive field overlap. Collapsing these into a single generic alias or shared type would conflate semantically distinct widget presentations and break WidgetKit's per-family view dispatch.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_Header_LargeNowPlayingWidgetEntryView_MediumNowPlayingWidgetEntryView_SmallNowPlayingWidgetEntryView.json",
+  "row_index": 5,
+  "trial": 2
+}

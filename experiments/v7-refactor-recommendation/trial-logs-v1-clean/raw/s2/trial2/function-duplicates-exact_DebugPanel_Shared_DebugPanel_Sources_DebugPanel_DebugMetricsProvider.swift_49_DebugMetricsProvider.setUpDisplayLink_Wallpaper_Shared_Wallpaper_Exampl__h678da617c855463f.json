@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- One member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` in the `Wallpaper` package.\n- Although `is_sample_app` is flagged `false` on that record, the file path contains `Examples/WallpaperSampleApp/` \u2014 a canonical sample-app directory. The decision rules treat files under `Examples/` or `SampleApp/` as sample-app mirrors regardless of the flag value, and the restraint-marker rule says any such record dominates toward no-action.\n- The canonical production copy already exists in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`). The copy in `DebugHUD.swift` is almost certainly a local convenience duplicate inside a sample/demo target that intentionally avoids a hard dependency on the `DebugPanel` package.\n- Lifting the sample-app copy into shared production code would couple the demo target to `DebugPanel` semantics in a way that is not warranted by the evidence here.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The production copy in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package DebugPanel) is the authoritative implementation. The WallpaperSampleApp copy is almost certainly a local convenience duplicate that deliberately avoids a hard dependency on the DebugPanel package; merging it would couple the demo target to production DebugPanel semantics without clear benefit.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ds5YWSEN5nbb8WuSFhRSiy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2619,
+    "output_tokens": 664,
+    "service_tier": "standard"
+  }
+}

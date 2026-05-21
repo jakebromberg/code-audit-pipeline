@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+    "rationale": "Both `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) are computed properties in the same file `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` within the `ColorPalette` package, and the pipeline reports a Jaccard similarity of 0.714, indicating their bodies are nearly identical. The only meaningful difference is the target platform color type (`UIColor` vs `NSColor`). Since they are already co-located, extraction to a common package is not applicable; the right action is to factor out the shared HSB component assembly into a private helper or unify them under a single platform-conditional `color` property using `#if canImport(UIKit)`/`#if canImport(AppKit)`. No restraint markers are present on either record, so the duplication is actionable.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIKit: Bool) -> <PlatformColor>` or a shared `func colorComponents() -> (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that encapsulates the shared HSB-to-platform-color conversion logic. Both `uiColor` (line 53) and `nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` would then delegate to this helper, differing only in the final platform type constructor (`UIColor` vs `NSColor`). Alternatively, use a `#if canImport(UIKit) / #if canImport(AppKit)` conditional compilation block with a single `color` computed property that resolves to the correct platform type, eliminating the need for two separate properties entirely.",
+      "why_no_category_fits": "The two properties `HSBColor.uiColor` and `HSBColor.nsColor` are not duplicates in the sense that they should be merged into one generic or extracted to a shared package \u2014 they already live in the same file and same package (`ColorPalette`). The duplication is in their internal implementation body (Jaccard 0.71), not in their declaration site. The appropriate fix is either a shared private helper or a platform-conditional single property, neither of which maps cleanly to `extract-to-common` (same file/package), `generic-parameterization` (the divergence is platform type, not a type parameter), `default-implementation` (no protocol involved), or `extension-consolidation` (already co-located). The `other` category best captures a 'extract shared implementation body' refactor within a single type."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 2
+}

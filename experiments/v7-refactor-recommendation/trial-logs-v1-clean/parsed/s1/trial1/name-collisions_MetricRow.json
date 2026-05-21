@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MetricRow",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' in the 'Wallpaper' package, which sits under an Examples/WallpaperSampleApp path and carries is_sample_app=false in its flags but is structurally a sample-app file by directory convention (Examples/WallpaperSampleApp). More decisively, the decision rules treat any record under Examples/ as a sample-app-mirror restraint marker regardless of the flag value, making no-action the correct default. The other record lives in 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' in the production 'DebugPanel' package. Merging or lifting the sample-app copy would couple production DebugPanel semantics to a demonstration context, which is precisely the anti-pattern the restraint rule guards against. Additionally, both records have empty fields_or_signature lists and no name populated, providing no structural evidence that a meaningful shared abstraction exists.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MetricRow.json",
+  "row_index": 26,
+  "trial": 1
+}

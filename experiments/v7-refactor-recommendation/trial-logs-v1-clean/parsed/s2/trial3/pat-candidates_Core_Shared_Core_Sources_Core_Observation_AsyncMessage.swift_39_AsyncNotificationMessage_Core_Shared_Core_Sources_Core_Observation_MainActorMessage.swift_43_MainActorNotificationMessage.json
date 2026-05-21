@@ -1,0 +1,30 @@
+{
+  "cluster_id": "pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.82,
+    "evidence_quote": "shared_field_count: 3",
+    "rationale": "Both `AsyncNotificationMessage` (Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39) and `MainActorNotificationMessage` (Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43) share exactly 3 fields, of which 2 are identical: `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name`. The sole differing slot is the `makeMessage` signature \u2014 `AsyncNotificationMessage` takes a plain `Notification` while `MainActorNotificationMessage` takes a `sending Notification`, reflecting their distinct concurrency contexts (async vs. MainActor). Introducing a base protocol `NotificationMessage` in the same `Core` package that carries the two shared members allows each child protocol to retain only its concurrency-specific `makeMessage` variant, eliminating the structural duplication without conflating the two execution contexts. Neither record carries any restraint marker, making this a clean production refactor.",
+    "specifics": {
+      "children": [
+        "AsyncNotificationMessage",
+        "MainActorNotificationMessage"
+      ],
+      "moved_members": [
+        "makeNotification:(_ message: Self, object: Subject?) -> Notification",
+        "name:Notification.Name"
+      ],
+      "parent": "NotificationMessage",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial3/pat-candidates_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_39_AsyncNotificationMessage_Core_Shared_Core_Sources_Core_Observation_MainActorMessage.swift_43_MainActorNotificationMessage.json",
+  "row_index": 6,
+  "trial": 3
+}

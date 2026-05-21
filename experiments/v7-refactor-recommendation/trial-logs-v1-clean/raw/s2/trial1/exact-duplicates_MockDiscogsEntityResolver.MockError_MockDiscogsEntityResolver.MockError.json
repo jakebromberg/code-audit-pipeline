@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live in test targets: one in 'Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' (package: Metadata) and the other in 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift' (package: app:iOS). Although the context flags do not set is_test=true, the file paths unambiguously place both declarations inside test bundles (the 'Tests/' directory segments and 'Tests' suffixes on the package names). The type 'MockDiscogsEntityResolver.MockError' is a nested mock error type used as a test fixture in two separate test suites that exercise different formatters/parsers; the duplication is intentional isolation between test modules. Consolidating these into shared production code would couple test-only error semantics into a non-test target, which is undesirable.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver.MockError\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned for the Metadata package, the identical 'MockDiscogsEntityResolver.MockError' type-alias-union (shared_field_count: 2, exact duplicate) could be extracted there and imported by both test targets, eliminating the duplication. However, this is only worthwhile if a dedicated test-support target is introduced; absent that, the isolation benefit of keeping fixtures local outweighs the deduplication gain.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BTrg8AbKgfEeSYXEfe6tai",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 572,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\"",
+    "rationale": "Both records in this cluster have empty `name` fields and empty `fields_or_signature` lists, which means the pipeline surfaced a name-collision signal without enough structural content to ground a concrete refactor recommendation. One record is a `type-alias-object` in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` at line 90 and the other is an `extension` in `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift` at line 73; without knowing the actual alias target or the extension's members, there is no evidence that these two declarations share meaningful shape or semantics beyond a coincidental name proximity. All context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are false on both records, so no restraint marker applies, but the absence of field data makes any action recommendation ungroundable.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_Talkset.json",
+  "row_index": 42,
+  "trial": 2
+}

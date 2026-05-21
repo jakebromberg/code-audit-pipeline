@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockURLProtocol\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records reside in test files: 'Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift' (package: AppServices) and 'Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift' (package: Metadata). Although the context_flags do not explicitly mark is_test=true, the file paths unambiguously place both type-alias-object declarations inside *Tests targets, which are test fixtures by location. Each test package independently defines a local MockURLProtocol alias scoped to its own test bundle; this is the canonical pattern for isolating URL-loading stubs per test module. Consolidating them into a shared target would couple two otherwise independent test packages and risk leaking test infrastructure into production dependency graphs.\",\n    \"evidence_quote\": \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift ... Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"AppServices\",\n        \"type_name\": \"MockURLProtocol\",\n        \"remove_from\": [\n          \"Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift\",\n          \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned, the two identical MockURLProtocol type-alias declarations could be extracted there to eliminate the name collision and reduce duplication. However, this is only advisable if the Metadata test target already depends on AppServices test infrastructure, which cannot be confirmed from the cluster row alone.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LgPt7USPs4ymMLzWw5BKFn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2499,
+    "output_tokens": 512,
+    "service_tier": "standard"
+  }
+}

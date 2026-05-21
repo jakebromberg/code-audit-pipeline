@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:SwiftUI.Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.45,
+    "evidence_quote": "\"package\": \"app:WatchXYC\" ... \"file\": \"WXYC/WatchXYC/PlayerPage.swift\" ... \"package\": \"app:iOS\" ... \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "Two unnamed extensions on SwiftUI.Image exist across two separate app targets \u2014 `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift, line 190) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift, line 27). Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is worth evaluating. However, because the two extensions live in distinct platform targets (watchOS vs. iOS/widget), the members they add to SwiftUI.Image are almost certainly platform-specific and cannot be trivially merged into a single shared file without introducing conditional compilation. The most actionable step is to audit whether any members overlap and, if so, extract shared helpers into a common Swift package that both targets already depend on; platform-exclusive members should remain in their respective targets.",
+    "specifics": {
+      "consolidate_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_type": "SwiftUI.Image"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_SwiftUI.Image.json",
+  "row_index": 41,
+  "trial": 3
+}

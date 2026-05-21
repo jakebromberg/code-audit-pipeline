@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:UserDefaults",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift\"\n\"file\": \"Shared/Caching/Sources/Caching/DefaultsStorage.swift\"\n\"package\": \"Caching\"",
+    "rationale": "Both records are unnamed extensions on (presumably) `UserDefaults` within the same `Caching` package, living in two separate files \u2014 `UserDefaults+WXYC.swift` (line 15) and `DefaultsStorage.swift` (line 47). Having two extension declarations on the same type in the same package without a clear separation-of-concern boundary creates a name-collision risk and makes it harder to reason about the full surface area of the extension. Since both records share the same package (`Caching`), carry no restraint markers, and the structural signal is `name-collisions`, consolidating them into a single canonical file (`UserDefaults+WXYC.swift`, which already carries the WXYC namespace convention) is the idiomatic Swift resolution. Any members from `DefaultsStorage.swift` that are logically distinct could be kept in a separate extension block within the same file, clearly delimited by a `// MARK:`.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Caching/Sources/Caching/UserDefaults+WXYC.swift",
+        "Shared/Caching/Sources/Caching/DefaultsStorage.swift"
+      ],
+      "target_type": "UserDefaults"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_UserDefaults.json",
+  "row_index": 45,
+  "trial": 1
+}

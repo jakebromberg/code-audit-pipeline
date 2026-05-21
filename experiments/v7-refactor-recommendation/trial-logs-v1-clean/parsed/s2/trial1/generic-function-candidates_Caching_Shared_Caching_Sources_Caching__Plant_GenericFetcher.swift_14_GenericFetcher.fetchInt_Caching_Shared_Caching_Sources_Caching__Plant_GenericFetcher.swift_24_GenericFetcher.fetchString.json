@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.82,
+    "evidence_quote": "GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+    "rationale": "The cluster surfaces two methods, `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24), both residing in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` within the `Caching` package. Their Jaccard similarity of 0.75 and the `_Plant_` prefix in the filename strongly suggest these are planted exemplars of a type-varying fetch pattern that should be collapsed into a single generic function `fetch<T>() -> T`. No restraint markers are set on either record, so there is no barrier to the refactor. Replacing the two concrete variants with one generic function eliminates the per-type boilerplate and makes the `GenericFetcher` type extensible to future value types without further method proliferation.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "fetch",
+      "replaces": [
+        "GenericFetcher.fetchInt",
+        "GenericFetcher.fetchString"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-function-candidates_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_14_GenericFetcher.fetchInt_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_24_GenericFetcher.fetchString.json",
+  "row_index": 19,
+  "trial": 1
+}

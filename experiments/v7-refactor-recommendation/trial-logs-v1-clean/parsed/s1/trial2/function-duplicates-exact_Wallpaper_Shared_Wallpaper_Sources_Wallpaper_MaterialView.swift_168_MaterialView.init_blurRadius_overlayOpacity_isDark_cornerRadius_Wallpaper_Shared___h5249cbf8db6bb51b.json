@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+    "rationale": "The cluster surfaces two initializers with the identical signature `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 35 and 168, both in the `Wallpaper` package. Having two definitions of the same initializer in one file is almost certainly an accidental duplication (e.g., a copy-paste or a merge artifact). No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so intentional-duplication rules do not apply. The correct remediation is a within-file deletion of the redundant definition, which does not map cleanly to any of the named refactor categories.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` is genuinely defined twice within `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (at line 35 and line 168). If so, delete the duplicate definition \u2014 retaining whichever copy is canonical (likely the one at line 35, as it appears first) \u2014 and verify that all call sites continue to compile. If the two definitions differ in body despite sharing the same signature, reconcile them into a single implementation before removing the redundant declaration.",
+      "why_no_category_fits": "Both records live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) and the exact same package (`Wallpaper`), so 'extract-to-common' is inapplicable (there is nowhere else to move it). The fix is simply deleting one of the two duplicate definitions within the file, which is a within-file deduplication action rather than any of the cross-cutting structural refactors the named categories describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 2
+}

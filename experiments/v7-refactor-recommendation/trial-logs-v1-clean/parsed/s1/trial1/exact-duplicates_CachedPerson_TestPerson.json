@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift",
+    "rationale": "Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) reside under `Shared/Caching/Tests/CachingTests/`, making them unambiguous test-target fixtures despite the `is_test: false` metadata flag \u2014 the directory path is the authoritative signal. Both are `type-alias-object` records with `shared_field_count: 2` and no declared fields of their own, meaning they are thin aliases used to satisfy generic constraints in their respective test files. Merging them into a shared production type would couple the `Caching` package's production surface to test-only naming and semantics. The distinct names (`TestPerson` vs `CachedPerson`) also suggest each alias was coined to communicate intent within its specific test file, so the duplication is intentional fixture design.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 1
+}

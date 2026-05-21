@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"BlendMode\", \"constraint\": null }\n      ],\n      \"new_name\": \"BlendModeKey\",\n      \"replaces\": [\n        \"PlaybackBlendModeKey\",\n        \"MaterialBlendModeKey\",\n        \"OverlayBlendModeKey\"\n      ]\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendModeKey`, `MaterialBlendModeKey`, and `OverlayBlendModeKey` \u2014 are `type-alias-object` declarations at exactly line 89 in their respective files within the `Wallpaper` package, with `shared_field_count: 1` and no differing slots, indicating structurally identical bodies. Since they differ only in the blend-mode domain they name, a single generic `BlendModeKey<BlendMode>` type alias object in a shared file (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKey.swift`) can replace all three, with concrete typealiases `typealias PlaybackBlendModeKey = BlendModeKey<PlaybackBlendMode>` etc. preserved for API compatibility if needed. No restraint markers are present on any record, so consolidation is safe. This eliminates the exact duplication flagged by the pipeline while keeping the domain-specific names as thin aliases.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"line\\\": 89\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendModeKey\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three blend-mode key types are truly identical and a generic parameterization is considered over-engineering for a simple key type, a single non-generic `BlendModeKey` extracted into a new shared file within the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKey.swift`) and referenced from the three original files achieves the same deduplication with less abstraction overhead.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01L2WQ3ES8gN6k8hmhq6SDpb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2688,
+    "output_tokens": 720,
+    "service_tier": "standard"
+  }
+}

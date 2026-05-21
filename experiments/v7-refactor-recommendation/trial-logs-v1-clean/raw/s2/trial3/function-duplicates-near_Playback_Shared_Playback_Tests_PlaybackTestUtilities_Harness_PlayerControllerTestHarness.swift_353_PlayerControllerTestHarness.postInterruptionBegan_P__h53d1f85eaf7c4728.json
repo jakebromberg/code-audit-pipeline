@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:353:PlayerControllerTestHarness.postInterruptionBegan+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:367:PlayerControllerTestHarness.postInterruptionEnded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `PlayerControllerTestHarness.postInterruptionBegan` (line 353) and `PlayerControllerTestHarness.postInterruptionEnded` (line 367) \u2014 reside in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift` and carry `is_test: true`. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Beyond the restraint marker, the two methods are semantically distinct test-harness helpers that simulate the beginning and ending of an audio interruption respectively; their structural similarity (Jaccard 0.83) is expected because they are symmetric event-posting helpers, not accidental duplication. Merging them into a single parameterised helper inside a test harness would obscure intent without reducing production risk.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018qHmdNLW6i1KdC1EUBG8KZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2642,
+    "output_tokens": 403,
+    "service_tier": "standard"
+  }
+}

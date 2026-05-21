@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"WXYC/WatchXYC/RootTabView.swift\", \"package\": \"app:WatchXYC\" ... \"file\": \"WXYC/iOS/Views/Root/RootTabView.swift\", \"package\": \"app:iOS\"",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning there is no shared logic or field structure to extract \u2014 they are merely two platform-specific root tab views that happen to share the name `RootTabView`. One lives in `app:WatchXYC` at `WXYC/WatchXYC/RootTabView.swift` and the other in `app:iOS` at `WXYC/iOS/Views/Root/RootTabView.swift`; these are distinct platform targets (watchOS vs. iOS) whose root navigation containers are expected to differ in layout, available tabs, and SwiftUI view hierarchy. The structural evidence block reports `jaccard: null` and `shared_field_count: null`, confirming no measurable structural overlap was detected. Renaming one to avoid the collision would reduce clarity without any consolidation benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:113:ReviewRequestServiceTests.shouldNotRequestIfAlreadyRequested+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:90:ReviewRequestServiceTests.shouldRequestReviewAtThreshold\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `shouldRequestReviewAtThreshold` (line 90) and `shouldNotRequestIfAlreadyRequested` (line 113) \u2014 are distinct test cases that verify complementary, opposing behaviours of `ReviewRequestService`: one asserts the happy-path threshold trigger, the other asserts the guard against duplicate requests. Their structural similarity (Jaccard 0.82) is expected for unit tests that share setup boilerplate and assertion patterns while intentionally exercising different code paths. Merging or extracting them would obscure test intent and couple unrelated assertions.\",\n    \"evidence_quote\": \"is_test: true ... shouldRequestReviewAtThreshold ... shouldNotRequestIfAlreadyRequested ... jaccard: 0.8181818181818182\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GAnDHkV3YawDVBR1V5wvBy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2598,
+    "output_tokens": 376,
+    "service_tier": "standard"
+  }
+}

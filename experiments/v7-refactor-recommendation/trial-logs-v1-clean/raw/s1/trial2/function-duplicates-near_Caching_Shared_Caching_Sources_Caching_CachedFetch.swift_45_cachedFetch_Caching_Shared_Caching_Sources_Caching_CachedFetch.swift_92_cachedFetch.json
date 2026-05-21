@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Caching\",\n      \"type_name\": \"cachedFetch\",\n      \"remove_from\": [\n        \"Shared/Caching/Sources/Caching/CachedFetch.swift\"\n      ]\n    },\n    \"rationale\": \"Both members are named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` within the `Caching` package, at lines 45 and 92, with a Jaccard similarity of 0.70 \u2014 indicating substantial but not identical bodies. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). The most likely cause is that one overload or variant was added later and duplicated logic from the first; the shared logic should be extracted into a private helper within the same file, leaving each public entry point as a thin wrapper that delegates to it, eliminating the near-duplicate body.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"cachedFetch\\\", \\\"package\\\": \\\"Caching\\\" ... \\\"line\\\": 45 ... \\\"line\\\": 92 ... \\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": null }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two `cachedFetch` variants at lines 45 and 92 differ primarily in the type they operate on (a common reason for near-duplicate free functions in a caching layer), a single generic `cachedFetch<T>` with an appropriate constraint could unify them entirely, rather than merely sharing a private helper. This is the more idiomatic Swift approach when the divergence is type-driven rather than logic-driven, but cannot be confirmed without inspecting the full signatures.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ke8P4GtAMLdMeGJGpdDujk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2565,
+    "output_tokens": 632,
+    "service_tier": "standard"
+  }
+}

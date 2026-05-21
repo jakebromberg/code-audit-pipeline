@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path \u2014 a sample-app directory that is a canonical restraint marker per the decision rules. Although 'is_sample_app' is flagged false, the file path unambiguously places this initializer inside a sample/demo target. Extracting 'DisplayLinkSequence.AsyncIterator.init' to a shared location would couple the production 'DebugPanel' package to sample-app semantics, which is the exact anti-pattern the restraint rule is designed to prevent. The duplication here is intentional: the WallpaperSampleApp's DebugHUD replicates the display-link machinery locally so the sample app remains self-contained.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_185_DisplayLinkSequence.AsyncIterator.init_Wallpaper_Shared_Wallpaper_Exam__hab72b81f81e03b7d.json",
+  "row_index": 38,
+  "trial": 3
+}

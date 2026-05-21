@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:Clock+QualityClock+SystemClock+SystemQualityClock",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"interface\", \"name\": \"QualityClock\", \"package\": \"Wallpaper\" ... \"kind\": \"interface\", \"name\": \"Clock\", \"package\": \"Caching\" ... \"shared_field_count\": 1",
+    "rationale": "The cluster surfaces two structurally identical interface/type-alias-object pairs: `Clock` + `SystemClock` in package `Caching` (Shared/Caching/Sources/Caching/Clock.swift) and `QualityClock` + `SystemQualityClock` in package `Wallpaper` (Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift). With `shared_field_count: 1` and no differing slots, the two protocols are exact duplicates. Since `Caching` already owns the canonical `Clock` protocol and `Wallpaper` is a peer shared package that could reasonably depend on `Caching`, the `QualityClock` / `SystemQualityClock` declarations in `AdaptiveQualityController.swift` should be deleted and replaced with a `import Caching` + `typealias QualityClock = Clock` (or direct use of `Clock`) so the single definition lives in one place. No restraint markers are present on any record, making consolidation safe.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift"
+      ],
+      "target_package": "Caching",
+      "type_name": "Clock"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_Clock_QualityClock_SystemClock_SystemQualityClock.json",
+  "row_index": 10,
+  "trial": 2
+}

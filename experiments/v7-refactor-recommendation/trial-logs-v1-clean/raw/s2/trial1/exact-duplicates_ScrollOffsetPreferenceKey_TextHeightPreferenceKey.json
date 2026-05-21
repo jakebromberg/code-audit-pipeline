@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:ScrollOffsetPreferenceKey+TextHeightPreferenceKey\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"ScrollOffsetPreferenceKey\",\n      \"remove_from\": [\n        \"WXYC/WatchXYC/PlayerPage.swift\",\n        \"WXYC/iOS/Views/Playlist/Playcut Detail/PlaycutRowView.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster identifies two `type-alias-object` declarations \u2014 `TextHeightPreferenceKey` in `app:WatchXYC` (PlayerPage.swift:140) and `ScrollOffsetPreferenceKey` in `app:iOS` (PlaycutRowView.swift:74) \u2014 flagged as exact duplicates with `shared_field_count: 1` and no differing slots, meaning their underlying structure is identical. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. Because both are SwiftUI `PreferenceKey` type aliases sharing the same shape, they should be extracted into a single shared location accessible to both the iOS and WatchXYC app targets. However, the cluster does not surface a dedicated shared/common package in the catalog; the closest grounded option is to place the canonical type in a shared file within `app:iOS` (or a shared module both targets already import) and remove the per-file duplicates. The names differ only in semantic intent (`ScrollOffset` vs `TextHeight`), which may indicate they are two distinct keys that happen to share the same boilerplate implementation \u2014 if so, a single generic `FloatPreferenceKey` or a shared base alias would unify them cleanly.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 1, \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Tag\", \"constraint\": null }\n          ],\n        \"new_name\": \"FloatPreferenceKey\",\n        \"replaces\": [\"TextHeightPreferenceKey\", \"ScrollOffsetPreferenceKey\"]\n      },\n      \"rationale\": \"Because both keys share identical structure (shared_field_count: 1, no differing slots) but carry different semantic names, a single phantom-tagged generic struct `FloatPreferenceKey<Tag>` could replace both, letting call sites instantiate `FloatPreferenceKey<TextHeightTag>` and `FloatPreferenceKey<ScrollOffsetTag>` without any code duplication.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LdWqEytxeSQBjaHZXjAdpd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2527,
+    "output_tokens": 694,
+    "service_tier": "standard"
+  }
+}

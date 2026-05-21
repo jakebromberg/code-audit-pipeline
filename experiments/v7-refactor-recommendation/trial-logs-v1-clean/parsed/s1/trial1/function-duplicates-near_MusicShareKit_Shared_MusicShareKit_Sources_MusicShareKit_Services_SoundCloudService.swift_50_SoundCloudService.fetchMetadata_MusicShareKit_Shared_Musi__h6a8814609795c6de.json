@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.8076923076923077",
+    "rationale": "Both `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64) live in the same package `MusicShareKit` and exhibit a high structural similarity (Jaccard 0.8077), indicating the two implementations share the overwhelming majority of their logic. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). The idiomatic Swift resolution is to introduce a protocol `MusicMetadataFetchable` with a default implementation of `fetchMetadata()` in a protocol extension, allowing both service types to conform and delete their near-identical bodies. The new protocol file should live alongside the existing services in `Shared/MusicShareKit/Sources/MusicShareKit/Services/`.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift",
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift"
+      ],
+      "method": "fetchMetadata()",
+      "protocol": "MusicMetadataFetchable",
+      "target_location": "Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicMetadataFetchable.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Services_SoundCloudService.swift_50_SoundCloudService.fetchMetadata_MusicShareKit_Shared_Musi__h6a8814609795c6de.json",
+  "row_index": 71,
+  "trial": 1
+}

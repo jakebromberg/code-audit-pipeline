@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records carry all context flags as false, so no restraint marker applies directly. However, the second member `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 a file whose path, name prefix `_Plant_`, and `CoreTesting` module strongly indicate it is a generated or hand-authored test-support mock fixture, even though `is_mock` is not set to true in the metadata. The structural signal is that both interfaces share 3 fields with no differing slots, but `MainActorNotificationMessage` is a production protocol/interface in `Core/Observation/MainActorMessage.swift` while `MockNotificationMessage` is a testing-support counterpart in `CoreTesting`. Merging or extracting these would couple production observation semantics to test-support infrastructure. The coincidence of shape is expected and intentional: the mock must mirror the production interface exactly to be useful as a stand-in.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01P69pKizEDyw29MxtAABf55",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2501,
+    "output_tokens": 341,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "The two `cachedFetch` functions in `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92, package `Caching`) share a Jaccard similarity of 0.7, indicating substantial but not total overlap. Both records carry all context flags as `false`, ruling out every restraint-based no-action reason. However, `fields_or_signature` is empty for both members, so the exact nature of the divergence \u2014 whether it is type-parametric, argument-label-based, or logic-based \u2014 cannot be determined from the cluster data alone. Without that information, prescribing a specific refactor category risks hallucination; a targeted inspection is the correct first step.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is only in parameter types or calling conventions, consider collapsing them into a single generic function parameterized over the differing type (e.g., `cachedFetch<T>(...)`). If one overload is a thin wrapper around the other, delete the wrapper and let callers use the canonical overload directly.",
+      "why_no_category_fits": "Both functions live in the same file and same package (`Caching`), so 'extract-to-common' (which targets cross-package deduplication) does not apply. The Jaccard similarity of 0.7 suggests near- but not exact-duplication, meaning a straight deletion is premature without inspecting the differing ~30 % of body. 'generic-parameterization' is the closest named category, but the cluster provides no signature information (`fields_or_signature` is empty for both members), so it is impossible to confirm that the divergence is type-parametric rather than logic-parametric. Recommending a generic refactor without that evidence would violate the no-hallucination rule. The safest grounded recommendation is therefore a manual inspection step with a conditional action path, which does not map cleanly to any single named category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 1
+}

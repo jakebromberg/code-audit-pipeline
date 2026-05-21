@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:EnvironmentValues",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"kind\": \"extension\" ... \"fields_or_signature\": [] ... \"package\": \"AppServices\" ... \"package\": \"Playback\" ... \"package\": \"WXUI\" ... \"package\": \"Wallpaper\" ... \"package\": \"PlayerHeaderView\"",
+    "rationale": "All eleven members are unnamed `extension` declarations on `EnvironmentValues` spread across five distinct packages (`AppServices`, `Playback`, `WXUI`, `Wallpaper`, `PlayerHeaderView`). The name-collision signal fires purely because Swift's `EnvironmentValues` extension pattern requires every module that injects a custom environment key to declare its own `extension EnvironmentValues` block \u2014 this is the canonical, idiomatic SwiftUI pattern and the coincidence is entirely structural. No fields or signatures are reported (`fields_or_signature: []` on every record), so there is no shared logic to extract. Consolidating these extensions across package boundaries would introduce artificial inter-package dependencies (e.g., `AppServices` depending on `Wallpaper`) with no benefit. None of the restraint markers are set, but the reason for no-action is that the shared shape encodes unrelated domain concepts whose coincidence is structural only.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_EnvironmentValues.json",
+  "row_index": 1,
+  "trial": 3
+}

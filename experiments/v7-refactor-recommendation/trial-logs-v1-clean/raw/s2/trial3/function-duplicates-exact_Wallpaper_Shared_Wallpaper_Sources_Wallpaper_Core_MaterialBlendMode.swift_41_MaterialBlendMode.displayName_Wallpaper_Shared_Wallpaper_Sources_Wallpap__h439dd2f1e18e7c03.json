@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"BlendModeDisplayable\",\n      \"associated_type\": null,\n      \"constraints\": [\"RawRepresentable\", \"CaseIterable\"],\n      \"replaces\": [\"MaterialBlendMode.displayName\", \"PlaybackBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n    },\n    \"rationale\": \"All three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently declares an identical `displayName` computed property at line 41 of their respective files. Because the implementations are exactly duplicated (query: `function-duplicates-exact`) and all context flags are false (no test, mock, codegen, or sample-app markers), this is unambiguous production duplication. Introducing a `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension within the `Wallpaper` package eliminates all three copies while preserving each type's distinct identity. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` suggests it may be a transitional or generated name, but since `is_codegen` is false it is treated as production code.\",\n    \"evidence_quote\": \"function-duplicates-exact\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three blend-mode enums already share a common protocol or if introducing a new PAT feels heavyweight, a simpler approach is to declare a `BlendModeDisplayable` protocol with a `displayName` requirement and provide a single default implementation in a protocol extension, then make each enum conform. This is mechanically equivalent but avoids any associated-type complexity if the display-name logic is purely string-based and uniform across all three types.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01K37xk5JMhQ44yiJSKqCr1K",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2790,
+    "output_tokens": 787,
+    "service_tier": "standard"
+  }
+}

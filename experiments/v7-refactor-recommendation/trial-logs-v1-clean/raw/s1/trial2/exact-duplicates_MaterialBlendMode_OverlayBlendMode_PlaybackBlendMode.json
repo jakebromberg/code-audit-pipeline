@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"BlendMode\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"All three members \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` declarations in the same `Wallpaper` package, all at line 21 of their respective files, and share exactly 16 fields with no differing slots (Jaccard not applicable, `differing_slots: null`). This is a textbook case of role-specific type aliases wrapping an identical underlying union type. The correct Swift idiom is to define a single canonical `BlendMode` type in the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode.swift`) and replace the three aliases with `typealias PlaybackBlendMode = BlendMode`, `typealias MaterialBlendMode = BlendMode`, and `typealias OverlayBlendMode = BlendMode` \u2014 or, if the call-site names are not part of a public API contract, remove the aliases entirely and migrate callers to `BlendMode` directly. No restraint markers are present on any record.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 16\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Retain the three distinct type aliases as thin `typealias` declarations pointing to a single canonical `BlendMode` union, preserving the semantic names at call sites while eliminating the duplicated union body.\",\n        \"why_no_category_fits\": \"If the three names are part of a stable public API and callers depend on the distinct names for readability or documentation purposes, a pure extract-to-common rename would be a breaking change. In that case the right action is to define the union once and re-express the three names as `typealias` wrappers \u2014 which is neither a pure extract nor a protocol refactor, but a hybrid alias-consolidation.\"\n      },\n      \"rationale\": \"Because all three aliases live in the same `Wallpaper` package and none are marked as public API boundaries in the cluster data, the alias-wrapper approach is a safe fallback if downstream consumers are sensitive to the concrete type name.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012j2pdY4KvPK32LnYfQcmN5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2676,
+    "output_tokens": 721,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:38:ReviewRequestServiceTests.recordRequestSentIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The restraint rule requires no-action whenever any participating record is a test fixture, and here both are. Although the two methods (`recordPlaybackStartedIncrementsCount` at line 22 and `recordRequestSentIncrementsCount` at line 38) share a Jaccard similarity of 0.75 and may well be candidates for a shared helper, collapsing test assertions into a generic function risks obscuring test intent and coupling distinct behavioural verifications. The structural similarity is likely incidental to the pattern of 'call one method, assert count increments', which is a common and intentional test idiom.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Epv3sX654EX21cJsNU3dGM",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2593,
+    "output_tokens": 351,
+    "service_tier": "standard"
+  }
+}

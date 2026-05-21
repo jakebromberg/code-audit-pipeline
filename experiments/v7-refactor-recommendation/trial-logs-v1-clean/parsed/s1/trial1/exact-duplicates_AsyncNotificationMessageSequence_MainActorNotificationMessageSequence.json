@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"differing_slots\": null, \"shared_field_count\": 3",
+    "rationale": "Both `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are `type-alias-object` records in the same `Core` package with `differing_slots: null` and `shared_field_count: 3`, indicating the pipeline found no structural difference between them. They live in adjacent files (`MainActorMessage.swift` and `AsyncMessage.swift`) under the same `Shared/Core/Sources/Core/Observation/` directory, suggesting they evolved in parallel rather than by design. No restraint markers are set on either record, so intentional duplication is not indicated. The names differ in actor-isolation semantics (`MainActor` vs. plain `Async`), which warrants a quick inspection before collapsing, but the structural evidence strongly suggests one is redundant.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MainActorNotificationMessageSequence` (line 129 of `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `Shared/Core/Sources/Core/Observation/AsyncMessage.swift`) resolve to the same underlying type alias target. If they do, retain the more semantically precise name (likely `MainActorNotificationMessageSequence`, given its actor-isolation intent) and replace all uses of the other with a `typealias` re-export or a deprecation alias pointing to the canonical one, then delete the redundant declaration. If the two aliases intentionally differ in their right-hand-side type (e.g., one is `@MainActor`-constrained and the other is not), add a clarifying comment to each and recommend no-action.",
+      "why_no_category_fits": "Both records are `type-alias-object` kinds with no fields (`fields_or_signature: []`). The cluster signals exact structural duplication (`shared_field_count: 3` on the alias metadata, `differing_slots: null`), but the correct resolution is not a classic extract, protocol, generic, or macro refactor \u2014 it is a deduplication of two type aliases within the same package (`Core`) that may or may not be semantically equivalent. The right mechanical action (collapse one alias into the other or add a deprecation forwarder) does not map cleanly to any named category."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_AsyncNotificationMessageSequence_MainActorNotificationMessageSequence.json",
+  "row_index": 31,
+  "trial": 1
+}

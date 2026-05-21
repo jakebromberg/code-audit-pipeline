@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ContentView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"fields_or_signature\": [], \"jaccard\": null, \"shared_field_count\": null, \"shared_ancestor\": null",
+    "rationale": "All three `ContentView` records are `type-alias-object` with empty `fields_or_signature`, and the structural evidence section reports null Jaccard, null shared_field_count, and null shared_ancestor \u2014 there is no structural overlap whatsoever. The name collision is a well-known SwiftUI convention artifact: every target (`WXUI`, `MusicShareKit`, `app:WXYC TV`) independently defines a `ContentView` as its local entry-point view. The first member additionally resides under `Shared/WXUI/Examples/WXUISampleApp/`, a path that signals sample-app scope regardless of the pipeline flag. Merging or extracting these would couple unrelated domain entry points across packages for no shared-logic benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_ContentView.json",
+  "row_index": 10,
+  "trial": 1
+}

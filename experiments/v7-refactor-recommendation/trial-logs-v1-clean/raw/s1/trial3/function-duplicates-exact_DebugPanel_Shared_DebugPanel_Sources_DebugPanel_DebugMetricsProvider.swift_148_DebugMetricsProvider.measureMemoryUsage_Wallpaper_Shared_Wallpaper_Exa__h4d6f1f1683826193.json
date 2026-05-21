@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the restraint markers carefully.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. Although `is_sample_app` is flagged `false` in the context flags, the file path contains `Examples/WallpaperSampleApp/` \u2014 which the decision rules explicitly call out as a sample-app path pattern that triggers the `sample-app-mirror` restraint. The rules state that a record \"sits under Examples/ or SampleApp/\" is a restraint marker regardless of the boolean flag value, and that this dominates action signals.\n\nThe canonical interpretation: the `WallpaperSampleApp` copy of `measureMemoryUsage` is a local debug utility duplicated into the sample app for self-contained demonstration purposes. Lifting it into the shared `DebugPanel` package would couple the sample app's debug tooling to production infrastructure, or vice versa \u2014 exactly the coupling the restraint rule is designed to prevent.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path hierarchy \u2014 a sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app boolean value. The duplicate of 'DebugMetricsProvider.measureMemoryUsage' in that file is almost certainly a self-contained debug utility copied into the sample app so it can run without depending on the production 'DebugPanel' package. Consolidating it into 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' would introduce a production-package dependency into a demonstration target, coupling sample-app semantics to production infrastructure. No refactor is warranted under the restraint rules.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"DebugPanel\",\n        \"type_name\": \"DebugMetricsProvider\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"\n        ]\n      },\n      \"rationale\": \"If the WallpaperSampleApp copy is a leftover prototype rather than a deliberate fixture \u2014 i.e., the sample app was intended to depend on the DebugPanel package but the dependency was never wired up \u2014 then the canonical implementation in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (line 148) should be the sole definition and the copy in DebugHUD.swift should be deleted in favour of importing DebugPanel. This alternative is only valid if an engineer confirms the sample-app copy is not load-bearing for standalone execution.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RA1A8NKCgbALkaEx2juXXn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2623,
+    "output_tokens": 897,
+    "service_tier": "standard"
+  }
+}

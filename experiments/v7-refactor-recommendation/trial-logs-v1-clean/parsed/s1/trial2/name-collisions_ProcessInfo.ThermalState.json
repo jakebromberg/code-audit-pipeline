@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"jaccard\": null, ... \"shared_field_count\": null",
+    "rationale": "All three records are unnamed extensions on `ProcessInfo.ThermalState` spread across `DebugPanel` (DebugMetricsProvider.swift:212), `Wallpaper` (QualitySignal.swift:230), and a sample-app HUD (DebugHUD.swift:236). The `fields_or_signature` arrays are empty for every member and all `structural_evidence` fields are null, so there is no content evidence that these extensions share members, logic, or intent \u2014 only that they extend the same Foundation type. Extending a system type in multiple packages for package-local purposes (debug metrics, throttling quality signals, HUD display) is idiomatic Swift and the coincidence is purely structural. Consolidating them without content evidence would risk coupling unrelated domain concerns (debug instrumentation, rendering throttle policy, sample-app UI) into a shared dependency.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 2
+}

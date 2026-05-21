@@ -1,0 +1,30 @@
+{
+  "cluster_id": "cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.52,
+    "evidence_quote": "jaccard: 0.8333333333333334",
+    "rationale": "The Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68) indicates that roughly 5 out of 6 structural slots are shared across two separate Shared/ packages. Their distinct names suggest they model the same concept from different domain perspectives rather than being accidental duplicates, making a unifying protocol the idiomatic Swift answer over a full merge. Introducing `MusicServiceIdentifiable` in a common dependency (e.g., `Shared/Metadata`, which `MusicShareKit` likely already depends on) lets both types retain their identity while the shared shape is expressed once. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are present on either record, so no no-action override applies.",
+    "specifics": {
+      "associated_type": "ServiceID",
+      "constraints": [
+        "Hashable",
+        "Codable"
+      ],
+      "new_protocol": "MusicServiceIdentifiable",
+      "replaces": [
+        "StreamingService",
+        "MusicServiceIdentifier"
+      ]
+    }
+  },
+  "query": "cross-package-shape-near-duplicates-any",
+  "raw_response_path": "raw/s1/trial2/cross-package-shape-near-duplicates-any_Metadata_Shared_Metadata_Sources_Metadata_StreamingService.swift_13_StreamingService_MusicShareKit_Shared_MusicShareKit_Sources_MusicSh__he5a75086055eaaaf.json",
+  "row_index": 2,
+  "trial": 2
+}

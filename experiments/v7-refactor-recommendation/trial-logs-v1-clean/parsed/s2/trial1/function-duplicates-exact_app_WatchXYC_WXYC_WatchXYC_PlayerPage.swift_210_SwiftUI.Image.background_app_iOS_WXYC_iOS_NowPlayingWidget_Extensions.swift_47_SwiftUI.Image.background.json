@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"SwiftUI.Image.background\", \"kind\": \"computed-property\" ... \"file\": \"WXYC/WatchXYC/PlayerPage.swift\", \"line\": 210 ... \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\", \"line\": 47",
+    "rationale": "Both `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:210) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift:47) define an identical computed property `SwiftUI.Image.background`, confirmed as an exact function duplicate with no differing slots. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). The property extends a SwiftUI framework type and is therefore a natural candidate for a shared extensions file. Ideally, a dedicated shared target (e.g., a `SharedUI` or `CommonExtensions` module that both `app:iOS` and `app:WatchXYC` already depend on, or could depend on) should host a single `extension Image { var background: ... }` declaration; if no such shared module exists today, the extension can live in a new file within the iOS target and be re-exported, or a lightweight shared Swift package can be introduced. Both copies should then be deleted.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 1
+}

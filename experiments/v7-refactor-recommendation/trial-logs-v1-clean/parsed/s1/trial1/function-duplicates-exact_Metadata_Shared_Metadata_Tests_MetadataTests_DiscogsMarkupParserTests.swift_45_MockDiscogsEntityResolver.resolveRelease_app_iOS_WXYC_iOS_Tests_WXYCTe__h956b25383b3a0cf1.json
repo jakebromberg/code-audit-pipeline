@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveRelease",
+    "rationale": "Both participating records are methods named `MockDiscogsEntityResolver.resolveRelease` residing in files under `Tests/` directories (`Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`). The `Mock` prefix and `*Tests.swift` file names are canonical test-fixture signals; the `is_test: false` and `is_mock: false` flags appear to be mislabeled by the pipeline. Lifting this duplicated mock method into shared production code would couple test-double semantics into a shared target, which is the exact anti-pattern the restraint rules guard against. If deduplication is desired, the correct venue is a dedicated test-support library (e.g., a `MetadataTestSupport` module), which is a test-infrastructure decision outside the scope of a production refactor recommendation.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_45_MockDiscogsEntityResolver.resolveRelease_app_iOS_WXYC_iOS_Tests_WXYCTe__h956b25383b3a0cf1.json",
+  "row_index": 21,
+  "trial": 1
+}

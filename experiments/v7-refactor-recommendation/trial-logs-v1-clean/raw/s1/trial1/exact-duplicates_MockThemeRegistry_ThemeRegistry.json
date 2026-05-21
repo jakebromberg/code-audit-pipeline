@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\n**Key observations:**\n- The file path for `MockThemeRegistry` is `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift` \u2014 it lives under `Tests/` and `Mocks/`, which are canonical test/mock directories.\n- Despite the context flags reporting `is_mock=false` and `is_test=false`, the file path itself is unambiguous: this is a mock fixture living in a test target's `Mocks/` subdirectory. The structural-analysis pipeline's flag inference appears to have missed this file.\n- Decision rule 1 states that a record sitting in a test/mock path is a restraint-marked record. The name `MockThemeRegistry` and the path `Tests/WallpaperTests/Mocks/` make the intent clear.\n- The two types are `type-alias-object` with 3 shared fields \u2014 the mock is almost certainly a typealias or thin wrapper over the production `ThemeRegistry` for test isolation purposes. Lifting this into shared production code would couple production semantics to test/mock semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockThemeRegistry+ThemeRegistry\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Although the pipeline-assigned context flags show is_mock=false and is_test=false for both records, the file path 'Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift' unambiguously places MockThemeRegistry inside a test target's Mocks/ directory. The name prefix 'Mock' further confirms this is a deliberate test fixture mirroring the production 'ThemeRegistry' in 'Shared/Wallpaper/Sources/Wallpaper/Core/ThemeRegistry.swift'. Merging or extracting these two type-alias-objects would couple production code in the Wallpaper package to test/mock semantics, which is the canonical restraint pattern described in decision rule 1. The structural similarity (3 shared fields, exact-duplicate signal) is expected and intentional for a mock that must replicate its subject's shape.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0114n7h5SJVer4Cs4gkENzE4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2520,
+    "output_tokens": 608,
+    "service_tier": "standard"
+  }
+}

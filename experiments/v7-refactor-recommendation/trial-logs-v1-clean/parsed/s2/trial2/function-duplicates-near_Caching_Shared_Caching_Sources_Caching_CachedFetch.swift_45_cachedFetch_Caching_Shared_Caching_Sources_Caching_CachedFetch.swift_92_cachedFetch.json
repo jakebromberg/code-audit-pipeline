@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both members are named `cachedFetch`, reside in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` within the `Caching` package, carry no restraint markers (all context flags false), and share a Jaccard similarity of 0.7 \u2014 well above the near-duplicate threshold. The 47-line gap between line 45 and line 92 in a single file strongly suggests one overload was added later as a variation rather than a deliberate independent abstraction. Because `fields_or_signature` is empty for both records, the precise parameter difference cannot be determined from the cluster data alone, so a targeted inspection is required before choosing the exact consolidation mechanism.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they can be unified into a single generic or defaulted-parameter function. If the differing behaviour is purely in one or two parameters (e.g., a cache policy, expiry duration, or key strategy), introduce default parameter values or a single generic overload so that one definition covers both call sites. If the two overloads differ in their async/throws signature, consider a single `async throws` variant with a non-throwing wrapper. Remove whichever overload becomes redundant after the merge.",
+      "why_no_category_fits": "The cluster signals near-duplicate functions (Jaccard 0.7) within the same file and package, which is a strong consolidation signal. However, because `fields_or_signature` is empty for both records the exact parameter lists are unknown, making it impossible to confirm whether the right fix is generic parameterization (different concrete types), a default-implementation extension (no protocol involved), or simple parameter defaulting. None of the named categories maps cleanly without knowing the signatures; 'generic-parameterization' would be premature, and 'default-implementation' requires a protocol context that is not evidenced here. 'Other' is therefore the most honest choice, with the recommendation to inspect and merge."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 2
+}

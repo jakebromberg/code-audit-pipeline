@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` (in `_Plant_ShowContainer.swift:19`) and `TrackContainerProtocol` (in `_Plant_TrackContainer.swift:19`) share three identical members \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of `item`: `Show` vs `Track`. This is the canonical PAT pattern: the varying `item` slot maps cleanly to an `associatedtype Item`, collapsing both protocols into a single generic `ContainerProtocol<Item>`. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Introducing the PAT eliminates the structural duplication while preserving full type safety for each concrete container.\",\n    \"evidence_quote\": \"\\\"isStale:Bool\\\",\\n        \\\"item:Show\\\",\\n        \\\"lastRefreshedAt:Date?\\\",\\n        \\\"pageToken:String?\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If downstream call-sites already hold existentials of `ShowContainerProtocol` or `TrackContainerProtocol` and migrating to a PAT would require opaque-type or generic-propagation changes throughout the `Playback` package, a simpler intermediate step is to extract a non-generic parent protocol `ContainerProtocol` carrying the three shared members and have both existing protocols inherit from it. This avoids PAT complexity at the cost of leaving the `item` slot duplicated in each child.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QvRELupG9LAWNpb8V5o2Bo",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2646,
+    "output_tokens": 669,
+    "service_tier": "standard"
+  }
+}

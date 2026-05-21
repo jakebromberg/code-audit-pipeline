@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Tests/CoreTests/HTTPURLResponseValidationTests.swift:19:HTTPURLResponseValidationTests.successStatusCodesDoNotThrow+Core:Shared/Core/Tests/CoreTests/HTTPURLResponseValidationTests.swift:32:HTTPURLResponseValidationTests.nonSuccessStatusCodesThrow\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry is_test=true and reside in Shared/Core/Tests/CoreTests/HTTPURLResponseValidationTests.swift. The two methods \u2014 HTTPURLResponseValidationTests.successStatusCodesDoNotThrow (line 19) and HTTPURLResponseValidationTests.nonSuccessStatusCodesThrow (line 32) \u2014 are complementary test cases that verify opposite sides of the same HTTP status-code validation contract. Their structural similarity (Jaccard 0.8) is expected: both iterate over a set of status codes and assert a specific throwing/non-throwing outcome, making the shape coincidental to the test pattern rather than a sign of unintended duplication. Merging or extracting them would obscure the distinct intent of each test and violate the restraint rule that any is_test=true record dominates action signals.\",\n    \"evidence_quote\": \"is_test: true ... HTTPURLResponseValidationTests.successStatusCodesDoNotThrow ... HTTPURLResponseValidationTests.nonSuccessStatusCodesThrow ... jaccard: 0.8\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DWrFZXdx98s7mxJkRu8VQg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2593,
+    "output_tokens": 406,
+    "service_tier": "standard"
+  }
+}

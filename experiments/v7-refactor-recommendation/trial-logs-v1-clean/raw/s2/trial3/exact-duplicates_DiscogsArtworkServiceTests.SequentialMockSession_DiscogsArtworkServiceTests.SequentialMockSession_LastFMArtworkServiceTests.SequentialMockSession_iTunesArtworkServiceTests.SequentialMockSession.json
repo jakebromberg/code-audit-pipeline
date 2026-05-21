@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nThe context flags show `is_test: false` on all four records, but the file path is `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and the type names are `iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, and `DiscogsArtworkServiceTests.SequentialMockSession` \u2014 all nested inside test suite classes (the `*Tests` outer type prefix is the enclosing test class). The structural pipeline has apparently not set `is_test=true` on these records (possibly because the alias declarations themselves aren't `XCTestCase` subclasses), but they are unambiguously test-file fixtures: they live in a `Tests/` directory, inside test-class namespaces, and are named `SequentialMockSession`. The decision rules say restraint markers \"dominate action signals\" \u2014 but here the markers are absent despite clear test-fixture semantics. I should apply the spirit of the rule: these are test fixtures, and the evidence is the file path and enclosing type names. I'll recommend `no-action` with `reason_class: \"test-fixture\"` and explain the discrepancy in the rationale.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four `SequentialMockSession` type-alias declarations reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside test-suite outer types (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`). Although the pipeline emitted `is_test: false` on every record \u2014 likely because a bare type-alias node was not attributed as a test declaration \u2014 the file path (`Tests/ArtworkTests/`) and the enclosing class names (all suffixed `Tests`) make the test-fixture nature unambiguous. Lifting these aliases into shared production code would couple production targets to test-only session-mocking semantics. The correct resolution, if the duplication is genuinely unwanted, is to consolidate within the test file itself (e.g., hoist a single `SequentialMockSession` typealias to file scope inside the test file), not to extract to a shared package.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"SequentialMockSession\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:84\",\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:211\",\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:317\",\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:363\"\n        ]\n      },\n      \"rationale\": \"If the four identical type-alias declarations are confirmed to resolve to the same underlying type, a single file-scoped `typealias SequentialMockSession = <underlying type>` at the top of `ArtworkFetcherTests.swift` could replace all four nested aliases, eliminating the duplication without crossing any package boundary. This is a within-file cleanup only and does not require a new shared target.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UGLVNsr7snVbyEfS9G2Fjg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2878,
+    "output_tokens": 977,
+    "service_tier": "standard"
+  }
+}

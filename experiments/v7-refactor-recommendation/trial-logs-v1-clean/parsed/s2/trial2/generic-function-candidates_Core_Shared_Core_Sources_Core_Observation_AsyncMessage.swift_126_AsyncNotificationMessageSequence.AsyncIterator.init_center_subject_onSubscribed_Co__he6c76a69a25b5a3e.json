@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-function-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126`) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152`) share an identical parameter label signature `(center:subject:onSubscribed:)` and a Jaccard similarity of 0.857, indicating near-identical initializer bodies that differ only in the concrete sequence/actor-isolation context they target. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate. Introducing a shared generic or protocol-constrained initializer in the `Core` package \u2014 or extracting the shared setup logic into a common internal helper \u2014 would eliminate the duplication while preserving the distinct `MainActor`-isolated and unconstrained variants as thin wrappers.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "NotificationMessageSequenceIterator.init(center:subject:onSubscribed:)",
+      "replaces": [
+        "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+        "MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)"
+      ],
+      "type_params": [
+        {
+          "constraint": "AsyncSequence",
+          "name": "Sequence"
+        }
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Co__he6c76a69a25b5a3e.json",
+  "row_index": 2,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which the decision rules explicitly call out as a sample-app location triggering `reason_class: \"sample-app-mirror\"` \u2014 even though the `is_sample_app` context flag is recorded as `false`. The file path is the authoritative structural signal here: the file sits under `Examples/` and `WallpaperSampleApp/`, which are canonical sample-app directories per the rules. The restraint-marker rule says \"sits under Examples/ or SampleApp/\" is sufficient, regardless of the flag value.\n\nThis is the canonical mixed-cluster pattern: one production record (`DebugPanel` package, `DebugMetricsProvider.swift`) and one sample-app record (`Wallpaper/Examples/WallpaperSampleApp`). Lifting the production implementation to accommodate the sample-app copy would couple production semantics to demonstration code.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location per the restraint rules, regardless of the is_sample_app flag value. The other record is a production method in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). This is the textbook mixed-cluster pattern: the sample-app copy of 'DebugMetricsProvider.updateMetrics' is a local demonstration fixture in 'DebugHUD.swift', not a candidate for shared extraction. Merging the two would couple the production DebugPanel package to sample-app semantics, which is the exact coupling the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Vhd7Q1C8JXnPTMwq26p8L5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2615,
+    "output_tokens": 685,
+    "service_tier": "standard"
+  }
+}

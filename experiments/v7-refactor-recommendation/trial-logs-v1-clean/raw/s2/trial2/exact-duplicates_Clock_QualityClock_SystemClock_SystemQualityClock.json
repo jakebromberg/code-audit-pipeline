@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Clock+QualityClock+SystemClock+SystemQualityClock\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Caching\",\n      \"type_name\": \"Clock\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two structurally identical interface/type-alias-object pairs: `Clock` + `SystemClock` in package `Caching` (Shared/Caching/Sources/Caching/Clock.swift) and `QualityClock` + `SystemQualityClock` in package `Wallpaper` (Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift). With `shared_field_count: 1` and no differing slots, the two protocols are exact duplicates. Since `Caching` already owns the canonical `Clock` protocol and `SystemClock` typealias, the `Wallpaper` package should drop its local `QualityClock`/`SystemQualityClock` definitions and import `Clock`/`SystemClock` from `Caching` instead, eliminating the duplication at its source. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on any record, so consolidation is safe.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityClock\\\", \\\"package\\\": \\\"Wallpaper\\\" ... \\\"name\\\": \\\"Clock\\\", \\\"package\\\": \\\"Caching\\\" ... \\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Introduce a new shared `Clocks` micro-package (or a `SharedClock` module within the existing `Shared/` tree) that owns the single canonical `Clock` protocol and `SystemClock` typealias, then make both `Caching` and `Wallpaper` depend on it rather than having either package own the definition.\",\n        \"why_no_category_fits\": \"If `Wallpaper` cannot take a dependency on `Caching` for architectural reasons (e.g., layering constraints), neither package is the right home for the shared abstraction; a neutral third package would be more appropriate than extract-to-common into `Caching`.\"\n      },\n      \"rationale\": \"The `Caching` package may sit at a different architectural layer than `Wallpaper`; forcing `Wallpaper` to import `Caching` solely for a clock protocol could introduce an undesirable cross-layer dependency. A dedicated `Clocks` or `CoreTime` module in the `Shared/` tree would give both packages a dependency-free home for the abstraction without coupling them to each other.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UArypZJPmwfznvaXvcrGmA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2788,
+    "output_tokens": 750,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the `default-impl-candidates` signal for three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 each with a `.displayName` property at line 41 in their respective files within the `Shared/Wallpaper` package.\n\nThe cluster_id encodes the key evidence: three parallel `displayName` implementations across three blend-mode types in the same package, all at the same line number (41), which is a strong structural signal of copy-paste duplication of a computed property or method.\n\nSince `members` is empty, I must rely on the cluster_id string for evidence. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are indicated. The three types share a naming convention (`*BlendMode`) and live in the same package, suggesting they likely conform to a shared protocol or could be made to do so.\n\nThe most idiomatic Swift answer is to introduce a protocol (e.g., `BlendMode`) with a `default-implementation` of `displayName` in a protocol extension, eliminating the three parallel implementations.\n\n```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendMode\",\n      \"method\": \"var displayName: String { get }\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster_id encodes three structurally identical `displayName` implementations \u2014 `MaterialBlendMode.displayName`, `PlaybackBlendMode.displayName`, and `OverlayBlendMode.displayName` \u2014 all at line 41 in their respective files within the same package `Shared/Wallpaper/Sources/Wallpaper/Core/`. The identical line number is strong evidence of copy-paste duplication of the same computed property body. All three types share the `*BlendMode` naming convention and reside in the same package, making them natural candidates for a shared `BlendMode` protocol with a single default implementation of `displayName` in a protocol extension. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are present on any participating record, so no intentional-duplication override applies.\",\n    \"evidence_quote\": \"MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"BlendMode\",\n        \"associated_type\": \"RawValue\",\n        \"constraints\": [\"RawRepresentable\", \"CustomStringConvertible\"],\n        \"replaces\": [\"MaterialBlendMode\", \"PlaybackBlendMode\", \"OverlayBlendMode\"]\n      },\n      \"rationale\": \"If the three `*BlendMode` enums are `RawRepresentable` (a common pattern for blend-mode enums), a PAT with an `associatedtype RawValue` and a default `displayName` derived from the raw value or case name would be more flexible than a plain protocol extension, allowing each conformer to specialize the display logic via its `RawValue` type without overriding the default. However, a plain protocol with a default implementation is simpler and sufficient if the `displayName` bodies are truly identical.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013rACni2dsZmVTNSxDb7Ymr",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2362,
+    "output_tokens": 1141,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:432:AudioPlayerRenderTapTests.installRenderTapDoesNotThrow+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:453:AudioPlayerRenderTapTests.installThenRemoveRenderTapIsSafe",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift",
+    "rationale": "Both methods \u2014 `AudioPlayerRenderTapTests.installRenderTapDoesNotThrow` (line 432) and `AudioPlayerRenderTapTests.installThenRemoveRenderTapIsSafe` (line 453) \u2014 reside in the same file (`Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift`) and the same class (`AudioPlayerRenderTapTests`). Although `is_test` is tagged `false` on both records (a likely pipeline tagging gap given the file path and class name), the structural duplication is entirely intra-file and intra-class. The two methods test distinct behaviors (installation without error vs. install-then-remove safety), so their shared shape reflects similar test scaffolding for related operations rather than accidental redundancy. Extracting shared body logic into a private helper would be a minor stylistic improvement at best and carries no cross-package or cross-target benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_Behavior_AudioPlayerBehaviorTests.swift_432_AudioPlayerRenderTapTests.installRenderTapDoesNotThrow_Playb__h190b4d21be3597d0.json",
+  "row_index": 35,
+  "trial": 1
+}

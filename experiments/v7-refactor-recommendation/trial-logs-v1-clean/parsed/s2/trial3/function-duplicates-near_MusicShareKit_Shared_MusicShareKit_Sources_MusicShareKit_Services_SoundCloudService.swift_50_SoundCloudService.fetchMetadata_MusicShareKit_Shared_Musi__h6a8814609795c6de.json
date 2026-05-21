@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.8076923076923077",
+    "rationale": "Both `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64) live in the same package `MusicShareKit` and exhibit a high structural similarity (Jaccard 0.8077), indicating the two implementations share the overwhelming majority of their logic. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The idiomatic Swift approach is to introduce a protocol `MusicMetadataFetchable` in the same package, provide the shared logic as a default implementation in a protocol extension, and let each service override only the service-specific parts (e.g., the base URL or credential handling). This eliminates the near-duplicate body while preserving per-service customisation points.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift",
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift"
+      ],
+      "method": "fetchMetadata()",
+      "protocol": "MusicMetadataFetchable",
+      "target_location": "Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicMetadataFetchable.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Services_SoundCloudService.swift_50_SoundCloudService.fetchMetadata_MusicShareKit_Shared_Musi__h6a8814609795c6de.json",
+  "row_index": 71,
+  "trial": 3
+}

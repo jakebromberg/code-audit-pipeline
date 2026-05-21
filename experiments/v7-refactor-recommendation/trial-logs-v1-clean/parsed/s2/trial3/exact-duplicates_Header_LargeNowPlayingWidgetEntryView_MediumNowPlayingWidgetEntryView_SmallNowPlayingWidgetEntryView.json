@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Header+LargeNowPlayingWidgetEntryView+MediumNowPlayingWidgetEntryView+SmallNowPlayingWidgetEntryView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"kind\": \"type-alias-object\"",
+    "rationale": "All four members are `type-alias-object` declarations in `app:iOS` under `WXYC/iOS/NowPlayingWidget/Views/`, and the cluster reports `shared_field_count: 2` with `differing_slots: null` and `jaccard: null`. Because these are type aliases rather than concrete types, the structural similarity is almost certainly a consequence of each alias resolving to the same underlying SwiftUI view type (e.g., `NowPlayingWidgetEntryView`) with a size/layout discriminator \u2014 a standard WidgetKit pattern where `SmallNowPlayingWidgetEntryView`, `MediumNowPlayingWidgetEntryView`, and `LargeNowPlayingWidgetEntryView` are intentionally distinct names required by the widget configuration API. Collapsing them would break the widget entry-point naming contract without any meaningful reduction in code. `Header` is a separate UI component whose coincidental alias shape does not imply shared semantics with the widget entry views.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial3/exact-duplicates_Header_LargeNowPlayingWidgetEntryView_MediumNowPlayingWidgetEntryView_SmallNowPlayingWidgetEntryView.json",
+  "row_index": 5,
+  "trial": 3
+}

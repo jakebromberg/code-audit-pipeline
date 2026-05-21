@@ -1,0 +1,32 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `AsyncMessage.swift` line 126) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `MainActorMessage.swift` line 152) share an identical parameter label signature `(center:subject:onSubscribed:)` within the same `Core` package, with a Jaccard similarity of 0.857 \u2014 indicating near-identical bodies. The only structural difference is the enclosing type (`AsyncNotificationMessageSequence` vs `MainActorNotificationMessageSequence`), suggesting the initializer logic is the same and the divergence is purely in the actor-isolation context of the outer sequence type. The shared initializer body should be extracted into a common generic or protocol-based helper within `Shared/Core/Sources/Core/Observation/`, allowing both iterator types to delegate to it and eliminating the near-duplicate. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "NotificationMessageAsyncIterator.init(center:subject:onSubscribed:)",
+      "replaces": [
+        "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+        "MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)"
+      ],
+      "type_params": [
+        {
+          "constraint": "AsyncSequence or a protocol capturing the shared iterator shape",
+          "name": "Sequence"
+        }
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Core___h612e892f6af52aae.json",
+  "row_index": 55,
+  "trial": 3
+}

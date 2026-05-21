@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base enum) in the `Playlist` package \u2014 for example in a new file `Shared/Playlist/Sources/Playlist/PlaylistCodingKeys.swift` \u2014 and replace each nested `CodingKeys` type-alias-union with a `typealias CodingKeys = PlaylistCodingKeys` (or remove the redundant declarations entirely if the parent types can share the same `Codable` key set). If the three types diverge in any keys not captured by the cluster's `shared_field_count: 4`, consider a protocol-based approach where a `PlaylistEntryCodable` protocol declares the common keys.\",\n      \"why_no_category_fits\": \"The records are `type-alias-union` kinds, not plain structs, classes, or functions, so `generic-parameterization` and `subclass-lift` do not apply. They are nested `CodingKeys` enums inside three distinct `Codable` types (`Announcement`, `Breakpoint`, `Talkset`), so `extract-to-common` in the plain sense would break `Codable` synthesis unless the parent types are also restructured. A `default-implementation` on a protocol extension cannot synthesise a nested enum. The most accurate recommendation is a targeted deduplication of the `CodingKeys` enum body \u2014 either via a shared typealias target or a protocol with an associated `CodingKeys` type \u2014 which does not map cleanly to any single named category.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift:34`, `Breakpoint.CodingKeys` in `PlaylistEntry.swift:72`, and `Talkset.CodingKeys` in `PlaylistEntry.swift:111` \u2014 are flagged as `exact-duplicates` with `shared_field_count: 4` and `kind: type-alias-union`, all within the same `Playlist` package. Because these are nested `CodingKeys` enums required by Swift's `Codable` synthesis, a naive `extract-to-common` would break the compiler's ability to resolve the nested type; the correct fix is either a shared concrete enum that each parent type aliases, or a protocol that constrains the associated `CodingKeys` type. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on any record, so deduplication is warranted.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-union\\\", \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"PlaylistEntryCodable\",\n        \"associated_type\": \"CodingKeys\",\n        \"constraints\": [\"CodingKey\"],\n        \"replaces\": [\"Announcement.CodingKeys\", \"Breakpoint.CodingKeys\", \"Talkset.CodingKeys\"]\n      },\n      \"rationale\": \"Introducing a `PlaylistEntryCodable` protocol with `associatedtype CodingKeys: CodingKey` would let each of `Announcement`, `Breakpoint`, and `Talkset` declare conformance and provide their own `CodingKeys`, while a protocol extension could supply any shared default decoding logic. This is more flexible than a single shared enum if the three types ever need to diverge beyond the 4 shared fields, but it is heavier machinery than a simple typealias and may be over-engineering for three small types in the same package.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017SQKjQSnLCiJ8Cg7pbsmxr",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2660,
+    "output_tokens": 1000,
+    "service_tier": "standard"
+  }
+}

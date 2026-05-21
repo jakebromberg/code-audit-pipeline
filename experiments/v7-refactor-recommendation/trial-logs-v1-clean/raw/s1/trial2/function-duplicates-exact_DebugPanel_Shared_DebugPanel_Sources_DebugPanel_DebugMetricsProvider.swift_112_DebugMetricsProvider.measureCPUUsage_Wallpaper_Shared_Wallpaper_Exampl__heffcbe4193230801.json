@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the context flags and file paths.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. Although its `is_sample_app` flag is `false`, the file path contains `Examples/WallpaperSampleApp/` \u2014 which the decision rules explicitly call out as a restraint marker path (`sits under Examples/ or SampleApp/`). The decision rules state that a record sitting under `Examples/` triggers `reason_class: \"sample-app-mirror\"` regardless of the flag value, and that a mixed cluster with one restraint-marked record should default to no-action unless the marked record is argued to be a removable leftover prototype.\n\nThere is no evidence in the cluster row that the `DebugHUD.swift` copy is a leftover prototype rather than a deliberate demonstration fixture. The canonical pattern here is a sample app that re-implements a debug utility locally to avoid a production dependency on `DebugPanel`, which is intentional.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` path \u2014 a restraint-marker path per the decision rules, regardless of the `is_sample_app` flag value. The canonical reason for a sample app to carry its own local copy of `DebugMetricsProvider.measureCPUUsage` is to avoid a hard production dependency on the `DebugPanel` package, making the duplication intentional. No evidence in the cluster row suggests the `DebugHUD.swift` copy is a removable leftover rather than a deliberate demonstration fixture, so lifting it into shared code would couple the sample app to `DebugPanel` semantics.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XMWBfe2r1aFJWHj6cmwbGU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2627,
+    "output_tokens": 648,
+    "service_tier": "standard"
+  }
+}

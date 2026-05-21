@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:18:RangeReplaceableCollection.popFirst+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25:RangeReplaceableCollection.safePopFirst",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift",
+    "rationale": "One of the two participating records \u2014 `RangeReplaceableCollection.safePopFirst` at `WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:25` \u2014 resides in the test target. Per the decision rules, any cluster containing a record with `is_test=true` must be treated as a test-fixture and no refactor action should be taken. Lifting the production `popFirst` extension (in `WXYC/iOS/NowPlayingWidget/Extensions.swift:18`) into shared code alongside the test-side `safePopFirst` would couple production semantics to test infrastructure. The two methods also carry different names (`popFirst` vs. `safePopFirst`), suggesting the test variant may intentionally wrap or rename the production one for clarity in assertions rather than being an accidental duplicate.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_18_RangeReplaceableCollection.popFirst_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_25_RangeReplaceableCollection.safePopFirst.json",
+  "row_index": 42,
+  "trial": 2
+}

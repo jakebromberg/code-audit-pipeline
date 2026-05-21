@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Bundle",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"file\": \"Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift\"\n\"file\": \"Shared/Caching/Sources/Caching/CacheMigrationManager.swift\"\n\"shared_field_count\": null\n\"jaccard\": null",
+    "rationale": "Both records are unnamed `extension` declarations on `Bundle`, one in `Shared/Playlist/Sources/Playlist/Bundle+Playlist.swift` (package: Playlist) and one in `Shared/Caching/Sources/Caching/CacheMigrationManager.swift` (package: Caching). The structural evidence carries no shared fields (`shared_field_count: null`, `jaccard: null`), meaning the cluster was surfaced purely because both files extend the same Foundation type. `Bundle` extensions are a standard Swift idiom for locating package-specific resources; each package legitimately needs its own extension to resolve its own bundle, so the duplication is domain-driven and intentional rather than accidental. Merging them would couple the Playlist and Caching packages without benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_Bundle.json",
+  "row_index": 18,
+  "trial": 1
+}

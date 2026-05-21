@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\" ... \"file\": \"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\" ... \"shared_field_count\": 2 ... \"differing_slots\": null",
+    "rationale": "Both `TestPerson` (line 71 in `CacheCoordinatorTests.swift`) and `CachedPerson` (line 257 in `CachedFetchTests.swift`) are `type-alias-object` declarations in the same package (`Caching`) and the same test directory (`Shared/Caching/Tests/CachingTests/`), sharing an identical underlying shape (`shared_field_count: 2`, `differing_slots: null`, `jaccard: null`). Despite `is_test: false` on both records \u2014 which appears to be a metadata gap given the unambiguous `Tests/CachingTests/` path \u2014 these are clearly test-support aliases for the same concrete type. Consolidating them into a single shared fixture alias (e.g., `PersonFixture`) in a test-support file within the `Caching` package's test target eliminates the exact duplication and gives both test files a single source of truth. No production code is involved, so the consolidation carries no cross-boundary risk.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift",
+        "Shared/Caching/Tests/CachingTests/CachedFetchTests.swift"
+      ],
+      "target_package": "Caching",
+      "type_name": "PersonFixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 1
+}

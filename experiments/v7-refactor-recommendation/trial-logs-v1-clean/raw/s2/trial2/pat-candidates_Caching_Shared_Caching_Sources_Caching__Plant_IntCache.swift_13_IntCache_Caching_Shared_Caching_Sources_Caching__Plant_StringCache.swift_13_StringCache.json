@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"Cache\",\n      \"associated_type\": \"Key\",\n      \"constraints\": [\"Hashable\"],\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` and `IntCache` in the `Caching` package share three identical fields (`capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`) and differ only in the key type of their `storage` dictionary (`[String: CacheEntry]` vs `[Int: CacheEntry]`). This is the canonical PAT signal: a single varying slot whose type is the natural associated type. Introducing a `Cache` protocol with `associatedtype Key: Hashable` and a `storage: [Key: CacheEntry]` requirement \u2014 plus default implementations for the invariant fields \u2014 eliminates the structural duplication while preserving type safety. Both `_Plant_StringCache.swift` and `_Plant_IntCache.swift` can then become thin typealiases or concrete conformances, or be removed entirely in favour of a single generic `Cache<Key: Hashable>` struct.\",\n    \"evidence_quote\": \"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n        ],\n        \"new_name\": \"Cache\",\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"A single generic struct `Cache<Key: Hashable>` with field `storage: [Key: CacheEntry]` is the most direct Swift idiom when the only variation is a type parameter. `StringCache` and `IntCache` become typealiases (`typealias StringCache = Cache<String>`, `typealias IntCache = Cache<Int>`), preserving call-site names while removing all duplication. This is slightly less flexible than a PAT but simpler when no protocol polymorphism is needed.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KoKvujk9Lmp7jvBrUbuwFU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2686,
+    "output_tokens": 633,
+    "service_tier": "standard"
+  }
+}

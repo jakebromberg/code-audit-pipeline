@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base set of raw-value cases) in the `Playlist` package \u2014 for example in a new file `Shared/Playlist/Sources/Playlist/PlaylistEntryCodingKeys.swift` \u2014 and have each parent type either (a) adopt it directly via `typealias CodingKeys = SharedPlaylistCodingKeys`, or (b) conform to `Decodable` with a custom `init(from:)` that references the shared keys. This eliminates the three identical `type-alias-union` declarations without requiring a new protocol or generic type.\",\n      \"why_no_category_fits\": \"The three duplicates are nested `CodingKeys` enums (kind: `type-alias-union`) inside distinct parent types (`Announcement`, `Breakpoint`, `Talkset`). The canonical refactor categories do not map cleanly: `extract-to-common` targets whole types moved to a new package, but all three are already in the same `Playlist` package and the extracted artifact would be a shared enum/typealias, not a moved type. `generic-parameterization` and `protocol-inheritance` do not apply to `CodingKeys` enums. `default-implementation` requires a protocol method. The most precise action is a shared `CodingKeys` enum with a per-type `typealias`, which is an idiomatic Swift `Codable` pattern not captured by any listed category.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` at line 34 in `_Plant_Announcement.swift`, `Breakpoint.CodingKeys` at line 72, and `Talkset.CodingKeys` at line 111 in `PlaylistEntry.swift` \u2014 are `type-alias-union` kinds in the same `Playlist` package with `shared_field_count: 4` and `differing_slots: null`, indicating they are structurally identical. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). Because `CodingKeys` enums are nested types used by `Codable` synthesis, the idiomatic Swift remedy is a shared enum with per-parent `typealias CodingKeys = \u2026` rather than extraction to a new package or protocol introduction.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-union\\\", \\\"shared_field_count\\\": 4, \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playlist\",\n        \"type_name\": \"PlaylistEntryCodingKeys\",\n        \"remove_from\": [\n          \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\",\n          \"Shared/Playlist/Sources/Playlist/PlaylistEntry.swift\"\n        ]\n      },\n      \"rationale\": \"If the four shared fields cover the complete key set for all three types, a single `PlaylistEntryCodingKeys` enum can be extracted within the existing `Playlist` package and each parent type can declare `typealias CodingKeys = PlaylistEntryCodingKeys`, removing all three duplicate declarations from their current files.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HsySzertLt1d1bxdCKcYae",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2660,
+    "output_tokens": 927,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `Image.heifData` method definitions at lines 28 and 107 within the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They are near-duplicates (Jaccard 0.75) living in the same file. Determine whether they represent a platform-conditional split (e.g., `#if os(macOS)` vs `#if os(iOS)`) or an accidental duplication. If the split is intentional and platform-driven, add a clarifying comment and leave them in place. If one is a leftover or the divergence is incidental, consolidate into a single implementation \u2014 potentially with a shared private helper \u2014 and remove the redundant definition.\",\n      \"why_no_category_fits\": \"Both records are in the exact same file and package, so 'extract-to-common' does not apply. They are methods on `Image`, not protocols or generics, so 'protocol-inheritance', 'pat-introduction', 'generic-parameterization', 'default-implementation', 'subclass-lift', and 'macro-synthesis' do not fit. 'Extension-consolidation' applies to extension declarations across locations, not two method bodies in one file. The correct action is an intra-file deduplication or a documented intentional-split, which requires first inspecting the conditional compilation context \u2014 something that cannot be resolved from the cluster metadata alone.\"\n    },\n    \"rationale\": \"Both `Image.heifData` methods reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (lines 28 and 107) within the `Core` package, with a Jaccard similarity of 0.75 \u2014 high but not identical. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is not intentional by policy. The most likely explanation is either a platform-conditional guard (`#if os(macOS)` / `#if os(iOS)`) that the static analysis cannot see, or an accidental copy-paste that was never cleaned up. The 0.25 divergence is meaningful enough to warrant inspection before blindly merging.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 28 ... \\\"line\\\": 107 ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"intentional-specialization\"\n      },\n      \"rationale\": \"If the two `Image.heifData` bodies are guarded by `#if os(macOS)` and `#if os(iOS)` (or similar compile-time conditions), the structural near-duplication is intentional platform specialization and no merge is warranted. The 0.75 Jaccard score is consistent with two platform branches that share most logic but differ in the platform-specific HEIF API call.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01E16U3pBQUHAUtM2onLMcUT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2553,
+    "output_tokens": 844,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:113:ReviewRequestServiceTests.shouldNotRequestIfAlreadyRequested+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:90:ReviewRequestServiceTests.shouldRequestReviewAtThreshold\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `shouldRequestReviewAtThreshold` (line 90) and `shouldNotRequestIfAlreadyRequested` (line 113) \u2014 are distinct test cases that verify complementary, opposing behaviours of `ReviewRequestService` (threshold-met vs. already-requested). A Jaccard similarity of ~0.82 is expected for test methods that share setup boilerplate and assertion patterns while exercising different logical branches; this is intentional structural similarity, not accidental duplication. Merging or extracting them would obscure test intent and violate the principle that each test method should document one behaviour.\",\n    \"evidence_quote\": \"is_test: true ... shouldRequestReviewAtThreshold ... shouldNotRequestIfAlreadyRequested ... jaccard: 0.8181818181818182\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ur2w2r2R8e6vPkqvE3hUBV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2598,
+    "output_tokens": 384,
+    "service_tier": "standard"
+  }
+}

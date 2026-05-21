@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.88,
+    "evidence_quote": "\"shared_field_count\": 4",
+    "rationale": "Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of `resolve:(id: Int) async throws -> <Entity>`. This is the canonical PAT pattern: a single protocol with an `associatedtype Entity` can absorb all shared members and declare `resolve(id: Int) async throws -> Entity`, eliminating the structural duplication entirely. Both files carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so the refactor is safe. The `_Plant_` prefix on both files suggests they are scaffolded/generated stubs that are intended to be replaced with a unified abstraction.",
+    "specifics": {
+      "associated_type": "Entity",
+      "constraints": [],
+      "new_protocol": "MetadataRepository",
+      "replaces": [
+        "ArtistRepository",
+        "ReleaseRepository"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial1/pat-candidates_Metadata_Shared_Metadata_Sources_Metadata__Plant_ArtistRepository.swift_19_ArtistRepository_Metadata_Shared_Metadata_Sources_Metadata__Plant_ReleaseRepository.swift_19_ReleaseRepository.json",
+  "row_index": 2,
+  "trial": 1
+}

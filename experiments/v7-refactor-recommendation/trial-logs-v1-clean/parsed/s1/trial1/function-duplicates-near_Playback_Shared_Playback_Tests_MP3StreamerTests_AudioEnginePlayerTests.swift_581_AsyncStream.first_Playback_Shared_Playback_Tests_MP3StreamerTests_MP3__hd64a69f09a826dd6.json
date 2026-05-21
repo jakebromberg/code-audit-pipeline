@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:581:AsyncStream.first+Playback:Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift:446:AsyncStream.first",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true ... Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift ... Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift ... jaccard: 0.9166666666666666",
+    "rationale": "Both participating records carry `is_test: true`. The near-duplicate `AsyncStream.first` helper appears in `MP3StreamDecoderTests.swift` (line 446) and `AudioEnginePlayerTests.swift` (line 581), both within the `Playback` package's test target `MP3StreamerTests`. Per the decision rules, any cluster where even one record is test-marked warrants no-action; here both are test fixtures. While the high Jaccard similarity (0.917) suggests the helper could be extracted to a shared test utility file, coupling two independent test files through a shared test helper introduces fragility without meaningful production benefit, and the duplication is intentional test scaffolding.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_581_AsyncStream.first_Playback_Shared_Playback_Tests_MP3StreamerTests_MP3__hd64a69f09a826dd6.json",
+  "row_index": 45,
+  "trial": 1
+}

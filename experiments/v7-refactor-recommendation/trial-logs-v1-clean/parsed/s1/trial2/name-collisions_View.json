@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:View",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\", \"fields_or_signature\": []",
+    "rationale": "All 15 members are unnamed extensions (name: \"\") on SwiftUI's `View` type, spread across unrelated packages \u2014 WXUI, Wallpaper, PartyHorn, PlayerHeaderView, MusicShareKit, and app:iOS \u2014 each in a distinct domain file such as `GlassEffect+Compatibility.swift`, `PlaybackBlendMode.swift`, `WipeDownRevealModifier.swift`, and `StatusBarStyleModifier.swift`. The structural evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, and fields_or_signature is empty for every record, meaning the pipeline has no evidence that these extensions share members \u2014 only that they all extend the same SwiftUI type. Extending `View` in a file-local extension to scope helper modifiers or previews is idiomatic Swift/SwiftUI practice; consolidating them would couple unrelated packages and destroy locality. No restraint markers are present, but the coincidence is purely structural (all extend `View`) with no shared content evidence.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_View.json",
+  "row_index": 0,
+  "trial": 2
+}

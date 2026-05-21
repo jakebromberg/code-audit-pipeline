@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- One record is in `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift` (package: `DebugPanel`, no restraint flags)\n- The other is in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` (package: `Wallpaper`)\n\nThe second record's file path contains `Examples/WallpaperSampleApp/`, which maps to the `is_sample_app` restraint pattern per the decision rules (sits under `Examples/`). Even though `is_sample_app` is recorded as `false`, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` is unambiguously under an `Examples/` directory, which the rules treat as a sample-app-mirror signal. The cluster is a name collision between a production `DebugHUD` type-alias in `DebugPanel` and what appears to be a local stub/mirror of the same name in a sample app. Lifting or merging these would couple production semantics to a demonstration context.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DebugHUD\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which is nested under an 'Examples/WallpaperSampleApp/' directory \u2014 the canonical sample-app-mirror pattern identified in the decision rules. The other record is the production type-alias at 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' in package 'DebugPanel'. Merging or extracting these would couple the production DebugPanel package to sample-app demonstration semantics. The name collision is expected: the sample app defines its own local 'DebugHUD' stub rather than importing the real one, which is a deliberate isolation pattern for example targets.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012y5gz8uodx66G8BQppvnHY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2508,
+    "output_tokens": 582,
+    "service_tier": "standard"
+  }
+}

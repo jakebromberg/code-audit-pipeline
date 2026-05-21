@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AVAudioSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"Playback\" ... \"package\": \"PartyHorn\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name is empty string) on what the cluster query identifies as AVAudioSession, living in two distinct packages \u2014 'Playback' (AudioSessionProtocol.swift, line 35) and 'PartyHorn' (SoundPlayer.swift, line 22). Because AVAudioSession is a system framework type, each package is independently adding conformances or convenience members suited to its own domain (audio session protocol bridging vs. sound playback). The structural evidence fields (jaccard, shared_field_count, differing_slots) are all null, meaning there is no demonstrated field or method overlap to consolidate. Merging these extensions would couple two unrelated packages around a shared Apple framework type without any demonstrated shared logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_AVAudioSession.json",
+  "row_index": 15,
+  "trial": 1
+}

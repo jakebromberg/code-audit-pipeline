@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+    "rationale": "Both participating records live under test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the `is_test` context flag is reported as `false` on both records, the file paths unambiguously place both declarations inside `Tests/` directories, making them test fixtures by location. The `MockDiscogsEntityResolver` name further signals deliberate test-double semantics. Consolidating these into a shared target would couple two independent test suites and risk leaking test infrastructure into production dependency graphs; the duplication is intentional and load-bearing.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 1
+}

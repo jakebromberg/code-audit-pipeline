@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the restraint markers carefully.\n\nThe second member has `file: \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\"` \u2014 the path contains `Examples/WallpaperSampleApp/`, which places it under a sample app directory. Per the decision rules, **any** participating record under `Examples/` or `SampleApp/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`, regardless of the `is_sample_app` flag value. The path evidence is sufficient and dominates the action signal.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MetricRow+MetricRow\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the Examples/WallpaperSampleApp/ directory \u2014 a sample-app path. Per the restraint rules, any record under Examples/ or SampleApp/ makes the cluster a sample-app-mirror and prohibits lifting production code into shared infrastructure. The DebugPanel copy at 'Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift' is a production type-alias-object, and merging it with a sample-app mirror would couple production semantics to demonstration code. No extraction is warranted unless the WallpaperSampleApp copy is confirmed to be a removable leftover prototype, which the cluster row does not evidence.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EKLDeWj6oLzGBJxj3Rk4iA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2519,
+    "output_tokens": 468,
+    "service_tier": "standard"
+  }
+}

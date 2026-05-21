@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:ExternalLinkTapped+StreamingLinkTapped",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", ... \"shared_field_count\": 3 ... \"differing_slots\": null",
+    "rationale": "Both `StreamingLinkTapped` (line 50) and `ExternalLinkTapped` (line 64) are `type-alias-object` kinds in the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package, sharing 3 fields with no differing slots (jaccard: null, differing_slots: null). This indicates they are structurally identical aliases for what is conceptually the same 'link tapped' analytics event, differentiated only by name. Introducing a shared protocol `LinkTappedEvent` (or a common base type) that both aliases/types conform to would make the shared contract explicit, allow consumers to handle any link-tapped event polymorphically, and prevent future drift between the two. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false), so refactoring is safe.",
+    "specifics": {
+      "children": [
+        "StreamingLinkTapped",
+        "ExternalLinkTapped"
+      ],
+      "moved_members": [],
+      "parent": "LinkTappedEvent",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_ExternalLinkTapped_StreamingLinkTapped.json",
+  "row_index": 24,
+  "trial": 1
+}

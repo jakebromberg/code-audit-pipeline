@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 however, the files are located at:\n- `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift`\n- `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`\n\nBoth file paths contain `Tests/` in their path and the type name is `MockDiscogsEntityResolver` \u2014 a clear mock/test fixture by naming convention. The context flags appear to be mislabeled (both `is_test` and `is_mock` are `false` despite the files living under `Tests/` directories and the type being named `Mock*`). The structural signal is an exact duplicate of a mock helper method across two test packages.\n\nEven setting aside the flag mislabeling, the canonical restraint pattern applies: this is a `MockDiscogsEntityResolver.resolveRelease` method duplicated across two separate test suites in two separate packages (`Metadata` and `app:iOS`). Lifting a shared mock into production-shared code would couple test semantics into a shared target. The right answer is no-action unless the mock is explicitly moved to a dedicated test-support library \u2014 but that is a test-infrastructure concern, not a production refactor.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records are methods named `MockDiscogsEntityResolver.resolveRelease` residing in files under `Tests/` directories (`Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`). The `Mock` prefix and `*Tests.swift` file names are canonical test-fixture signals; the `is_test: false` and `is_mock: false` flags appear to be mislabeled by the pipeline. Lifting this duplicated mock method into shared production code would couple test-double semantics into a shared target, which is the exact anti-pattern the restraint rules guard against. If deduplication is desired, the correct venue is a dedicated test-support library (e.g., a `MetadataTestSupport` module), which is a test-infrastructure decision outside the scope of a production refactor recommendation.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the team decides to introduce a dedicated test-support target within the `Metadata` package (e.g., `MetadataTestSupport`), the shared `MockDiscogsEntityResolver.resolveRelease` implementation could be extracted there and reused by both `DiscogsMarkupParserTests` and `DiscogsFormatterTests`. This would eliminate the exact duplication without touching production code. However, this is only appropriate if `app:iOS` tests can take a dependency on a `Metadata`-package test-support module, which requires explicit architectural sign-off.\"\n    },\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015mLwUcJ87bUbvbe5gEZ3cF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 970,
+    "service_tier": "standard"
+  }
+}

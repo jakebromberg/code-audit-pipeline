@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:42:WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:WXYC TV\",\n      \"type_name\": \"buildConfiguration\",\n      \"remove_from\": [\n        \"WXYC/WXYC TV/WXYCTVApp.swift\",\n        \"WXYC/iOS/WXYCApp.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster identifies an exact function duplicate: `WXYCTVApp.buildConfiguration` at `WXYC/WXYC TV/WXYCTVApp.swift:42` and `WXYCApp.buildConfiguration` at `WXYC/iOS/WXYCApp.swift:367` share identical structure across two production app targets (`app:WXYC TV` and `app:iOS`). Neither record carries any restraint marker (is_test, is_mock, is_sample_app are all false), so no intentional-duplication rule applies. The method should be extracted into a shared module (e.g., a common Swift package or a shared file both targets already depend on) and called from both app entry points, eliminating the divergence risk if configuration logic ever changes. Because the cluster provides no evidence of a pre-existing shared dependency package by name, the target_package is provisionally set to `app:WXYC TV` as the more general-purpose target, but the team should introduce or identify a proper shared utilities package if one exists.\",\n    \"evidence_quote\": \"WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Define a free function `buildConfiguration()` in a new or existing shared Swift package (e.g., `Core` or `Shared`) that both `WXYCTVApp` and `WXYCApp` call, rather than extracting it as a static/instance method on either app type.\",\n        \"why_no_category_fits\": \"The method belongs to two distinct app-entry-point types (`WXYCTVApp`, `WXYCApp`) that cannot share a common superclass or protocol conformance in a meaningful way without restructuring the app lifecycle. A free function or a namespace enum in a shared package is more idiomatic than forcing a protocol or subclass relationship between two `@main` structs.\"\n      },\n      \"rationale\": \"If the two app types cannot be made to conform to a shared protocol (e.g., because `@main` entry points have structural constraints), extracting `buildConfiguration` as a free function in a shared package is the next-best option, keeping both app targets thin and the logic testable in isolation.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Q6PpXNvA1A68zUUfoArdTg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 780,
+    "service_tier": "standard"
+  }
+}

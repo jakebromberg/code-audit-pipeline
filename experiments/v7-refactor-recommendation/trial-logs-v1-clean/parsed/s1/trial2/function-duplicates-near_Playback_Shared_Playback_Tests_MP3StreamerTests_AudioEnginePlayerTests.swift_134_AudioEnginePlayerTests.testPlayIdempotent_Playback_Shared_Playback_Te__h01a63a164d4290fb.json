@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:134:AudioEnginePlayerTests.testPlayIdempotent+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:365:AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true ... AudioEnginePlayerTests.testPlayIdempotent ... AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown ... jaccard: 0.7692307692307693",
+    "rationale": "Both participating records in this cluster carry `is_test: true` and reside in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift`. Although the Jaccard similarity of 0.769 indicates meaningful structural overlap between `testPlayIdempotent` (line 134) and `testPlaySucceedsAfterEngineTearDown` (line 365), the two methods are distinct test scenarios \u2014 idempotent play behaviour versus successful play after engine tear-down \u2014 whose shared shape reflects a common test scaffolding pattern rather than unintentional duplication. Merging or extracting them would obscure the separate failure modes each test is designed to catch, reducing diagnostic clarity when either test fails.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_134_AudioEnginePlayerTests.testPlayIdempotent_Playback_Shared_Playback_Te__h01a63a164d4290fb.json",
+  "row_index": 97,
+  "trial": 2
+}

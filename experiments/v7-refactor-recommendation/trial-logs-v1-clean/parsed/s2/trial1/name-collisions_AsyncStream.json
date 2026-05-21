@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AsyncStream",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift",
+    "rationale": "Both participating records reside under test file paths \u2014 'Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift' (line 444) and 'Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift' (line 579) \u2014 within the Playback package's test suite. Although the context_flags do not carry is_test=true, the file paths unambiguously place both extensions inside a Tests/ directory, making them test fixtures. The extensions are unnamed (name: \"\") with no recorded fields or signatures, providing no structural basis for a meaningful refactor. Consolidating or extracting these anonymous test-support extensions would couple test infrastructure across unrelated test files without any production benefit.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_AsyncStream.json",
+  "row_index": 16,
+  "trial": 1
+}

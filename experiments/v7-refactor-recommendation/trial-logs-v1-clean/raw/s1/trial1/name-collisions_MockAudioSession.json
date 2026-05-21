@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the context carefully.\n\nThe cluster contains four `type-alias-object` records all named `MockAudioSession`, spread across test files and a `Mocks/` directory within test targets (`Tests/RadioPlayerTests/`, `Tests/PlaybackTestUtilities/Mocks/`, `Tests/PartyHornTests/`). Despite the context flags all reading `is_test: false` and `is_mock: false`, the file paths are unambiguous: every participating record lives under a `Tests/` directory, and one lives explicitly in a `Mocks/` subdirectory (`PlaybackTestUtilities/Mocks/MockAudioSession.swift`). The structural pipeline's flag inference appears to have missed these, but the file paths are the ground truth. These are test/mock fixtures by location and naming convention.\n\nThe decision rules state that any record in a test or mock context triggers `no-action` with the appropriate reason class. All four records here are in test infrastructure. Lifting `MockAudioSession` into shared production code would couple production targets to test/mock semantics \u2014 exactly the anti-pattern the restraint rules guard against. The right answer is `no-action`.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockAudioSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four participating records reside under `Tests/` directories \u2014 specifically `Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift`, `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift` (two declarations), and `Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift`. Although the pipeline emitted `is_test: false` and `is_mock: false` for every record, the file paths are unambiguous: all four are test-target fixtures, and two live in an explicit `Mocks/` subdirectory. Consolidating these into shared production code would couple production targets to test/mock semantics. The name collision across `Playback` and `PartyHorn` packages is expected and intentional: each package owns its own mock of `AudioSession` for isolated unit testing.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KyN2Eq4yek2x893tXZCwEd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2765,
+    "output_tokens": 601,
+    "service_tier": "standard"
+  }
+}

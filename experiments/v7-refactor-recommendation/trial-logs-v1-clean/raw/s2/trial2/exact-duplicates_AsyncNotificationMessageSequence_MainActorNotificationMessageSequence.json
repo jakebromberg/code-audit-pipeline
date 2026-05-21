@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with empty `fields_or_signature` lists. Despite sharing 3 structural slots (Jaccard and differing_slots are null, suggesting the pipeline matched on shape alone), their names encode meaningfully distinct semantics: one is scoped to `MainActor` dispatch and the other is a general async notification sequence. Collapsing or extracting them risks erasing that semantic distinction. No restraint markers are present, but the structural evidence is too thin \u2014 null Jaccard, null differing_slots \u2014 to confidently assert the aliases are truly interchangeable rather than coincidentally shaped.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"differing_slots\\\": null, \\\"jaccard\\\": null\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Audit whether `MainActorNotificationMessageSequence` is simply a `@MainActor`-constrained typealias over the same underlying generic type that `AsyncNotificationMessageSequence` aliases. If so, retain both names but add a code comment in each file cross-referencing the other, making the intentional distinction explicit and preventing future false-positive duplicate reports.\",\n        \"why_no_category_fits\": \"The cluster provides no field or signature detail (both lists are empty) and null Jaccard/differing_slots, so there is insufficient evidence to prescribe extract-to-common, generic-parameterization, or any structural refactor. The action is documentation/annotation rather than code restructuring.\"\n      },\n      \"rationale\": \"Because the pipeline matched on shape with no field-level evidence, the safest productive step is to make the intentional distinction between the two aliases explicit in source comments rather than merging or extracting them.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019X4jbNuiLKRG64g9ZDMFhJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2514,
+    "output_tokens": 573,
+    "service_tier": "standard"
+  }
+}

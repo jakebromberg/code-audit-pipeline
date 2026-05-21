@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195:DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second participating record resides at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. Lifting the shared 'DisplayLinkSequence.AsyncIterator.next' implementation into a common package would couple production DebugPanel code to demonstration semantics, which is the wrong direction. Even absent the sample-app concern, the two packages ('DebugPanel' and 'Wallpaper') are unrelated domain packages, and creating a shared dependency between them solely to deduplicate a single small async iterator method would introduce unjustified coupling.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_195_DisplayLinkSequence.AsyncIterator.next_Wallpaper_Shared_Wallpaper_Exam__h4e4f6d3507d3b355.json",
+  "row_index": 31,
+  "trial": 3
+}

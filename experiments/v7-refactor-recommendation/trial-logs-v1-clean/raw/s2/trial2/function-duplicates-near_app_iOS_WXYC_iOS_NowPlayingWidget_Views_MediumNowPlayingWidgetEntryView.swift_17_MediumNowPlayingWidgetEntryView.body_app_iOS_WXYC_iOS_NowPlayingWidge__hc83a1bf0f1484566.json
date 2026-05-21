@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"NowPlayingWidgetEntryView\",\n      \"remove_from\": [\n        \"WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift\",\n        \"WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift\"\n      ]\n    },\n    \"rationale\": \"The two `body` computed properties in `SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView` share a Jaccard similarity of 0.714, indicating substantial structural overlap in their SwiftUI view bodies. Both live in the same package (`app:iOS`) and the same directory (`WXYC/iOS/NowPlayingWidget/Views/`), and neither carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The divergence between small and medium widget layouts is typically parameterisable (e.g., via a `WidgetFamily` or size enum), so a single shared `NowPlayingWidgetEntryView` that accepts a size parameter can replace both, eliminating the near-duplicate `body` implementations.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Size\", \"constraint\": \"NowPlayingWidgetSize or WidgetFamily\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\n          \"SmallNowPlayingWidgetEntryView\",\n          \"MediumNowPlayingWidgetEntryView\"\n        ]\n      },\n      \"rationale\": \"If the size distinction requires type-level differentiation (e.g., different associated layout types), a generic struct parameterised over a size type is idiomatic Swift and avoids a runtime switch, while still collapsing the near-duplicate `body` implementations into one.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0169Ed2mB4snCt56ExXy2m3z",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2646,
+    "output_tokens": 692,
+    "service_tier": "standard"
+  }
+}

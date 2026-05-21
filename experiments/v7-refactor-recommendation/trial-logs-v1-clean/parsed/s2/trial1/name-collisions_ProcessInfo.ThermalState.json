@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": []",
+    "rationale": "All three records have empty `fields_or_signature` arrays, so there is no literal evidence that the extensions share any members, conformances, or computed properties. The cluster signal is purely that three files \u2014 `DebugPanel/DebugMetricsProvider.swift` (package: DebugPanel), `WallpaperSampleApp/Sources/DebugHUD.swift` (package: Wallpaper, path contains Examples/WallpaperSampleApp), and `Wallpaper/Throttling/QualitySignal.swift` (package: Wallpaper) \u2014 each declare an unnamed extension on `ProcessInfo.ThermalState`, but without knowing what each extension contributes it is impossible to determine whether they duplicate logic or serve entirely distinct domain purposes (debug display vs. thermal throttling vs. sample HUD). Recommending consolidation without field evidence would require hallucinating equivalence. Additionally, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` carries strong sample-app path semantics, further discouraging coupling that file's extension into shared production code.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 1
+}

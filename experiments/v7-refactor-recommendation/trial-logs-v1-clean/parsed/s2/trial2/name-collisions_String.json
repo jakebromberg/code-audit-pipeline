@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:String",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+    "rationale": "Four separate `extension` declarations on `String` are spread across three distinct packages (`Playlist`, `AnalyticsMacros`, `Analytics`), creating name-collision risk and making it difficult to reason about what capabilities are being added to `String` across the codebase. The dedicated file `Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift` already follows the Swift convention of a named `String+` extension file, suggesting that pattern should be the canonical home for at least the Playlist-scoped additions. The extensions in `FlowsheetEntryType.swift` (line 106) and `AnalyticsEvent.swift` (line 39) appear to be inline helpers that could be extracted into their own `String+` files within their respective packages to eliminate the collision signal. Because the extensions live in separate packages with no shared dependency, full consolidation into one file is not feasible without introducing a new cross-package dependency; the minimum viable action is to isolate each package's `String` extensions into a dedicated `String+<PackageName>.swift` file per package.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+        "Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift",
+        "Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift",
+        "Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift"
+      ],
+      "target_type": "String"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_String.json",
+  "row_index": 6,
+  "trial": 2
+}

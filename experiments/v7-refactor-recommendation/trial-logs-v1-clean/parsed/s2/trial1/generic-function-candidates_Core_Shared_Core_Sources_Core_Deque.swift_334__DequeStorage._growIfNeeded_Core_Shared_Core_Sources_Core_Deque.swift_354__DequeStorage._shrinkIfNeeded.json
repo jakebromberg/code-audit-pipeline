@@ -1,0 +1,21 @@
+{
+  "cluster_id": "generic-function-candidates:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "Although `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` share a high structural similarity (Jaccard 0.714), they encode semantically opposite and complementary capacity-management operations on a deque's backing storage. Growth and shrink policies typically diverge in their threshold arithmetic, reallocation strategies, and copy directions; collapsing them into a single generic function parameterised on direction would obscure intent and likely require branching that negates any abstraction benefit. The `fields_or_signature` arrays are both empty, so there is no concrete signature evidence to ground a safe generic extraction. Preferring clarity over DRY is the idiomatic Swift stance for private storage-management helpers.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-function-candidates_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 23,
+  "trial": 1
+}

@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:ScrollOffsetPreferenceKey+TextHeightPreferenceKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"shared_field_count\": 1",
+    "rationale": "The cluster identifies two `type-alias-object` declarations \u2014 `TextHeightPreferenceKey` in `app:WatchXYC` (PlayerPage.swift:140) and `ScrollOffsetPreferenceKey` in `app:iOS` (PlaycutRowView.swift:74) \u2014 flagged as exact duplicates with `shared_field_count: 1` and no differing slots, meaning their underlying structure is identical despite carrying different names. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Because these are SwiftUI `PreferenceKey` type-alias objects with identical shape, they should be consolidated into a single shared definition. However, the cluster does not surface a dedicated shared/common package in the catalog; the closest actionable target is to place the canonical type in a shared module or, at minimum, deduplicate by having `app:WatchXYC` import and reuse the definition from `app:iOS`. The differing names suggest each was independently authored for the same structural purpose, which is the canonical case for extraction.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/Views/Playlist/Playcut Detail/PlaycutRowView.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "ScrollOffsetPreferenceKey"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_ScrollOffsetPreferenceKey_TextHeightPreferenceKey.json",
+  "row_index": 34,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) reside in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package. Although the context flags do not mark either record as `is_test=true` (likely a metadata gap given the file path clearly sits under a `Tests/` directory and the type name is `HLSPlayerTests`), the file path and type name unambiguously identify these as test methods. More importantly, the two methods encode distinct, non-interchangeable test scenarios \u2014 stalling from a playing state versus recovering from a stall \u2014 whose structural similarity is coincidental to the domain logic under test. Merging or extracting them would obscure test intent and couple unrelated failure-mode assertions.\",\n    \"evidence_quote\": \"HLSPlayerTests.stallFromPlaying+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012fqVzVkQFfJVz1TX21zsmK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2595,
+    "output_tokens": 416,
+    "service_tier": "standard"
+  }
+}

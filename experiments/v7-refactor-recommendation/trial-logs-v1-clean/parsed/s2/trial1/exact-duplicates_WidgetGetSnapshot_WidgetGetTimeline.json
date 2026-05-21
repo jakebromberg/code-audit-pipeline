@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:WidgetGetSnapshot+WidgetGetTimeline",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"WidgetGetSnapshot\" ... \"name\": \"WidgetGetTimeline\" ... \"fields_or_signature\": [] ... \"fields_or_signature\": [] ... \"shared_field_count\": 1",
+    "rationale": "Both `WidgetGetSnapshot` and `WidgetGetTimeline` are `type-alias-object` declarations in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`, lines 92 and 102) with empty `fields_or_signature` arrays. The structural signal is that they share shape (both are empty type aliases), but they encode distinct domain concepts \u2014 snapshotting a widget vs. fetching its timeline \u2014 whose structural coincidence is purely a consequence of both being zero-field event marker types. Merging or extracting them would conflate two semantically separate analytics events that exist to be distinguished in event streams. No restraint markers are present, but the coincidental-shape reason dominates here.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_WidgetGetSnapshot_WidgetGetTimeline.json",
+  "row_index": 37,
+  "trial": 1
+}

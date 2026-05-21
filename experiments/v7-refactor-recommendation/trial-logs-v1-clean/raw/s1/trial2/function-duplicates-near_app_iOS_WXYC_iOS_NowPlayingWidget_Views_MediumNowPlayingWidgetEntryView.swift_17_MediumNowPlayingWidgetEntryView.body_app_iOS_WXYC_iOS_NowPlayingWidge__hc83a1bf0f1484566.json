@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"NowPlayingWidgetEntryView\",\n      \"remove_from\": [\n        \"WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift\",\n        \"WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `SmallNowPlayingWidgetEntryView.body` (line 17) and `MediumNowPlayingWidgetEntryView.body` (line 17) are near-duplicate computed properties with a Jaccard similarity of 0.714, both residing in the same package (`app:iOS`) under `WXYC/iOS/NowPlayingWidget/Views/`. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The structural near-duplication strongly suggests the two `body` implementations share a common layout that differs only in size-specific parameters (e.g., widget family or frame dimensions), making them good candidates for a single shared SwiftUI view parameterised by size. Extracting a unified `NowPlayingWidgetEntryView` that accepts a `WidgetFamily` or equivalent size parameter would eliminate the duplication while keeping both widget entry points as thin wrappers or type aliases.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Size\", \"constraint\": \"NowPlayingWidgetSize or WidgetFamily\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\n          \"SmallNowPlayingWidgetEntryView\",\n          \"MediumNowPlayingWidgetEntryView\"\n        ]\n      },\n      \"rationale\": \"If the size distinction maps cleanly to a Swift type parameter or an enum, a single generic (or enum-parameterised) `NowPlayingWidgetEntryView<Size>` struct could replace both concrete types, keeping SwiftUI's type system happy while eliminating the near-duplicate `body` implementations. This is slightly less idiomatic for SwiftUI widgets than a plain extracted view with a stored property, hence it is the alternative rather than the primary.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QWC9uMWS7DwwRvZAAc3SZS",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2646,
+    "output_tokens": 768,
+    "service_tier": "standard"
+  }
+}

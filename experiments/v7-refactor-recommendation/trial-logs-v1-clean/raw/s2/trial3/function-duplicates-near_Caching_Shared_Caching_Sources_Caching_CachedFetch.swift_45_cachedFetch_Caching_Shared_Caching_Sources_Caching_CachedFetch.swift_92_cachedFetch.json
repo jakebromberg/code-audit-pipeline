@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is limited to a small number of call-site parameters (e.g., a cache policy, expiry duration, or key strategy), unify them into a single generic or defaulted-parameter function, removing the near-duplicate body. If the two overloads are genuinely distinct entry points that happen to share ~70 % of their body, extract the shared logic into a private `_cachedFetch(...)` implementation function called by both public overloads.\",\n      \"why_no_category_fits\": \"Both records are in the same file and same package (`Caching`), so `extract-to-common` (cross-package extraction) does not apply. The cluster reports two free functions, not types, so `generic-parameterization` for a struct/class is wrong. The signatures are not provided (`fields_or_signature: []`), so we cannot confirm a protocol conformance pattern that would justify `default-implementation` or `pat-introduction`. The most precise recommendation is to consolidate the shared body into a private helper \u2014 a pattern that does not map cleanly to any named category because it is an intra-file, intra-function deduplication rather than a cross-type or cross-package concern.\"\n    },\n    \"rationale\": \"The cluster identifies two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 indicating substantial but not identical bodies. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so action is warranted. Because both functions live in the same file and package, cross-package extraction is inappropriate; the right fix is intra-file deduplication via a shared private helper or a single overload with defaulted parameters. The empty `fields_or_signature` arrays prevent confirming exact parameter differences, so the recommendation is conditional on inspection.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": \"Decodable\" }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If the two overloads differ only in the concrete return type they decode or cache (a common pattern for fetch utilities), a single generic `cachedFetch<T: Decodable>(...)` could replace both, eliminating the near-duplicate body entirely. This is defensible but speculative given the absent signature data.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Um22qU7TS1QdsKS7Ntw4dK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2565,
+    "output_tokens": 860,
+    "service_tier": "standard"
+  }
+}

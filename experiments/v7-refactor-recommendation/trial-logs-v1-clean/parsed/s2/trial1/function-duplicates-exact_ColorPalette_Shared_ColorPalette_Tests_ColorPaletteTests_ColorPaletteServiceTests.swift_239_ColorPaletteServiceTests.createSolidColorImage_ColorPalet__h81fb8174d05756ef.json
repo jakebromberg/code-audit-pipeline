@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift",
+    "rationale": "Both participating records reside in test files within the ColorPalette package \u2014 `ColorPaletteServiceTests.swift` (line 239) and `DominantColorExtractorTests.swift` (line 278) \u2014 and both are methods named `createSolidColorImage` that serve as test helpers. Although the pipeline has flagged `is_test: false` on both records, the file paths unambiguously place them under `Shared/ColorPalette/Tests/ColorPaletteTests/`, which is a test target. Extracting a shared helper into production or shared code would couple test infrastructure to non-test modules; the correct resolution, if any, is to introduce a private test-only helper file within the same test target rather than a cross-module extraction. Per the restraint rules, the test-fixture classification dominates any action signal here.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+    "rationale": "Both participating records live under `Tests/` directories \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` \u2014 and the owning type is named `MockDiscogsEntityResolver`, a clear test-double naming convention. Although the pipeline's `is_test` and `is_mock` flags are both `false` on each record (likely a tagging gap), the literal file paths and the `Mock`-prefixed type name are unambiguous evidence that these are test-support helpers, not production code. Extracting `resolveMaster` into a shared production target would couple production packages to test-fixture semantics and cross a test/production boundary. The correct resolution, if deduplication is desired at all, is to consolidate the mock into a shared test-support module (e.g., a `TestSupport` library target within the `Metadata` package) rather than any production target.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_55_MockDiscogsEntityResolver.resolveMaster_app_iOS_WXYC_iOS_Tests_WXYCTes__hfa603d2ae22b4b75.json",
+  "row_index": 24,
+  "trial": 2
+}

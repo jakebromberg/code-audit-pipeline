@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"",
+    "rationale": "Both participating records live in test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the pipeline's `is_test` flag is reported as `false` for both records, the file paths unambiguously place both declarations inside `Tests/` directories, making them test-only fixtures. The `MockDiscogsEntityResolver.MockError` type-alias-union is a local error stub scoped to each test file's mock collaborator; consolidating it into shared production code would couple production targets to test semantics. Each test suite is entitled to its own isolated error stub, and the duplication is intentional.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockDiscogsEntityResolver.MockError_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 46,
+  "trial": 2
+}

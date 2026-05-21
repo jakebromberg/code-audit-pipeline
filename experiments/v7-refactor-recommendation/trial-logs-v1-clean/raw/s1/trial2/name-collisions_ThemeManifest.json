@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:ThemeManifest\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster surfaces three records all within the `Wallpaper` package: a `type-alias-object` at `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:15`, an extension on that same type at line 579 of the same file, and a second extension declared inside `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift:49`. The structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`) are all null and `fields_or_signature` is empty for every record, so there is no field-level or signature-level overlap to act on. The two source-file records are a canonical Swift pattern of declaring a type and then extending it in the same file; the test-file extension is a test-support convenience on the same type. No refactor is warranted because the 'collision' is simply the expected co-existence of a type declaration, its own extension, and a test-side extension \u2014 all intentionally referencing the same named type.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\\\", \\\"kind\\\": \\\"type-alias-object\\\", \\\"line\\\": 15\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FnzKwK9CwZBetvX8HoKxos",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2634,
+    "output_tokens": 392,
+    "service_tier": "standard"
+  }
+}

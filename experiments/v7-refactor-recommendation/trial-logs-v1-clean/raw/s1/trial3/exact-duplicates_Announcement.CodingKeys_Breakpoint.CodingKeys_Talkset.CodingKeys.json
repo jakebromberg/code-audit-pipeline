@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base enum) in the `Playlist` package \u2014 for example in a new file `Shared/Playlist/Sources/Playlist/PlaylistEntryCodingKeys.swift` \u2014 and replace each nested `CodingKeys` type-alias-union with a `typealias CodingKeys = PlaylistEntryCodingKeys` (or remove the redundant declarations entirely if the parent types can share one conformance). If the key sets genuinely differ in ways not captured by the `fields_or_signature: []` snapshot, prefer a protocol-based approach where a `PlaylistEntryCodable` protocol declares the shared keys.\",\n      \"why_no_category_fits\": \"The three members are `type-alias-union` kinds (not plain enums, structs, or functions), so neither `generic-parameterization`, `subclass-lift`, nor `default-implementation` applies directly. `extract-to-common` is the closest fit, but the members are nested `CodingKeys` types whose identity is tightly coupled to their enclosing `Codable` conformance \u2014 extracting them as a standalone shared type requires either a typealias indirection or a protocol constraint, which is a nuanced Codable-specific pattern that does not map cleanly to the `extract-to-common` schema (which targets standalone types, not nested coding-key enums). `macro-synthesis` would be appropriate if a `@CodingKeys` macro were being introduced, but no such macro exists in the cluster evidence.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` (line 34, `_Plant_Announcement.swift`), `Breakpoint.CodingKeys` (line 72), and `Talkset.CodingKeys` (line 111, both in `PlaylistEntry.swift`) \u2014 are flagged as exact duplicates with `shared_field_count: 4` and reside in the same `Playlist` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The structural signal is strong: four identical coding keys repeated across three sibling types in the same package is maintenance debt. However, because these are nested `CodingKeys` type-alias-unions whose deduplication must respect Swift's `Codable` synthesis rules, the remediation is Codable-specific and does not map cleanly to any single named category.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-union\\\" ... \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Playlist\",\n        \"type_name\": \"PlaylistEntryCodingKeys\",\n        \"remove_from\": [\n          \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\",\n          \"Shared/Playlist/Sources/Playlist/PlaylistEntry.swift\"\n        ]\n      },\n      \"rationale\": \"If the four shared fields are truly identical across all three types and Swift's Codable synthesis can be satisfied via a shared enum (e.g., by making each parent type use `typealias CodingKeys = PlaylistEntryCodingKeys`), a straightforward extraction into a single `PlaylistEntryCodingKeys` enum in the `Playlist` package eliminates all three duplicates with minimal structural change. This is the simplest mechanical fix, but it requires verifying that no type adds extra keys beyond the shared four.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Dm9D6nqr7VhXV3DJ9mZVbk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2660,
+    "output_tokens": 982,
+    "service_tier": "standard"
+  }
+}

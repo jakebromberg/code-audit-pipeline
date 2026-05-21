@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and null values for all structural evidence fields (`differing_slots`, `shared_ancestor`, `shared_field_count`), leaving only the cluster ID string and a Jaccard similarity of 0.75 as evidence. While the ID string names two types \u2014 `ShaderArgumentValue` in `ParameterStore.swift:282` and `ParameterValue` in `ThemeManifest.swift:512` \u2014 both within the `Shared/Wallpaper` package, there is no field list, method list, or context-flag data to ground a concrete refactor recommendation. Without member-level evidence it is impossible to determine whether the structural overlap is domain-meaningful (warranting extraction or a shared protocol) or merely coincidental (e.g., both are value-typed enums with a similar case count). Recommending an action without that grounding would violate the no-hallucination rule, so no-action is the correct outcome.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"ParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms that `ShaderArgumentValue` and `ParameterValue` share the same cases or fields (consistent with the 0.75 Jaccard score), a single canonical type in `Shared/Wallpaper` could replace both, reducing duplication within the package. This alternative should only be pursued once the empty `members` data is populated and the overlap is confirmed to be semantically intentional rather than coincidental.\"\n    },\n    \"confidence\": 0.1\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DbDrKbPkJdRZ3xV4fbt5Ls",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2312,
+    "output_tokens": 638,
+    "service_tier": "standard"
+  }
+}

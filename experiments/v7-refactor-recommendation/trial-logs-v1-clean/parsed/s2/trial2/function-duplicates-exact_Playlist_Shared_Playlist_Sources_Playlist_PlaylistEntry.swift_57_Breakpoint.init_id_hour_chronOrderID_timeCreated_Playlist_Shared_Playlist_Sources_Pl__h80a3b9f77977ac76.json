@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:57:Breakpoint.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:96:Talkset.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift:19:Announcement.init(id:hour:chronOrderID:timeCreated:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.82,
+    "evidence_quote": "Announcement.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:57:Breakpoint.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:96:Talkset.init(id:hour:chronOrderID:timeCreated:)",
+    "rationale": "Three types in the same `Playlist` package \u2014 `Announcement` (in `_Plant_Announcement.swift:19`), `Breakpoint` (in `PlaylistEntry.swift:57`), and `Talkset` (in `PlaylistEntry.swift:96`) \u2014 all carry an identical initializer signature `init(id:hour:chronOrderID:timeCreated:)`. Because all three share the same parameter labels and live in the same package with no restraint markers, the body is almost certainly identical boilerplate assigning the four arguments to stored properties. The idiomatic Swift fix is to introduce (or extend) a shared protocol \u2014 likely already named `PlaylistEntry` given the file name \u2014 and provide a default implementation of this initializer in a protocol extension, eliminating the per-type copies. The `_Plant_` prefix on the Announcement file suggests it may be a generated or scaffolded stub, making consolidation even more appropriate.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift",
+        "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift"
+      ],
+      "method": "init(id:hour:chronOrderID:timeCreated:)",
+      "protocol": "PlaylistEntry",
+      "target_location": "Shared/Playlist/Sources/Playlist/PlaylistEntry.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Playlist_Shared_Playlist_Sources_Playlist_PlaylistEntry.swift_57_Breakpoint.init_id_hour_chronOrderID_timeCreated_Playlist_Shared_Playlist_Sources_Pl__h80a3b9f77977ac76.json",
+  "row_index": 4,
+  "trial": 2
+}

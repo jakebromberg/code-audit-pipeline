@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AVAudioSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"Playback\" ... \"package\": \"PartyHorn\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both members are unnamed extensions (name is empty string) on what is likely `AVAudioSession` \u2014 a system framework type \u2014 appearing in two separate packages (`Playback` at `Shared/Playback/Sources/PlaybackCore/Protocols/AudioSessionProtocol.swift:35` and `PartyHorn` at `Shared/PartyHorn/Sources/PartyHorn/SoundPlayer.swift:22`). The structural evidence fields (jaccard, shared_field_count, differing_slots, shared_ancestor) are all null, meaning no field-level overlap was detected. Without evidence of shared members or duplicated logic, these extensions most likely serve distinct, package-local purposes \u2014 one supporting a playback protocol abstraction and the other supporting sound playback in PartyHorn \u2014 and their co-occurrence on the same system type is coincidental. Consolidating them would couple two unrelated packages without demonstrated benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_AVAudioSession.json",
+  "row_index": 15,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheProtocol\",\n      \"associated_type\": \"Key\",\n      \"constraints\": [\"Hashable\"],\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift`) and `IntCache` (in `_Plant_IntCache.swift`) within the `Caching` package share an identical structural shape \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[K: CacheEntry]` \u2014 differing only in the key type of `storage` (`String` vs `Int`). This is the canonical PAT signal: a single varying slot whose type is the natural associated type. Introducing a `CacheProtocol` with `associatedtype Key: Hashable` and a `storage: [Key: CacheEntry]` requirement (plus `capacity`, `hitCount`, `lastAccess`) would unify both types under one abstraction, allowing generic algorithms over any cache keyed by a `Hashable` type. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint override is needed.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n        ],\n        \"new_name\": \"Cache\",\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"Rather than a protocol with an associated type, a single generic struct `Cache<Key: Hashable>` with fields `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[Key: CacheEntry]` would directly replace both `StringCache` and `IntCache` with concrete type aliases `typealias StringCache = Cache<String>` and `typealias IntCache = Cache<Int>`. This is simpler than a PAT when no polymorphic dispatch over the protocol is required, but the PAT approach is preferred if callers need to abstract over heterogeneous cache types.\"\n    },\n    \"confidence\": 0.91\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01G9yLAwrNinjizRBW1L3jSH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2686,
+    "output_tokens": 696,
+    "service_tier": "standard"
+  }
+}

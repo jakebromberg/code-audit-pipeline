@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:153:ReviewRequestServiceTests.didRequestReviewResetsState+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:177:ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `ReviewRequestServiceTests.didRequestReviewResetsState` (line 153) and `ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger` (line 177) \u2014 are distinct test cases that verify different behavioural invariants of the review-request service (state reset vs. re-trigger suppression). Their structural similarity (Jaccard 0.769) is expected for tests that exercise the same system under test with different preconditions and assertions; merging them would obscure test intent and violate the one-assertion-per-test principle. No production code is involved, so there is no coupling risk to address.\",\n    \"evidence_quote\": \"is_test: true ... ReviewRequestServiceTests.didRequestReviewResetsState ... ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01V4kScFEceZgT4MsTheRWqT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2602,
+    "output_tokens": 394,
+    "service_tier": "standard"
+  }
+}
