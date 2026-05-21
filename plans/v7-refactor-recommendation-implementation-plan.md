@@ -315,3 +315,4 @@ Critical dependencies (blocked_by): Phase A blocks Phase C; Phase B blocks Phase
 - [`docs/refactor-recommendation-experiment-agent-prompt.md`](../docs/refactor-recommendation-experiment-agent-prompt.md) — full prompt + per-category specifics schemas, used by Phase D.
 - [`docs/refactor-recommendation-experiment-macro-candidates.md`](../docs/refactor-recommendation-experiment-macro-candidates.md) — out of round 1 scope; round 2 reference for Cat. 7.
 - [Issue #5](https://github.com/jakebromberg/code-audit-pipeline/issues/5) — substrate-emitted `cluster_id`, the V7 prerequisite.
+- [`experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

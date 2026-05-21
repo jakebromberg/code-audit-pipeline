@@ -27,3 +27,4 @@ This directory is the shell. Each phase populates it:
 - [`docs/refactor-recommendation-experiment-agent-prompt.md`](../../docs/refactor-recommendation-experiment-agent-prompt.md)
 - [`docs/refactor-recommendation-experiment-macro-candidates.md`](../../docs/refactor-recommendation-experiment-macro-candidates.md) (round 2 reference)
 - [`plans/v7-refactor-recommendation-implementation-plan.md`](../../plans/v7-refactor-recommendation-implementation-plan.md)
+- [`experiments/v7-refactor-recommendation/glossary.md`](glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

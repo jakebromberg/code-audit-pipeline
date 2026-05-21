@@ -148,3 +148,7 @@ These don't gate approval but should be remembered when Phase C, D, and E run:
 ## Approval
 
 Manifest and rubric **approved unconditionally** for Phase C plant-tree generation and Phase D trial execution at the hashes recorded above. F1 and F2 are tracked watch-items for Phase C and Phase E respectively; neither makes this approval provisional. No revisions required to `plant-manifest.yaml` or `rubric.yaml`.
+
+## See also
+
+- [`experiments/v7-refactor-recommendation/glossary.md`](glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

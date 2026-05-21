@@ -80,3 +80,4 @@ The PR-title approach is the cheapest calibration that could possibly work. If V
 - [V7 methodology §5.1–§5.5](../../docs/refactor-recommendation-experiment-methodology.md#plant-design) — the 5 MVP plant categories
 - [V6 results conclusion](../../docs/wxyc-ios-64-experiment-results.md#conclusion) — natural-finding examples that suggest Cat. 2/3 opportunities exist beyond the title-keyword sample
 - Issue: jakebromberg/code-audit-pipeline#18
+- [`experiments/v7-refactor-recommendation/glossary.md`](glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

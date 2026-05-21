@@ -101,3 +101,7 @@ The methodology's ~$9 Phase-D figure appears to assume larger output tokens than
 
 1. **Pin the Sonnet date-suffix.** ~~The API returned bare `claude-sonnet-4-6`; methodology §10 requires a date-pinned identifier. Update `reproducibility.yaml > execution.model_versions.primary_pinned_at` before the Phase D harness runs.~~ **Resolved 2026-05-14 (§6.1):** the Anthropic public models endpoint exposes only the bare alias for the 4.6 tier; nine candidate date suffixes spanning 2025-08-01 through 2026-04-01 all returned HTTP 404 on `/v1/messages`. The reproducibility manifest now pins via the API-version header (`anthropic-version: 2023-06-01`) + bare alias + per-recommendation capture of the response `model` field; see `reproducibility.yaml > execution` for the full rationale. Repoint if Anthropic publishes a 4.6 date-pinned variant before Phase D execution starts.
 2. **Markdown-fenced JSON in agent response.** The §5.3 response wrapped its JSON array in a ` ```json ` fence. The Phase D harness (plan §6.2) needs to handle this — either reject and re-prompt, or extract via the same regex the validator uses.
+
+## See also
+
+- [`experiments/v7-refactor-recommendation/glossary.md`](../glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).
