@@ -466,8 +466,43 @@ execution:
       # cleanly under the regenerated catalogs. See scripts/drift_check.py
       # `substrate_notes` field and analyses-v2/drift-check.json for the
       # full record.
-    v2_trial_date_range: null         # PR 3: {start, end} ISO timestamps
-    v2_actual_spend_usd: null         # PR 3: sum of per-rec cost_usd over v2 trial logs
-    v2_response_model_capture: null   # PR 3: distinct `model` values from /v1/messages responses
-    sub_experiment_outcome: null      # PR 4: "H1 supported" | "H0a supported" | "halted"
+    v2_trial_date_range:              # PR 3 (executed 2026-05-20)
+      start: "2026-05-20T15:25:30"
+      end: "2026-05-20T18:12:20"
+    v2_actual_spend_usd: 51.5927      # sum of per-rec cost_usd over trial-logs-v2/
+    v2_response_model_capture:        # distinct `model` values from /v1/messages responses
+      claude-sonnet-4-6: 2901
+    # Substrate divergence remediation. Because the regenerated substrate at PR 2
+    # diverged from `pre_registration.plant_tree_sha` by 1 swift file in 485
+    # (0.2%; see drift_check_results.metrics.substrate note above), running v2
+    # against round-2's original `trial-logs/` `scored` numbers as the v1 control
+    # would conflate prompt-sensitivity with substrate noise. Per plan §3.2
+    # halt-recovery protocol (option (a) re-control rerun), PR 3 also runs v1
+    # against the regenerated substrate to give a matched-substrate comparison.
+    # The round-2 `trial-logs/` and `analyses/` artifacts stay untouched as the
+    # historical v1-against-original-substrate snapshot.
+    v1_clean_rerun:                   # PR 3: re-control v1 rerun against the regenerated substrate
+      date_range:
+        start: "2026-05-20T15:25:30"
+        end: "2026-05-20T16:43:06"
+      actual_spend_usd: 41.7654       # sum of per-rec cost_usd over trial-logs-v1-clean/
+      response_model_capture:
+        claude-sonnet-4-6: 2901
+      trial_logs_dir: experiments/v7-refactor-recommendation/trial-logs-v1-clean
+      analyses_dir: experiments/v7-refactor-recommendation/analyses-v1-clean
+      score_summary:
+        scored_pairs: 522
+        panel_routed: 119
+        s1_canonical_recall: 0.070
+        s1_panel_route_rate: 0.146
+        s2_canonical_recall: 0.110
+        s2_panel_route_rate: 0.276
+    v2_score_summary:                 # PR 3 (auto-scored against trial-logs-v2/)
+      scored_pairs: 522
+      panel_routed: 108
+      s1_canonical_recall: 0.055
+      s1_panel_route_rate: 0.120
+      s2_canonical_recall: 0.105
+      s2_panel_route_rate: 0.258
+    sub_experiment_outcome: null      # PR 4: "H1 supported" | "H0a supported" | "halted" — preliminary read from PR 3 data: panel-route drop is 17.8% (S1) / 6.5% (S2), well below the §3.4 50% threshold for H1; H0a supported per the decision tree, pending PR 4's per-category breakdown
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
