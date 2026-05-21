@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:LightboxActiveKey+ScrollIdleKey+ScrolledToTopKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All three records \u2014 `ScrolledToTopKey` (line 16), `ScrollIdleKey` (line 20), and `LightboxActiveKey` (line 28) \u2014 are `type-alias-object` declarations in the same file `Shared/WXUI/Sources/WXUI/OverlaySheet.swift` within the `WXUI` package. They share structural shape (empty `fields_or_signature`, same `kind`) because SwiftUI environment key types are idiomatically small, zero-field structs; the similarity is a consequence of the SwiftUI `EnvironmentKey` pattern, not accidental duplication. Each key encodes a distinct domain concept (`ScrolledToTop`, `ScrollIdle`, `LightboxActive`), so merging or extracting them would conflate unrelated UI state signals. No restraint markers are present, but the coincidental-shape reason class applies.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_LightboxActiveKey_ScrollIdleKey_ScrolledToTopKey.json",
+  "row_index": 18,
+  "trial": 3
+}

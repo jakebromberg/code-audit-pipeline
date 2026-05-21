@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Consolidate the four identical `SequentialMockSession` type-alias declarations \u2014 `iTunesArtworkServiceTests.SequentialMockSession` (line 84), `LastFMArtworkServiceTests.SequentialMockSession` (line 211), `DiscogsArtworkServiceTests.SequentialMockSession` (line 317), and a second `DiscogsArtworkServiceTests.SequentialMockSession` (line 363) \u2014 into a single top-level or file-scope type alias declared once in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`. Each per-test-class alias can then be removed; the inner test classes reference the shared alias directly. The duplicate at line 363 (same qualified name as line 317) should be investigated for being an outright copy-paste error and deleted.\",\n      \"why_no_category_fits\": \"All four records are type-alias objects with no fields (`fields_or_signature: []`), so there is no method body to give a default implementation, no protocol hierarchy to restructure, and no generic parameterization to introduce. The duplication is purely a repeated alias declaration inside the same test file, not a cross-file or cross-package concern, so `extract-to-common` does not apply. The correct fix is a simple intra-file deduplication \u2014 hoist the alias to file scope once \u2014 which none of the named categories describe precisely. The context flags are all false (is_test, is_mock, is_sample_app, is_codegen are all false per the cluster row), so no restraint-marker no-action applies, but the structural signal is a test-support alias living in a test file, making the fix purely local.\"\n    },\n    \"rationale\": \"All four records are `type-alias-object` entries in the single file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package, sharing `shared_field_count: 1` and carrying identical structure. Three distinct test-class namespaces (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`) each redeclare the same alias, and `DiscogsArtworkServiceTests.SequentialMockSession` appears twice (lines 317 and 363), which is almost certainly a copy-paste error. Because all context flags are false and the records are type aliases with no fields, the right fix is to hoist a single `typealias SequentialMockSession = \u2026` to file scope in `ArtworkFetcherTests.swift` and remove the four inner declarations, rather than any protocol or generic restructuring.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"DiscogsArtworkServiceTests.SequentialMockSession\\\", \\\"package\\\": \\\"Artwork\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because `fields_or_signature` is empty for every record, the pipeline has no visibility into what the alias resolves to; if each alias resolves to a different underlying type (e.g., a different mock session class per service), the duplication is coincidental name-sharing and no consolidation is safe without inspecting the alias targets.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ns43XJsFU1UviMpF99CT7Y",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4140,
+    "output_tokens": 909,
+    "service_tier": "standard"
+  }
+}

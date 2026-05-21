@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:ApplicationWillTerminateMessage+HLSPlaybackStalledMessage+PlaybackStalledMessage+RequestSentMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\"",
+    "rationale": "All four records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the structural similarity is purely that they are zero-field type aliases \u2014 not that they alias the same underlying type or carry the same domain semantics. `ApplicationWillTerminateMessage` (Core package), `PlaybackStalledMessage` and `HLSPlaybackStalledMessage` (Playback package), and `RequestSentMessage` (MusicShareKit package) each represent distinct domain events in unrelated subsystems. The `shared_field_count: 1` with `jaccard: null` and `differing_slots: null` confirms the pipeline matched on structural shape (empty-body type alias) rather than on any shared content. Extracting these to a common type would conflate unrelated message concepts and couple Core, Playback, and MusicShareKit around a meaningless shared ancestor.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_ApplicationWillTerminateMessage_HLSPlaybackStalledMessage_PlaybackStalledMessage_RequestSentMessage.json",
+  "row_index": 8,
+  "trial": 2
+}

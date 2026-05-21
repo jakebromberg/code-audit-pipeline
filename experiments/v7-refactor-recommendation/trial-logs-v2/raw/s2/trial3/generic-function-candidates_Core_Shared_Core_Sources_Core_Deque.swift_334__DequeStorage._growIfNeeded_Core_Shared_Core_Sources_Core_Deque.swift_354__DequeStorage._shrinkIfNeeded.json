@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"intentional-specialization\"\n    },\n    \"rationale\": \"Although `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) share a high Jaccard similarity of 0.714, they encode semantically opposite capacity-management operations on the same storage type: one expands the buffer when it is too small, the other contracts it when it is too large. Collapsing them into a single generic function would require a direction parameter or a predicate closure, obscuring the intent of each call site and likely harming inlineability of these private, performance-sensitive helpers. Both records carry no restraint markers (is_test, is_mock, is_sample_app, is_codegen all false), but the structural similarity is coincidental to their opposing roles rather than evidence of true redundancy. No action is warranted.\",\n    \"evidence_quote\": \"_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Efqv5DooXWKEVTio3acf8W",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3818,
+    "output_tokens": 377,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared initializer body of `AsyncIterator.init(center:subject:onSubscribed:)` into a common internal helper \u2014 either a free function or a shared base struct/mixin \u2014 inside the `Core` package (e.g., `Shared/Core/Sources/Core/Observation/NotificationMessageSequenceSupport.swift`). Both `AsyncNotificationMessageSequence.AsyncIterator` (in `AsyncMessage.swift:126`) and `MainActorNotificationMessageSequence.AsyncIterator` (in `MainActorMessage.swift:152`) would delegate to this helper, eliminating the near-duplicate body (Jaccard 0.857). Because the two iterator types differ only in actor isolation (`MainActor` vs. unconstrained), the helper should be written as a non-isolated function so both callers can invoke it safely.\",\n      \"why_no_category_fits\": \"The two records are initializers on nested types (`AsyncIterator`) of two distinct concrete sequence types, not free functions or top-level types. `generic-parameterization` does not cleanly apply because the divergence is actor-isolation, not a type parameter. `extract-to-common` does not apply because both files already live in the same package (`Core`) and the schema requires moving to an upstream package. `default-implementation` does not apply because there is no shared protocol whose extension could host the default. `subclass-lift` does not apply because these are structs/value types, not class hierarchies. The most idiomatic Swift remedy is a shared internal helper function within the same package, which none of the named categories capture precisely.\"\n    },\n    \"rationale\": \"The two initializers `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126, `AsyncMessage.swift`) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152, `MainActorMessage.swift`) share a Jaccard similarity of 0.857, indicating nearly identical bodies. Both live in the same `Core` package under `Shared/Core/Sources/Core/Observation/`, carry identical parameter labels (`center:subject:onSubscribed:`), and have no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The sole structural difference is actor isolation implied by the `MainActor` prefix on one type, making a shared internal helper the most targeted fix without coupling production types to test or sample-app semantics.\",\n    \"evidence_quote\": \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"S\", \"constraint\": \"AsyncSequence\" }\n        ],\n        \"new_name\": \"makeNotificationAsyncIterator\",\n        \"replaces\": [\n          \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n          \"MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\"\n        ]\n      },\n      \"rationale\": \"If the two iterator types are made to conform to a common protocol, a generic factory function parameterised over the sequence type could replace both initializers. However, actor-isolation constraints on `MainActorNotificationMessageSequence` make a fully generic solution harder to express without `@Sendable` or `@MainActor` annotations that would restrict the generic's applicability, so this is the weaker option.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TYBM6Ec4WvhwvLdSj2UKHv",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3886,
+    "output_tokens": 1054,
+    "service_tier": "standard"
+  }
+}

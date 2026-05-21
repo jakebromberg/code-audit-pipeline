@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "Announcement.CodingKeys\", \"Breakpoint.CodingKeys\", \"Talkset.CodingKeys\" ... \"kind\": \"type-alias-union\" ... \"shared_field_count\": 4",
+    "rationale": "All three `CodingKeys` enums \u2014 `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` \u2014 are nested types required by Swift's `Codable` synthesis machinery. Each must be declared as a private nested enum inside its own parent type so the compiler can map that type's specific property names to JSON keys. Although the cluster reports `shared_field_count: 4` and flags them as exact duplicates in shape, the structural similarity is coincidental: each `CodingKeys` enum is semantically bound to its enclosing type (`Announcement`, `Breakpoint`, `Talkset`) and cannot be shared without breaking `Codable` conformance for each parent. Extracting or aliasing them to a common definition would decouple the key mapping from the type it serves, which is not a safe refactor. No restraint markers are present, but the domain reason alone warrants no action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 1
+}

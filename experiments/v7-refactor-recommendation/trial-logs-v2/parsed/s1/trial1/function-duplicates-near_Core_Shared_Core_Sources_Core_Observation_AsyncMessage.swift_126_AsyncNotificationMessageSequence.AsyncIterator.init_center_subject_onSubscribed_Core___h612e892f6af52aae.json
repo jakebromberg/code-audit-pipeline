@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 in `AsyncMessage.swift`) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 in `MainActorMessage.swift`) share an identical parameter signature and reside in the same `Core` package under `Shared/Core/Sources/Core/Observation/`. The Jaccard similarity of 0.857 confirms near-identical bodies, with the only meaningful difference being the actor-isolation context (`@MainActor` vs. unconstrained). The shared initialisation logic \u2014 wiring `center`, `subject`, and `onSubscribed` \u2014 can be extracted into a common internal base initializer or a shared helper within the same `Core` package, with each concrete `AsyncIterator` delegating to it. No restraint markers are present on either record, making consolidation safe.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Core/Sources/Core/Observation/AsyncMessage.swift",
+        "Shared/Core/Sources/Core/Observation/MainActorMessage.swift"
+      ],
+      "target_package": "Core",
+      "type_name": "NotificationMessageSequenceIteratorBase"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Core___h612e892f6af52aae.json",
+  "row_index": 55,
+  "trial": 1
+}

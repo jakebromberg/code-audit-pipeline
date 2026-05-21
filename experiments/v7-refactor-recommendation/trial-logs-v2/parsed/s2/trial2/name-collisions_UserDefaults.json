@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:UserDefaults",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"extension\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both participating records are unnamed `extension` declarations on `UserDefaults` within the same `Caching` package \u2014 one in `UserDefaults+WXYC.swift` at line 15 and one in `DefaultsStorage.swift` at line 47. Neither record carries any `fields_or_signature` entries, so there is no evidence of overlapping members, duplicate method bodies, or shared shape beyond the fact that both extend the same base type. All structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are null, confirming the pipeline found no concrete overlap. The signal is a name collision on the extended type only, which is a normal Swift pattern for splitting `UserDefaults` extensions across files by concern.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_UserDefaults.json",
+  "row_index": 45,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is implemented twice via `#if` branches, two separate `extension` blocks, or two distinct `@ViewBuilder` overloads. Determine which variant is canonical, then either (a) delete the redundant implementation and unify the differing logic into a single `body` using conditional expressions or helper `@ViewBuilder` sub-views, or (b) if both are intentional conditional compilations, add a comment explaining the branching rationale so the near-duplicate signal is suppressed in future analysis passes.\",\n      \"why_no_category_fits\": \"Both records are in the same file, same type, and carry the same name (`MaterialView.body`), so this is not a cross-file extraction or protocol-inheritance problem. The `fields_or_signature` arrays are empty, preventing a precise `default-implementation` or `subclass-lift` recommendation. The near-duplicate signal (Jaccard 0.83) within a single file most likely reflects a conditional-compilation split or an accidental second implementation, which requires human inspection before any mechanical refactor can be prescribed. None of the named categories (`extract-to-common`, `protocol-inheritance`, `default-implementation`, `pat-introduction`, `generic-parameterization`, `subclass-lift`, `macro-synthesis`, `composition`, `extension-consolidation`) accurately describes the intra-file, same-name deduplication action needed here.\"\n    },\n    \"rationale\": \"Both participating records are `MaterialView.body` computed properties in the single file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 60 and 192), with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The Jaccard similarity of 0.8333 confirms substantial but not identical content, suggesting one implementation diverged from the other over time rather than being an intentional specialization. Because both records share the same type name, file, and package (`Wallpaper`), the duplication is intra-type and intra-file, which no single named refactor category cleanly addresses without first understanding why two `body` implementations exist in the same `MaterialView` declaration.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MaterialView.body\\\", \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `body` implementations live in separate `extension MaterialView` blocks within the same file, consolidating them into a single extension and merging the near-duplicate logic into one `body` property is the most mechanical fix. This is a weaker recommendation because the empty `fields_or_signature` lists prevent confirming the extension-block hypothesis without reading the source.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014p17HJ7FqdkexC44d7N4iQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 948,
+    "service_tier": "standard"
+  }
+}

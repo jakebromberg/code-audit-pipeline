@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster references two files in the same package (`Shared/Wallpaper`):\n- `AccentColorControls.swift` at line 16, type `AccentColorControls`\n- `MaterialControls.swift` at line 15, type `MaterialControls`\n\nThe structural evidence shows a Jaccard similarity of 0.75 (high), but the `members` array is empty \u2014 there are no field/method lists, no context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`), and no `fields_or_signature` data to ground a specific refactor recommendation. Without member-level evidence I cannot name methods to extract, a protocol to introduce, or a default implementation to consolidate \u2014 doing so would be hallucination.\n\nBoth types live in a `DebugUI/ThemeDebugOverlay` path, which is suggestive of debug/overlay UI controls that may share shape, but I cannot confirm this from the cluster data alone.\n\nPer decision rule 6 (NO HALLUCINATION): when evidence cannot be grounded in the cluster row, recommend `no-action` with `reason_class: \"coincidental\"`.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.75 between `AccentColorControls` (AccentColorControls.swift:16) and `MaterialControls` (MaterialControls.swift:15), both in `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/`. However, the `members` array is empty, providing no field or method signatures to ground any specific refactor action. Without member-level evidence it is impossible to name shared methods, a target protocol, or a default implementation without hallucinating. The structural similarity may reflect coincidental UI-control shape (both are debug overlay controls for distinct theme properties \u2014 accent color vs. material) rather than true duplication of logic.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75\",\n    \"alternative\": null,\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012UcMa6ZmhDmPnkCxGLYd86",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3593,
+    "output_tokens": 649,
+    "service_tier": "standard"
+  }
+}

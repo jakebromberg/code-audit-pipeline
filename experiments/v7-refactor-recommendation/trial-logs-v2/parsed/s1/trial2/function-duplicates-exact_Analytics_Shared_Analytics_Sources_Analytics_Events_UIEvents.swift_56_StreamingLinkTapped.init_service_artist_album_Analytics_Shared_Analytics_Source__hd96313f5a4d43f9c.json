@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) are flagged as exact function duplicates sharing the identical `(service:artist:album:)` parameter signature within the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is actionable. However, the two types are distinct named analytics events whose type identity is load-bearing for event routing, ruling out a simple generic merge. The right fix is a shared initializer protocol or private helper within the same file, which none of the standard categories cleanly describe given the absence of a pre-existing protocol in the cluster row.",
+    "specifics": {
+      "proposed_action": "Introduce a shared private or internal helper initializer (or a common base struct/protocol with a default initializer body) within `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package that accepts `(service:artist:album:)` parameters and is delegated to by both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70). Because both types are distinct event types that must remain separate named structs/classes for analytics discrimination, full extraction or generic parameterization is inappropriate; instead, a shared initializer helper or a protocol with a default implementation providing the common `(service:artist:album:)` init body would eliminate the duplication while preserving the distinct type identities.",
+      "why_no_category_fits": "The two initializers belong to two distinct named event types (`StreamingLinkTapped` and `ExternalLinkTapped`) that must remain separate for analytics event discrimination \u2014 merging them into a single generic type would collapse semantically distinct events. `extract-to-common` does not apply because both records already live in the same file and package (`Analytics`, `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`), so there is no cross-package extraction to perform. `generic-parameterization` would collapse the two event types into one, losing type-level discrimination. `default-implementation` requires a named protocol that already exists in the cluster's source files, and none is named in the cluster row. The most idiomatic Swift remedy \u2014 a protocol with a default `init(service:artist:album:)` body, or a shared private factory \u2014 falls between `default-implementation` (no existing protocol named) and `pat-introduction` (no associated type is needed), making `other` the most accurate category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 2
+}

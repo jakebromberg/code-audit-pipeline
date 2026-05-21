@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"artwork:Image?\"], \"b\": [\"artwork:UIImage?\"]}], \"shared_field_count\": 2",
+    "rationale": "Both `NowPlayingItem` (package `AppServices`, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (package `app:iOS`, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` records sharing two fields \u2014 `playcut:Playcut` and an artwork field \u2014 but the artwork type diverges: `artwork:Image?` in `NowPlayingItem` versus `artwork:UIImage?` in `PlaycutSelection`. This divergence is precisely the structural signal for a PAT: the shared shape can be expressed as a protocol with an `associatedtype ArtworkImage` covering the platform-specific image type, while `playcut:Playcut` becomes a required concrete member. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication override applies. Introducing `PlaycutPresenting` in the `AppServices` package (already upstream of `app:iOS`) lets both the service layer and the UI layer conform with their respective image types without coupling `AppServices` to UIKit.",
+    "specifics": {
+      "associated_type": "ArtworkImage",
+      "constraints": [],
+      "new_protocol": "PlaycutPresenting",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial2/pat-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 7,
+  "trial": 2
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\",\n            \"kind\": \"computed-property\",\n            \"line\": 73,\n            \"name\": \"CGImage.pngDataCompatibility\"",
+    "rationale": "Both participating records share the identical name `CGImage.pngDataCompatibility`, identical kind `computed-property`, identical package `Artwork`, and identical file `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`, differing only in line number (73 vs 103). This is a within-file exact duplicate \u2014 the property is defined twice in the same source file. No restraint markers are set (`is_test: false`, `is_mock: false`, `is_sample_app: false`, `is_codegen: false`), so the duplication is unintentional. The fix is purely local: delete one of the two definitions and ensure all call sites in the file reference the surviving one.",
+    "specifics": {
+      "proposed_action": "Deduplicate the two identical `CGImage.pngDataCompatibility` computed-property definitions within `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 73 and 103) by retaining one definition \u2014 preferably hoisted to a private extension on `CGImage` at the top of the file or in a dedicated test-support file within the `Artwork` package \u2014 and removing the second occurrence.",
+      "why_no_category_fits": "Both records live in the same single file (`ArtworkServiceTests.swift`) and are exact duplicates of the same computed property on `CGImage`. The appropriate fix is intra-file deduplication (keep one definition, delete the other), which does not map cleanly to `extract-to-common` (no cross-package movement needed), `extension-consolidation` (there is only one file involved, not multiple extension sites to merge), or any of the protocol/generic/macro categories. The context flags show `is_test: false` on both records despite the file path containing `Tests/`, so no restraint-marker override applies; the duplication is a straightforward copy-paste artifact that should be resolved by simple deletion of the redundant definition."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkServiceTests.swift_103_CGImage.pngDataCompatibility_Artwork_Shared_Artwork_Tests_ArtworkTests_Artwor__h44f4e2cd5f662eae.json",
+  "row_index": 11,
+  "trial": 2
+}

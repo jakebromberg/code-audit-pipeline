@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:57:AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:75:AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:75:AudioEnginePlayerTests.testMultipleRenderTapCallsBeforePlay",
+    "rationale": "Both participating records are methods named `testRenderTapAfterPlayWorksNormally` (line 57) and `testMultipleRenderTapCallsBeforePlay` (line 75) in `AudioEnginePlayerTests` within `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift`. Although the pipeline flagged them as function-duplicates-exact, the two test methods exercise distinct scenarios \u2014 one verifies render-tap behaviour after play has started, the other verifies multiple render-tap calls before play \u2014 so any structural similarity in their bodies is incidental to the test setup boilerplate rather than a sign of extractable logic. Additionally, all context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are recorded as `false`, yet the file path (`Tests/MP3StreamerTests/`) and the `test`-prefixed method names make clear these are XCTest cases; merging or abstracting them would obscure the distinct intent of each scenario without meaningful reduction in complexity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_57_AudioEnginePlayerTests.testRenderTapAfterPlayWorksNormally_Playback_S__h093b5dbf5fd520e0.json",
+  "row_index": 18,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:FittingText+PlaylistSectionHeader+TextRowView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"shared_field_count\": 2",
+    "rationale": "All three records \u2014 `PlaylistSectionHeader` in `PlaylistView.swift`, `TextRowView` in `TextRowView.swift`, and `FittingText` in `InfoDetailView.swift` \u2014 are `type-alias-object` kinds within the same `app:iOS` package and share 2 fields per the `shared_field_count` evidence, indicating they are exact structural duplicates of the same underlying SwiftUI view shape. Because all three live in `app:iOS` there is no cross-package extraction needed; the right move is to consolidate them into a single canonical type alias (retaining the most semantically descriptive name, `FittingText`) in a shared Views utility file within `app:iOS`, and replace the other two declarations with imports or direct references to that single definition. No restraint markers are present on any record, so no no-action override applies.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Views/Playlist/PlaylistView.swift",
+        "WXYC/iOS/Views/Playlist/Playcut Detail/TextRowView.swift",
+        "WXYC/iOS/Views/Info Detail/InfoDetailView.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "FittingText"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_FittingText_PlaylistSectionHeader_TextRowView.json",
+  "row_index": 14,
+  "trial": 1
+}

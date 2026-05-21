@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence.AsyncIterator+MainActorNotificationMessageSequence.AsyncIterator\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the structural signal is limited to the alias declaration shape itself rather than any substantive shared logic. The two types \u2014 `AsyncNotificationMessageSequence.AsyncIterator` in `AsyncMessage.swift` and `MainActorNotificationMessageSequence.AsyncIterator` in `MainActorMessage.swift` \u2014 are nested type aliases that exist to satisfy the `AsyncIteratorProtocol` requirement of their respective parent sequence types, which encode distinct concurrency semantics (main-actor-isolated vs. unconstrained). Collapsing or extracting them would conflate those distinct concurrency domains without any meaningful deduplication benefit. The `shared_field_count: 1` and `differing_slots: null` further indicate the overlap is purely structural coincidence at the alias level.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"fields_or_signature\\\": []\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Xy1SqsFGhCEDS9km4bEMZn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3792,
+    "output_tokens": 331,
+    "service_tier": "standard"
+  }
+}

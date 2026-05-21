@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:QualityTrend+ThermalDirection",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"QualityTrend\" ... \"name\": \"ThermalDirection\" ... \"kind\": \"type-alias-union\" ... \"shared_field_count\": 3 ... \"differing_slots\": null, \"jaccard\": null",
+    "rationale": "Both `QualityTrend` and `ThermalDirection` are `type-alias-union` declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift`) within the same package (`Wallpaper`), at lines 191 and 208 respectively. Although the structural analysis reports `shared_field_count: 3`, the two names encode distinct domain concepts \u2014 quality trending direction versus thermal state direction \u2014 whose structural coincidence is a consequence of both being small union type-aliases over a similarly sized case set, not a sign of unintended duplication. No restraint markers are present, but merging or abstracting two semantically distinct type aliases into a single shared type would conflate unrelated domain vocabulary and reduce readability without meaningful code-size benefit. The `differing_slots` and `jaccard` fields are both `null`, limiting the evidence available to confirm true identity rather than mere shape similarity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_QualityTrend_ThermalDirection.json",
+  "row_index": 33,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DeviceContextProtocol+MockDeviceContext",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift\", \"kind\": \"type-alias-object\"",
+    "rationale": "The cluster pairs `DeviceContextProtocol` (an interface in `Shared/Wallpaper/Sources/Wallpaper/Throttling/DeviceContext.swift`) with `MockDeviceContext` (a type-alias-object in `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift`). Although neither record carries a restraint flag (all context flags are false), the two records are structurally distinct kinds \u2014 one is a protocol interface and the other is a type alias that almost certainly aliases or conforms to that protocol for test purposes. The `shared_field_count` of 4 reflects the mock mirroring the protocol's surface, which is the expected and intentional relationship between a protocol and its test double. No consolidation is warranted because collapsing a protocol definition and its mock alias would conflate production API with test infrastructure.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_DeviceContextProtocol_MockDeviceContext.json",
+  "row_index": 38,
+  "trial": 1
+}

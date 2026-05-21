@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-struct-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.93,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"storage:[String: CacheEntry]\"], \"b\": [\"storage:[Int: CacheEntry]\"]}], \"shared_field_count\": 4",
+    "rationale": "Both `StringCache` and `IntCache` in the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[_: CacheEntry]` \u2014 and differ only in the key type of the `storage` dictionary (`[String: CacheEntry]` vs `[Int: CacheEntry]`). The structural evidence confirms exactly one differing slot and a shared field count of 4, making this a textbook candidate for a single generic struct parameterised over `Key: Hashable`. Both records carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so there is no reason to hold back. Replacing both with `Cache<Key: Hashable>` eliminates the duplication entirely within the same `Caching` package and makes the type immediately extensible to any future key type (e.g., `UUID`, `URL`) without further duplication.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "Cache",
+      "replaces": [
+        "StringCache",
+        "IntCache"
+      ],
+      "type_params": [
+        {
+          "constraint": "Hashable",
+          "name": "Key"
+        }
+      ]
+    }
+  },
+  "query": "generic-struct-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-struct-candidates_Caching_Shared_Caching_Sources_Caching__Plant_IntCache.swift_13_IntCache_Caching_Shared_Caching_Sources_Caching__Plant_StringCache.swift_13_StringCache.json",
+  "row_index": 1,
+  "trial": 1
+}

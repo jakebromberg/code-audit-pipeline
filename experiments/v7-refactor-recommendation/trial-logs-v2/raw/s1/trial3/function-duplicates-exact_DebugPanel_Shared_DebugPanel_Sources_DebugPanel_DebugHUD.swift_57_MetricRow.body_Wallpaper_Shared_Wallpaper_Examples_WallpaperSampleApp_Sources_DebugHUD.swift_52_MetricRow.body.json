@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nBoth records have all context flags set to `false` (is_test, is_mock, is_sample_app, is_codegen). However, one of the files lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory per the decision rules. The decision rules state that a record sitting under `Examples/` or `SampleApp/` triggers `reason_class: \"sample-app-mirror\"` regardless of the `is_sample_app` flag value. This is a mixed cluster (one production record in `DebugPanel`, one sample-app-path record in `Wallpaper`), so the restraint marker dominates.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The canonical pattern here is that the WallpaperSampleApp has copied or mirrored the DebugPanel's MetricRow.body computed property for local demonstration purposes. Lifting the shared implementation into a common location would couple the production DebugPanel package to sample-app semantics, which is the exact coupling the restraint rule is designed to prevent. No refactor is warranted unless the sample-app copy is confirmed to be a leftover prototype slated for deletion.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BKFUo18DGcw5XztMjuZMEZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3853,
+    "output_tokens": 587,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "Both `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are `type-alias-object` declarations in the same package (`Core`) with empty `fields_or_signature` lists. Type aliases carry no implementation body \u2014 they are thin rename bindings, and the structural similarity (shared_field_count: 3 with no differing_slots reported) reflects the alias machinery rather than duplicated logic. The two names encode meaningfully distinct concepts: one is scoped to `@MainActor` dispatch semantics (`MainActorNotificationMessageSequence` in `MainActorMessage.swift`) and the other is a general async sequence alias (`AsyncNotificationMessageSequence` in `AsyncMessage.swift`). Collapsing them would erase that semantic distinction without removing any real duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_AsyncNotificationMessageSequence_MainActorNotificationMessageSequence.json",
+  "row_index": 31,
+  "trial": 1
+}

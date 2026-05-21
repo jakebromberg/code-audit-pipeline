@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+    "rationale": "Both participating records are the function `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (package `Caching`), at lines 45 and 92 respectively, with a Jaccard similarity of 0.70. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so intentional-duplication restraint rules do not apply. The near-duplicate signal within a single file is a strong indicator of accidental drift between two overloads or a copy-paste that was never reconciled. Because `fields_or_signature` is empty for both records, the precise divergence cannot be determined from the cluster row alone, making a concrete generic-parameterization or extract-to-common prescription unsafe without manual inspection.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` function bodies at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` in the `Caching` package. They share a Jaccard similarity of 0.70 and reside in the same file, strongly suggesting one is a near-duplicate of the other with minor parameter or behaviour variation. Determine whether the divergence is intentional (e.g., one overload handles an optional key, the other a non-optional key) or accidental drift. If accidental, collapse the two into a single implementation with a shared private helper that encodes the common logic, leaving at most one public overload that delegates to it. If intentional, add a brief inline comment on each function explaining why the two overloads must remain distinct, so future readers do not re-flag them.",
+      "why_no_category_fits": "Both records are in the same file and the same package (`Caching`), so `extract-to-common` (which requires moving code to an upstream package) does not apply. There is no protocol, conformer, or associated-type structure involved, ruling out `protocol-inheritance`, `default-implementation`, and `pat-introduction`. The records are free functions, not structs or classes, so `subclass-lift`, `composition`, and `extension-consolidation` do not fit. `macro-synthesis` is inapplicable because the duplication is in function bodies, not member synthesis. `generic-parameterization` could theoretically unify two overloads, but `fields_or_signature` is empty for both records, so there is no evidence of differing type parameters to generalize over \u2014 the cluster row does not supply enough information to safely prescribe a generic signature. The most honest recommendation is to flag the in-file near-duplicate for manual review and inline consolidation."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 2
+}

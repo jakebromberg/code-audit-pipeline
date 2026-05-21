@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:DiscogsMarkupParser.ResolvedToken+ResolvedBioToken",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"shared_field_count\": 9",
+    "rationale": "Both `DiscogsMarkupParser.ResolvedToken` and `ResolvedBioToken` are `type-alias-union` kinds in the same `Metadata` package with `shared_field_count: 9` and no differing slots, indicating they are structurally identical. The nested form `DiscogsMarkupParser.ResolvedToken` suggests it was originally scoped to the parser but has since been duplicated as a top-level alias in `ResolvedBioToken.swift`. Since both records carry all context flags as `false`, there is no restraint marker preventing consolidation. The canonical definition should be promoted to a top-level type (e.g., `ResolvedToken`) within the `Metadata` package, and `ResolvedBioToken.swift` should be removed, with any references to `ResolvedBioToken` updated to use the unified type.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "ResolvedToken"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_DiscogsMarkupParser.ResolvedToken_ResolvedBioToken.json",
+  "row_index": 25,
+  "trial": 1
+}

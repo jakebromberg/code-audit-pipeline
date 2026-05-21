@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:HandleINIntent+SiriIntentDonated",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": [], \"shared_field_count\": 1",
+    "rationale": "Both `HandleINIntent` and `SiriIntentDonated` are `type-alias-object` declarations residing in the same file (`Shared/Analytics/Sources/Analytics/Events/IntentEvents.swift`) within the same `Analytics` package. Although the structural signal reports `shared_field_count: 1` and flags them as exact duplicates, type aliases by definition carry no fields of their own \u2014 the shared count most likely reflects an empty or trivially identical underlying shape rather than meaningful duplicated logic. The two names encode distinct domain events (handling an intent vs. donating one to Siri), so any structural coincidence is semantic-only and collapsing them would destroy that distinction. No restraint markers are present, but the coincidental-shape reason dominates.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_HandleINIntent_SiriIntentDonated.json",
+  "row_index": 40,
+  "trial": 2
+}

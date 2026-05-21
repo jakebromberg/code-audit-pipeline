@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) carry all-false context flags, so no restraint marker applies. However, the names encode clearly distinct domain roles: `MainActorNotificationMessage` is a production actor-bound message type, while `MockNotificationMessage` \u2014 residing in the `CoreTesting` sub-package and bearing the `_Plant_Mock` filename prefix \u2014 is a test-support double. Their structural coincidence (3 shared fields, empty `fields_or_signature` list) is consistent with both types satisfying the same narrow interface contract rather than representing unintentional duplication. Merging or extracting them would couple production semantics to test-support semantics without clear benefit.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VUnKKsXLdbhQzqXbUC7B2j",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3763,
+    "output_tokens": 334,
+    "service_tier": "standard"
+  }
+}

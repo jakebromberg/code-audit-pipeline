@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Announcement.CodingKeys\", \"Breakpoint.CodingKeys\", \"Talkset.CodingKeys",
+    "rationale": "All three `CodingKeys` enums \u2014 `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` \u2014 are nested types required by Swift's `Codable` synthesis machinery. Each must be declared as a private nested enum inside its own parent type to control which keys participate in encoding/decoding for that specific type. Although the cluster reports `shared_field_count: 4` and flags them as exact duplicates in shape, the structural coincidence is an artifact of Swift's `CodingKeys` protocol requirement rather than a sign of extractable shared logic. Merging or aliasing them would break the `Codable` conformance of each parent type (`Announcement`, `Breakpoint`, `Talkset`) and is not semantically meaningful \u2014 the keys encode domain-specific field names that happen to overlap in count but belong to unrelated model types within the `Playlist` package.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 1
+}

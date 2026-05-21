@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+    "rationale": "Both participating records live in test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the context flags do not set `is_test: true`, the file paths unambiguously place both declarations inside `Tests/` directories, making them test-local mock error types. Each test target independently defines `MockDiscogsEntityResolver.MockError` to satisfy its own mock resolver fixture; consolidating them would couple two otherwise-independent test targets and risk leaking test-only types into shared production code. No action is warranted.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockDiscogsEntityResolver.MockError_MockDiscogsEntityResolver.MockError.json",
+  "row_index": 46,
+  "trial": 2
+}

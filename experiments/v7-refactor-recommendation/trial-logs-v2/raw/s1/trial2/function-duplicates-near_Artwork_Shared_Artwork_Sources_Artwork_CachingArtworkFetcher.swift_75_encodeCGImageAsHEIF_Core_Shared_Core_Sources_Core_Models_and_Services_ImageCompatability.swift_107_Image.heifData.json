@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two near-duplicate HEIF-encoding routines \u2014 `encodeCGImageAsHEIF` in package `Artwork` (CachingArtworkFetcher.swift:75) and `Image.heifData` in package `Core` (ImageCompatability.swift:107) \u2014 with a Jaccard similarity of 0.71, indicating substantial shared logic. `Core` is the natural canonical home because it already owns the image-compatibility surface (`ImageCompatability.swift`) and `Artwork` depends on `Core` (not the reverse), satisfying the upstream-of-every-consumer constraint. The `encodeCGImageAsHEIF` free function in `Artwork` should be deleted and its call sites redirected to `Image.heifData` in `Core`, eliminating the duplication without introducing a new package.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Keep `Image.heifData` in `Core` as-is and replace `encodeCGImageAsHEIF` in `CachingArtworkFetcher.swift` with a thin wrapper that delegates to `Image.heifData`, rather than deleting the `Artwork`-local function entirely. This preserves any `Artwork`-specific call-site ergonomics (e.g., a CGImage-typed parameter vs. an Image-typed one) while still centralising the encoding logic.\",\n        \"why_no_category_fits\": \"This is a delegation/wrapper pattern rather than a pure extraction, because the two functions may differ in their parameter types (CGImage vs. Image) even though their bodies are near-identical. If the signatures are truly incompatible, a full extract-to-common would require an adapter layer, making a thin-wrapper approach more pragmatic.\"\n      },\n      \"rationale\": \"If the parameter types of `encodeCGImageAsHEIF` (CGImage) and `Image.heifData` (Image) are not directly interchangeable, a full consolidation into `Core` may require a bridging conversion. In that case, keeping `encodeCGImageAsHEIF` as a one-line wrapper calling `Image.heifData` after the necessary conversion avoids touching `Core`'s public API while still removing the duplicated encoding logic.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014PHzeBjwQCvsmDRz8AKu6x",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 748,
+    "service_tier": "standard"
+  }
+}

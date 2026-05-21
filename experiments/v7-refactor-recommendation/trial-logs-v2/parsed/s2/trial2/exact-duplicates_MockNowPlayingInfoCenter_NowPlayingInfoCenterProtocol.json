@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockNowPlayingInfoCenter+NowPlayingInfoCenterProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift\", \"kind\": \"type-alias-object\"",
+    "rationale": "The two participating records \u2014 `NowPlayingInfoCenterProtocol` (an interface in `WXYC/iOS/NowPlayingInfoCenterManager.swift`) and `MockNowPlayingInfoCenter` (a type-alias-object in `WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift`) \u2014 are structurally distinct kinds: one is a protocol declaration and the other is a type alias that presumably conforms to or wraps it for testing purposes. The `shared_field_count` of 1 with null Jaccard and null differing_slots indicates the overlap is minimal and likely reflects the alias relationship rather than true duplication. Although neither record carries a restraint flag (all context flags are false), the file path `WXYCTests/NowPlayingInfoCenterManagerTests.swift` places `MockNowPlayingInfoCenter` squarely in the test target, making this a deliberate test-support alias of the production protocol rather than an accidental duplicate. No refactoring action is warranted because the two records serve different roles \u2014 protocol definition vs. test-side alias \u2014 and collapsing them would couple production and test semantics.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockNowPlayingInfoCenter_NowPlayingInfoCenterProtocol.json",
+  "row_index": 47,
+  "trial": 2
+}

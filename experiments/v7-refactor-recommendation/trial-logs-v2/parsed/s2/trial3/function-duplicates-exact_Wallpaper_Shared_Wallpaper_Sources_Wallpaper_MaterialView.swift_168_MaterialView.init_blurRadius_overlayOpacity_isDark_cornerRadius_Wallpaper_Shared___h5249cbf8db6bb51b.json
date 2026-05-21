@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+    "rationale": "The cluster surfaces two records with the identical name `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 35 and 168 respectively. No restraint markers are set on either record (all context flags are false), so this is genuine unintentional duplication. Because both occurrences live in the same file and the same type, the correct remedy is straightforward deletion of the redundant declaration rather than any cross-boundary refactoring pattern. Swift would not compile two identically-signed initializers on the same type, so one of these is either dead code or the file contains a second nested type or extension of `MaterialView` that should be collapsed.",
+    "specifics": {
+      "proposed_action": "Remove the duplicate initializer declaration at line 168 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, retaining only the one at line 35. Both declarations carry the identical signature `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` in the same file and same package (`Wallpaper`). Verify that the body at line 168 is either identical to or fully subsumed by the body at line 35 before deletion; if the two bodies differ in any meaningful way, consolidate the logic into the line-35 declaration and delete the line-168 copy.",
+      "why_no_category_fits": "Both records are the same initializer in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at different line numbers \u2014 this is an intra-file exact duplicate, not a cross-file or cross-package duplication. None of the action categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) apply because there is nothing to extract, generalise, or lift across a boundary; the fix is simply to delete one of the two identical declarations within the same type in the same file."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 3
+}

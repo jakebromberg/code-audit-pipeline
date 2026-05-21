@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` and `ShaderDirectiveControlsDisclosure.humanReadableName` share a method name and a high Jaccard similarity (0.8), but the cluster provides no `fields_or_signature` entries for either record, making it impossible to verify that their implementations are structurally equivalent rather than coincidentally named. The two host types \u2014 `ShaderDirectiveStore` (a data/core type in `Core/`) and `ShaderDirectiveControlsDisclosure` (a UI disclosure type in `DebugUI/ThemeDebugOverlay/`) \u2014 serve distinct domain roles, and a `humanReadableName` helper is a common enough pattern that parallel independent implementations are expected. Without concrete signature evidence, introducing a shared generic function risks coupling unrelated domain concepts on the basis of a name coincidence alone.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 0\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"ShaderDirective\",\n        \"method\": \"humanReadableName\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared `ShaderDirective` protocol (or similar) already exists in the `Wallpaper` package and both types conform to it, a protocol extension default implementation of `humanReadableName` would be the idiomatic Swift consolidation point. However, no such protocol is evidenced in the cluster row, so this alternative is speculative and should only be pursued after inspecting the actual method bodies.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UAEPnVkAj4DjrfVwvE4Ann",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3897,
+    "output_tokens": 642,
+    "service_tier": "standard"
+  }
+}

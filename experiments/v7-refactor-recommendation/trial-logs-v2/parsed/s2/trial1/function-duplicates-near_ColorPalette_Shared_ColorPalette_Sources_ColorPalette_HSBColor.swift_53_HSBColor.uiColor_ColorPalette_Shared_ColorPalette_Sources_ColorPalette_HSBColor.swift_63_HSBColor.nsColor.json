@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+    "rationale": "Both `HSBColor.uiColor` and `HSBColor.nsColor` are computed properties in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` within the `ColorPalette` package. Despite a Jaccard similarity of 0.71, these two properties are intentionally distinct: `uiColor` targets UIKit (iOS/tvOS) and `nsColor` targets AppKit (macOS). Their structural similarity is a natural consequence of both converting the same HSB color model to a platform color type \u2014 the parallel shape is load-bearing platform-specific behavior, not accidental duplication. Merging or abstracting them would obscure the platform boundary and likely require conditional compilation that is harder to read than the current side-by-side declarations.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 1
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "The two initializers `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126, `AsyncMessage.swift`) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152, `MainActorMessage.swift`) share a Jaccard similarity of 0.857, indicating nearly identical bodies. Both live in the same `Core` package under `Shared/Core/Sources/Core/Observation/`, carry identical parameter labels (`center:subject:onSubscribed:`), and have no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The sole structural difference is actor isolation implied by the `MainActor` prefix on one type, making a shared internal helper the most targeted fix without coupling production types to test or sample-app semantics.",
+    "specifics": {
+      "proposed_action": "Extract the shared initializer body of `AsyncIterator.init(center:subject:onSubscribed:)` into a common internal helper \u2014 either a free function or a shared base struct/mixin \u2014 inside the `Core` package (e.g., `Shared/Core/Sources/Core/Observation/NotificationMessageSequenceSupport.swift`). Both `AsyncNotificationMessageSequence.AsyncIterator` (in `AsyncMessage.swift:126`) and `MainActorNotificationMessageSequence.AsyncIterator` (in `MainActorMessage.swift:152`) would delegate to this helper, eliminating the near-duplicate body (Jaccard 0.857). Because the two iterator types differ only in actor isolation (`MainActor` vs. unconstrained), the helper should be written as a non-isolated function so both callers can invoke it safely.",
+      "why_no_category_fits": "The two records are initializers on nested types (`AsyncIterator`) of two distinct concrete sequence types, not free functions or top-level types. `generic-parameterization` does not cleanly apply because the divergence is actor-isolation, not a type parameter. `extract-to-common` does not apply because both files already live in the same package (`Core`) and the schema requires moving to an upstream package. `default-implementation` does not apply because there is no shared protocol whose extension could host the default. `subclass-lift` does not apply because these are structs/value types, not class hierarchies. The most idiomatic Swift remedy is a shared internal helper function within the same package, which none of the named categories capture precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Core___h612e892f6af52aae.json",
+  "row_index": 55,
+  "trial": 3
+}

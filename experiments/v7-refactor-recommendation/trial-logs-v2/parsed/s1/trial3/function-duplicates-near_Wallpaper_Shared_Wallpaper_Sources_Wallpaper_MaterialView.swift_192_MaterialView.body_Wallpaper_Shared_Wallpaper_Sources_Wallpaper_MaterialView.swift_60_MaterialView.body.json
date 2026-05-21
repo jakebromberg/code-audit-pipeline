@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"MaterialView.body\", \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 60 ... \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both participating records are `MaterialView.body` computed properties in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192, within the same `Wallpaper` package \u2014 no cross-file or cross-package boundary exists. The Jaccard similarity of 0.8333 indicates the two bodies are nearly identical but not exact, suggesting a conditional compilation branch or an accidental duplication. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional production code. The correct fix is an intra-file refactor: extract the shared view-building logic into a private `@ViewBuilder` helper and unify or remove the redundant `body` definition.",
+    "specifics": {
+      "proposed_action": "Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates within the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is defined twice \u2014 once for each branch of a `#if` compiler condition, a `where` clause, or an accidental copy-paste. Determine which definition is authoritative, extract any shared view-building logic into a private helper method or `@ViewBuilder` function within the same file, and remove or consolidate the redundant definition.",
+      "why_no_category_fits": "Both records are the same computed property (`MaterialView.body`) in the same file and package, so `extract-to-common` (cross-package extraction) does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved \u2014 `body` is a SwiftUI `View` protocol requirement and cannot be lifted to a default implementation without knowing the concrete view tree. The duplication is intra-file structural near-duplication of a single property, best resolved by an inline refactor (private helper extraction) rather than any of the cross-type or cross-package categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "Although both records carry is_sample_app=false, the second record's file path \u2014 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' \u2014 sits under the 'Examples/WallpaperSampleApp/' directory, which the decision rules treat as a sample-app-mirror restraint marker regardless of the flag value. This is the canonical mixed-cluster pattern: one production method in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel) and one copy embedded in a sample application. Extracting the shared implementation into a common package would couple production DebugPanel semantics to a demonstration artifact, which is the exact coupling the restraint rule is designed to prevent. The correct resolution, if the duplication is unwanted, is to delete the copy in DebugHUD.swift and have the sample app import DebugPanel directly \u2014 not to lift shared code.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_148_DebugMetricsProvider.measureMemoryUsage_Wallpaper_Shared_Wallpaper_Exa__h4d6f1f1683826193.json",
+  "row_index": 15,
+  "trial": 3
+}

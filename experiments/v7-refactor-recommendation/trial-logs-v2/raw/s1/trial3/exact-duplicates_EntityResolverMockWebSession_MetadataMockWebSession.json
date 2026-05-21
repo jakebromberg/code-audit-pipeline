@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records reside under test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift` (line 79, `MetadataMockWebSession`) and `Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift` (line 72, `EntityResolverMockWebSession`) \u2014 within the `Metadata` package's test target. Although the context flags do not set `is_test: true`, the file paths unambiguously place both type-alias objects inside a `Tests/MetadataTests/` directory, making them test fixtures. Merging or lifting these aliases would couple two distinct test suites (`PlaycutMetadataServiceCachingTests` and `DiscogsAPIEntityResolverCachingTests`) through a shared symbol, reducing test isolation for no production benefit. The structural signal of `shared_field_count: 2` on empty `fields_or_signature` lists indicates the similarity is superficial (both are bare type aliases), not a meaningful abstraction opportunity.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QM8yTC5UQZj7N4ooiJXHWY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3799,
+    "output_tokens": 390,
+    "service_tier": "standard"
+  }
+}

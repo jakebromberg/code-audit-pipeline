@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"ArtworkImage\", \"constraint\": null }\n      ],\n      \"new_name\": \"PlaycutPresentation\",\n      \"replaces\": [\"NowPlayingItem\", \"PlaycutSelection\"]\n    },\n    \"rationale\": \"Both `NowPlayingItem` (in `AppServices`) and `PlaycutSelection` (in `app:iOS`) are `type-alias-object` structs with an identical `playcut:Playcut` field and a single differing slot: `artwork:Image?` vs `artwork:UIImage?`. The only structural divergence is the platform image type (`Image` for SwiftUI vs `UIImage` for UIKit), which is a textbook candidate for a single generic struct parameterised on the artwork type. Introducing `PlaycutPresentation<ArtworkImage>` in `AppServices` (the upstream package) with `var artwork: ArtworkImage?` and `var playcut: Playcut` would let the iOS app layer instantiate `PlaycutPresentation<UIImage>` and any SwiftUI layer use `PlaycutPresentation<Image>`, eliminating the duplication without coupling the shared package to a platform-specific image type. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint override is needed.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"artwork:Image?\\\"], \\\"b\\\": [\\\"artwork:UIImage?\\\"]}], \\\"shared_field_count\\\": 2\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"AppServices\",\n        \"type_name\": \"PlaycutPresentation\",\n        \"remove_from\": [\n          \"Shared/AppServices/Sources/AppServices/NowPlayingService.swift\",\n          \"WXYC/iOS/Views/Playlist/PlaylistView.swift\"\n        ]\n      },\n      \"rationale\": \"If the codebase commits to a single image type (e.g., always `UIImage` on iOS), a non-generic concrete struct `PlaycutPresentation` could be extracted directly into `AppServices` and both existing types removed. This is simpler than a generic but sacrifices cross-platform flexibility and hard-codes a UIKit dependency into the shared package, making it the weaker option.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CbhWXj5DkVihCHofWQVVbe",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3904,
+    "output_tokens": 712,
+    "service_tier": "standard"
+  }
+}

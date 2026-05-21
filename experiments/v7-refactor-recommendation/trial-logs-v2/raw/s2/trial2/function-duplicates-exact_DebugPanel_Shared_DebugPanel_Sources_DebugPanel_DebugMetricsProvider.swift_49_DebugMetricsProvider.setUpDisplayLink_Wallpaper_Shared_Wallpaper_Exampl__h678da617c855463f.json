@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory \u2014 a restraint marker under the decision rules (\"sits under Examples/ or SampleApp/\"). Even though `is_sample_app` is explicitly `false` on the record, the path-based rule (\"sits under Examples/ or SampleApp/\") is an independent restraint signal. The decision rules state that a record sitting under `Examples/` triggers `reason_class: \"sample-app-mirror\"` regardless of the flag value.\n\nThe canonical restraint pattern applies: one record is production (`DebugPanel`), the other is in a sample-app directory. Lifting the production code based on a cluster that includes a sample-app-mirror record would couple production semantics to demonstration code.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory \u2014 a path-based sample-app restraint marker. The other record is a production method in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`). Per the decision rules, a mixed cluster where one record is a sample-app file dominates action signals: extracting or consolidating the shared `setUpDisplayLink` implementation would couple the production `DebugPanel` package to demonstration semantics. The duplication is intentional \u2014 the sample app replicates the display-link setup locally rather than depending on the production debug panel.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01T6eHzDA9ya8FyFKvQwhDaj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3881,
+    "output_tokens": 632,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster has:\n- `cluster_id` referencing two types: `Announcement.CodingKeys` in `Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift:34` and `ShowMarker` in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:117`\n- `members: []` \u2014 no participating records with field lists, context flags, or kind information\n- All structural evidence fields are `null` (no jaccard, no shared_field_count, no differing_slots)\n- Query type is `subset-pairs`\n\nWithout any populated `members` records, I cannot ground a recommendation in literal field lists, context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`), or method signatures. The cluster_id string alone tells me the two types are in the same package (`Shared/Playlist`) and that one is a `CodingKeys` enum (a codegen-adjacent nested type synthesized for `Codable` conformance) and the other is `ShowMarker`, but I cannot verify shared members, constraints, or intent without the actual record data. Inventing evidence would violate rule 6.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Playlist:Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift:34:Announcement.CodingKeys__Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:117:ShowMarker\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster's `members` array is empty and every structural evidence field (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) is null, providing no grounded basis for any action recommendation. The cluster_id names `Announcement.CodingKeys` (a nested `Codable`-synthesized enum in `_Plant_Announcement.swift:34`) and `ShowMarker` (in `PlaylistEntry.swift:117`), but without populated field lists, context flags, or a non-null jaccard score, any structural overlap between these two types cannot be verified from the supplied data. Recommending a refactor without that evidence would require hallucination, which is prohibited by the decision rules.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": null,\n    \"confidence\": 0.05\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AUtM92wj9WE4cSca8X7Kzv",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3549,
+    "output_tokens": 620,
+    "service_tier": "standard"
+  }
+}

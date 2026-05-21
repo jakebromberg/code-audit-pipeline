@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"All four records are type-alias-objects named `SequentialMockSession` nested inside different test-suite types (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`) within the same test file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`. Although the context flags do not carry `is_test=true` (the pipeline appears to have mis-classified them), the file path `Tests/ArtworkTests/ArtworkFetcherTests.swift`, the enclosing type names ending in `Tests`, and the `SequentialMockSession` naming convention all unambiguously identify these as test-fixture type aliases. The `fields_or_signature` list is empty for every record, so there is no shared implementation body to consolidate. Merging them into a single shared alias would couple the three independent test suites and obscure which mock session belongs to which service under test.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01G12kmohz9wg7AA5nXLEoB5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4140,
+    "output_tokens": 400,
+    "service_tier": "standard"
+  }
+}

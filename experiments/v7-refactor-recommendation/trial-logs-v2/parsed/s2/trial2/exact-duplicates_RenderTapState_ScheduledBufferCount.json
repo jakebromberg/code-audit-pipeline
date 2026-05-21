@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:RenderTapState+ScheduledBufferCount",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"name\": \"ScheduledBufferCount\", \"kind\": \"type-alias-object\" ... \"name\": \"RenderTapState\", \"kind\": \"type-alias-object\" ... \"shared_field_count\": 1",
+    "rationale": "Both participating records \u2014 `ScheduledBufferCount` (line 381) and `RenderTapState` (line 418) \u2014 are `type-alias-object` declarations living in the same file (`Shared/Playback/Sources/MP3Streamer/Playback/AudioEnginePlayer.swift`) within the same package (`Playback`). The cluster reports `shared_field_count: 1` with `jaccard: null` and `differing_slots: null`, indicating the structural overlap is limited to a single shared slot (likely the underlying aliased type) rather than meaningful semantic duplication. Type aliases for distinct audio-engine concepts (`RenderTapState` vs. `ScheduledBufferCount`) that happen to alias the same underlying type are intentionally separate names encoding different domain roles; collapsing or extracting them would obscure intent without reducing real duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_RenderTapState_ScheduledBufferCount.json",
+  "row_index": 43,
+  "trial": 2
+}

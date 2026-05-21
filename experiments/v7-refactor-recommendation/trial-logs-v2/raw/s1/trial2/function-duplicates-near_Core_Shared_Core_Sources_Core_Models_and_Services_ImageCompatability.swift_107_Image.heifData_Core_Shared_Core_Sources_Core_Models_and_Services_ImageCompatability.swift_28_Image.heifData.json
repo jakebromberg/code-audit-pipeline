@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"Image\",\n      \"consolidate_from\": [\n        \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n      ]\n    },\n    \"rationale\": \"Both participating records are the method `Image.heifData` in the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` within the `Core` package, at lines 28 and 107 respectively. A Jaccard similarity of 0.75 between two declarations of the same name in the same file strongly indicates one is a near-duplicate of the other \u2014 likely a copy-paste or a platform-conditional variant that was never consolidated. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The correct action is to collapse the two `Image.heifData` implementations into a single canonical definition within `ImageCompatability.swift`, removing the redundant declaration at line 107 (or line 28 if the later version is the more correct one).\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"Image.heifData\\\", \\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 28 ... \\\"name\\\": \\\"Image.heifData\\\", \\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 107\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the two `Image.heifData` declarations are intentionally separated by a compile-time conditional (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`) and the Jaccard similarity of 0.75 reflects shared boilerplate rather than true duplication, then the divergence is load-bearing and no consolidation should be attempted without first auditing the surrounding `#if` blocks in `ImageCompatability.swift`.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Vw2jws2tk9C9fZ1GYoMkKW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3815,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

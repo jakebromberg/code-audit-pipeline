@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:PauseWXYC+WhatsPlayingOnWXYC",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"PauseWXYC\" ... \"name\": \"WhatsPlayingOnWXYC\" ... \"kind\": \"type-alias-object\" ... \"shared_field_count\": 2",
+    "rationale": "The two records, `PauseWXYC` in `Shared/Intents/Sources/Intents/PauseWXYC.swift` (package `Intents`) and `WhatsPlayingOnWXYC` in `WXYC/iOS/Intents.swift` (package `app:iOS`), carry different names and almost certainly represent distinct Siri/App Intents actions \u2014 one for pausing playback and one for querying what is currently playing. Despite the `shared_field_count: 2` structural signal, the divergent names strongly suggest these are separate domain concepts whose structural similarity is coincidental (both are `type-alias-object` wrappers over an intent type with the same small field shape). Merging or extracting them would conflate two semantically unrelated intent actions. No restraint markers are present, but the coincidental-shape rule applies: the structural overlap does not imply shared semantics.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_PauseWXYC_WhatsPlayingOnWXYC.json",
+  "row_index": 27,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster_id encodes:\n- `subset-pairs` signal\n- Record 1: `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback` \u2014 this is inside `AnalyticsTesting`, strongly suggesting a test/mock fixture context\n- Record 2: `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent`\n\nThe `members` array is empty and all `structural_evidence` fields are null, meaning there is no field-level evidence to ground an action recommendation. Additionally, the first record's path contains `AnalyticsTesting` and the type name contains `Mock`, both of which are restraint markers indicating a mock/test fixture. Per decision rule 1, any participating record with `is_mock=true` or test-fixture characteristics dominates and requires `no-action`.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.StoppedEventProxy__Playback` located in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift`, whose path contains `AnalyticsTesting` and whose type name contains `Mock` \u2014 both canonical restraint markers indicating a deliberate test/mock fixture. Per the restraint-marker rule, this dominates any action signal. Furthermore, the `members` array is empty and all `structural_evidence` fields (`differing_slots`, `jaccard`, `shared_field_count`, `shared_ancestor`) are null, providing zero field-level evidence to ground any refactor action even if the restraint marker were absent.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016T5Wt3DNrLB7jYzB2ENEvm",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3568,
+    "output_tokens": 621,
+    "service_tier": "standard"
+  }
+}

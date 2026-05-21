@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster has:\n- `cluster_id` referencing two records:\n  1. `Analytics` package, `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97`, type `MockStructuredAnalytics.CPUSessionEventProxy+Playback`, context: this is in `AnalyticsTesting` \u2014 strongly suggesting a test/mock fixture\n  2. `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272`, type `CPUSessionEvent`\n- `members: []` \u2014 no field/method detail provided\n- `jaccard: 0.875` \u2014 high structural similarity\n- `query: \"cross-package-shape-near-duplicates-any\"`\n\nThe first record is in `AnalyticsTesting` (a testing support module) and the type name is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` \u2014 the `Mock` prefix and `AnalyticsTesting` path are both canonical restraint markers indicating `is_mock=true` or test-fixture semantics. Per decision rule 1, any participating record with mock/test characteristics triggers `no-action` with the appropriate `reason_class`. The `members` array is empty so I cannot ground any field-level evidence for an action recommendation anyway.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` declared in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 the `Mock` prefix in the type name and the `AnalyticsTesting` module path are both canonical mock/test-fixture markers. Per the restraint rule, any cluster containing a mock or test record must be left as-is to avoid coupling production code (`CPUSessionEvent` in `PlaybackCore`) to test-support semantics. Additionally, `members: []` means no field-level evidence is available to ground a concrete extraction or protocol recommendation, making any action recommendation speculative.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CzJSswTQWmaxtx1ycCPAUk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3587,
+    "output_tokens": 695,
+    "service_tier": "standard"
+  }
+}

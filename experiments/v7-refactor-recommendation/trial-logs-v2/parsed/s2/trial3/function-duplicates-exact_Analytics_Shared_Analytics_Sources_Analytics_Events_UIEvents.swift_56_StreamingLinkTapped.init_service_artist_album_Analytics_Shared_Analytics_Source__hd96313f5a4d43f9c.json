@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) are flagged as exact function duplicates residing in the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package, with identical parameter labels `service:artist:album:`. Because they are initializers on two distinct named types in the same file, neither cross-package extraction nor protocol default-implementation applies directly. The most idiomatic Swift remedy is to extract the shared payload fields into a composed value type or to delegate to a shared private factory, but the cluster row's `fields_or_signature: []` prevents naming those fields with grounded evidence, so a precise 'composition' or 'default-implementation' specifics block cannot be filled without hallucination.",
+    "specifics": {
+      "proposed_action": "Introduce a shared private or internal helper initializer (or a common base struct/protocol with a default initializer body) within `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package that both `StreamingLinkTapped.init(service:artist:album:)` and `ExternalLinkTapped.init(service:artist:album:)` delegate to, eliminating the duplicated initializer body. Alternatively, if `StreamingLinkTapped` and `ExternalLinkTapped` share the same stored properties (`service`, `artist`, `album`), extract those into a shared value type (e.g., `LinkTappedPayload`) and have both event types compose it, reducing the initializer duplication to a one-liner delegation in each type.",
+      "why_no_category_fits": "The two duplicated members are initializers on two distinct named types (`StreamingLinkTapped` and `ExternalLinkTapped`) within the same file and package. 'extract-to-common' does not fit because both records already live in the same package and file \u2014 there is no cross-package extraction to perform. 'default-implementation' does not fit because these are struct/class initializers, not protocol witness methods. 'generic-parameterization' does not fit because the two types are semantically distinct event kinds (streaming vs. external link) that should remain separate named types for analytics discrimination. 'subclass-lift' does not fit because Swift structs cannot subclass. 'composition' is the closest fit but the cluster row provides no field list (`fields_or_signature` is empty for both records), so the composed type cannot be named with grounded evidence. 'other' is therefore the most honest category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 3
+}

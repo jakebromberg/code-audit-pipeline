@@ -1,0 +1,32 @@
+{
+  "cluster_id": "generic-struct-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"artwork:Image?\"], \"b\": [\"artwork:UIImage?\"]}], \"shared_field_count\": 2",
+    "rationale": "Both `NowPlayingItem` (in `AppServices`, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift`) and `PlaycutSelection` (in `app:iOS`, `WXYC/iOS/Views/Playlist/PlaylistView.swift`) are `type-alias-object` structs with identical shape \u2014 `artwork` and `playcut:Playcut` \u2014 differing only in the concrete image type (`Image?` vs `UIImage?`). The `structural_evidence` confirms `shared_field_count: 2` with a single differing slot on the `artwork` field. Parameterizing over the image type as `ArtworkImage` would unify both into one generic struct, eliminating the duplication while preserving the platform-specific instantiation (`PlaycutPresentation<Image>` in AppServices, `PlaycutPresentation<UIImage>` in the iOS app). Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app` are all false), so no intentional-duplication rule applies.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "PlaycutPresentation",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "ArtworkImage"
+        }
+      ]
+    }
+  },
+  "query": "generic-struct-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-struct-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 2,
+  "trial": 2
+}

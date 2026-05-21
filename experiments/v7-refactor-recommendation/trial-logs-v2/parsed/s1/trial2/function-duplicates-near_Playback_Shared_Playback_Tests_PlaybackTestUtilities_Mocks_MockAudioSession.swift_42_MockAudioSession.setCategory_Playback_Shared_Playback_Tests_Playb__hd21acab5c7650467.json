@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:42:MockAudioSession.setCategory+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift:53:MockAudioSession.setCategory",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_mock\": true,\n        \"is_test\": true",
+    "rationale": "Both participating records carry `is_mock: true` and `is_test: true`, and both reside in `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift`. The two `MockAudioSession.setCategory` overloads at lines 42 and 53 are deliberate mock-fixture methods within a test-support target; their near-duplication (Jaccard 0.875) is characteristic of overloaded mock stubs that differ only in parameter label or arity, not an accidental copy. Lifting or merging them would couple test-fixture semantics into production code or alter the mock's observable behaviour under test. Per the restraint rules, any record with `is_mock: true` or `is_test: true` dominates action signals.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockAudioSession.swift_42_MockAudioSession.setCategory_Playback_Shared_Playback_Tests_Playb__hd21acab5c7650467.json",
+  "row_index": 50,
+  "trial": 2
+}

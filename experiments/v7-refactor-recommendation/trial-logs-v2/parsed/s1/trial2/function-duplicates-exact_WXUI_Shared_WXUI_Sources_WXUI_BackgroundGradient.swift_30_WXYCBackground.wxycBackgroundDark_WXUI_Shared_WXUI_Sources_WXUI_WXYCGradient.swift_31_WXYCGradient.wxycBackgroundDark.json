@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.72,
+    "evidence_quote": "WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark",
+    "rationale": "Both `WXYCBackground.wxycBackgroundDark` (in `BackgroundGradient.swift`, line 30) and `WXYCGradient.wxycBackgroundDark` (in `WXYCGradient.swift`, line 31) are exact-duplicate computed properties living in the same `WXUI` package. The duplication suggests that `WXYCBackground` is either a redundant type or a thin wrapper whose sole `wxycBackgroundDark` property is already canonically expressed on `WXYCGradient`. The single authoritative definition should live on `WXYCGradient` in `WXYCGradient.swift`, and the duplicate declaration on `WXYCBackground` in `BackgroundGradient.swift` should be removed (or `WXYCBackground` itself retired if `wxycBackgroundDark` is its only member). No restraint markers are present on either record, so consolidation is safe.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/WXUI/Sources/WXUI/BackgroundGradient.swift",
+        "Shared/WXUI/Sources/WXUI/WXYCGradient.swift"
+      ],
+      "target_type": "WXYCGradient"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_WXUI_Shared_WXUI_Sources_WXUI_BackgroundGradient.swift_30_WXYCBackground.wxycBackgroundDark_WXUI_Shared_WXUI_Sources_WXUI_WXYCGradient.swift_31_WXYCGradient.wxycBackgroundDark.json",
+  "row_index": 8,
+  "trial": 2
+}

@@ -1,0 +1,25 @@
+{
+  "cluster_id": "generic-function-candidates:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:191:SwiftUI.Image.logo+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:28:SwiftUI.Image.logo",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"SwiftUI.Image.logo\", \"kind\": \"computed-property\" ... \"jaccard\": 0.8823529411764706",
+    "rationale": "Both `app:WatchXYC` (`WXYC/WatchXYC/PlayerPage.swift:191`) and `app:iOS` (`WXYC/iOS/NowPlayingWidget/Extensions.swift:28`) declare an identical computed property `SwiftUI.Image.logo` with a Jaccard similarity of 0.88, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The canonical definition should live in a shared location accessible to both targets; however, since no dedicated shared/common package is surfaced in the cluster, the iOS extension file (`WXYC/iOS/NowPlayingWidget/Extensions.swift`) is the better host if the WatchXYC target can import it, or alternatively the property should be moved to a shared extensions file within a common module both targets already depend on. The WatchXYC duplicate at `PlayerPage.swift:191` should then be removed.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.logo"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_191_SwiftUI.Image.logo_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_28_SwiftUI.Image.logo.json",
+  "row_index": 1,
+  "trial": 2
+}

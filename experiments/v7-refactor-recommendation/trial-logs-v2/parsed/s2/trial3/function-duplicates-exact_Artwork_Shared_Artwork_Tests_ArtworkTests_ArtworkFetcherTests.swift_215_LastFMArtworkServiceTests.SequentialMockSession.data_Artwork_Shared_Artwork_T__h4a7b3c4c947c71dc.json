@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "iTunesArtworkServiceTests.SequentialMockSession.data\nLastFMArtworkServiceTests.SequentialMockSession.data\nDiscogsArtworkServiceTests.SequentialMockSession.data",
+    "rationale": "All four duplicate `data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside per-test-class `SequentialMockSession` helper types (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`). Although the context flags do not carry `is_test: true`, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the naming convention (`\u2026Tests.SequentialMockSession`) make clear these are test-internal mock session helpers, each scoped to its own test class to avoid cross-test coupling. The structural duplication is intentional: each `SequentialMockSession` is a lightweight, self-contained stub whose identical shape is coincidental to the test fixture pattern rather than a sign of shared logic that should be extracted. Consolidating them into a single shared helper would couple unrelated test classes and complicate future per-service divergence.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkFetcherTests.swift_215_LastFMArtworkServiceTests.SequentialMockSession.data_Artwork_Shared_Artwork_T__h4a7b3c4c947c71dc.json",
+  "row_index": 0,
+  "trial": 3
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) are flagged as exact function duplicates sharing the identical signature `init(service:artist:album:)` within the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package. Because they are initializers on two semantically distinct event types rather than free functions or protocol conformers, none of the named refactor categories map cleanly. The most idiomatic Swift resolution is to define a protocol (e.g., `LinkTappedEvent`) with a default initializer extension, or to extract a shared `LinkTappedPayload` value type that both structs embed, eliminating the duplicated body without collapsing the distinct type identities.",
+    "specifics": {
+      "proposed_action": "Introduce a shared private or internal helper initializer (or a common base struct/protocol with a default initializer body) within `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package that both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) delegate to, eliminating the duplicated initializer body. Concretely, consider extracting a `LinkTappedEvent` protocol or base struct with a memberwise `init(service:artist:album:)` and having both event types conform to or embed it.",
+      "why_no_category_fits": "The two duplicates are initializers on distinct named types (`StreamingLinkTapped` and `ExternalLinkTapped`), not free functions, structs, or protocols in isolation. `generic-parameterization` does not cleanly apply because the types themselves carry different semantic identities (streaming vs. external link) and the cluster provides no `fields_or_signature` evidence that the bodies are parameterisable over a single type parameter. `default-implementation` requires a protocol whose conformers share the method, but no such protocol is identified in the cluster. `extract-to-common` applies to types/functions moved to an upstream package, but both records already live in the same file and package (`Analytics` / `UIEvents.swift`), so no cross-package extraction is needed. The most idiomatic Swift remedy is a shared protocol with a default initializer or a composed value type, which straddles `default-implementation` and `composition` without fitting either schema precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 1
+}

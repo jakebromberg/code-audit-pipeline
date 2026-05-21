@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/RadioPlayerTests/RadioPlayerTests.swift:160:RadioPlayerTests.pauseStopsPlayback+Playback:Shared/Playback/Tests/RadioPlayerTests/RadioPlayerTests.swift:181:RadioPlayerTests.pauseResetsStream\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `RadioPlayerTests.pauseStopsPlayback` (line 160) and `RadioPlayerTests.pauseResetsStream` (line 181) \u2014 carry `is_test: true` in their context flags. Although the two test methods share a high structural similarity (Jaccard 0.7778), they are distinct test cases verifying different observable behaviours of the pause operation: one asserts that playback stops, the other that the stream is reset. Collapsing or extracting them would obscure test intent and couple unrelated assertions. The restraint rule for test fixtures dominates the near-duplicate signal here.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AFKUxKMkXcvgYHuY8PSqL6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3846,
+    "output_tokens": 313,
+    "service_tier": "standard"
+  }
+}

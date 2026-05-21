@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.45,
+    "evidence_quote": "\"jaccard\": 0.8333333333333334",
+    "rationale": "Both participating records are `MaterialView.body` computed properties in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192, with a Jaccard similarity of 0.8333, indicating substantial but not identical content. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set, so no restraint marker applies. Because both records share the same type name, file, and package (`Wallpaper`), this is an intra-file near-duplicate that does not map cleanly to any cross-file or cross-type refactor category. The high Jaccard score suggests one body may be a copy-paste of the other with minor variation, but the zero `shared_field_count` and null `differing_slots` in the structural evidence mean the exact divergence point cannot be identified without reading the source, making a precise mechanical recommendation premature.",
+    "specifics": {
+      "proposed_action": "Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is defined twice \u2014 once for each branch of a `#if` compiler condition or for two distinct `extension MaterialView` blocks with different `where` clauses. If the two bodies are truly redundant, consolidate them into a single `body` implementation, extracting the differing sub-expression into a private helper (e.g., `private var backgroundLayer: some View`) that encapsulates the varying part. If the split is load-bearing (e.g., one branch targets macOS material styles and the other targets iOS), add a comment documenting the intentional divergence so future readers do not re-flag it.",
+      "why_no_category_fits": "Both records are the same computed property name (`MaterialView.body`) in the same file (`MaterialView.swift`) at different line numbers (60 and 192). This is not a cross-type or cross-package duplication, so `extract-to-common` does not apply. There is no protocol involved, so `default-implementation`, `protocol-inheritance`, and `pat-introduction` do not apply. The property is not a free function or struct, so `generic-parameterization` does not apply. There is no class hierarchy, so `subclass-lift` does not apply. There are no repetitive member syntheses, so `macro-synthesis` does not apply. The duplication is intra-file and intra-type, making `extension-consolidation` the closest fit, but that category targets dispersed extensions of a single type across multiple files \u2014 not two property definitions within one file. The correct action is an intra-file deduplication whose shape (conditional compilation branch vs. genuine redundancy) cannot be determined from the cluster metadata alone, warranting manual inspection before any mechanical change."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 1
+}

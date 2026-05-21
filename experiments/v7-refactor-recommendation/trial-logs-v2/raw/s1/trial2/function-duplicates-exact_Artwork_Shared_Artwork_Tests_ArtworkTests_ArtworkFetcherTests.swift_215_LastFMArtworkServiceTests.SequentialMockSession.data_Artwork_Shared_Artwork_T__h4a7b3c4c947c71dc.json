@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the context carefully.\n\nThe cluster contains four duplicate `data` methods, all nested inside `SequentialMockSession` types that are themselves nested inside test classes (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`). All four live in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`.\n\nThe context flags report `is_test: false` and `is_mock: false` for all records. However, the **names** are unambiguous: the enclosing types are `*Tests` classes and `SequentialMockSession` is a mock/stub helper. The file path is `Tests/ArtworkTests/ArtworkFetcherTests.swift`. The structural pipeline's flag inference appears to have missed these \u2014 the names and path make the test/mock nature of these records evident. Per the decision rules, the restraint-marker check is on the flags as reported, but the rationale should acknowledge the naming evidence.\n\nDespite the flags not being set, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the enclosing type names (`SequentialMockSession` inside `*Tests` classes) make this clearly test infrastructure. Consolidating these into shared code would couple test scaffolding into production targets. The right call is no-action, citing the coincidental/test-fixture nature.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four duplicate `data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside `SequentialMockSession` types that are themselves nested inside test classes (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`). Although the pipeline emitted `is_test: false` and `is_mock: false` for every record, the file path under `Tests/ArtworkTests/` and the enclosing type names (`SequentialMockSession`, `*Tests`) make the test-fixture nature unambiguous. Lifting these into shared production code would couple test scaffolding into the `Artwork` package's non-test targets. The duplication across per-service test classes is intentional: each `SequentialMockSession` is a local stub scoped to its enclosing test class, and consolidating them would obscure that per-service isolation.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01N2QoxoRqexzJAWEDNTuXKX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4255,
+    "output_tokens": 854,
+    "service_tier": "standard"
+  }
+}

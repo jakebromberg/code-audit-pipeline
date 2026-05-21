@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Show+Track",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "_Plant_ShowContainer.swift\n...\"name\": \"Show\"\n..._Plant_TrackContainer.swift\n...\"name\": \"Track\"",
+    "rationale": "Both `Show` and `Track` are `type-alias-object` declarations in the same `Playback` package, living in `_Plant_ShowContainer.swift` and `_Plant_TrackContainer.swift` respectively. The `_Plant_` prefix on both file names strongly suggests these are codegen scaffold or plant-manifest artefacts rather than hand-authored duplicates. Despite the `shared_field_count: 2` signal, both records carry empty `fields_or_signature` lists, meaning the structural overlap is in shape only (both are type-alias objects at line 13) and not in any named members. `Show` and `Track` are distinct domain concepts whose coincidental structural identity as type aliases does not warrant merging or extraction.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Show_Track.json",
+  "row_index": 39,
+  "trial": 1
+}

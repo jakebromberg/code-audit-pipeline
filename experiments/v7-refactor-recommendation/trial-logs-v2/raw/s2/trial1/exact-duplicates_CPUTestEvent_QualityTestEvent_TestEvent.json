@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CPUTestEvent+QualityTestEvent+TestEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"All three records \u2014 `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 are `type-alias-object` declarations residing in `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`. Although none carry a restraint flag (is_test, is_mock, is_sample_app are all false), the file path places them squarely inside a test target (`Tests/AnalyticsTests/`). The structural evidence shows zero differing slots and a shared field count of only 1, meaning these are structurally trivial aliases whose similarity is an artefact of being lightweight test-fixture type aliases rather than a meaningful duplication of production logic. Consolidating them would conflate distinct named test concepts (`CPUTestEvent`, `QualityTestEvent`, `TestEvent`) that exist to give readable names to separate test scenarios, not to share behaviour.\",\n    \"evidence_quote\": \"Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GSarN2ioRRqpHvLWvrUmHd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3910,
+    "output_tokens": 331,
+    "service_tier": "standard"
+  }
+}

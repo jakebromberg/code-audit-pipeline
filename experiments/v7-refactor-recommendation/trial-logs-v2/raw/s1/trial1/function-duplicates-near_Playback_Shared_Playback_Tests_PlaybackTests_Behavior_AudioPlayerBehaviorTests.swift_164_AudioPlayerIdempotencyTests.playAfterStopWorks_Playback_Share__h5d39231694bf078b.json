@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:164:AudioPlayerIdempotencyTests.playAfterStopWorks+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:88:AudioPlayerCoreStateTests.isPlayingFalseAfterStop\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `AudioPlayerCoreStateTests.isPlayingFalseAfterStop` (line 88) and `AudioPlayerIdempotencyTests.playAfterStopWorks` (line 164) \u2014 carry `is_test: true` in their context flags. Although the two methods share a Jaccard similarity of 0.7, they belong to distinct test classes (`AudioPlayerCoreStateTests` and `AudioPlayerIdempotencyTests`) that are intentionally testing different behavioural facets of the audio player: core state transitions versus idempotency of the play-after-stop sequence. Merging or deduplicating test methods across semantically distinct test classes would obscure test intent and couple unrelated failure surfaces. No production code is involved, so no shared-code benefit accrues.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01E1ZdBfigXNyUPBPHrNkUNP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3889,
+    "output_tokens": 377,
+    "service_tier": "standard"
+  }
+}

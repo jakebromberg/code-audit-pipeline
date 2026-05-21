@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false`, `is_mock: false`, `is_sample_app: false`, and `is_codegen: false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver` \u2014 both strong signals that these are test fixtures and mock objects living inside test targets, even though the context flags say otherwise. The flags appear to be mislabeled (the files are under `Tests/` directories and the type name begins with `Mock`).\n\nPer the decision rules, I must ground my recommendation in the cluster row data, not inferred knowledge. The flags as given say `is_test: false` and `is_mock: false`. However, the file paths (`\u2026/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `\u2026/Tests/WXYCTests/DiscogsFormatterTests.swift`) and the type name prefix `Mock` are literal substrings of the cluster row. The restraint rules trigger on the flag values, but the evidence_quote and rationale can and should cite the file paths and type name as the basis for a no-action recommendation \u2014 the structural coincidence is that two test targets each define their own local mock for the same interface, which is the canonical \"test-fixture\" pattern regardless of flag mislabeling.\n\nGiven the ambiguity, I'll apply the \"when in doubt, prefer no-action\" rule, citing the file paths and mock naming as the grounding evidence.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live under `Tests/` directories \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` \u2014 and the shared type name `MockDiscogsEntityResolver` carries the `Mock` prefix, the canonical Swift test-double naming convention. Each test target independently defines a local mock for `DiscogsEntityResolver` scoped to its own test suite (`MetadataTests` and `WXYCTests` respectively). Consolidating these into a shared mock would couple two otherwise independent test targets and risk leaking test-only infrastructure into a shared production package. The duplication is intentional test-fixture isolation, not an accidental copy.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `MockDiscogsEntityResolver.resolveMaster` implementations are truly identical and both test targets already depend on the `Metadata` package, the mock could be extracted into a test-support module within `Metadata` (e.g., `Metadata/TestSupport`) and shared. This is only warranted if the mock is stable, not test-specific in its assumptions, and the `app:iOS` test target already has a declared dependency on `Metadata` \u2014 none of which can be confirmed from the cluster row alone.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NNXyrT38MQ3K6A8qznrApf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3861,
+    "output_tokens": 987,
+    "service_tier": "standard"
+  }
+}

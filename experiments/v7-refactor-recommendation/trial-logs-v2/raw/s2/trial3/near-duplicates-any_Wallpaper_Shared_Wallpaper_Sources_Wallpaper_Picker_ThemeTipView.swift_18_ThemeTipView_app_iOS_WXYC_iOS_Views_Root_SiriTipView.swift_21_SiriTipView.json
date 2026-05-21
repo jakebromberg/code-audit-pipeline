@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "I need to analyze this cluster row carefully. The cluster has a Jaccard similarity of 0.75 between `ThemeTipView` and `SiriTipView`, suggesting they are near-duplicates with significant structural overlap but some differences.\n\nLet me examine the evidence:\n- `ThemeTipView` in `Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift` (line 18, package: Shared/Wallpaper)\n- `SiriTipView` in `WXYC/iOS/Views/Root/SiriTipView.swift` (line 21, package: iOS app target)\n- Jaccard similarity: 0.75 (high overlap)\n- No restraint markers (is_test, is_mock, is_sample_app) are indicated\n- The members array is empty, so I cannot see specific field/method lists\n\nThe cluster_id encodes the key facts: two \"tip view\" types with 75% structural similarity. One lives in a shared `Wallpaper` package, the other in the iOS app target. The shared package (`Shared/Wallpaper`) is already upstream of the iOS app, making it a natural extraction target. However, the members list is empty, so I cannot name specific fields or methods to ground the specifics precisely.\n\nGiven the empty `members` array, I cannot cite specific field names or method signatures. The Jaccard of 0.75 is suggestive but without concrete member evidence I cannot responsibly name `moved_members` or `type_params`. The safest grounded recommendation is `extract-to-common` since the shared package already exists and is upstream, but I must note the evidence limitation.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift:18:ThemeTipView+app:iOS:WXYC/iOS/Views/Root/SiriTipView.swift:21:SiriTipView\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Shared/Wallpaper\",\n      \"type_name\": \"TipView\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift\",\n        \"WXYC/iOS/Views/Root/SiriTipView.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.75 between `ThemeTipView` (in `Shared/Wallpaper/Sources/Wallpaper/Picker/ThemeTipView.swift`) and `SiriTipView` (in `WXYC/iOS/Views/Root/SiriTipView.swift`), indicating substantial structural overlap. The `Shared/Wallpaper` package already exists upstream of the iOS app target, making it a natural home for a shared base. Neither record carries any restraint marker (is_test, is_mock, is_sample_app), so no intentional-duplication rule applies. The 25% divergence (Jaccard 0.75) likely reflects tip-specific content (theme vs. Siri) that can be parameterised via an initialiser argument or a small configuration struct, leaving the shared layout/presentation logic in a single extracted `TipView` type. Confidence is moderate because the `members` array is empty, preventing verification of specific shared fields.\",\n    \"evidence_quote\": \"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Content\", \"constraint\": \"View\" }\n        ],\n        \"new_name\": \"TipView\",\n        \"replaces\": [\"ThemeTipView\", \"SiriTipView\"]\n      },\n      \"rationale\": \"If the 25% divergence between `ThemeTipView` and `SiriTipView` is entirely in the tip-body content rather than in structural layout, a generic `TipView<Content: View>` parameterised over its inner content would be idiomatic SwiftUI and would avoid introducing a configuration-struct indirection. This is slightly less idiomatic than a concrete extracted type when the variation is purely data-driven, hence it is the alternative rather than the primary.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AQHrT38gTE8dKpeDZULfS7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3571,
+    "output_tokens": 1085,
+    "service_tier": "standard"
+  }
+}

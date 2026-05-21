@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift",
+    "rationale": "Both participating records reside under `Shared/ColorPalette/Tests/ColorPaletteTests/` \u2014 specifically `DominantColorExtractorTests.swift` (line 278) and `ColorPaletteServiceTests.swift` (line 239) \u2014 and belong to types named `DominantColorExtractorTests` and `ColorPaletteServiceTests`. Although the pipeline has tagged both records with `is_test: false`, the file paths (under `Tests/ColorPaletteTests/`) and the class names (both suffixed `Tests`) are unambiguous indicators of test fixtures. The `createSolidColorImage` helper is a test-support utility duplicated across two test classes within the same package; lifting it into shared production code would couple production targets to test-only image-construction semantics. No action is warranted until the `is_test` flags are corrected and the helper is confirmed to have production relevance.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 3
+}

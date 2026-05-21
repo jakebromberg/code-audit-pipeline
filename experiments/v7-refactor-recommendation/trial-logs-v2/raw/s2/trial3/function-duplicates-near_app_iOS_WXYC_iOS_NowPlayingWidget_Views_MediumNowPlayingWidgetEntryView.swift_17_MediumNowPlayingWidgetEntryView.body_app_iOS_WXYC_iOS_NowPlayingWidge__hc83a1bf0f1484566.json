@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"composition\",\n    \"specifics\": {\n      \"composing_type\": \"SmallNowPlayingWidgetEntryView and MediumNowPlayingWidgetEntryView\",\n      \"composed_type\": \"NowPlayingWidgetEntryBodyView\",\n      \"field_name\": \"body\"\n    },\n    \"rationale\": \"The two computed properties `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body`, both declared at line 17 in their respective files within `WXYC/iOS/NowPlayingWidget/Views/`, share a Jaccard similarity of 0.714, indicating substantial structural overlap in their SwiftUI `body` implementations. The most idiomatic Swift/SwiftUI remedy is to extract the shared layout logic into a dedicated reusable view (e.g., `NowPlayingWidgetEntryBodyView`) parameterised by any size-specific values, and have both entry views compose it. This avoids duplicating widget body logic while preserving the distinct `SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView` types that WidgetKit requires as separate entry-view conformers. Both records are production code in `app:iOS` with no restraint markers, so refactoring is safe.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract the shared body logic into a private or internal free SwiftUI `View`-returning function or `@ViewBuilder` helper inside `WXYC/iOS/NowPlayingWidget/Views/`, called by both `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body`.\",\n        \"why_no_category_fits\": \"A `@ViewBuilder` helper function is lighter-weight than a full composed type and avoids introducing a new named type, but it does not map cleanly to any of the named categories (it is neither a generic parameterization nor a protocol change); it is a valid SwiftUI-idiomatic alternative to full composition.\"\n      },\n      \"rationale\": \"If the diverging slots between the two bodies are minimal (e.g., only a size hint or padding constant differs), a shared `@ViewBuilder` helper in the same `WXYC/iOS/NowPlayingWidget/Views/` directory is lower overhead than a new composed type, while still eliminating the near-duplicate body logic flagged by the Jaccard score of 0.714.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017JcPFfYNpvUjKL4euLkBfP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 774,
+    "service_tier": "standard"
+  }
+}

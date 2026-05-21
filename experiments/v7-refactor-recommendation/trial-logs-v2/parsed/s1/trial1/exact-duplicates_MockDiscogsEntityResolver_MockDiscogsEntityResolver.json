@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockDiscogsEntityResolver+MockDiscogsEntityResolver",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"file\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\"",
+    "rationale": "Both participating records live in test files: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the context flags do not set `is_test: true`, the file paths unambiguously place both declarations inside `Tests/` directories, making them test fixtures. Lifting a shared `MockDiscogsEntityResolver` into production or shared code would couple test-only mock semantics into a non-test target, which is the canonical restraint pattern. The duplication is intentional: each test module independently defines the minimal mock it needs.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_MockDiscogsEntityResolver_MockDiscogsEntityResolver.json",
+  "row_index": 26,
+  "trial": 1
+}

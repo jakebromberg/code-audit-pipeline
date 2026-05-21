@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` and `IntCache` in package `Caching` share four identical fields (`capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`) and differ only in the key type of `storage` \u2014 `[String: CacheEntry]` vs `[Int: CacheEntry]`. This is the canonical motivation for generic parameterization: a single `Cache<Key: Hashable>` struct with `storage: [Key: CacheEntry]` replaces both type-alias objects without any loss of expressiveness. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. The `_Plant_` filename prefix suggests these are pipeline-generated placeholders, making consolidation into a single generic type the correct production outcome.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"CacheProtocol\",\n        \"associated_type\": \"Key\",\n        \"constraints\": [\"Hashable\"],\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"If `StringCache` and `IntCache` need to diverge in behaviour (e.g., custom eviction strategies per key type), a PAT `CacheProtocol` with `associatedtype Key: Hashable` and shared requirements `capacity`, `hitCount`, `lastAccess`, and `storage` would allow distinct conforming types while still unifying the interface. However, given that the structural evidence shows purely coincident shape with no behavioural divergence, a concrete generic struct is more idiomatic Swift and is preferred as the primary recommendation.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HDmzAmMLUKBkwvCrmFBkse",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3948,
+    "output_tokens": 638,
+    "service_tier": "standard"
+  }
+}

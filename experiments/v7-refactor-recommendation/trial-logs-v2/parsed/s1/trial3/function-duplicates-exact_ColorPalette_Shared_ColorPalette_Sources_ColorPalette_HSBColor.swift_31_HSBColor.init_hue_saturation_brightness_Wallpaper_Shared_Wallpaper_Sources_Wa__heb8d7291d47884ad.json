@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "All three initializers share the signature `init(hue:saturation:brightness:)` purely because they all model HSB color components \u2014 a structural coincidence driven by the HSB color space's three-parameter shape, not by shared logic. `HSBColor` (in package `ColorPalette`), `AccentColor` (line 62, `Wallpaper`), and `HSBOffset` (line 198, `Wallpaper`) are semantically distinct types: a base color value, a themed accent color, and a relative color offset respectively. Extracting a shared initializer body would couple these domain-distinct types without meaningful reduction in complexity, and the `fields_or_signature` arrays are empty, providing no evidence of shared implementation beyond the parameter labels. No restraint markers are present, but the coincidental-shape rule applies: the overlap is structural only.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wa__heb8d7291d47884ad.json",
+  "row_index": 5,
+  "trial": 3
+}

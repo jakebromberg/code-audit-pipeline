@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live inside test target files \u2014 `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift` (package: Wallpaper) and `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift` (package: Caching). Although the context flags do not set `is_test: true`, the file paths unambiguously place both type-alias objects inside `Tests/` directories, making them test fixtures by location. Consolidating these mock clock aliases into shared production code would couple the Wallpaper and Caching packages' test infrastructure in a way that is not warranted by the structural overlap alone. The coincidence of shape (both are type-alias objects with 2 shared fields) is expected for clock-stub patterns and does not justify extraction.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\"\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013TWMKmuJfMDJaLkQvSVD8P",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3786,
+    "output_tokens": 329,
+    "service_tier": "standard"
+  }
+}

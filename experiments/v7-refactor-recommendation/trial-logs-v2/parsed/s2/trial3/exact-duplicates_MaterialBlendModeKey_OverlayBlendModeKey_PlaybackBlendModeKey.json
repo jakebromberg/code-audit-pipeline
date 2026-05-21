@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"line\": 89 ... \"package\": \"Wallpaper\" ... \"shared_field_count\": 1",
+    "rationale": "All three records \u2014 `PlaybackBlendModeKey` (line 89, `PlaybackBlendMode.swift`), `MaterialBlendModeKey` (line 89, `MaterialBlendMode.swift`), and `OverlayBlendModeKey` (line 89, `_Plant_OverlayBlendMode.swift`) \u2014 are `type-alias-object` kinds in the same `Wallpaper` package with identical structural position (`shared_field_count: 1`, same line number) and no context-flag restraints. Because all three are in the same package and carry no fields or methods, the duplication is purely a declaration-site redundancy that can be resolved by co-locating the three aliases in one file within `Wallpaper`, eliminating the scattered identical declarations without requiring a new package or protocol.",
+    "specifics": {
+      "proposed_action": "Introduce a single generic or parameterized `EnvironmentKey` type alias (e.g., `BlendModeKey`) in the `Wallpaper` package \u2014 or, if these are `EnvironmentKey` conformances, consolidate the three identical type-alias-object declarations at line 89 of their respective files into one shared declaration in a new file such as `Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeKeys.swift` within the same `Wallpaper` package. Remove the duplicate declarations from `PlaybackBlendMode.swift`, `MaterialBlendMode.swift`, and `_Plant_OverlayBlendMode.swift`.",
+      "why_no_category_fits": "All three records are `type-alias-object` kinds with empty `fields_or_signature` lists, so there are no methods or fields to lift into a protocol, default implementation, or generic function. The records are all in the same package (`Wallpaper`), so `extract-to-common` does not apply (no cross-package movement is needed). The duplication is a structural identity of three type-alias declarations at the same line number across three sibling files; the appropriate fix is consolidation within the existing package into a single declaration site, which does not map cleanly to any of the named action categories."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial3/exact-duplicates_MaterialBlendModeKey_OverlayBlendModeKey_PlaybackBlendModeKey.json",
+  "row_index": 19,
+  "trial": 3
+}

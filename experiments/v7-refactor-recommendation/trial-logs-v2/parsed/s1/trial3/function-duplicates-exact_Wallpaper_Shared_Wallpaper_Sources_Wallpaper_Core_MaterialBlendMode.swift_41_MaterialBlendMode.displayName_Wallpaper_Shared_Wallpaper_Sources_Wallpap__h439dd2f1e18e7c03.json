@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "macro-synthesis",
+    "confidence": 0.72,
+    "evidence_quote": "PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+    "rationale": "All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each carries an exact-duplicate `displayName` computed property at line 41 of their respective files. Because the property is structurally identical across three parallel enum-like blend-mode types, a `@DisplayName` attached macro applied at the type declaration site would synthesize the property uniformly and eliminate all three hand-written copies. None of the participating records carry any restraint flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. A macro is preferred over a protocol default-implementation here because the body is synthesized from the type's own case names rather than delegated behaviour, which is the canonical Swift macro use-case.",
+    "specifics": {
+      "applies_to": [
+        "enum"
+      ],
+      "macro_name": "@DisplayName",
+      "population_size_evidence": "3 participating records: PlaybackBlendMode.displayName, MaterialBlendMode.displayName, OverlayBlendMode.displayName \u2014 all at line 41 in the Wallpaper package",
+      "synthesizes": "A `var displayName: String` computed property that derives a human-readable display name from each case label, replacing the identical `displayName` implementations on `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode`.",
+      "use_swift_builtin": false
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_MaterialBlendMode.swift_41_MaterialBlendMode.displayName_Wallpaper_Shared_Wallpaper_Sources_Wallpap__h439dd2f1e18e7c03.json",
+  "row_index": 1,
+  "trial": 3
+}

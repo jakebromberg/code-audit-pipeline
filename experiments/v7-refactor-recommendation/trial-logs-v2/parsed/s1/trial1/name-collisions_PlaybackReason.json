@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": []",
+    "rationale": "All four records in this cluster belong to the same logical type, `PlaybackReason`, spread intentionally across three packages (`Playback`, `PlayerHeaderView`, `app:iOS`) as a core type-alias declaration plus package-specific extensions. The pattern \u2014 a canonical definition in `Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift` with downstream extensions in `PlaybackReason+PlayerHeaderView.swift` and `PlaybackReason+App.swift` \u2014 is the standard Swift extension-per-consumer idiom, not accidental duplication. No fields or signatures are surfaced (`fields_or_signature: []` on every record), so there is no evidence of repeated logic to consolidate. No restraint markers are set, but the structural signal is a name-collision query with null Jaccard and null shared-field-count, confirming the pipeline found only a shared name, not shared content.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 1
+}

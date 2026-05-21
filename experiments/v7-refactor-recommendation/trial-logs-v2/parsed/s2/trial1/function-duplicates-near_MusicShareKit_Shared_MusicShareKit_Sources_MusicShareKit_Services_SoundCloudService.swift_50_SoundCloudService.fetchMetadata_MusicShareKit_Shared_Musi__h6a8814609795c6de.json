@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.62,
+    "evidence_quote": "SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+    "rationale": "Both `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64) reside in the same package `MusicShareKit` and exhibit a Jaccard similarity of 0.808, indicating their implementations are nearly identical. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The parallel naming convention \u2014 both classes exposing a `fetchMetadata` method \u2014 strongly suggests they conform or should conform to a shared service protocol, making a protocol default implementation the idiomatic Swift consolidation path. The shared implementation body should be lifted into a protocol extension within the same `MusicShareKit` package, eliminating the near-duplicate logic in both service files.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift",
+        "Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift"
+      ],
+      "method": "fetchMetadata()",
+      "protocol": "MusicServiceProtocol",
+      "target_location": "Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicServiceProtocol+Defaults.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Services_SoundCloudService.swift_50_SoundCloudService.fetchMetadata_MusicShareKit_Shared_Musi__h6a8814609795c6de.json",
+  "row_index": 71,
+  "trial": 1
+}

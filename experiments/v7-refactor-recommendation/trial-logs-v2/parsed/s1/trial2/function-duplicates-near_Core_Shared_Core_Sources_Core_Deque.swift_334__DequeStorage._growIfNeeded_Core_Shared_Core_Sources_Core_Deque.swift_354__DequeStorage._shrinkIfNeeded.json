@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "The two methods `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` are structurally similar (Jaccard 0.71) but encode intentionally opposite and complementary capacity-management operations on a deque's backing storage. Growth and shrink paths in a ring-buffer or deque implementation are canonically kept separate because their branching conditions, reallocation strategies, and copy directions differ in ways that make a unified generic helper harder to read and maintain without meaningful code savings. Neither record carries any restraint marker, but the semantic divergence between 'grow' and 'shrink' is domain-load-bearing, not coincidental, so merging them would obscure intent rather than reduce duplication.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 2
+}

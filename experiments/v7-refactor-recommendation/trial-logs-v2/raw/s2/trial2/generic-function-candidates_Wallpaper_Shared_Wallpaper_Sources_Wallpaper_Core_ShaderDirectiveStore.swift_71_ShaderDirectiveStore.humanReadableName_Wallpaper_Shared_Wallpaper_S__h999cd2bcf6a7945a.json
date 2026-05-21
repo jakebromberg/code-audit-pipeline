@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` and `ShaderDirectiveControlsDisclosure.humanReadableName` share a method name and a high Jaccard similarity of 0.8, but the cluster provides no `fields_or_signature` entries for either record, making it impossible to verify that the implementations are structurally equivalent rather than coincidentally named. The two host types \u2014 `ShaderDirectiveStore` (a data/core type in `Core/`) and `ShaderDirectiveControlsDisclosure` (a UI disclosure component in `DebugUI/ThemeDebugOverlay/`) \u2014 serve distinct domain roles, and a `humanReadableName` helper is a common enough pattern that parallel naming is likely intentional per-type formatting logic rather than a true duplication. Without concrete signature or body evidence, introducing a generic function or shared protocol would risk coupling unrelated domain concepts on structural coincidence alone.\",\n    \"evidence_quote\": \"\\\"fields_or_signature\\\": [], \\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"ShaderDirectiveNamed\",\n        \"method\": \"humanReadableName\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If inspection of the actual method bodies confirms the implementations are identical, introducing a protocol (e.g., `ShaderDirectiveNamed`) with a default `humanReadableName` implementation in the `Wallpaper` package would eliminate the duplication without coupling the two types directly. However, this requires body-level evidence not present in the cluster row, so it remains a lower-confidence alternative.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011W2zogngdKeEA3FLsvMgLH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3897,
+    "output_tokens": 663,
+    "service_tier": "standard"
+  }
+}

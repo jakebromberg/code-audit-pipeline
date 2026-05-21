@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift:210:HLSPlayer.handlePlaybackStalled+Playback:Shared/Playback/Sources/RadioPlayer/Player/RadioPlayer.swift:141:RadioPlayer.handlePlaybackStalled",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.62,
+    "evidence_quote": "RadioPlayer.handlePlaybackStalled+Playback:Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift:210:HLSPlayer.handlePlaybackStalled",
+    "rationale": "Both `RadioPlayer.handlePlaybackStalled` (line 141) and `HLSPlayer.handlePlaybackStalled` (line 210) are flagged as exact function duplicates within the same `Playback` package, with no restraint markers (all context flags false). Because the two player types live in sibling source targets under `Shared/Playback/Sources/` and share an identical method body, the idiomatic Swift resolution is to surface a shared protocol (or an existing base protocol already used by both players) and provide a single default implementation in a protocol extension, eliminating the duplicated bodies in both conformers. If no shared protocol currently exists, one should be introduced within the `Playback` package to host the default. Note: the `protocol` and `target_location` fields are best-effort given the cluster row does not expose the existing protocol hierarchy; if no shared protocol exists, the `other` alternative below is preferable.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Playback/Sources/RadioPlayer/Player/RadioPlayer.swift",
+        "Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift"
+      ],
+      "method": "handlePlaybackStalled()",
+      "protocol": "PlayerProtocol",
+      "target_location": "Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Playback_Shared_Playback_Sources_HLSPlayer_HLSPlayer.swift_210_HLSPlayer.handlePlaybackStalled_Playback_Shared_Playback_Sources_RadioPlayer_Player_Ra__h69468a0f0599a5df.json",
+  "row_index": 34,
+  "trial": 3
+}

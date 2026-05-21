@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:URLSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"fields_or_signature\": []",
+    "rationale": "All four records are unnamed extensions on `URLSession` spread across four distinct packages \u2014 `Playlist`, `Core`, `Playback`, and `MusicShareKit` \u2014 each in a file with a different purpose (`PlaylistFetcher.swift`, `URLSession+WebSession.swift`, `URLSessionProtocol.swift`, `RequestService.swift`). The cluster carries no `fields_or_signature` data for any member, so there is no evidence of shared method bodies or overlapping API surface. The structural signal is purely a name collision on the extended type (`URLSession`), not a duplication of logic. Without field-level evidence of actual overlap, consolidation would risk merging extensions that serve unrelated domain concerns across package boundaries.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_URLSession.json",
+  "row_index": 8,
+  "trial": 1
+}

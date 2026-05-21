@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayerController",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"line\": 23 ... \"kind\": \"extension\", \"line\": 286 ... \"file\": \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\"",
+    "rationale": "All three records in this cluster belong to the same package ('Playback') and the same logical type ('RadioPlayerController'): one is the type-alias-object declaration at line 23 of 'RadioPlayerController.swift', one is an extension on that same type at line 286 of the same file, and one is an extension in the test file 'RadioPlayerControllerTests.swift'. These are not independent duplicates \u2014 they are the canonical Swift pattern of a type declaration accompanied by one or more extensions in the same file, plus a test-file extension. No fields or signatures are shared across records (fields_or_signature is empty on all three), so there is no structural duplication to collapse. The name collision signal is a false positive arising from the analyzer treating multiple declarations referencing the same name as a cluster.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_RadioPlayerController.json",
+  "row_index": 13,
+  "trial": 2
+}

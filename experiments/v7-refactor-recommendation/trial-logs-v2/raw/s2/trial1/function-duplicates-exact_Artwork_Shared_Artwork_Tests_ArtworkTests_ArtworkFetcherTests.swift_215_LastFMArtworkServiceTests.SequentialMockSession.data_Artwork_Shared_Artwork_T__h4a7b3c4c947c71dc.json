@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"All four duplicate `data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside per-test-class `SequentialMockSession` helper types (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`). Although the context flags do not carry `is_test: true`, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the naming convention (`\u2026Tests.SequentialMockSession`) make clear these are test-internal mock session helpers, each scoped to its own test class. Consolidating them into a single shared helper would couple unrelated test fixtures and obscure which mock belongs to which service under test. The structural duplication is incidental to the test-fixture pattern, not a production-code concern.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data\\nLastFMArtworkServiceTests.SequentialMockSession.data\\nDiscogsArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WmHiFQCZMEm3QhWMeJc24u",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4255,
+    "output_tokens": 554,
+    "service_tier": "standard"
+  }
+}

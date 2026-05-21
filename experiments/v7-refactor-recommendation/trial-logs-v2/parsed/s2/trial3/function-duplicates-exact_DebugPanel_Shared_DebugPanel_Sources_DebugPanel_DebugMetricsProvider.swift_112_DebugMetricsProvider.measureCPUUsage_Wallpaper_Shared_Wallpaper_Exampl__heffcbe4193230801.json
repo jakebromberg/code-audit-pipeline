@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under both `Examples/` and `WallpaperSampleApp/` \u2014 path locations that the decision rules treat as sample-app restraint markers regardless of the `is_sample_app` boolean value. The canonical production implementation of `DebugMetricsProvider.measureCPUUsage` already exists in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`). The copy in `DebugHUD.swift` is a local convenience for the Wallpaper sample app's debug overlay and is intentionally isolated from the production `DebugPanel` package. Lifting the sample-app copy into shared production code would couple the `DebugPanel` package to sample-app semantics, which is the canonical restraint pattern.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_112_DebugMetricsProvider.measureCPUUsage_Wallpaper_Shared_Wallpaper_Exampl__heffcbe4193230801.json",
+  "row_index": 9,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282:ShaderArgumentValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries a Jaccard similarity of 0.75 between `ShaderArgumentValue` (at `Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift:282`) and `ParameterValue` (at `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512`), but the `members` array is empty and `differing_slots`, `shared_ancestor`, and `shared_field_count` are all null. Without any field or method evidence to ground a concrete refactor, the structural overlap cannot be distinguished from a coincidental shape match between two domain-distinct types \u2014 one representing a GPU shader argument value and the other a theme manifest parameter value. Recommending a merge or extraction without grounded member evidence risks coupling unrelated domain concepts.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"AnyParameterValue\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ParameterStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If a follow-up inspection of the two types at lines 282 and 512 confirms that their cases or fields are genuinely shared (consistent with the 0.75 Jaccard score), a unified `AnyParameterValue` enum or struct could be extracted within the same `Shared/Wallpaper` package, eliminating the near-duplication. This alternative is contingent on member-level evidence that is absent from the current cluster row.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HnrpKkGYhdWdhyoW7drk85",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3574,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

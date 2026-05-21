@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:LightboxActiveKey+ScrollIdleKey+ScrolledToTopKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"ScrolledToTopKey\", \"name\": \"ScrollIdleKey\", \"name\": \"LightboxActiveKey\", \"fields_or_signature\": [], \"kind\": \"type-alias-object\", \"file\": \"Shared/WXUI/Sources/WXUI/OverlaySheet.swift\"",
+    "rationale": "All three records \u2014 `ScrolledToTopKey` (line 16), `ScrollIdleKey` (line 20), and `LightboxActiveKey` (line 28) \u2014 are `type-alias-object` declarations in the same file `Shared/WXUI/Sources/WXUI/OverlaySheet.swift` within package `WXUI`. They share structural shape (empty `fields_or_signature`, same `kind`) because SwiftUI environment key types are idiomatically small boilerplate structs, but each encodes a distinct UI concern: scroll-to-top tracking, scroll-idle state, and lightbox activation. Merging or abstracting them would conflate unrelated domain concepts whose structural coincidence is purely a consequence of the SwiftUI `EnvironmentKey` pattern. No restraint markers are present, but the coincidental reason class applies because the shared shape reflects a framework convention rather than duplicated logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_LightboxActiveKey_ScrollIdleKey_ScrolledToTopKey.json",
+  "row_index": 18,
+  "trial": 2
+}

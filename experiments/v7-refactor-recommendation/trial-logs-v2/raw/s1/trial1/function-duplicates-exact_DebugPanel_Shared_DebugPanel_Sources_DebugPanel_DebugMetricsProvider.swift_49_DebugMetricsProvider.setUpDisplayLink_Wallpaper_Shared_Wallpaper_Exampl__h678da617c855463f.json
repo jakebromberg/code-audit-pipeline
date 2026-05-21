@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory. The decision rules state that any record under `Examples/` or `SampleApp/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`, regardless of what `is_sample_app` reports. The `is_sample_app` flag reads `false`, but the path evidence is unambiguous \u2014 this file sits inside an `Examples/WallpaperSampleApp/` subtree, which is the canonical sample-app-mirror pattern. Lifting the production `DebugPanel` implementation to a shared location because a sample-app copy coincidentally matches it would couple production semantics to demonstration code.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits inside an `Examples/WallpaperSampleApp/` directory \u2014 the canonical sample-app subtree. Even though `is_sample_app` is reported as `false`, the file path is authoritative: this is a demonstration copy of `DebugMetricsProvider.setUpDisplayLink` that mirrors the production implementation in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`. Merging or extracting these two would couple the production `DebugPanel` package to sample-app semantics, which is the exact anti-pattern the restraint rule guards against. The correct resolution, if the sample-app copy is stale, is to delete it from the sample app \u2014 not to consolidate it with production code.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LibD5p7fFsV4tFPXvyqwmz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3881,
+    "output_tokens": 641,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster carefully:\n\n- Two exact duplicate initializers: `DisplayLinkSequence.AsyncIterator.init` in `DebugPanel` package and `Wallpaper` package.\n- The second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample-app path. Although `is_sample_app` is flagged `false` on the record, the file path itself sits under `Examples/WallpaperSampleApp/`, which is the canonical restraint marker for sample-app-mirror per the decision rules.\n- The decision rules state: \"ANY participating record \u2026 sits under Examples/ or SampleApp/ \u2192 reason_class: 'sample-app-mirror'\". The path evidence is unambiguous: `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`.\n- This is the canonical restraint pattern: one production record (`DebugPanel`) and one sample-app record (`WallpaperSampleApp`). Lifting the production initializer into shared code based on this cluster would couple production semantics to a demonstration fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the Examples/WallpaperSampleApp/ directory \u2014 the canonical sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The other record is a production initializer in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). Merging these would couple the production DebugPanel package to sample-app demonstration semantics. The duplication is intentional: the WallpaperSampleApp needs its own local copy of DisplayLinkSequence.AsyncIterator.init for self-contained demonstration purposes.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HiMwSLmVzuSaGzAoJRnfJF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3879,
+    "output_tokens": 690,
+    "service_tier": "standard"
+  }
+}

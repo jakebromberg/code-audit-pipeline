@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+    "rationale": "Both participating records \u2014 `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) \u2014 live in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` within the `Playback` package. Although the context flags do not mark either record as `is_test=true` or `is_mock=true`, the file path (`Tests/PlaybackTests/`) and the `Mock` prefix on the enclosing type make clear these are test-fixture computed properties on a mock object. The two properties represent structurally similar but semantically distinct stream accessors (`stateStream` vs. `eventStream`), and the `fields_or_signature` arrays are both empty, providing no concrete shared body to extract. Merging or abstracting them would conflate two intentionally separate stream concepts inside a test-only mock type.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_AudioPlayerControllerTests.swift_248_MockAudioPlayerForController.stateStream_Playback_Shared_Playback_T__h6345b38100a17bf2.json",
+  "row_index": 39,
+  "trial": 2
+}

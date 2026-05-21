@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze the near-duplicate signal between `AccentColorControls` and `MaterialControls` in the `Wallpaper` package's `DebugUI/ThemeDebugOverlay` directory.\n\nKey observations:\n- Both types live in the same package (`Shared/Wallpaper`) and same subdirectory (`DebugUI/ThemeDebugOverlay`)\n- The `members` array is empty \u2014 no field/method lists are provided\n- Jaccard similarity is 0.75 (reasonably high, but not exact)\n- No restraint markers are present (no `is_test`, `is_mock`, `is_sample_app`, `is_codegen` flags visible)\n- Without field/method lists I cannot ground a specific refactor action in literal evidence from the cluster row \u2014 I cannot name moved members, a shared protocol, or a concrete extraction target with confidence\n\nSince the `members` array is empty and `differing_slots`, `shared_ancestor`, and `shared_field_count` are all `null`, there is insufficient evidence to prescribe a specific structural change without hallucinating details about the types' internals.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.75 between `AccentColorControls` (line 16) and `MaterialControls` (line 15), both residing in `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/`. However, the `members` array is empty and all structural detail fields (`differing_slots`, `shared_ancestor`, `shared_field_count`) are null, providing no grounded evidence of which fields or methods are shared. Without literal member evidence it is impossible to name moved members, a target protocol, or a safe extraction point without hallucinating; the two controls plausibly share SwiftUI view scaffolding shape while encoding distinct domain concepts (accent-color selection vs. material selection), making their structural similarity coincidental rather than actionable.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.75, \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018DMCCH2kcd7Mfa58ZThB2N",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3593,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

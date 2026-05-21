@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"differing_slots\": null,\n            \"jaccard\": null,\n            \"shared_ancestor\": null,\n            \"shared_field_count\": null",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists and no structural evidence (Jaccard, shared fields, and differing slots are all null), meaning the pipeline detected only a name collision on `RootTabView` across two distinct app targets: `app:WatchXYC` (at `WXYC/WatchXYC/RootTabView.swift`) and `app:iOS` (at `WXYC/iOS/Views/Root/RootTabView.swift`). These are platform-specific root navigation views for watchOS and iOS respectively \u2014 their identical name reflects a conventional SwiftUI entry-point naming pattern, not shared logic. Because the structural evidence is entirely absent and the two targets serve divergent platform contexts, the coincidence is nominal only and no refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 3
+}

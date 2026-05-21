@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NotificationMessage\",\n      \"associated_type\": \"Subject\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (in `Shared/Core/Sources/Core/Observation/AsyncMessage.swift`) and `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) are interfaces in the same `Core` package sharing three of three members: `name: Notification.Name`, `makeNotification(_ message: Self, object: Subject?) -> Notification`, and a `makeMessage` factory. The only structural difference is the `sending` ownership annotation on `MainActorNotificationMessage`'s `makeMessage` parameter, which reflects a concurrency-domain distinction (main-actor vs. async) rather than a semantic one. Introducing a base PAT `NotificationMessage` with the shared contract (`name`, `makeNotification`, `makeMessage`) and letting each child protocol refine `makeMessage` with its own concurrency annotation eliminates the duplicated surface while preserving the intentional divergence. All participating records are production code with no restraint markers, making this a clean consolidation opportunity.\",\n    \"evidence_quote\": \"shared_field_count\\\": 3\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\n          \"AsyncNotificationMessage\",\n          \"MainActorNotificationMessage\"\n        ],\n        \"moved_members\": [\n          \"name:Notification.Name\",\n          \"makeNotification:(_ message: Self, object: Subject?) -> Notification\"\n        ],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If introducing a full PAT feels heavyweight, a simpler protocol-inheritance hierarchy where a base `NotificationMessage` protocol (new, but minimal) declares `name` and `makeNotification` \u2014 the two members that are byte-for-byte identical across both protocols \u2014 and each child protocol adds its own concurrency-flavoured `makeMessage` override is also defensible. This avoids the associated-type machinery while still deduplicating the shared contract. The tradeoff is that callers cannot write generic code over `NotificationMessage` without existential boxing, which the PAT approach avoids.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RYmMgLH5kAq3A9h9u8ji8x",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3958,
+    "output_tokens": 685,
+    "service_tier": "standard"
+  }
+}

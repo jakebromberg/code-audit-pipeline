@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` and `IntCache` in the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[_: CacheEntry]` \u2014 and differ only in the key type of the `storage` dictionary (`[String: CacheEntry]` vs `[Int: CacheEntry]`). The structural evidence confirms exactly one differing slot and a shared field count of 4, making this a textbook candidate for a single generic struct parameterised over `Key: Hashable`. Both records carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so there is no reason to hold back. Replacing both with `Cache<Key: Hashable>` eliminates the duplication entirely within the same `Caching` package and makes the type immediately extensible to any future key type (e.g., `UUID`, `URL`) without further duplication.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Caching\",\n        \"type_name\": \"Cache\",\n        \"remove_from\": [\n          \"Shared/Caching/Sources/Caching/_Plant_StringCache.swift\",\n          \"Shared/Caching/Sources/Caching/_Plant_IntCache.swift\"\n        ]\n      },\n      \"rationale\": \"If the team prefers to avoid generics for readability or API-stability reasons, a single concrete `Cache` struct with a type-erased key (e.g., `AnyHashable`) could be extracted into the same `Caching` package, removing both specialised files. This is less type-safe than the generic approach but still eliminates the duplication.\"\n    },\n    \"confidence\": 0.93\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01ErMjVLMiH4RbtSRVLsiKJX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3952,
+    "output_tokens": 675,
+    "service_tier": "standard"
+  }
+}

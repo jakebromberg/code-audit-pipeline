@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"SwiftUI.Image.background\", \"kind\": \"computed-property\", \"file\": \"WXYC/WatchXYC/PlayerPage.swift\", \"line\": 210 ... \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\", \"line\": 47",
+    "rationale": "The computed property `SwiftUI.Image.background` is declared identically in two separate app targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:210` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:47` \u2014 with no context flags (is_test, is_mock, is_sample_app, is_codegen) set on either record, indicating both are live production extension points. Because this is a SwiftUI extension on `Image`, the canonical home is the iOS target's `Extensions.swift` file, which already exists for this purpose; the WatchXYC target should consume it from a shared location or the extension should be moved to a shared extensions file that both targets can import. Keeping two identical computed-property bodies in sync across targets is a maintenance liability with no architectural justification evident in the cluster.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 2
+}

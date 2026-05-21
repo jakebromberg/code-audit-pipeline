@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:AppleMusicService+BandcampService+SoundCloudService+SpotifyService+YouTubeMusicService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All five records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the structural pipeline detected shape similarity solely because each file declares a type alias at roughly the same line with no fields \u2014 not because they share meaningful implementation. The names `AppleMusicService`, `BandcampService`, `SoundCloudService`, `SpotifyService`, and `YouTubeMusicService` encode distinct domain concepts (five different music streaming platforms), and type aliases by definition delegate their real shape to their aliased target, which is not visible in this cluster row. With `shared_field_count: 1` and `differing_slots: null`, there is no concrete member evidence to extract or unify. Collapsing these into a single generic or shared type would erase intentional per-service identity without any demonstrated code savings.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_AppleMusicService_BandcampService_SoundCloudService_SpotifyService_YouTubeMusicService.json",
+  "row_index": 4,
+  "trial": 1
+}

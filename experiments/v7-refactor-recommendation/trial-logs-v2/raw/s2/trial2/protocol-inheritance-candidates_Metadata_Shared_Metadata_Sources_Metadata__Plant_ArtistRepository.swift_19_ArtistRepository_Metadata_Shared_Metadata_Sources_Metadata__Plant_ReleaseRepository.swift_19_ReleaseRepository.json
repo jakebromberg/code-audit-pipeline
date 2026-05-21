@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MetadataRepository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ArtistRepository\", \"ReleaseRepository\"]\n    },\n    \"rationale\": \"Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of their `resolve:(id: Int) async throws -> <Entity>` method (`Artist` vs `Release`). This is the canonical PAT pattern: a family of protocols that are structurally identical except for one varying type. Introducing a `MetadataRepository` protocol with `associatedtype Entity` and moving the three shared members plus the generic `resolve` signature into it eliminates the duplication while preserving full type safety for each concrete conformer. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint rule applies.\",\n    \"evidence_quote\": \"\\\"cacheKey:(for id: Int) -> String\\\",\\n        \\\"entityKind:String\\\",\\n        \\\"lastSync:Date?\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"MetadataRepository\",\n        \"children\": [\"ArtistRepository\", \"ReleaseRepository\"],\n        \"moved_members\": [\"cacheKey:(for id: Int) -> String\", \"entityKind:String\", \"lastSync:Date?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If a non-generic base protocol is preferred over a PAT (e.g., to avoid opaque-type or existential complexity at call sites), a plain `MetadataRepository` parent protocol could hold the three shared members while `ArtistRepository` and `ReleaseRepository` each declare their own typed `resolve` override. This avoids the `any MetadataRepository` / `some MetadataRepository` ergonomic friction introduced by an associated type, at the cost of losing the unified `resolve` signature in the parent. The parent protocol `MetadataRepository` would be new to the source tree, which the schema permits for `protocol-inheritance` only when it already exists \u2014 so this alternative is strictly secondary and would require creating the parent first.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PRyfGb9PCRins9FLqrDTNZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3914,
+    "output_tokens": 693,
+    "service_tier": "standard"
+  }
+}

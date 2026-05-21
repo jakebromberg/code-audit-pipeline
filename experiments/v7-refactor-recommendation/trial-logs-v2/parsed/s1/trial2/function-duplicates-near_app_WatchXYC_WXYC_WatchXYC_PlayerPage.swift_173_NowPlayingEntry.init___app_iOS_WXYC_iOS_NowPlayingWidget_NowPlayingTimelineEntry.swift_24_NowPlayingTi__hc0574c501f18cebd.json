@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.55,
+    "evidence_quote": "\"jaccard\": 0.7777777777777778",
+    "rationale": "The two initializers live in separate platform-specific packages (`app:WatchXYC` in `WXYC/WatchXYC/PlayerPage.swift` and `app:iOS` in `WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift`) and carry distinct names and signatures (`NowPlayingEntry.init(_:)` vs `NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)`). Although the Jaccard similarity is 0.78, both records report `fields_or_signature: []`, meaning no concrete shared member evidence is available to ground a safe extraction. The types serve platform-divergent roles \u2014 a watchOS player page entry versus an iOS WidgetKit timeline entry \u2014 making structural similarity likely coincidental rather than a sign of shared logic. Without inspectable field or body evidence, any extraction would risk coupling platform-specific widget/timeline semantics to watchOS display semantics.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_173_NowPlayingEntry.init___app_iOS_WXYC_iOS_NowPlayingWidget_NowPlayingTimelineEntry.swift_24_NowPlayingTi__hc0574c501f18cebd.json",
+  "row_index": 94,
+  "trial": 2
+}

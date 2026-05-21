@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:HLSRateDidChangeMessage+PlayerRateDidChangeMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": [], \"package\": \"Playback\"",
+    "rationale": "Both `PlayerRateDidChangeMessage` and `HLSRateDidChangeMessage` are `type-alias-object` records in the same `Playback` package, flagged as exact duplicates with `shared_field_count: 2` and no differing slots. Neither carries any restraint marker. Since both are type aliases (empty `fields_or_signature`), there is no code body to extract or generalize \u2014 the duplication is purely a naming redundancy. The right fix is alias consolidation within the `Playback` package, not a structural refactor, which is why none of the standard action categories apply cleanly.",
+    "specifics": {
+      "proposed_action": "Determine whether `HLSRateDidChangeMessage` (in `Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift`) and `PlayerRateDidChangeMessage` (in `Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift`) are both type aliases pointing to the same underlying type. If so, consolidate to a single canonical type alias \u2014 likely `PlayerRateDidChangeMessage` \u2014 declared once in a shared location within the `Playback` package (e.g., a new `Shared/Playback/Sources/Playback/Messages/PlaybackMessages.swift` or an existing shared messages file), and replace all uses of `HLSRateDidChangeMessage` with the canonical alias. If the two aliases intentionally target different underlying types despite the structural match, add a comment to each explaining the distinction and recommend no further action.",
+      "why_no_category_fits": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists. The standard action categories (extract-to-common, protocol-inheritance, default-implementation, etc.) are designed for concrete types, protocols, or functions with members. A type alias has no body to extract or generalize \u2014 the appropriate action is alias deduplication or renaming within the same package, which does not map cleanly to any named category. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so no-action is not warranted on those grounds."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_HLSRateDidChangeMessage_PlayerRateDidChangeMessage.json",
+  "row_index": 45,
+  "trial": 1
+}

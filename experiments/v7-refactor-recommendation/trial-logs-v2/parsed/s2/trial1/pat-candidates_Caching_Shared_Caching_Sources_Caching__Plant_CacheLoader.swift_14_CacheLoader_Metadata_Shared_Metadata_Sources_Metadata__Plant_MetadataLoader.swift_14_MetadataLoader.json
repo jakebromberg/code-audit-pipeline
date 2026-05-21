@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.82,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"load:() async throws -> Data\"], \"b\": [\"load:() async throws -> PlaycutMetadata\"]}], \"shared_field_count\": 4",
+    "rationale": "Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load()`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single varying slot (`Payload`) separates two otherwise-identical interfaces. Introducing `CacheLoadable` with `associatedtype Payload` and a shared `load() async throws -> Payload` requirement eliminates the structural duplication while preserving each concrete return type. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no no-action override applies.",
+    "specifics": {
+      "associated_type": "Payload",
+      "constraints": [],
+      "new_protocol": "CacheLoadable",
+      "replaces": [
+        "CacheLoader",
+        "MetadataLoader"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial1/pat-candidates_Caching_Shared_Caching_Sources_Caching__Plant_CacheLoader.swift_14_CacheLoader_Metadata_Shared_Metadata_Sources_Metadata__Plant_MetadataLoader.swift_14_MetadataLoader.json",
+  "row_index": 1,
+  "trial": 1
+}

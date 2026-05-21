@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared SwiftUI layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared private or internal SwiftUI `View` subcomponent (e.g., `NowPlayingWidgetContentView`) within the `WXYC/iOS/NowPlayingWidget/Views/` directory, parameterised by any size-specific values (e.g., font size, image size, or layout constants) that differ between the two widget sizes. Each entry view's `body` would then delegate to this shared subcomponent, passing the appropriate size-specific arguments.\",\n      \"why_no_category_fits\": \"Neither `extract-to-common` nor `generic-parameterization` fits cleanly. Both files already live in the same package (`app:iOS`) and the same directory (`WXYC/iOS/NowPlayingWidget/Views/`), so there is no cross-package extraction to perform. The duplication is a SwiftUI view-composition problem \u2014 the right Swift idiom is to factor the shared layout into a child `View` struct parameterised by size-specific values, not to introduce a generic function or a protocol hierarchy. The `fields_or_signature` lists are empty, so the precise differing slots are not surfaced in the cluster data, but the Jaccard similarity of 0.714 confirms meaningful shared structure alongside some divergence that is likely size-driven.\"\n    },\n    \"rationale\": \"The two computed properties `SmallNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift`) and `MediumNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift`) share a Jaccard similarity of 0.714, indicating substantial but not identical layout logic. Both are production code (all context flags false) in the same `app:iOS` package and the same subdirectory, so cross-package extraction is unnecessary. The idiomatic SwiftUI remedy is to compose a shared child `View` struct that encapsulates the common layout, with size-specific parameters passed at the call site from each entry view's `body`.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Style\", \"constraint\": \"NowPlayingWidgetStyle\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\"SmallNowPlayingWidgetEntryView\", \"MediumNowPlayingWidgetEntryView\"]\n      },\n      \"rationale\": \"If a `NowPlayingWidgetStyle` protocol (or similar) were introduced to capture size-specific constants, a single generic `NowPlayingWidgetEntryView<Style>` struct could replace both `SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView`. However, WidgetKit requires concrete `View` types registered via `@main` / `widgetConfiguration`, which makes a single generic entry view harder to wire up correctly; the child-view composition approach is therefore preferred.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Avjzdaz4yYWkRmx94b14WF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 988,
+    "service_tier": "standard"
+  }
+}

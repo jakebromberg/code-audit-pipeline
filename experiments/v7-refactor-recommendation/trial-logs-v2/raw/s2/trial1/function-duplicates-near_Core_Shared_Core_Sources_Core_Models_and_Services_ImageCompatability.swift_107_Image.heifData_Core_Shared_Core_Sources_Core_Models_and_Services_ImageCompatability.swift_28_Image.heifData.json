@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Consolidate the two near-duplicate `Image.heifData` method definitions within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` into a single canonical implementation. Inspect the bodies at lines 28 and 107 to determine whether one is a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`) or a true accidental duplicate. If they are platform guards, restructure them under a single method declaration with internal `#if` branches; if they are genuine duplicates, delete the one at line 107 and retain (or lightly generalise) the one at line 28.\",\n      \"why_no_category_fits\": \"Both records are methods on the same type (`Image.heifData`) in the same file and same package (`Core`), so 'extract-to-common' (no cross-package movement needed), 'generic-parameterization' (no type-parameter variation is evident), and 'default-implementation' (no protocol conformer split) are all inapplicable. The duplication is intra-file rather than cross-type or cross-package, making 'extension-consolidation' a poor fit as well. The correct action is a straightforward within-file deduplication or platform-branch merge, which none of the named categories capture precisely.\"\n    },\n    \"rationale\": \"Both participating records share the name `Image.heifData`, reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` within package `Core`, and carry no restraint flags (is_test=false, is_mock=false, is_sample_app=false, is_codegen=false). The Jaccard similarity of 0.75 indicates the two method bodies are nearly but not perfectly identical, suggesting either a platform-conditional split (UIKit vs AppKit) that was copy-pasted rather than branched, or an accidental second definition introduced during a refactor. Having two definitions of the same method name in the same file at lines 28 and 107 is unambiguously a maintenance hazard regardless of the cause.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"Image.heifData\\\" ... \\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\" ... \\\"line\\\": 28 ... \\\"line\\\": 107 ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `Image.heifData` definitions exist because the file contains separate `extension Image` blocks for UIKit and AppKit (a common pattern in cross-platform Swift), the right structural fix is to consolidate those extensions so that the single `heifData` property uses `#if canImport(UIKit) \u2026 #else \u2026 #endif` internally, eliminating the duplicate declaration while preserving platform-specific logic.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MRfziDzrJMJdtRZg4wcteY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3815,
+    "output_tokens": 856,
+    "service_tier": "standard"
+  }
+}

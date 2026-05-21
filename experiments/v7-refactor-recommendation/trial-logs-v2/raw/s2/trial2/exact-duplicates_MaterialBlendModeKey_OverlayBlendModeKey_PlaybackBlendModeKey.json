@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"BlendModeKey\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"All three type aliases \u2014 `PlaybackBlendModeKey`, `MaterialBlendModeKey`, and `OverlayBlendModeKey` \u2014 are structurally identical (`kind: type-alias-object`, `fields_or_signature: []`, `line: 89`) and live in the same package (`Wallpaper`) under `Shared/Wallpaper/Sources/Wallpaper/Core/`. No restraint markers are set on any record. Because they are exact duplicates within the same package, a single shared type alias `BlendModeKey` can be declared once in the `Wallpaper` package (e.g., in a new `BlendModeKey.swift` or an existing shared core file) and the three per-mode redeclarations removed. Each call site can either use `BlendModeKey` directly or introduce a `typealias PlaybackBlendModeKey = BlendModeKey` at the point of use if distinct nominal identity is still desired.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"fields_or_signature\\\": [], \\\"line\\\": 89\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If each blend-mode key is intentionally kept separate so that future divergence (e.g., different underlying type aliases or conformances per mode) remains easy, the structural coincidence at line 89 across three files is load-bearing domain separation and no consolidation is warranted.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TizdPJ2bewpFXwLNxXyeTY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3950,
+    "output_tokens": 587,
+    "service_tier": "standard"
+  }
+}

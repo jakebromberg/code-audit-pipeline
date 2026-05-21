@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster carefully:\n\n- `MainActorNotificationMessage` lives in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift` \u2014 production code, no restraint markers.\n- `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 the file path contains `CoreTesting` and the filename prefix `_Plant_Mock` strongly signals a test/mock fixture, yet `is_mock=false` and `is_test=false` per the context flags.\n\nThe decision rules require me to use the **provided context flags** as the authoritative restraint markers, not inferred path heuristics. Both records have all restraint flags set to `false`. However, the `_Plant_Mock` prefix and `CoreTesting` package path are strong structural evidence that this is a deliberately parallel mock/testing type whose duplication with the production interface is intentional \u2014 the coincidence is by design, not accidental. The `fields_or_signature` lists are both empty (no concrete members surfaced), and `shared_field_count: 3` with `jaccard: null` gives limited actionable signal. Lifting a mock type into the production `Core` source would couple production semantics to testing infrastructure. The right call under the decision rules is `no-action` with `reason_class: \"coincidental\"` (the structural overlap is intentional by the mock-mirroring pattern, and no restraint flag formally fires).\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both records carry all-false context flags, `MockNotificationMessage` resides in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 a `CoreTesting` sub-package with a `_Plant_Mock` filename prefix \u2014 making the structural overlap with `MainActorNotificationMessage` an intentional mock-mirroring pattern rather than accidental duplication. Both `fields_or_signature` lists are empty, so there are no concrete shared members to extract. Merging or consolidating these two interfaces would couple the production `Core/Observation` layer to testing infrastructure, which is the canonical restraint scenario. With `jaccard: null` and no differing slots reported, the pipeline has insufficient signal to distinguish a safe extraction target from a deliberate parallel declaration.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U6YqjqxnEJ2T6g1i7corAf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3763,
+    "output_tokens": 636,
+    "service_tier": "standard"
+  }
+}

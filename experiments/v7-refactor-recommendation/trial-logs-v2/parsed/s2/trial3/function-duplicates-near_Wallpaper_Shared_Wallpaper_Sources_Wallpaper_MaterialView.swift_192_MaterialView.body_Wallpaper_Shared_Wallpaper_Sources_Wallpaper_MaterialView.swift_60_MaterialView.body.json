@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"name\": \"MaterialView.body\", \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 60 ... \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both participating records are `MaterialView.body` computed properties in the single file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 60 and 192), with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The Jaccard similarity of 0.8333 confirms substantial but not identical content, suggesting one implementation diverged from the other over time rather than being an intentional specialization. Because both records share the same type name, file, and package (`Wallpaper`), the duplication is intra-type and intra-file, which no single named refactor category cleanly addresses without first understanding why two `body` implementations exist in the same `MaterialView` declaration.",
+    "specifics": {
+      "proposed_action": "Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is implemented twice via `#if` branches, two separate `extension` blocks, or two distinct `@ViewBuilder` overloads. Determine which variant is canonical, then either (a) delete the redundant implementation and unify the differing logic into a single `body` using conditional expressions or helper `@ViewBuilder` sub-views, or (b) if both are intentional conditional compilations, add a comment explaining the branching rationale so the near-duplicate signal is suppressed in future analysis passes.",
+      "why_no_category_fits": "Both records are in the same file, same type, and carry the same name (`MaterialView.body`), so this is not a cross-file extraction or protocol-inheritance problem. The `fields_or_signature` arrays are empty, preventing a precise `default-implementation` or `subclass-lift` recommendation. The near-duplicate signal (Jaccard 0.83) within a single file most likely reflects a conditional-compilation split or an accidental second implementation, which requires human inspection before any mechanical refactor can be prescribed. None of the named categories (`extract-to-common`, `protocol-inheritance`, `default-implementation`, `pat-introduction`, `generic-parameterization`, `subclass-lift`, `macro-synthesis`, `composition`, `extension-consolidation`) accurately describes the intra-file, same-name deduplication action needed here."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 3
+}

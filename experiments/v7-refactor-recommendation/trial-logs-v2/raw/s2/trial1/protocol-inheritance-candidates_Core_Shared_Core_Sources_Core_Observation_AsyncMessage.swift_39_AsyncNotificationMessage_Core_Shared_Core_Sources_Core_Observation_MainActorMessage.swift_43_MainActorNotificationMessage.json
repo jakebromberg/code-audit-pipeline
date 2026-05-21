@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"protocol-inheritance\",\n    \"specifics\": {\n      \"parent\": \"AsyncNotificationMessage\",\n      \"children\": [\"MainActorNotificationMessage\", \"AsyncNotificationMessage\"],\n      \"moved_members\": [\n        \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n        \"name:Notification.Name\"\n      ],\n      \"reuse_existing_swift_protocol\": false\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` and `MainActorNotificationMessage` in package `Core` share two identical member declarations \u2014 `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name` \u2014 differing only in the `makeMessage` factory signature (`sending Notification` vs plain `Notification`), which reflects the concurrency isolation distinction between the two protocols. The shared members are strong candidates to be hoisted into a common base protocol. Since both protocols already live in `Shared/Core/Sources/Core/Observation/`, the most idiomatic Swift approach is to introduce a base protocol (using one of the existing names, or a new `NotificationMessage` protocol) that carries the shared contract, with `MainActorNotificationMessage` and `AsyncNotificationMessage` refining it and each declaring only their divergent `makeMessage` overload. No restraint markers are present on either record, so no no-action override applies.\",\n    \"evidence_quote\": \"\\\"makeNotification:(_ message: Self, object: Subject?) -> Notification\\\",\\n            \\\"name:Notification.Name\\\"\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"AsyncNotificationMessage\",\n        \"method\": \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n        \"target_location\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared base protocol is considered too heavyweight, a protocol extension on `AsyncNotificationMessage` (or a new umbrella protocol) providing a default implementation of `makeNotification` and a default `name` could eliminate the duplication without restructuring the protocol hierarchy. However, this is less idiomatic than protocol inheritance when the two protocols are genuinely distinct roles that share a structural contract.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012Ha4D6ie4riM9Td3tJV5jz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3905,
+    "output_tokens": 671,
+    "service_tier": "standard"
+  }
+}

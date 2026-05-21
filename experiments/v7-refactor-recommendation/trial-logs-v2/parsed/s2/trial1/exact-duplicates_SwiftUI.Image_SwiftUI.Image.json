@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:SwiftUI.Image+SwiftUI.Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 2",
+    "rationale": "Two identical `extension SwiftUI.Image` declarations exist in separate app targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:190` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:27` \u2014 with `shared_field_count: 2` and no differing slots, confirming exact duplication. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Because both are production app targets and the extension body is identical, the shared members should live in exactly one place. However, without visibility into a dedicated shared/common package that both targets already depend on, the most conservative grounded choice is to consolidate into the existing `WXYC/iOS/NowPlayingWidget/Extensions.swift` file (package `app:iOS`) and have the WatchXYC target reference it \u2014 or, preferably, move it to a shared Swift file accessible to both targets if such a module exists. The `remove_from` list names both current locations so the duplicate in `PlayerPage.swift` is deleted after consolidation.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_SwiftUI.Image_SwiftUI.Image.json",
+  "row_index": 28,
+  "trial": 1
+}

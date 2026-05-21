@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/PlayerControllerBehaviorTests.swift:132:PlayerControllerBehaviorTests.multipleStopCallsAreIdempotent+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/PlayerControllerBehaviorTests.swift:214:StopBehaviorTests.stopIsIdempotent",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTests/Behavior/PlayerControllerBehaviorTests.swift`. The two methods \u2014 `PlayerControllerBehaviorTests.multipleStopCallsAreIdempotent` (line 132) and `StopBehaviorTests.stopIsIdempotent` (line 214) \u2014 are test-fixture methods that intentionally verify the same idempotency invariant from two different test-class perspectives (a broader behavior suite vs. a focused stop-behavior suite). Merging or deduplicating them would couple distinct test contexts and obscure the intent of each test class. The restraint marker `is_test: true` on every record dominates the near-duplicate signal (Jaccard 0.78).",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_PlaybackTests_Behavior_PlayerControllerBehaviorTests.swift_132_PlayerControllerBehaviorTests.multipleStopCallsAreIdempo__h65bc32429b6d8d11.json",
+  "row_index": 89,
+  "trial": 2
+}

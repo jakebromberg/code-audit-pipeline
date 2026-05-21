@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.55,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"line\": 89 ... \"shared_field_count\": 1 ... \"package\": \"Wallpaper\"",
+    "rationale": "All three records \u2014 `PlaybackBlendModeKey` (line 89, `PlaybackBlendMode.swift`), `MaterialBlendModeKey` (line 89, `MaterialBlendMode.swift`), and `OverlayBlendModeKey` (line 89, `_Plant_OverlayBlendMode.swift`) \u2014 are `type-alias-object` declarations at the exact same line number with identical empty `fields_or_signature` lists, all residing in the `Wallpaper` package. The `shared_field_count: 1` and `query: exact-duplicates` confirm the structural identity. Because they are type aliases rather than structs or functions, none of the standard action categories (extract-to-common, default-implementation, generic-parameterization) map cleanly; the right fix is to consolidate or genericize the key declaration within the existing `Wallpaper` package.",
+    "specifics": {
+      "proposed_action": "Introduce a single generic or parameterized `EnvironmentKey` type alias (e.g., `BlendModeKey`) in the `Wallpaper` package \u2014 or, if these are SwiftUI `EnvironmentKey` conformances, consolidate the three structurally identical `type-alias-object` declarations at line 89 of their respective files into one shared declaration inside `Shared/Wallpaper/Sources/Wallpaper/Core/`. Remove the per-mode duplicate declarations from `PlaybackBlendMode.swift`, `MaterialBlendMode.swift`, and `_Plant_OverlayBlendMode.swift`, leaving only the canonical one (or a single generic wrapper).",
+      "why_no_category_fits": "All three records are `type-alias-object` kinds with empty `fields_or_signature`, so there are no methods or fields to lift into a protocol, no function bodies to default-implement, and no struct fields to generalize in the usual sense. The duplication is at the type-alias/key-declaration level rather than at the method-body or struct-shape level. `extract-to-common` does not apply because all three already live in the same package (`Wallpaper`). The closest fit is a small inline consolidation or a generic key wrapper, which is best described as 'other'."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MaterialBlendModeKey_OverlayBlendModeKey_PlaybackBlendModeKey.json",
+  "row_index": 19,
+  "trial": 2
+}

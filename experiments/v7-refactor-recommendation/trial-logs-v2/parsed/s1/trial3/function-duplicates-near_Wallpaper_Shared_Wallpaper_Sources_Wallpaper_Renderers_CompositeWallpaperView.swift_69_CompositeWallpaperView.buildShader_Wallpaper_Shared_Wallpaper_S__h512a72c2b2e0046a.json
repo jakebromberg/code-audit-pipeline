@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift:69:CompositeWallpaperView.buildShader+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift:48:StitchableWallpaperView.buildShader",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.875",
+    "rationale": "Both `StitchableWallpaperView.buildShader` (line 48) and `CompositeWallpaperView.buildShader` (line 69) live in the same `Wallpaper` package under `Shared/Wallpaper/Sources/Wallpaper/Renderers/` and exhibit a Jaccard similarity of 0.875, indicating near-identical implementations. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. The most idiomatic Swift approach is to extract the shared `buildShader` logic into a protocol extension or a free function within the same `Wallpaper` package \u2014 both view types already reside there, so no new package dependency is introduced. Each view type can then delegate to or inherit the shared implementation, eliminating the near-duplicate bodies.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "buildShader"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Renderers_CompositeWallpaperView.swift_69_CompositeWallpaperView.buildShader_Wallpaper_Shared_Wallpaper_S__h512a72c2b2e0046a.json",
+  "row_index": 51,
+  "trial": 3
+}

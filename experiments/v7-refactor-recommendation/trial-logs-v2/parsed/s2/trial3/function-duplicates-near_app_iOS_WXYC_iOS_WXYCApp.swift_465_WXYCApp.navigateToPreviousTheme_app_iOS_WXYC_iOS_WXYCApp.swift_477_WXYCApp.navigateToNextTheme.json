@@ -1,0 +1,32 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+    "rationale": "The two methods `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file `WXYC/iOS/WXYCApp.swift` within package `app:iOS` and share a Jaccard similarity of 0.75, indicating near-duplicate bodies that differ only in the direction of navigation (previous vs. next). Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The most idiomatic Swift consolidation is to introduce a single method parameterised by direction \u2014 either an enum `ThemeNavigationDirection` with `.previous` and `.next` cases, or a simple `Int` offset \u2014 replacing both duplicates in place within `WXYC/iOS/WXYCApp.swift`. This eliminates the near-duplicate body while keeping the call sites expressive.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "navigateToTheme",
+      "replaces": [
+        "WXYCApp.navigateToPreviousTheme",
+        "WXYCApp.navigateToNextTheme"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "Direction"
+        }
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "near-duplicates-any:Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:160:Playcut+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:212:Playcut.CodingKeys",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "Playcut+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:212:Playcut.CodingKeys",
+    "rationale": "The cluster's `members` array is empty, leaving no `fields_or_signature` data to ground a concrete refactor. The cluster_id encodes two entities \u2014 `Playlist` (line 160) and `Playcut+Playlist` / `Playcut.CodingKeys` (line 212) \u2014 both residing in the same file `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift`. While the Jaccard similarity of 0.95 is high, `Playcut.CodingKeys` is a nested `CodingKeys` enum whose structural resemblance to a sibling `Playlist` enum is a well-known coincidental pattern in Swift Codable conformances: both enumerate the same field names by design, not because they represent the same abstraction. Without member-level evidence to confirm otherwise, prescribing a merge or extraction risks collapsing intentionally separate coding-key namespaces.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "near-duplicates-any",
+  "raw_response_path": "raw/s1/trial3/near-duplicates-any_Playlist_Shared_Playlist_Sources_Playlist_PlaylistEntry.swift_160_Playcut_Playlist_Shared_Playlist_Sources_Playlist_PlaylistEntry.swift_212_Playcut.CodingKeys.json",
+  "row_index": 0,
+  "trial": 3
+}

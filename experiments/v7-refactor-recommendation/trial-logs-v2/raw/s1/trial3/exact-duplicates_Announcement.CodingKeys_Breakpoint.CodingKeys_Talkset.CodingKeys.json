@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"All three `CodingKeys` enums \u2014 `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` \u2014 are nested `type-alias-union` declarations inside distinct domain types within the `Playlist` package. The `fields_or_signature` arrays are empty for all three records, so the structural evidence of 4 shared fields comes from the pipeline's diff analysis rather than from inspectable member lists, making it impossible to confirm whether the overlap is semantically meaningful or merely coincidental key-name collision across unrelated model types. Because `CodingKeys` enums are tightly coupled to the JSON contract of their enclosing type, merging or lifting them would conflate distinct wire formats. No restraint markers are present, but the domain-concept divergence (announcement vs. breakpoint vs. talkset) and the nested-type pattern make this coincidental structural overlap rather than actionable duplication.\",\n    \"evidence_quote\": \"Announcement.CodingKeys\\\", \\\"Breakpoint.CodingKeys\\\", \\\"Talkset.CodingKeys\\\" ... \\\"kind\\\": \\\"type-alias-union\\\" ... \\\"fields_or_signature\\\": []\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VNGNCLKtt5V71o15e5qBtp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3922,
+    "output_tokens": 386,
+    "service_tier": "standard"
+  }
+}

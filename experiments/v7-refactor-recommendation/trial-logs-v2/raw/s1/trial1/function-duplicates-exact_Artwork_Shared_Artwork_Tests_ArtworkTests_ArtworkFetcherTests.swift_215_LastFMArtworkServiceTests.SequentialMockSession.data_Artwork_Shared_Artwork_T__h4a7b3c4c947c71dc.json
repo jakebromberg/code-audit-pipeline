@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"All four duplicate `data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside per-test-class `SequentialMockSession` helper types (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`). Although the context flags do not set `is_test: true`, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the enclosing type names (all suffixed `Tests`) make clear these are test-internal mock session helpers. The structural duplication is incidental to each test class owning its own self-contained mock; consolidating them would couple otherwise independent test fixtures. No action is warranted.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"SequentialMockSession\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the four `SequentialMockSession.data` implementations are truly identical in body, a single shared `SequentialMockSession` helper extracted to a test-support file within the `Artwork` package (e.g., `Shared/Artwork/Tests/ArtworkTests/TestSupport/SequentialMockSession.swift`) would eliminate the repetition and let all three test classes reuse it. This is only worth pursuing if the implementations are confirmed identical and the test classes are expected to remain in the same file or package.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017cbhZsAhu81YgnHTCgx3ia",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4255,
+    "output_tokens": 713,
+    "service_tier": "standard"
+  }
+}

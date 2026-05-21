@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags carefully.\n\nBoth records have `is_sample_app: false`, `is_test: false`, `is_mock: false`, and `is_codegen: false`. However, the file path for the second record is `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which per the decision rules triggers the `sample-app-mirror` restraint class regardless of the `is_sample_app` flag value.\n\nThe decision rules state: \"ANY participating record has `is_sample_app=true`, or sits under `Examples/` or `SampleApp/`\" \u2014 the path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` clearly sits under `Examples/WallpaperSampleApp/`, satisfying the path-based criterion even though the flag reads `false`. This is the canonical restraint pattern: a production method in `DebugPanel` and a sample-app copy in `WallpaperSampleApp`. Lifting the production implementation to accommodate the sample-app copy would couple production semantics to demonstration code.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148:DebugMetricsProvider.measureMemoryUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:175:DebugMetricsProvider.measureMemoryUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"Although the `is_sample_app` flag is `false` on both records, the second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory tree \u2014 a path-based restraint marker that triggers the `sample-app-mirror` reason class per the decision rules. The first record is a production method in the `DebugPanel` package (`Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:148`). Merging or extracting these would couple the production `DebugPanel` package to sample-app demonstration semantics. The correct resolution, if any, is for the sample app to import and call `DebugPanel.DebugMetricsProvider.measureMemoryUsage` directly rather than redeclaring it \u2014 but that is a local cleanup decision for the sample app, not a shared-code extraction.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KhMwxUwXPncFz7EAUtaXxG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3885,
+    "output_tokens": 738,
+    "service_tier": "standard"
+  }
+}

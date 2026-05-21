@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift:231:AudioPlayerTestHarness.simulatePlaybackStarted+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift:304:AudioPlayerTestHarness.simulateRecovery\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `AudioPlayerTestHarness.simulatePlaybackStarted` (line 231) and `AudioPlayerTestHarness.simulateRecovery` (line 304) \u2014 carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift`. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Here both records are test helpers whose structural similarity (Jaccard 0.7857) likely reflects the parallel shape of playback-state simulation methods in a test harness, not accidental duplication that warrants production refactoring. Merging or abstracting these methods risks coupling test-harness semantics in ways that reduce readability of the test utilities.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SgYrnapuNeyWXPoWAJ7iNx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3894,
+    "output_tokens": 386,
+    "service_tier": "standard"
+  }
+}

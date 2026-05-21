@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendMode\",\n      \"method\": \"var blendMode: ...\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+Defaults.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"Three types in the same `Wallpaper` package \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 each carry an identically-shaped `blendMode` computed property at exactly line 62 of their respective files, flagged as `function-duplicates-exact`. Because all three are production code (all context flags false) in the same package, the idiomatic Swift resolution is to introduce a shared protocol (e.g., `BlendMode`) and provide a single default implementation via a protocol extension, eliminating the three redundant bodies. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` suggests it may be a codegen-seeded scaffold, but `is_codegen` is explicitly `false`, so it is treated as production code. A default-implementation extension placed in `Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+Defaults.swift` stays within the same SPM package and requires no dependency changes.\",\n    \"evidence_quote\": \"PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"BM\", \"constraint\": \"RawRepresentable\" }\n        ],\n        \"new_name\": \"blendMode\",\n        \"replaces\": [\n          \"PlaybackBlendMode.blendMode\",\n          \"MaterialBlendMode.blendMode\",\n          \"OverlayBlendMode.blendMode\"\n        ]\n      },\n      \"rationale\": \"If `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` are all `RawRepresentable` enums whose `blendMode` property is derived purely from the raw value, a single generic free function or constrained extension could replace all three computed properties without introducing a new protocol. However, this is less idiomatic Swift than a protocol + default implementation when the shared behaviour is a property on a named concept.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QPpnnbmDu8fjYe8NJSGuMk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4058,
+    "output_tokens": 934,
+    "service_tier": "standard"
+  }
+}

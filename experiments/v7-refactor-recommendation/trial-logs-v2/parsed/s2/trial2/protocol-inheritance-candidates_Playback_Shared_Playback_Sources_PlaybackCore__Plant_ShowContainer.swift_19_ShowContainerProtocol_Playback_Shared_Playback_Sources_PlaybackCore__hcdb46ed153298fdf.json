@@ -1,0 +1,27 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.82,
+    "evidence_quote": "\"isStale:Bool\", \"item:Show\", \"lastRefreshedAt:Date?\", \"pageToken:String?\" ... \"isStale:Bool\", \"item:Track\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"",
+    "rationale": "Both `ShowContainerProtocol` (in `_Plant_ShowContainer.swift`) and `TrackContainerProtocol` (in `_Plant_TrackContainer.swift`) within the `Playback` package share three identical members \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of their `item` field (`Show` vs `Track`). This is the canonical PAT pattern: a single generic protocol with `associatedtype Item` captures the shared shape, while the `item: Item` requirement varies per conformer. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication override applies. Introducing `ContainerProtocol` with `associatedtype Item` eliminates the structural duplication and makes the relationship between the two container protocols explicit and type-safe.",
+    "specifics": {
+      "associated_type": "Item",
+      "constraints": [],
+      "new_protocol": "ContainerProtocol",
+      "replaces": [
+        "ShowContainerProtocol",
+        "TrackContainerProtocol"
+      ]
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial2/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_PlaybackCore__Plant_ShowContainer.swift_19_ShowContainerProtocol_Playback_Shared_Playback_Sources_PlaybackCore__hcdb46ed153298fdf.json",
+  "row_index": 7,
+  "trial": 2
+}

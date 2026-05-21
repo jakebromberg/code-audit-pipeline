@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to assess whether a default-implementation refactor is warranted.\n\nKey observations:\n- All four participating records are in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` \u2014 a test file.\n- The records are nested types: `LastFMArtworkServiceTests.SequentialMockSession.data`, `DiscogsArtworkServiceTests.SequentialMockSession.data` (appears twice, at lines 321 and 367), and `iTunesArtworkServiceTests.SequentialMockSession.data`.\n- The `members` array is empty and `shared_field_count` is 0, meaning the pipeline surfaced these as candidates by name/shape signal alone, with no concrete shared field evidence.\n- All records are inside a test file, which triggers the restraint rule: `is_test=true` dominates.\n\nBecause every participating record lives in a test file (a mock session helper nested inside test classes), the intentional-duplication restraint applies unconditionally. Lifting these into a shared default implementation would couple test fixture internals to production or shared infrastructure, which is the canonical anti-pattern the restraint rule guards against.\n\n```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Every participating record \u2014 `LastFMArtworkServiceTests.SequentialMockSession.data`, both `DiscogsArtworkServiceTests.SequentialMockSession.data` entries (lines 321 and 367), and `iTunesArtworkServiceTests.SequentialMockSession.data` \u2014 lives exclusively in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`, a test file. The restraint rule requires no-action whenever any participating record is a test fixture, and here all four are. Furthermore, the cluster's `members` array is empty and `shared_field_count` is 0, meaning there is no concrete shared-field evidence to ground a default-implementation recommendation even if the restraint were absent. Extracting these nested mock session helpers into a shared default implementation would entangle test fixture semantics with production or shared infrastructure.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019BX4FR32o3rkn3UjqcgUQ2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3680,
+    "output_tokens": 797,
+    "service_tier": "standard"
+  }
+}

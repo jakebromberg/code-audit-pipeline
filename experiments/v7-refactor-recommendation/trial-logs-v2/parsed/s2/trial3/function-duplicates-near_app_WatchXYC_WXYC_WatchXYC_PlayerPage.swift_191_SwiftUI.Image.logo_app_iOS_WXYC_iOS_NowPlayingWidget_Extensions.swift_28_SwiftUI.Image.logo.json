@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:191:SwiftUI.Image.logo+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:28:SwiftUI.Image.logo",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.8823529411764706",
+    "rationale": "The computed property `SwiftUI.Image.logo` is declared identically in both `WXYC/WatchXYC/PlayerPage.swift` (package `app:WatchXYC`) and `WXYC/iOS/NowPlayingWidget/Extensions.swift` (package `app:iOS`), with a Jaccard similarity of 0.88, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. However, because no shared upstream package is explicitly named among the two participating records, the most pragmatic option is to move the definition into a shared extensions file within `app:iOS` (e.g., a `SharedExtensions.swift` or the existing `Extensions.swift`) and have `app:WatchXYC` consume it \u2014 or, if the two targets cannot directly share code, to note that a common module would be the ideal long-term home. The duplication is purely structural with no domain divergence evident from the cluster.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.logo"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_191_SwiftUI.Image.logo_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_28_SwiftUI.Image.logo.json",
+  "row_index": 49,
+  "trial": 3
+}

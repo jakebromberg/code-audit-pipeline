@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"macro-synthesis\",\n    \"specifics\": {\n      \"macro_name\": \"@DisplayName\",\n      \"applies_to\": [\"enum\"],\n      \"synthesizes\": \"A `var displayName: String` computed property that derives a human-readable display name from each case label, replacing the identical `displayName` implementations on `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode`.\",\n      \"population_size_evidence\": \"3 participating records: PlaybackBlendMode.displayName, MaterialBlendMode.displayName, OverlayBlendMode.displayName \u2014 all at line 41 in the Wallpaper package\",\n      \"use_swift_builtin\": false\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each carries an exactly-duplicated `displayName` computed property at line 41 of their respective files. The structural signal is `function-duplicates-exact`, confirming byte-level identity. Because the three types are parallel enum-like blend-mode types sharing only the shape of a display-name property, a `@DisplayName` attached macro synthesising `var displayName: String` is the most idiomatic Swift 5.9+ answer: it eliminates the boilerplate at the declaration site without requiring a shared protocol or base class, and scales automatically to any future blend-mode type added to the package.\",\n    \"evidence_quote\": \"PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendMode\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+Defaults.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared `BlendMode` protocol already exists (or is introduced) in the `Wallpaper` package, a protocol extension default implementation for `displayName` would also eliminate the three duplicate bodies. This is simpler than a macro but requires introducing or verifying a common protocol, which is not confirmed by the cluster row alone.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JDewtMcy2Y4e7WA2r7f2Z3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4052,
+    "output_tokens": 889,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:PlayerHeaderViewApp+PlayerHeaderViewSampleApp+WXUISampleApp+WXYCTVApp+WallpaperSampleApp+WatchXYC",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All six records are `type-alias-object` declarations with empty `fields_or_signature` lists, meaning the structural similarity is purely that each file defines a zero-member type alias \u2014 almost certainly a SwiftUI `@main` app entry-point alias (e.g., `typealias WatchXYC = \u2026`). Each alias carries a distinct name (`WXUISampleApp`, `WallpaperSampleApp`, `PlayerHeaderViewApp`, `PlayerHeaderViewSampleApp`, `WatchXYC`, `WXYCTVApp`) scoped to its own package (`WXUI`, `Wallpaper`, `PlayerHeaderView`, `app:WatchXYC`, `app:WXYC TV`), and the shared shape \u2014 a single empty type alias \u2014 is an unavoidable boilerplate artifact of the SwiftUI app-entry-point pattern rather than a meaningful duplication of logic. Extracting or unifying these aliases would serve no purpose because each must remain in its own module to satisfy the `@main` or entry-point requirement of its respective target. The `shared_field_count: 1` and `differing_slots: null` confirm there is no shared logic to consolidate.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_PlayerHeaderViewApp_PlayerHeaderViewSampleApp_WXUISampleApp_WXYCTVApp_WallpaperSampleApp_WatchXYC.json",
+  "row_index": 2,
+  "trial": 2
+}

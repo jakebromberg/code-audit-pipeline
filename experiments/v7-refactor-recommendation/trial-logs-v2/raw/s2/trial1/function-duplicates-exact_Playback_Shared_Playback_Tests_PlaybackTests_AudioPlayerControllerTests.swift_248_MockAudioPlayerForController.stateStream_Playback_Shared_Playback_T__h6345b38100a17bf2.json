@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records \u2014 `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) \u2014 live in the same test file `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` and are computed properties on the same mock type. Although the context flags do not set `is_test` or `is_mock` to true, the file path (`Tests/PlaybackTests/`) and the `Mock` prefix on the enclosing type make clear these are test-support fixtures. The two properties represent semantically distinct stream concepts (`stateStream` vs. `eventStream`) whose structural similarity is coincidental to their shared Combine/AsyncSequence return-type shape, not evidence of extractable duplication. With `fields_or_signature` empty for both records, there is insufficient evidence to confirm the bodies are truly identical rather than merely similarly shaped.\",\n    \"evidence_quote\": \"MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FvcpqZz5nRn5mD7u6VEPmf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3849,
+    "output_tokens": 425,
+    "service_tier": "standard"
+  }
+}

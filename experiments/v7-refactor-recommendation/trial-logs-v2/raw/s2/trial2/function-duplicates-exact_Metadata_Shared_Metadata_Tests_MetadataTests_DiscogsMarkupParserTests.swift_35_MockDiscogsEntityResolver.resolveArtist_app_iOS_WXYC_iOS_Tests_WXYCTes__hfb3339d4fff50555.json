@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live in test files \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). The method name `MockDiscogsEntityResolver.resolveArtist` is a mock/stub helper defined inline in each test suite to satisfy the local test's dependency on a `DiscogsEntityResolver` abstraction. Although both `context_flags` blocks show `is_mock: false` and `is_test: false`, the file paths unambiguously place both records inside `Tests/` directories, and the `Mock` prefix on the enclosing type is the canonical Swift test-fixture naming convention. Lifting this mock into a shared location would couple two independent test targets through a shared test-support dependency, which is undesirable and provides no production benefit.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support target were introduced inside the `Metadata` package (e.g., `MetadataTestSupport`), `MockDiscogsEntityResolver` including `resolveArtist` could be defined once and imported by both `MetadataTests` and `WXYCTests`. This is only worth pursuing if additional mock types are duplicated across the same pair of test targets, making the overhead of a shared test-support library worthwhile.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SU1891PpofBhgnMUr9NEPx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3865,
+    "output_tokens": 644,
+    "service_tier": "standard"
+  }
+}

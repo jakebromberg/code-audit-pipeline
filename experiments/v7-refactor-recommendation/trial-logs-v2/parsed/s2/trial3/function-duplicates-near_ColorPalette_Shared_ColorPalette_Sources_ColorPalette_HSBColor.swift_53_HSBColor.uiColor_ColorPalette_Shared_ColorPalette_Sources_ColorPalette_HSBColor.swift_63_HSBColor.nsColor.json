@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+    "rationale": "The two computed properties `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` are structurally similar (Jaccard 0.71) because they both convert the same `HSBColor` value type into a platform color \u2014 but they target distinct platform types (`UIColor` on iOS/tvOS vs. `NSColor` on macOS). These are intentionally parallel platform-specific accessors; collapsing them into a single generic or shared implementation would require conditional compilation or type erasure that adds complexity without removing meaningful duplication. Both records carry no restraint markers, but the domain concepts are genuinely distinct: one accessor is load-bearing for UIKit consumers and the other for AppKit consumers, and their near-identical shape is a direct consequence of the symmetric platform color APIs rather than copy-paste drift.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/HLSPlayer/Protocol/HLSAVPlayerProtocol.swift:20:HLSAVPlayerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "shared_field_count: 0",
+    "rationale": "The structural evidence explicitly reports `shared_field_count: 0` and `jaccard: null`, meaning the pipeline found no statistically meaningful field overlap between `HLSAVPlayerProtocol` and `TimeShiftablePlayer`. The sole surface-level overlap is `play:()`, a one-word method name whose presence in both protocols is a domain coincidence rather than a shared contract: `HLSAVPlayerProtocol` models raw AVPlayer primitives (`rate:Float`, `seekableTimeRanges:[NSValue]`, `seek:(to time: CMTime) async -> Bool`) while `TimeShiftablePlayer` models a live-radio abstraction with entirely different semantics (`isAtLiveEdge:Bool`, `secondsBehindLive:TimeInterval`, `seekToLive:() async`, `stateStream:AsyncStream<PlayerState>`, `makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>`). Introducing a parent protocol to capture only `play:()` would create a misleading inheritance hierarchy that implies a shared contract where none exists, and would couple two protocols that are intentionally scoped to different layers of the playback stack within the same `Playback` package.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial3/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_HLSPlayer_Protocol_HLSAVPlayerProtocol.swift_20_HLSAVPlayerProtocol_Playback_Shared_Playback_Sources_PlaybackC__h82db2967eceab244.json",
+  "row_index": 16,
+  "trial": 3
+}

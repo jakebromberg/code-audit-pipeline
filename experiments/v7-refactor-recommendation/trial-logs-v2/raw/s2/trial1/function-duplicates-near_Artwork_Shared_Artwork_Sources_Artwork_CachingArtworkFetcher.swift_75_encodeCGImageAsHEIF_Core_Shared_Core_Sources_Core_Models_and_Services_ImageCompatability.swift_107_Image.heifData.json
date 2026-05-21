@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two near-duplicate HEIF-encoding routines \u2014 `encodeCGImageAsHEIF` in package `Artwork` (CachingArtworkFetcher.swift:75) and `Image.heifData` in package `Core` (ImageCompatability.swift:107) \u2014 with a Jaccard similarity of 0.706, indicating substantial shared logic. `Core` is the natural canonical home because it already owns the image-compatibility surface (`ImageCompatability.swift`) and `Artwork` is a consumer package that depends on `Core`. Consolidating into `Core` eliminates the duplicate, keeps the implementation close to related image utilities, and lets `CachingArtworkFetcher` call the shared method directly. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so no intentional-duplication rule applies.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Move `encodeCGImageAsHEIF` out of `CachingArtworkFetcher` into a dedicated `CGImage+HEIF.swift` extension file within the `Artwork` package, and have `Core`'s `Image.heifData` delegate to it (or vice-versa) via a shared internal helper, without changing the public API surface of either package.\",\n        \"why_no_category_fits\": \"If `Artwork` cannot take a hard dependency on `Core`'s image utilities (e.g., due to layering constraints not visible in the cluster row), neither a clean extract-to-common nor a protocol approach is appropriate; instead, a thin internal helper within `Artwork` that mirrors the `Core` implementation would reduce drift without coupling packages in the wrong direction.\"\n      },\n      \"rationale\": \"If the dependency direction between `Artwork` and `Core` is not already established, promoting `encodeCGImageAsHEIF` into `Core` would introduce a new inter-package dependency. In that case, keeping the implementation in `Artwork` and documenting the near-duplication is safer than forcing a layering change.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JDKoAWQYmHX8YM8ps3FqMj",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 716,
+    "service_tier": "standard"
+  }
+}

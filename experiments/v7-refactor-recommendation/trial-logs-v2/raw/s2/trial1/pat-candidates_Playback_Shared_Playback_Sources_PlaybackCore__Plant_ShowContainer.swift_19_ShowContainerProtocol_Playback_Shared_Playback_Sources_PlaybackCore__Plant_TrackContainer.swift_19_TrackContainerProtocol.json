@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in the `Playback` package share three identical fields \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of the `item` field (`Show` vs `Track`). The structural evidence confirms `shared_field_count: 4` with a single differing slot (`item:Show` vs `item:Track`), which is the canonical PAT signal: a family of protocols that are identical except for one type parameter. Introducing a PAT `ContainerProtocol` with `associatedtype Item` and moving the three shared fields into it eliminates the duplication while preserving the distinct `item` types through the associated type. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint override applies.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4, \\\"differing_slots\\\": [{\\\"a\\\": [\\\"item:Show\\\"], \\\"b\\\": [\\\"item:Track\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If callers already hold typed references to `ShowContainerProtocol` or `TrackContainerProtocol` and a PAT's opaque-type ergonomics are undesirable (e.g., the protocols are used as existentials), a non-generic base protocol `ContainerProtocol` carrying the three shared members as concrete requirements is a viable alternative. However, this approach cannot unify the `item` property without losing static type information, so the PAT approach is preferred.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LUHs757GHhXnN1aaHYbxMk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3944,
+    "output_tokens": 677,
+    "service_tier": "standard"
+  }
+}

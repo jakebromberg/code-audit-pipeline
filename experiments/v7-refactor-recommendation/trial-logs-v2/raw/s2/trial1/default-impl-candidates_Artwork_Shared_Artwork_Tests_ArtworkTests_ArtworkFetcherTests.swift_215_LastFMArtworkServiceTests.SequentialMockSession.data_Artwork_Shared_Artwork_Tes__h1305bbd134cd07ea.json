@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the participating records carefully.\n\nThe cluster_id encodes the participating records:\n- `Artwork/Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215` \u2014 `LastFMArtworkServiceTests.SequentialMockSession.data`\n- `Artwork/Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321` \u2014 `DiscogsArtworkServiceTests.SequentialMockSession.data`\n- `Artwork/Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367` \u2014 `DiscogsArtworkServiceTests.SequentialMockSession.data`\n- `Artwork/Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88` \u2014 `iTunesArtworkServiceTests.SequentialMockSession.data`\n\nAll four participating records reside in `ArtworkFetcherTests.swift`, which is a test file (path contains `Tests/ArtworkTests/`). The restraint rule is unambiguous: **any** participating record with `is_test=true` triggers `no-action` with `reason_class: \"test-fixture\"`. All four records here are test fixtures \u2014 nested `SequentialMockSession.data` members inside test-suite classes. Lifting these into a shared default implementation would couple production or shared infrastructure to test semantics, which is precisely the anti-pattern the restraint rule guards against.\n\n```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All four participating records \u2014 `LastFMArtworkServiceTests.SequentialMockSession.data`, `DiscogsArtworkServiceTests.SequentialMockSession.data` (appearing twice, at lines 321 and 367), and `iTunesArtworkServiceTests.SequentialMockSession.data` \u2014 live exclusively in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`, a test file. Every record in the cluster is a test fixture; the restraint rule mandates no-action whenever any participating record is test-marked. Extracting a default implementation of `data` from these nested `SequentialMockSession` mock types would couple shared or production infrastructure to test-only semantics, which is the canonical anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TuBYQA1ZoxRDiZdRohQRLT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3680,
+    "output_tokens": 1009,
+    "service_tier": "standard"
+  }
+}

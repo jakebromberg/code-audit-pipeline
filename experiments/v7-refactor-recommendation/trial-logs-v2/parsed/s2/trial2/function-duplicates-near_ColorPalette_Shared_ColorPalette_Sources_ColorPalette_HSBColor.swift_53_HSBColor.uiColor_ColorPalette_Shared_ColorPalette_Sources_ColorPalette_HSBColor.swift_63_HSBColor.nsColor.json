@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The cluster identifies `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` as near-duplicates with a Jaccard similarity of 0.714, meaning roughly 71 % of their token bodies are shared. Both are computed properties on the same type in the same file and package (`ColorPalette`), so no cross-package extraction is warranted. The divergence is platform-type-only (`UIColor` vs `NSColor`), suggesting a shared private helper for the HSB component tuple would eliminate the duplication without any structural reorganisation.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(uiColorFactory: (CGFloat,CGFloat,CGFloat,CGFloat)->UIColor, nsColorFactory: (CGFloat,CGFloat,CGFloat,CGFloat)->NSColor) -> <T>`) or, more idiomatically, extract the shared HSB-to-color-component conversion logic into a private computed property (e.g., `private var hsbComponents: (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that both `uiColor` and `nsColor` delegate to. This eliminates the near-duplicate body while keeping the two platform-typed properties as thin wrappers in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`.",
+      "why_no_category_fits": "Both properties live in the same file and same type (`HSBColor`) in the same package (`ColorPalette`), so `extract-to-common` (cross-package extraction) is not applicable. They are computed properties, not protocol conformances, so `default-implementation`, `protocol-inheritance`, and `pat-introduction` do not apply. They return platform-specific types (`UIColor` vs `NSColor`), making a single generic parameterization unsound without conditional compilation. The right fix is an internal DRY helper within the existing type \u2014 a refactor that fits none of the named categories precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 2
+}

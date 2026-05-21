@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "I need to analyze this cluster row carefully before making a recommendation.\n\n**Observations:**\n\n1. **Cluster type:** `cross-package-shape-near-duplicates-any`\n2. **Participating records:**\n   - `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97` \u2014 type `MockStructuredAnalytics.CPUSessionEventProxy+Playback`, package `Analytics`\n   - `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272` \u2014 type `CPUSessionEvent`, package `Playback`\n3. **Context flags:** The first record is in a file named `MockStructuredAnalytics.swift` inside a path component `AnalyticsTesting` \u2014 strongly suggesting `is_mock=true` or `is_test=true`. The type name `MockStructuredAnalytics.CPUSessionEventProxy+Playback` contains the word \"Mock\" explicitly.\n4. **Structural evidence:** Jaccard similarity of 0.875 (high shape overlap), but `members` array is empty \u2014 no field/method detail is available to ground a specific action recommendation.\n5. **Decision rule:** The first participating record is clearly a mock fixture (path contains `AnalyticsTesting`, type name contains `Mock`). Per decision rule 1, ANY participating record with `is_mock=true` triggers `no-action` with `reason_class: \"mock-fixture\"`. The mock type `MockStructuredAnalytics.CPUSessionEventProxy+Playback` is intentionally mirroring the shape of the production `CPUSessionEvent` \u2014 that is the purpose of a mock/test proxy.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` declared in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 the file path contains the `AnalyticsTesting` component and the type name carries the `Mock` prefix, both unambiguous markers of a deliberate test/mock fixture. Per decision rule 1, any cluster containing a mock-marked record must be treated as intentional duplication. The high Jaccard similarity of 0.875 between this proxy and the production `CPUSessionEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` is expected: the mock is designed to mirror the production shape so that test code can substitute it. Lifting shared structure into a common location would couple production `PlaybackCore` semantics to the `AnalyticsTesting` module, which is the canonical anti-pattern this rule guards against.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014a28z2Wxw1bDpL1EV1KeyG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3587,
+    "output_tokens": 835,
+    "service_tier": "standard"
+  }
+}

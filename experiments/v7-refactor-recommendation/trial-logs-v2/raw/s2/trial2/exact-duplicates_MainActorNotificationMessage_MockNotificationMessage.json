@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster carefully:\n\n- `MainActorNotificationMessage` lives in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift` \u2014 production code, no restraint markers.\n- `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 the path contains `CoreTesting` and the filename prefix `_Plant_Mock` strongly signals a test/mock fixture, yet `is_mock=false` and `is_test=false` per the context flags.\n\nThe decision rules require me to apply restraint markers **as recorded**. Neither record carries `is_mock=true` or `is_test=true`. However, the file path `CoreTesting/_Plant_MockNotificationMessage.swift` and the `Mock` prefix in the name are strong structural signals that this is a deliberate test-support fixture. The `fields_or_signature` list is empty for both records, so there is no method-level evidence to ground an action recommendation. With no fields to extract, no protocol hierarchy to establish, and the second record sitting in a `CoreTesting` module with a `Mock`-prefixed name, any merge or extraction would risk coupling production semantics to test-support semantics. The coincidental-shape signal dominates here.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records share the same package ('Core') and report zero fields (`fields_or_signature: []`), so there is no concrete member surface to extract or unify. More importantly, the second record lives at 'Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift' with a 'Mock'-prefixed name, placing it firmly in a test-support module; merging or lifting it alongside the production 'MainActorNotificationMessage' in 'Shared/Core/Sources/Core/Observation/MainActorMessage.swift' would couple production observation semantics to test-fixture semantics. With no differing slots, no shared ancestor, and no shared fields listed beyond the structural count of 3, the overlap is structural coincidence rather than actionable duplication.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KsTykuenn1aP7gdZuQmwPb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3763,
+    "output_tokens": 593,
+    "service_tier": "standard"
+  }
+}

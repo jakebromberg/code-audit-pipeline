@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+    "rationale": "Both participating records are `Image.heifData` methods in the same file (`Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`) and the same package (`Core`), at lines 28 and 107 respectively, with a Jaccard similarity of 0.75. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). The near-duplicate signal within a single file strongly suggests either a platform-conditional split that should be unified under `#if` guards, or an accidental duplication where one definition is stale and should be removed. The appropriate action is an in-file consolidation rather than any cross-package or protocol-level refactor.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method declarations at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They share a Jaccard similarity of 0.75, suggesting near-duplicate bodies. Determine whether one is a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`) or a genuine accidental duplication. If the divergence is purely platform-conditional, consolidate into a single method body using `#if` guards or a shared private helper. If one is a leftover from an earlier implementation, delete it. Either way, the two declarations should be collapsed to a single canonical `Image.heifData` within the same file.",
+      "why_no_category_fits": "Both records are in the same file and same package \u2014 `extract-to-common` does not apply (there is no cross-package duplication). There is no protocol, conformer, or generic type involved, so `default-implementation`, `pat-introduction`, and `generic-parameterization` do not apply. The duplication is two method declarations of the same name in one file, which is most likely a platform-conditional split or an accidental leftover; the correct fix is an in-file consolidation or deletion, which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 3
+}

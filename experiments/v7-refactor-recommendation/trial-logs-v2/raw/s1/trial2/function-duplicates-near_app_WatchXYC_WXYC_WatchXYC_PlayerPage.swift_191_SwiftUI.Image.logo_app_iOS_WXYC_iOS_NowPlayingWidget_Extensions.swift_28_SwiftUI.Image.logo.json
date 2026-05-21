@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:191:SwiftUI.Image.logo+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:28:SwiftUI.Image.logo\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"SwiftUI.Image.logo\",\n      \"remove_from\": [\n        \"WXYC/WatchXYC/PlayerPage.swift\"\n      ]\n    },\n    \"rationale\": \"The computed property `SwiftUI.Image.logo` is declared identically in both `WXYC/WatchXYC/PlayerPage.swift` (package `app:WatchXYC`) and `WXYC/iOS/NowPlayingWidget/Extensions.swift` (package `app:iOS`), with a Jaccard similarity of 0.88, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. The canonical definition should live in a shared extensions file accessible to both targets; however, since no dedicated shared/common package is surfaced in the cluster, the best available option is to move the definition into a shared Swift file (e.g., a new `WXYC/Shared/Extensions/Image+Logo.swift`) within whichever package is upstream, or at minimum remove the duplicate from `PlayerPage.swift` and import the definition from `Extensions.swift`. The duplication creates a maintenance risk: any future change to the logo asset name or rendering logic must be applied in two places.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"SwiftUI.Image.logo\\\", \\\"kind\\\": \\\"computed-property\\\" ... \\\"jaccard\\\": 0.8823529411764706\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"SwiftUI.Image\",\n        \"consolidate_from\": [\n          \"WXYC/WatchXYC/PlayerPage.swift\",\n          \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"\n        ]\n      },\n      \"rationale\": \"Rather than moving the property to a shared package, both extension declarations on `SwiftUI.Image` could be consolidated into a single shared extensions file (e.g., `WXYC/Shared/Extensions/Image+WXYC.swift`) that both the WatchXYC and iOS targets include, avoiding cross-package dependency changes while still eliminating the duplicate.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UXsprGZujLhUj6VxjAcGsf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3838,
+    "output_tokens": 676,
+    "service_tier": "standard"
+  }
+}

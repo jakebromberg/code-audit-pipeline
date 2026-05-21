@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in the `Playback` package share three identical members \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of `item` (`Show` vs `Track`). This is the canonical PAT pattern: the varying slot (`item`) becomes an `associatedtype Item`, and the three shared members lift into the new protocol body. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Introducing `ContainerProtocol<Item>` eliminates the structural duplication while preserving full type safety for each concrete container.\",\n    \"evidence_quote\": \"\\\"isStale:Bool\\\", \\\"lastRefreshedAt:Date?\\\", \\\"pageToken:String?\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If a PAT is considered too heavyweight for this use-case, a non-generic parent protocol `ContainerProtocol` could hold the three shared members (`isStale`, `lastRefreshedAt`, `pageToken`) with `ShowContainerProtocol` and `TrackContainerProtocol` inheriting from it and each adding their own typed `item` property. This is simpler but loses the ability to write generic algorithms over `ContainerProtocol` that also reference `item` in a type-safe way.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0183ewffDiecn4bb82P7xEDo",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 632,
+    "service_tier": "standard"
+  }
+}

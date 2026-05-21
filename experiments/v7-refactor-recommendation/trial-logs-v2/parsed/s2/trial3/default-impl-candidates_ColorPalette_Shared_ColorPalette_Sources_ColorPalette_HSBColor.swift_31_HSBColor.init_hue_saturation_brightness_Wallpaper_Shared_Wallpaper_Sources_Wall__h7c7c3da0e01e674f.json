@@ -1,0 +1,21 @@
+{
+  "cluster_id": "default-impl-candidates:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "All three types \u2014 `HSBColor`, `HSBOffset`, and `AccentColor` \u2014 share the initializer label signature `init(hue:saturation:brightness:)`, but they encode distinct domain concepts: a base HSB color value, a relative HSB offset/delta, and a themed accent color role. The `default-implementation` category requires naming an existing protocol that all three conformers already share, but no such protocol is surfaced in this cluster row and the `members` array is empty with `shared_field_count: 0`, providing no evidence that the initializer bodies are identical or even compatible. Proposing a default implementation without a pre-existing protocol would require inventing both a new protocol and new conformances, which exceeds the schema's constraints and risks conflating semantically unrelated types whose structural similarity is coincidental to the HSB color-space domain.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "default-impl-candidates",
+  "raw_response_path": "raw/s2/trial3/default-impl-candidates_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wall__h7c7c3da0e01e674f.json",
+  "row_index": 5,
+  "trial": 3
+}

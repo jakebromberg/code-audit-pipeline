@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:109:PlaybackState.description+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:105:PlayerState.description",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "PlayerState.description+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:105:PlayerState.description",
+    "rationale": "Both `PlayerState.description` (line 105 of `PlayerState.swift`) and `PlaybackState.description` (line 109 of `PlaybackState.swift`) are computed properties that conform to `CustomStringConvertible` on two distinct domain types within the same `Playback` package. A Jaccard similarity of 0.857 on near-duplicate body text is expected for `description` implementations that enumerate a small, parallel set of enum cases or state fields \u2014 the structural resemblance is a natural consequence of the two types modelling related but distinct concepts (player state vs. playback state). Neither record carries any restraint marker, but the `fields_or_signature` arrays are both empty, meaning there is no shared member evidence to lift into a common extension or default implementation. Merging or defaulting these properties would conflate two separate domain abstractions without a grounding protocol to attach the default to.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Playback_Shared_Playback_Sources_PlaybackCore_PlaybackState.swift_109_PlaybackState.description_Playback_Shared_Playback_Sources_PlaybackCore_PlayerState.swift_105_PlayerState.description.json",
+  "row_index": 56,
+  "trial": 3
+}

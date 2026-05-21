@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` at line 56 and `ExternalLinkTapped.init(service:artist:album:)` at line 70 live in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`) within the `Analytics` package and carry identical signatures, indicating their bodies are exact duplicates. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. Because both types reside in the same package and file, cross-package extraction is unnecessary; the idiomatic fix is a shared payload struct or private helper within the same file that both initializers delegate to.",
+    "specifics": {
+      "proposed_action": "Introduce a shared private or internal helper (e.g., a static factory or a common memberwise initializer on a shared value type such as a `LinkTappedPayload(service:artist:album:)` struct) inside `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package, and have both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) delegate to it. This removes the duplicated initializer body without requiring a new package or a protocol hierarchy.",
+      "why_no_category_fits": "The two initializers belong to two distinct concrete types (`StreamingLinkTapped` and `ExternalLinkTapped`) in the same file and package, so `extract-to-common` (which targets cross-package duplication) is not the right fit. There is no protocol in the cluster to attach a `default-implementation` to, and no evidence of a PAT or generic opportunity given that the types are event-specific value types whose only shared shape is the `(service:artist:album:)` parameter list. `subclass-lift` is inappropriate for what are almost certainly structs/enums in an analytics event file. The most idiomatic Swift remedy is a shared payload value type or a private delegating helper \u2014 neither of which maps cleanly to any named category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 1
+}

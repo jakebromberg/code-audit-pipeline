@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are `type-alias-object` records in the same `Core` package, living in sibling files `Observation/MainActorMessage.swift` and `Observation/AsyncMessage.swift`. Despite sharing 3 structural fields, they carry distinct names that signal intentionally different semantic roles: one is scoped to `@MainActor` dispatch, the other is a general async notification sequence. Type aliases by definition have no body to deduplicate, and the structural overlap is almost certainly a coincidence of the underlying generic type they both alias rather than a true duplication. No restraint markers are present, but the domain distinction between actor-isolated and general async contexts is sufficient reason to leave them separate.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"kind\\\": \\\"type-alias-object\\\" ... \\\"shared_field_count\\\": 3\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KkqNH7rvfaas4SYgFp889E",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3776,
+    "output_tokens": 328,
+    "service_tier": "standard"
+  }
+}

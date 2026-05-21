@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ErrorEvent",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\"",
+    "rationale": "Both participating records are `type-alias-object` entries with empty `fields_or_signature` lists and no `name` field populated, meaning the structural pipeline surfaced a name collision on `ErrorEvent` but provided no field-level evidence of shared shape or semantics. The two aliases live in distinct packages (`Playback` and `Analytics`) at unrelated paths (`PlaybackCore/Analytics/PlaybackAnalytics.swift` and `Analytics/Events/ErrorEvents.swift`), and without knowing what each alias resolves to there is no grounded basis for recommending extraction or consolidation. All context flags are false on both records, so no restraint marker applies, but the absence of any `jaccard`, `shared_field_count`, or `shared_ancestor` evidence means the coincidence is purely nominal.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_ErrorEvent.json",
+  "row_index": 24,
+  "trial": 1
+}

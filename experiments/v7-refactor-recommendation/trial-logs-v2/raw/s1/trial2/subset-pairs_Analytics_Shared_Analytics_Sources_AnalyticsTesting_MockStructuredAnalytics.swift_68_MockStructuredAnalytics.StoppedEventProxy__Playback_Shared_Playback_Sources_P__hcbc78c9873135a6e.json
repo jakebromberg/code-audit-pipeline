@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster is a `subset-pairs` signal between:\n1. `MockStructuredAnalytics.StoppedEventProxy__Playback` in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68` (package: `Analytics`, path contains `AnalyticsTesting`)\n2. `PlaybackStoppedEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48` (package: `Playback`)\n\nKey observations:\n- The first record lives under `AnalyticsTesting` \u2014 this is a testing/mock package by name convention.\n- The `members` array is empty and all `structural_evidence` fields are null, meaning there is no field-level evidence to ground any action recommendation.\n- One record is clearly a mock/test fixture (`AnalyticsTesting`, `MockStructuredAnalytics`, `StoppedEventProxy`).\n- Decision rule 1 applies: ANY participating record with test/mock characteristics \u2192 `no-action` with `reason_class: \"test-fixture\"`.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.StoppedEventProxy__Playback`, declared inside `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 a file whose package path (`AnalyticsTesting`) and type name prefix (`Mock`) unambiguously mark it as a test fixture. Per decision rule 1, any cluster containing a test/mock record must be treated as intentional duplication. Additionally, the `members` array is empty and all `structural_evidence` fields are null, so there is no field-level evidence to ground any concrete refactor action even if the restraint marker were absent. Lifting `PlaybackStoppedEvent` from `PlaybackCore` into shared code on the basis of this proxy would couple production playback semantics to test infrastructure.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MRGVEyHTGGNvrPwCg4rdeY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3568,
+    "output_tokens": 669,
+    "service_tier": "standard"
+  }
+}

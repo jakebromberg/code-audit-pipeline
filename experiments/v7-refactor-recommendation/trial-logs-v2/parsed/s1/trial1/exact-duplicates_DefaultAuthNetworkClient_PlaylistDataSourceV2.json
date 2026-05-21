@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DefaultAuthNetworkClient+PlaylistDataSourceV2",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"shared_field_count\": 1, \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null",
+    "rationale": "Both `PlaylistDataSourceV2` (in `Playlist/V2/PlaylistDataSourceV2.swift`) and `DefaultAuthNetworkClient` (in `MusicShareKit/Auth/AuthNetworkClient.swift`) are `type-alias-object` declarations with empty `fields_or_signature` lists. The structural signal is that they share exactly one field (shared_field_count: 1) with null jaccard and null shared_ancestor, meaning the overlap is purely in the alias-object shape rather than in any meaningful member content. The two names encode entirely unrelated domain concepts \u2014 playlist data sourcing versus authenticated network communication \u2014 whose structural coincidence is an artifact of both being type aliases with no additional members, not a sign of shared logic worth consolidating. No restraint markers are present, but the domain divergence and absence of any shared members make any extraction or unification semantically unsound.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_DefaultAuthNetworkClient_PlaylistDataSourceV2.json",
+  "row_index": 49,
+  "trial": 1
+}

@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7058823529411765",
+    "rationale": "The cluster surfaces two near-duplicate functions \u2014 `encodeCGImageAsHEIF` in package `Artwork` (CachingArtworkFetcher.swift:75) and `Image.heifData` in package `Core` (ImageCompatability.swift:107) \u2014 with a Jaccard similarity of 0.706, indicating substantial shared logic for HEIF-encoding a CGImage. Since `Core` is already a shared foundation package and `Artwork` is a consumer of it (the package names and paths imply this layering), the canonical implementation should live in `Core` as `Image.heifData`. The `encodeCGImageAsHEIF` free function in `Artwork` can then be deleted and its call sites redirected to the `Core` extension method, eliminating the duplication without coupling production code to any test or sample-app fixture (all context flags are false on both records).",
+    "specifics": {
+      "remove_from": [
+        "Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift"
+      ],
+      "target_package": "Core",
+      "type_name": "Image.heifData"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Artwork_Shared_Artwork_Sources_Artwork_CachingArtworkFetcher.swift_75_encodeCGImageAsHEIF_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData.json",
+  "row_index": 143,
+  "trial": 3
+}

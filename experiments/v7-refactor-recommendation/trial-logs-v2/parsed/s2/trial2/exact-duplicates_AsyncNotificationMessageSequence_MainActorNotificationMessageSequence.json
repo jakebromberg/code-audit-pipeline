@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "Both `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` are `type-alias-object` records in the same package (`Core`) with empty `fields_or_signature` lists. Type aliases carry no body \u2014 the structural similarity (shared_field_count: 3) reflects the alias declaration syntax itself, not duplicated logic. The two names are semantically distinct: one is scoped to `@MainActor` dispatch, the other is a general async notification sequence. Collapsing or extracting them would destroy the intentional naming distinction that communicates actor-isolation context to callers. No restraint markers are present, but the coincidence is purely structural.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_AsyncNotificationMessageSequence_MainActorNotificationMessageSequence.json",
+  "row_index": 31,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift",
+    "rationale": "Both participating records reside under `Shared/ColorPalette/Tests/ColorPaletteTests/` \u2014 specifically `DominantColorExtractorTests.swift` (line 278) and `ColorPaletteServiceTests.swift` (line 239) \u2014 and their owning types are named `DominantColorExtractorTests` and `ColorPaletteServiceTests`, confirming these are test-class helper methods. Although the pipeline emitted `is_test: false` for both records (likely a metadata gap in test-method classification), the file paths and type names are literal evidence from the cluster row that both `createSolidColorImage` implementations are test fixtures. Lifting a shared image-construction helper out of two test classes into production code would couple production targets to test-only image-generation semantics, which is the canonical restraint pattern. The correct remediation \u2014 if desired \u2014 would be a private test-support file within the same test target, not a cross-boundary extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 2
+}

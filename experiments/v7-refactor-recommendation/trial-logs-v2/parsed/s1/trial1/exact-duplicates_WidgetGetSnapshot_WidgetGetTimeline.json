@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:WidgetGetSnapshot+WidgetGetTimeline",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"WidgetGetSnapshot\" ... \"name\": \"WidgetGetTimeline\" ... \"fields_or_signature\": [] ... \"shared_field_count\": 1",
+    "rationale": "Both `WidgetGetSnapshot` and `WidgetGetTimeline` are `type-alias-object` declarations in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`) within the `Analytics` package, with empty `fields_or_signature` lists. The structural signal is an exact-duplicate match with `shared_field_count: 1`, but because both records carry no fields at all, the overlap is purely nominal/structural coincidence rather than substantive code duplication. The two names encode distinct widget lifecycle concepts (snapshot vs. timeline) that are intentionally separate event types; merging or extracting them would conflate domain semantics without reducing any real code.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_WidgetGetSnapshot_WidgetGetTimeline.json",
+  "row_index": 37,
+  "trial": 1
+}

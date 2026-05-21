@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"humanReadableName\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) are near-duplicate methods (Jaccard 0.8) living in the same `Wallpaper` package with no restraint markers (is_test, is_mock, is_sample_app, is_codegen all false). Because both types reside in the same package, the shared logic can be extracted into a protocol extension or free function within `Wallpaper` itself \u2014 for example, a `ShaderDirectiveNaming` protocol or a shared extension on a common base type \u2014 eliminating the duplication without introducing a new package dependency. The high Jaccard similarity strongly suggests the two implementations diverged from a single original and will drift further if not unified.\",\n    \"evidence_quote\": \"ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"ShaderDirectiveNaming\",\n        \"method\": \"humanReadableName\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n        ]\n      },\n      \"rationale\": \"If `ShaderDirectiveStore` and `ShaderDirectiveControlsDisclosure` can both be made to conform to a shared `ShaderDirectiveNaming` protocol, the near-identical `humanReadableName` body could be provided as a protocol extension default implementation, removing the per-type duplication while preserving override flexibility. However, this requires introducing a new protocol name not currently evidenced in the cluster, making `extract-to-common` within the existing `Wallpaper` package the more conservative primary choice.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NzHCXev1LgQZLSK3txPTPB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3899,
+    "output_tokens": 818,
+    "service_tier": "standard"
+  }
+}

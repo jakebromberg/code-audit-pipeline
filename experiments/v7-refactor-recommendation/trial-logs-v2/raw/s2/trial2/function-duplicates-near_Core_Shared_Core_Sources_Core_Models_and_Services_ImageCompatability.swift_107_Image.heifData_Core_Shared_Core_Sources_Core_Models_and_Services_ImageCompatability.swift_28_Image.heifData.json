@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `Image.heifData` method declarations at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. With a Jaccard similarity of 0.75 they are near-duplicates but not identical, suggesting one may be a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`). Consolidate into a single implementation \u2014 either by unifying the shared logic into one method body with conditional branches, or by extracting the common logic into a private helper and having each variant delegate to it \u2014 then delete the redundant declaration.\",\n      \"why_no_category_fits\": \"Both records live in the same file (`ImageCompatability.swift`) and the same package (`Core`), so `extract-to-common` (which requires moving to a different package) does not apply. There is no protocol, subclass hierarchy, or generic type involved, so `protocol-inheritance`, `default-implementation`, `pat-introduction`, `generic-parameterization`, `subclass-lift`, and `macro-synthesis` do not apply. The duplication is within a single file between two method overloads/variants, making this an intra-file deduplication task best described as a targeted consolidation that does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"Both participating records are `Image.heifData` methods in the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`), at lines 28 and 107, with no restraint markers (all context flags false). A Jaccard score of 0.75 indicates substantial but imperfect overlap, consistent with two platform-conditional variants (UIKit vs AppKit) that share most of their body. The right fix is intra-file consolidation \u2014 extracting shared logic into a private helper or unifying the conditional branches \u2014 rather than any cross-package or protocol-level refactor.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 28, \\\"name\\\": \\\"Image.heifData\\\" ... \\\"line\\\": 107, \\\"name\\\": \\\"Image.heifData\\\" ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `Image.heifData` declarations are separated by a `#if` conditional block rather than being true independent methods, restructuring the file so that a single `extension Image` block contains one `heifData` property/method with internal conditional logic would eliminate the near-duplicate signal while keeping platform specificity intact.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KL6aPE5XhQv8XK4yGxoJom",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3815,
+    "output_tokens": 809,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both participating records are the function `cachedFetch` in `Shared/Caching/Sources/Caching/CachedFetch.swift` within the `Caching` package, at lines 45 and 92 respectively. The structural evidence reports a Jaccard similarity of 0.7, indicating substantial but not identical overlap \u2014 a classic sign of copy-paste divergence within a single file. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so no restraint marker applies. Because both functions live in the same file and package, the appropriate fix is intra-file consolidation rather than any cross-package or type-hierarchy refactor.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` function bodies at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` in the `Caching` package. They share a Jaccard similarity of 0.7 and reside in the same file, strongly suggesting one is a near-duplicate of the other. Determine whether they differ only in a single parameter (e.g., a cache policy, expiry, or key type), and if so, unify them into a single `cachedFetch` function with a defaulted or overloaded parameter, removing the redundant overload from the same file.",
+      "why_no_category_fits": "Both records are in the same file and the same package (`Caching`), so `extract-to-common` (which requires moving across packages) does not apply. There is no protocol, conformer, or type hierarchy involved, so `default-implementation`, `protocol-inheritance`, `pat-introduction`, `subclass-lift`, and `composition` do not apply. The duplication is two free functions in one file, not a family of types, so `generic-parameterization` and `macro-synthesis` are not the right fit either. The correct action is an intra-file consolidation \u2014 collapsing two near-duplicate free functions into one \u2014 which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"One of the two participating records lives in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` under the `AnalyticsTesting` target, which is a test/mock support module (the path segment `AnalyticsTesting` and the type prefix `Mock` are canonical restraint markers). Per the decision rules, any cluster where at least one record is a test or mock fixture must be treated as no-action. Lifting `CPUSessionEvent` from `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` into shared code alongside `MockStructuredAnalytics.CPUSessionEventProxy+Playback` would couple production playback analytics to test-fixture semantics, which is the exact anti-pattern the restraint rule guards against. The high Jaccard similarity (0.875) is expected: the mock is intentionally shaped to mirror the production type it stands in for.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0144zC9gnzaJsnqaGqaYFXSz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3575,
+    "output_tokens": 426,
+    "service_tier": "standard"
+  }
+}

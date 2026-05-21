@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ContentView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "\"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null, \"differing_slots\": null",
+    "rationale": "All three records are `type-alias-object` entries with empty `fields_or_signature` lists and empty `name` fields, meaning the pipeline has surfaced only a naming collision on the SwiftUI conventional entry-point name `ContentView` across three structurally unrelated files: `WXUISampleApp.swift` (package WXUI, under an Examples path), `RequestSentHUD.swift` (package MusicShareKit), and `WXYC TV/ContentView.swift` (package app:WXYC TV). The `structural_evidence` block carries all-null values for jaccard, shared_field_count, shared_ancestor, and differing_slots, confirming there is no shared shape or content \u2014 only a coincident name. `ContentView` is the idiomatic SwiftUI root-view name and its reuse across independent targets is expected and intentional; consolidating or renaming these types would break each target's SwiftUI entry point without any structural benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_ContentView.json",
+  "row_index": 10,
+  "trial": 2
+}

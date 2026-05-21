@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available and make a recommendation.\n\nThe cluster references:\n- `MockAudioPlayerForController` in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` (line 244) \u2014 a mock, in a test file\n- `HLSPlayer` in `Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift` (line 31) \u2014 production code\n\nThe `members` array is empty and all structural evidence fields are null, meaning no field-level overlap data was surfaced. However, the cluster_id itself encodes the participating records, and one of them is clearly in a test file acting as a mock (`MockAudioPlayerForController`).\n\nPer decision rule 1: ANY participating record with `is_test=true` or `is_mock=true` triggers \"no-action\" with reason_class \"test-fixture\" or \"mock-fixture\". The record `MockAudioPlayerForController` in `AudioPlayerControllerTests.swift` is both a mock and a test fixture by name and path. This restraint marker dominates.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:244:MockAudioPlayerForController__Playback:Shared/Playback/Sources/HLSPlayer/HLSPlayer.swift:31:HLSPlayer\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockAudioPlayerForController` located at `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:244`, which is unambiguously a test-fixture mock by both its name prefix (`Mock\u2026`) and its residence inside the `Tests/PlaybackTests/` directory. Per the restraint rules, any cluster containing a test or mock record must be treated as no-action. Lifting shared shape between `HLSPlayer` (production) and `MockAudioPlayerForController` (test mock) into common code would couple production semantics to test-fixture semantics, which is the canonical anti-pattern the restraint rule is designed to prevent. Additionally, the `members` array is empty and all `structural_evidence` fields are null, so there is no field-level evidence to ground any action recommendation even if the restraint were absent.\",\n    \"evidence_quote\": \"Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:244:MockAudioPlayerForController\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01G8MNnb6DyJhZQsMxAxAbK4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3558,
+    "output_tokens": 644,
+    "service_tier": "standard"
+  }
+}

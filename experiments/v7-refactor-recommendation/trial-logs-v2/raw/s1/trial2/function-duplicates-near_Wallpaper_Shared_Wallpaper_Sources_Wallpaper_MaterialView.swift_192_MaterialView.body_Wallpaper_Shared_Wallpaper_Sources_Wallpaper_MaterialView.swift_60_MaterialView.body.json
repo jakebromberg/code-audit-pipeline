@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a SwiftUI `View` with two conditional or overloaded `body` implementations (e.g., inside `#if` compiler directives or inside two distinct nested types both named `MaterialView`). Determine which implementation is canonical, delete or merge the redundant one, and if the two variants serve genuinely different configurations, extract the differing logic into a private helper `@ViewBuilder` function (e.g., `private func materialContent(...) -> some View`) called from a single `body` property, eliminating the near-duplicate.\",\n      \"why_no_category_fits\": \"Both records are the same computed property name (`MaterialView.body`) in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`), so 'extract-to-common' (cross-file/package extraction) does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved. The duplication is an intra-file near-duplicate of a SwiftUI `body` property, which is best resolved by merging or extracting a shared `@ViewBuilder` helper \u2014 a pattern that does not map cleanly to any of the named categories.\"\n    },\n    \"rationale\": \"The cluster surfaces two `MaterialView.body` computed-property declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192, with a Jaccard similarity of 0.8333, indicating substantial but not identical content. Because both records share the same package (`Wallpaper`), the same file, and the same property name, this is an intra-file duplication rather than a cross-file or cross-package concern. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. The correct fix is to consolidate the two near-identical `body` implementations into one, extracting any differing logic into a private `@ViewBuilder` helper.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `body` implementations exist because `MaterialView` is declared in two separate extensions within the same file (a common SwiftUI pattern), consolidating both extensions into a single `MaterialView` body declaration would eliminate the near-duplicate. However, this is secondary to simply merging the duplicate logic, and the cluster row does not confirm an extension-split structure.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QRNAA6PdUfiDKGWNUFUMo6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 899,
+    "service_tier": "standard"
+  }
+}

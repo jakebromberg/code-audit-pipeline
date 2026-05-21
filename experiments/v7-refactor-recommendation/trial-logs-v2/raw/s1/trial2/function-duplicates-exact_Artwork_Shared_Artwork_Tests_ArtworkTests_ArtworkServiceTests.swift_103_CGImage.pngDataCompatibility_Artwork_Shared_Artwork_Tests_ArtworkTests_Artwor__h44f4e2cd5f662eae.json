@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Deduplicate the two identical `CGImage.pngDataCompatibility` computed-property definitions within `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 73 and 103) by retaining one definition \u2014 preferably hoisted to a private extension on `CGImage` at the top of the file or in a dedicated test-support file within the `Artwork` package \u2014 and removing the second occurrence.\",\n      \"why_no_category_fits\": \"Both records live in the same single file (`ArtworkServiceTests.swift`) and are exact duplicates of the same computed property on `CGImage`. The appropriate fix is intra-file deduplication (keep one definition, delete the other), which does not map cleanly to `extract-to-common` (no cross-package movement needed), `extension-consolidation` (there is only one file involved, not multiple extension sites to merge), or any of the protocol/generic/macro categories. The context flags show `is_test: false` on both records despite the file path containing `Tests/`, so no restraint-marker override applies; the duplication is a straightforward copy-paste artifact that should be resolved by simple deletion of the redundant definition.\"\n    },\n    \"rationale\": \"Both participating records share the identical name `CGImage.pngDataCompatibility`, identical kind `computed-property`, identical package `Artwork`, and identical file `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`, differing only in line number (73 vs 103). This is a within-file exact duplicate \u2014 the property is defined twice in the same source file. No restraint markers are set (`is_test: false`, `is_mock: false`, `is_sample_app: false`, `is_codegen: false`), so the duplication is unintentional. The fix is purely local: delete one of the two definitions and ensure all call sites in the file reference the surviving one.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\\\",\\n            \\\"kind\\\": \\\"computed-property\\\",\\n            \\\"line\\\": 73,\\n            \\\"name\\\": \\\"CGImage.pngDataCompatibility\\\"\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"CGImage\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\"\n        ]\n      },\n      \"rationale\": \"If `CGImage.pngDataCompatibility` is used by multiple test classes within `ArtworkServiceTests.swift` (explaining why it was written twice), it could be lifted into a dedicated `CGImage+TestSupport.swift` extension file within the `Artwork` package's test target, making it available to any future test files without repetition. However, since both occurrences are in the same file and the cluster provides no evidence of broader usage, simple intra-file deduplication is the more proportionate primary action.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DPekDY3ebeSLSKwU1LigSo",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3839,
+    "output_tokens": 854,
+    "service_tier": "standard"
+  }
+}

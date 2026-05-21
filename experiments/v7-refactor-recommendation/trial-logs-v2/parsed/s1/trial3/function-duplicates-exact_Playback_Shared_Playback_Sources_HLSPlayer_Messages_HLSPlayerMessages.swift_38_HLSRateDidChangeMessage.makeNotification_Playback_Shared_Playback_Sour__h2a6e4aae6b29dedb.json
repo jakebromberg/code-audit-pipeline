@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift:38:HLSRateDidChangeMessage.makeNotification+Playback:Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift:42:PlayerRateDidChangeMessage.makeNotification",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "HLSRateDidChangeMessage.makeNotification+Playback:Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift:42:PlayerRateDidChangeMessage.makeNotification",
+    "rationale": "Both `HLSRateDidChangeMessage.makeNotification` (line 38 in `HLSPlayerMessages.swift`) and `PlayerRateDidChangeMessage.makeNotification` (line 42 in `RadioPlayerMessages.swift`) are flagged as exact function duplicates within the same `Playback` package. Because the bodies are identical and both types presumably conform to a shared message protocol (given the parallel naming convention `*RateDidChangeMessage`), the cleanest Swift-idiomatic fix is to define a protocol \u2014 e.g., `RateDidChangeMessage` \u2014 that both types conform to, and provide a single default implementation of `makeNotification()` in a protocol extension within the `Playback` package, eliminating the duplicated bodies in both conforming types. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is safe. The shared package (`Playback`) means no cross-package dependency changes are required.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift",
+        "Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift"
+      ],
+      "method": "makeNotification()",
+      "protocol": "makeNotification",
+      "target_location": "Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Sources_HLSPlayer_Messages_HLSPlayerMessages.swift_38_HLSRateDidChangeMessage.makeNotification_Playback_Shared_Playback_Sour__h2a6e4aae6b29dedb.json",
+  "row_index": 27,
+  "trial": 3
+}

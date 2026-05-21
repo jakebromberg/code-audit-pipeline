@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift",
+    "rationale": "Both participating records live under `Tests/` subdirectories (`Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) and carry the `Mock` prefix in their type names (`MockHLSAVPlayer`, `MockPlayer`). Although the pipeline emitted `is_mock: false` and `is_test: false` for both records, the file paths and naming conventions are unambiguous indicators of test-fixture code. Consolidating these two `play` implementations would couple distinct mock objects that intentionally model different playback abstractions (`HLSAVPlayer` vs a generic `Player`), and the `fields_or_signature` list is empty for both, providing no structural evidence that the bodies are meaningfully shareable beyond coincidental method-name overlap.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 3
+}

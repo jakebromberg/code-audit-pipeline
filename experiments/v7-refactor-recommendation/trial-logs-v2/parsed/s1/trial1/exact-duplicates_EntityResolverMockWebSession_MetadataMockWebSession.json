@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift",
+    "rationale": "Both participating records reside under test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift` (line 79, `MetadataMockWebSession`) and `Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift` (line 72, `EntityResolverMockWebSession`) \u2014 within the `Metadata` package's test target. Although the context flags do not set `is_test: true` or `is_mock: true`, the file paths unambiguously place both type-alias objects inside a `Tests/MetadataTests/` directory, making them test fixtures by location. Consolidating these aliases into shared test infrastructure would couple two otherwise independent test suites and obscure the intent of each mock session alias within its own caching-test context.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 1
+}

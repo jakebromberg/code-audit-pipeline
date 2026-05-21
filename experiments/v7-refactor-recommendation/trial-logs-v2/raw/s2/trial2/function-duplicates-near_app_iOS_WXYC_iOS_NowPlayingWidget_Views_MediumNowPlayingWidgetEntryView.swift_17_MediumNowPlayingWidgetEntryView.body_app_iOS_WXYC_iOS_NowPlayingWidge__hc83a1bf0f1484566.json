@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared SwiftUI layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared private or internal SwiftUI `View` subcomponent (e.g., `NowPlayingWidgetContentView`) within the `WXYC/iOS/NowPlayingWidget/Views/` directory, parameterised by any size-specific values (e.g., font size, image size, padding) passed as initialiser arguments. Each entry view's `body` then composes this shared subview, delegating the common layout to it while retaining only the size-specific configuration at the call site.\",\n      \"why_no_category_fits\": \"The two duplicated members are SwiftUI `body` computed properties on concrete `View`-conforming structs (`SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView`). The idiomatic Swift/SwiftUI remedy is view composition \u2014 extracting a shared child `View` struct \u2014 rather than any of the named categories. `extract-to-common` does not apply because both files already live in the same package (`app:iOS`) and the same directory; there is no cross-package extraction needed. `generic-parameterization` does not apply because the variation is in layout constants, not in generic type parameters. `default-implementation` does not apply because `body` is a protocol requirement of `View` whose default cannot be meaningfully shared across unrelated concrete types without coupling them. `subclass-lift` does not apply because SwiftUI views are structs, not classes. The closest named category would be `composition`, but the schema for `composition` models the case where one type becomes a *field* of another, whereas here the goal is to introduce a *third* extracted view type composed into both existing views \u2014 a three-way relationship the `composition` schema does not capture cleanly.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.7142857142857143 between `SmallNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift`) and `MediumNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift`), indicating substantial shared layout structure. Both are `computed-property` members in the same `app:iOS` package and the same `Views/` subdirectory, so no cross-package extraction is warranted. The idiomatic SwiftUI remedy for near-duplicate `body` implementations across size-variant widget views is to extract a shared child `View` struct parameterised by size-specific constants, which none of the named refactor categories model precisely. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so intentional-duplication rules do not apply.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"composition\",\n      \"specifics\": {\n        \"composing_type\": \"SmallNowPlayingWidgetEntryView\",\n        \"composed_type\": \"MediumNowPlayingWidgetEntryView\",\n        \"field_name\": \"contentView\"\n      },\n      \"rationale\": \"As a weaker alternative, `SmallNowPlayingWidgetEntryView.body` could delegate to `MediumNowPlayingWidgetEntryView` as a composed sub-view (or vice versa), treating the medium layout as the canonical implementation and the small layout as a wrapper that constrains it. However, this creates an asymmetric dependency between two peer widget views that are conceptually siblings, making the medium view load-bearing for the small one \u2014 a fragile coupling. The extracted-subview approach in the primary recommendation is more symmetric and maintainable.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Umsye1TYKhiHq1Zx5rUYvV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 1111,
+    "service_tier": "standard"
+  }
+}
