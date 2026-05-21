@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for `differing_slots`, `shared_ancestor`, and `shared_field_count`, leaving no concrete field lists, method signatures, or context flags to ground a refactor recommendation. The only available evidence is a Jaccard similarity of 0.75 between `AccentColorControls` (AccentColorControls.swift:16) and `MaterialControls` (MaterialControls.swift:15) in the `Wallpaper` package's `DebugUI/ThemeDebugOverlay` directory. Without member-level detail it is impossible to identify which members are shared, which diverge, or whether the structural overlap is domain-meaningful rather than coincidental (e.g., both being small SwiftUI control views with similar boilerplate). Recommending an extraction or protocol introduction without that evidence would risk coupling two intentionally distinct debug-UI controls. Per the decision rules, when evidence cannot be grounded in the cluster row, `no-action` with reason_class `coincidental` is the correct answer.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ThemeDebugControl\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift\"\n        ]\n      },\n      \"rationale\": \"If member-level inspection confirms the ~75 % overlap consists of shared SwiftUI view scaffolding (body structure, state declarations, layout helpers), a common base view or shared helper within the same `Wallpaper` package's `DebugUI/ThemeDebugOverlay` group could eliminate the duplication. This alternative is demoted because the empty `members` array makes it impossible to verify the claim without further analysis.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01J1nV5E6LgHd3tt9PTBTFr4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2331,
+    "output_tokens": 669,
+    "service_tier": "standard"
+  }
+}

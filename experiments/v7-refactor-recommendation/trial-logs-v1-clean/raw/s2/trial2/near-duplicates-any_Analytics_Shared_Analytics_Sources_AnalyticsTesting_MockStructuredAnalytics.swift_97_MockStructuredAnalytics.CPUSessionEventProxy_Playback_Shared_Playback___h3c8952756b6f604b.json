@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the participating records based on the cluster_id itself, since `members` is empty.\n\nFrom the cluster_id I can extract:\n- Record 1: `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97` \u2014 type `MockStructuredAnalytics.CPUSessionEventProxy+Playback`, in the `Analytics` package, path contains `AnalyticsTesting` and the type name starts with `Mock`\n- Record 2: `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272` \u2014 type `CPUSessionEvent`, in the `Playback` package\n\nThe first record is in `AnalyticsTesting` (a testing support module) and its type is named `MockStructuredAnalytics.CPUSessionEventProxy+Playback` \u2014 the `Mock` prefix is a canonical mock-fixture marker. The restraint rule is clear: **any** participating record with `is_mock=true` (or whose name/path unambiguously signals a mock fixture) triggers `no-action` with `reason_class: \"mock-fixture\"`. The `AnalyticsTesting` module path and `Mock` prefix are strong structural evidence of this, even without explicit field-level flags, and the high Jaccard similarity (0.875) is exactly the expected pattern for a mock mirroring a production type.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` located in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 the `Mock` prefix and the `AnalyticsTesting` module path are canonical mock-fixture markers. The high Jaccard similarity of 0.875 against the production type `CPUSessionEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` is precisely the expected pattern: a test double intentionally mirrors the shape of its production counterpart. Lifting shared structure into common code would couple production `PlaybackCore` semantics to test/mock infrastructure, which is the restraint pattern the decision rules are designed to prevent.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01V3nXndB4SuvWiMj4kBgkgi",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 728,
+    "service_tier": "standard"
+  }
+}

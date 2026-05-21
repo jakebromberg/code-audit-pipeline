@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the file paths carefully.\n\nThe second member's file path is `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which is a strong structural indicator of a sample app context, even though `is_sample_app` is flagged `false` in the context flags. However, the decision rules specify that the `is_sample_app` flag on the record governs, not path heuristics \u2014 but the rules also say records \"under Examples/ or SampleApp/\" trigger the sample-app-mirror restraint. The rule text explicitly lists path-based evidence as a trigger: \"sits under Examples/ or SampleApp/\". This record sits under `Examples/WallpaperSampleApp/`, which satisfies that condition regardless of the flag value.\n\nTherefore, the mixed-cluster restraint applies: one record is production (`DebugPanel`), the other sits under `Examples/WallpaperSampleApp/`, making this a canonical sample-app-mirror pattern. Lifting the production implementation based on a sample-app duplicate would couple production semantics to demonstration code.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:100:DebugMetricsProvider.updateMetrics+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:131:DebugMetricsProvider.updateMetrics\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The other record is a production method in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). Merging or extracting shared code from this cluster would couple the production DebugPanel package to demonstration-context semantics defined in the Wallpaper sample app. The duplication is intentional: the sample app re-implements updateMetrics locally to remain self-contained without depending on the DebugPanel production package.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FarGUaiovQcXReeQsW18mw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2615,
+    "output_tokens": 680,
+    "service_tier": "standard"
+  }
+}

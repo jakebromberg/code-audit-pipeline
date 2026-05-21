@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully assess the context flags and file paths.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory. The decision rules state that any record sitting under `Examples/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`, regardless of what `is_sample_app` reports. The `is_sample_app` flag reads `false`, but the path evidence overrides that: the file is unambiguously inside a sample-app subtree.\n\nAdditionally, even setting aside the sample-app path signal, the `DebugHUD.swift` file in a `WallpaperSampleApp` is a demonstration/debugging artifact, while the production copy lives in `DebugPanel`. Lifting the production implementation to satisfy a sample-app duplicate would couple production semantics to demonstration code \u2014 exactly the anti-pattern the restraint rules guard against.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195:DisplayLinkSequence.AsyncIterator.next+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:219:DisplayLinkSequence.AsyncIterator.next\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record resides at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits inside an Examples/WallpaperSampleApp/ subtree \u2014 a sample-app directory. Per the restraint rules, any record under Examples/ triggers sample-app-mirror no-action regardless of the is_sample_app flag value. The production copy of DisplayLinkSequence.AsyncIterator.next lives in DebugPanel (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:195); extracting shared code to satisfy this duplicate would couple the production DebugPanel package to demonstration semantics. The duplication is intentional: the sample app replicates the display-link async iterator locally to remain self-contained without taking a dependency on DebugPanel.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NxnbT4cYWLXR9pN4ff91wk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2615,
+    "output_tokens": 660,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"shared_field_count\": 4, \"differing_slots\": null",
+    "rationale": "All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift:34`, `Breakpoint.CodingKeys` in `PlaylistEntry.swift:72`, and `Talkset.CodingKeys` in `PlaylistEntry.swift:111` \u2014 are flagged as exact duplicates with `shared_field_count: 4` and `differing_slots: null`, meaning their 4 coding-key cases are identical. All three live in the same `Playlist` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so consolidation is safe. Because `CodingKeys` must satisfy `Swift.CodingKey` and is referenced by name during `Codable` synthesis, a simple file-level extraction is insufficient; a protocol-based or typealias-based approach is required to preserve `Codable` conformance on each parent type.",
+    "specifics": {
+      "proposed_action": "Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base set of raw values) in a protocol or a common parent type within the `Playlist` package, and have each nested `CodingKeys` either be replaced by a direct typealias to the shared enum or be removed in favour of a protocol-provided default. Concretely: introduce a `PlaylistEntryCodable` protocol in `Shared/Playlist/Sources/Playlist/` with an associated or concrete `CodingKeys` enum carrying the 4 shared cases, and conform `Announcement`, `Breakpoint`, and `Talkset` to it, deleting the three redundant nested `CodingKeys` declarations.",
+      "why_no_category_fits": "The three duplicates are nested `CodingKeys` enums (kind: `type-alias-union`) rather than free-standing structs, classes, or functions. The most idiomatic Swift fix is neither a plain `extract-to-common` (the type must remain nested or accessible as `CodingKeys` for `Codable` synthesis to work) nor a straightforward `default-implementation` (there is no protocol method to default \u2014 the duplication is in an enum declaration). A `macro-synthesis` approach (`@CodingKeys` macro) is the closest named category but the cluster row provides no evidence that a macro already exists or that the population is large enough to justify authoring one. The correct action is a protocol-based shared `CodingKeys` definition, which straddles `extract-to-common` and `default-implementation` without fitting either cleanly."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 1
+}

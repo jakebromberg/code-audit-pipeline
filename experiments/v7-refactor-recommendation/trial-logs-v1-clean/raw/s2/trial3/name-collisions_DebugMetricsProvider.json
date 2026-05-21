@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- `cluster_id`: `name-collisions:DebugMetricsProvider`\n- Two `type-alias-object` records share the name `DebugMetricsProvider`\n- One lives in `DebugPanel` (production package)\n- The other lives in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp`, which is a sample-app path, and `is_sample_app` is... `false` on the record itself\n\nHowever, the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` sits under `Examples/WallpaperSampleApp/`, which is a canonical sample-app directory. Decision rule 1 states that records sitting under `Examples/` trigger `reason_class: \"sample-app-mirror\"` regardless of the flag value. The second record is clearly a sample-app fixture (the path is unambiguous), so no-action is warranted.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two `DebugMetricsProvider` type-alias-object records lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory \u2014 a canonical sample-app location. Per decision rule 1, any participating record under `Examples/` triggers the sample-app-mirror restraint, dominating the action signal. Lifting or merging the production `DebugPanel` alias with a sample-app alias would couple production semantics to demonstration code. No structural evidence (Jaccard, shared fields, shared ancestor) is provided to suggest the coincidence is anything other than a naming collision between an independent debug panel and a sample-app HUD.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AZcJkR9Ax46VTMcthBGdDq",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 564,
+    "service_tier": "standard"
+  }
+}

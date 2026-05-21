@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "Both `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file (`WXYC/iOS/WXYCApp.swift`) and package (`app:iOS`), carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), and share a Jaccard similarity of 0.75 \u2014 indicating their bodies differ only in the direction of navigation. Introducing a single `navigateTheme(direction:)` helper removes the duplicated logic while keeping the two public entry-point names as thin, readable wrappers if they are part of a public interface, or collapsing them entirely if they are internal.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single parameterised helper, e.g. `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)`, where the direction/offset argument encodes the \u00b11 step. Both call sites become one-liners delegating to the shared helper, eliminating the near-duplicate body (Jaccard 0.75).",
+      "why_no_category_fits": "The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of methods on the same class (`WXYCApp`) in the same file. 'extract-to-common' targets cross-file/cross-package duplication; 'generic-parameterization' targets type-level generics; 'subclass-lift' requires an inheritance hierarchy. The correct fix is a direction-parameterised private helper within the same file, which is closest to 'other' since no listed category covers intra-file method consolidation via a new parameter."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 2
+}

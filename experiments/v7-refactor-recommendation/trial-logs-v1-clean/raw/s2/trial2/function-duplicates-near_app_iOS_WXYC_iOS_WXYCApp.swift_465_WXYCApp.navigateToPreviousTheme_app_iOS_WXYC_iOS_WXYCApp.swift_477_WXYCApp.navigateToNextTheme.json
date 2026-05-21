@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single parameterised helper, e.g. `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)`, where the direction/offset argument encodes the \u00b11 step. Both call sites become one-liners delegating to the shared helper, eliminating the near-duplicate body (Jaccard 0.75).\",\n      \"why_no_category_fits\": \"The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of methods on the same class (`WXYCApp`) in the same file. 'extract-to-common' targets cross-file/cross-package duplication; 'generic-parameterization' targets type-level generics; 'subclass-lift' requires an inheritance hierarchy. The correct fix is a direction-parameterised private helper within the same file, which is closest to 'other' since no listed category covers intra-file method consolidation via a new parameter.\"\n    },\n    \"rationale\": \"Both `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file (`WXYC/iOS/WXYCApp.swift`) and package (`app:iOS`), carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), and share a Jaccard similarity of 0.75 \u2014 indicating their bodies differ only in the direction of navigation. Introducing a single `navigateTheme(direction:)` helper removes the duplicated logic while keeping the two public entry-point names as thin, readable wrappers if they are part of a public interface, or collapsing them entirely if they are internal.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `navigateToPreviousTheme` and `navigateToNextTheme` have meaningfully divergent side-effects beyond the directional step (e.g., different animation curves, boundary-check logic, or analytics events), the 0.75 Jaccard overlap may reflect coincidental structural similarity rather than true duplication, and keeping them separate preserves clarity of intent.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DVUTJ3s8JTf3SfWQZ4HBa8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 759,
+    "service_tier": "standard"
+  }
+}

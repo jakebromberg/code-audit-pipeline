@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 but the file paths are telling: both live under `Tests/` directories (`MetadataTests/DiscogsMarkupParserTests.swift` and `WXYCTests/DiscogsFormatterTests.swift`), and the type name is `MockDiscogsEntityResolver`, which is a classic test-double naming convention. The context flags, however, are the authoritative signal per the decision rules, and both records report `is_test: false` and `is_mock: false`.\n\nDespite the flags, the file paths (`Tests/MetadataTests/` and `Tests/WXYCTests/`) and the `Mock` prefix on the type name strongly suggest these are test fixtures. The pipeline has apparently not tagged them correctly. The method `MockDiscogsEntityResolver.resolveRelease` is an exact duplicate across two test packages (`Metadata` and `app:iOS`), and the right structural action would normally be to extract the shared mock to a common test-support target. However, I cannot override the flag-based rules without explicit evidence that the records are removable prototypes \u2014 and the `Mock` prefix plus `Tests/` paths suggest deliberate, parallel test fixtures, not accidental duplication of production code.\n\nGiven the `Mock` naming and `Tests/` file paths, this is the canonical restraint pattern even if the flags are miscalibrated; I will recommend no-action with reason_class `coincidental` (the flags say non-test, so I cannot use `test-fixture` strictly), but I will note the anomaly in the rationale.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records carry is_test=false and is_mock=false per their context_flags, so the formal restraint-marker rules do not trigger. However, both files reside under Tests/ directories (Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift and WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift) and the type name MockDiscogsEntityResolver bears the canonical Mock prefix, indicating these are intentional, parallel test-double implementations scoped to their respective test targets (Metadata and app:iOS). Extracting a shared mock into a common production or test-support package would couple two independent test suites and risk leaking test semantics into shared infrastructure. The duplication is structurally coincidental given the likely miscalibration of the is_mock/is_test flags, and no production refactor is warranted.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the is_mock/is_test flags are confirmed to be miscalibrated and these are genuine production helpers, the identical MockDiscogsEntityResolver.resolveRelease method in both Metadata and app:iOS packages could be extracted into a shared test-support module within the Metadata package, eliminating the exact duplicate. This is only defensible if the Mock type is not a deliberate per-suite fixture.\"\n    },\n    \"confidence\": 0.25\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FfRnYHCLxKC4MnRjif4BTz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 986,
+    "service_tier": "standard"
+  }
+}

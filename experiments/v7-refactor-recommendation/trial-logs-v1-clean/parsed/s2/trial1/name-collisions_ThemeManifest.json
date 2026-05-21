@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ThemeManifest",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"structural_evidence\": { \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null }",
+    "rationale": "The cluster surfaces three records all within the `Wallpaper` package: a `type-alias-object` at `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:15`, an extension on that same type at line 579 of the same file, and a second extension declared inside `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift:49`. The structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are all null and `fields_or_signature` is empty for every member, so there is no field-level or signature-level overlap to act on. The two source-file records are a canonical type-plus-extension split within one file, and the test-file extension is a test-support addition to the same type \u2014 both are expected patterns in Swift. No refactor is warranted without concrete evidence of duplicated logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_ThemeManifest.json",
+  "row_index": 14,
+  "trial": 1
+}

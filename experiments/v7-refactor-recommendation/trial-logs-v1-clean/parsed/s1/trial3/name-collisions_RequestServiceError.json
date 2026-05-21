@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RequestServiceError",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/MusicShareKit/Tests/MusicShareKitTests/RequestServiceTests.swift\"",
+    "rationale": "The cluster surfaces a name collision between an `extension` at `Shared/MusicShareKit/Tests/MusicShareKitTests/RequestServiceTests.swift:76` and a `type-alias-union` at `Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift:167`, both named `RequestServiceError` within the `MusicShareKit` package. All `structural_evidence` fields (`differing_slots`, `jaccard`, `shared_ancestor`, `shared_field_count`) are null, and both `fields_or_signature` arrays are empty, providing no field-level evidence to ground a concrete refactor. The test file path strongly suggests the extension is a test-scope conformance or helper (e.g., `Equatable` conformance for `XCTAssertEqual` use), which is a canonical pattern that intentionally re-opens a production type in test scope \u2014 not a duplication to be eliminated. Without grounded evidence of a true structural problem, recommending a merge or rename risks coupling test-scope declarations to production code.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_RequestServiceError.json",
+  "row_index": 39,
+  "trial": 3
+}

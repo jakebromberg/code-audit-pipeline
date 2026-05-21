@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "fields_or_signature\": [], \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "All three records are unnamed extensions on `ProcessInfo.ThermalState` spread across three distinct packages (`DebugPanel`, `Wallpaper` throttling, and a Wallpaper sample-app HUD), and the cluster provides no field or method evidence (`fields_or_signature: []`, `jaccard: null`, `shared_field_count: null`) to confirm overlapping behaviour. The extensions almost certainly serve divergent domain purposes \u2014 debug metrics formatting in `DebugPanel/DebugMetricsProvider.swift`, quality-signal throttling in `Wallpaper/Throttling/QualitySignal.swift`, and HUD display in `WallpaperSampleApp/DebugHUD.swift` \u2014 whose structural coincidence (all extending the same Foundation type) is incidental to their separate concerns. Consolidating them without body evidence risks coupling unrelated subsystems.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 2
+}

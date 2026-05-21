@@ -1,0 +1,33 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\",\n      \"line\": 89",
+    "rationale": "All three types \u2014 `PlaybackBlendModeKey`, `MaterialBlendModeKey`, and `OverlayBlendModeKey` \u2014 are `type-alias-object` declarations at exactly line 89 in their respective files within the `Wallpaper` package, with `shared_field_count: 1` and no differing slots, indicating structurally identical bodies. Since they differ only in the blend-mode domain they name (Playback, Material, Overlay), a single generic `BlendModeKey<BlendMode>` type parameterised on the blend-mode type would unify all three without loss of type safety. All three files reside in `Shared/Wallpaper/Sources/Wallpaper/Core/`, so the extracted type can live in a new or existing file in that same directory. No restraint markers are present on any record.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "BlendModeKey",
+      "replaces": [
+        "PlaybackBlendModeKey",
+        "MaterialBlendModeKey",
+        "OverlayBlendModeKey"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "BlendMode"
+        }
+      ]
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MaterialBlendModeKey_OverlayBlendModeKey_PlaybackBlendModeKey.json",
+  "row_index": 19,
+  "trial": 2
+}

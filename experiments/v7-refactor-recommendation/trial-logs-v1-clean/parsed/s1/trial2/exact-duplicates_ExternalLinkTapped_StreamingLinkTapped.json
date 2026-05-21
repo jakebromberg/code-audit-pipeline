@@ -1,0 +1,27 @@
+{
+  "cluster_id": "exact-duplicates:ExternalLinkTapped+StreamingLinkTapped",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 3",
+    "rationale": "Both `StreamingLinkTapped` (line 50) and `ExternalLinkTapped` (line 64) are `type-alias-object` kinds in the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package, sharing 3 fields with no differing slots \u2014 they are structurally identical. Rather than keeping two separate type aliases that alias the same underlying shape, introducing a shared protocol `LinkTappedEvent` (or a common concrete type) that both names conform to or alias would eliminate the duplication while preserving the semantic distinction between streaming and external link taps. All context flags are false, so no restraint markers apply.",
+    "specifics": {
+      "children": [
+        "StreamingLinkTapped",
+        "ExternalLinkTapped"
+      ],
+      "moved_members": [],
+      "parent": "LinkTappedEvent",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_ExternalLinkTapped_StreamingLinkTapped.json",
+  "row_index": 24,
+  "trial": 2
+}

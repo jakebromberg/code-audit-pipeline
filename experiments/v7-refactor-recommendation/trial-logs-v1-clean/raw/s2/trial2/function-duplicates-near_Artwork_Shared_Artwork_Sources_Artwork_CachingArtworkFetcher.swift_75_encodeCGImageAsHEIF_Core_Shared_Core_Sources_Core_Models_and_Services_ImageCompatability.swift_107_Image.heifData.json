@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline detected near-duplicate function bodies between `encodeCGImageAsHEIF` in the `Artwork` package (`Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift`, line 75) and `Image.heifData` in the `Core` package (`Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`, line 107), with a Jaccard similarity of 0.706 \u2014 well above the near-duplicate threshold. Both records carry all context flags false, so no restraint markers apply. `Core` already hosts `Image.heifData` as the canonical HEIF-encoding utility; `Artwork` already depends on `Core` (it is a higher-level package), so no new dependency edge is required. The `encodeCGImageAsHEIF` free function in `CachingArtworkFetcher.swift` should be deleted and its call sites redirected to `Image.heifData` from `Core`, eliminating the duplication at its source.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\",\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n        ]\n      },\n      \"rationale\": \"If the two implementations differ in subtle platform-specific ways (e.g., compression quality parameters), a single `Image` extension in `Core` with an overloaded or parameterised `heifData` method could absorb both variants rather than a hard delete of the `Artwork` copy. This is less preferred because it risks over-generalising `Core`'s API surface without confirmed divergence evidence.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WHJR1VdPBnnGT7wY8BYWLp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 648,
+    "service_tier": "standard"
+  }
+}

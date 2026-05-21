@@ -1,0 +1,33 @@
+{
+  "cluster_id": "exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\", ... \"shared_field_count\": 1",
+    "rationale": "All three type-alias-object declarations \u2014 `PlaybackBlendModeKey` (line 89 of PlaybackBlendMode.swift), `MaterialBlendModeKey` (line 89 of MaterialBlendMode.swift), and `OverlayBlendModeKey` (line 89 of _Plant_OverlayBlendMode.swift) \u2014 are exact duplicates within the same `Wallpaper` package, sharing `shared_field_count: 1` and no differing slots. The only distinction is the blend-mode domain encoded in the name, which is a strong signal that a single generic or parameterised type can replace all three. Introducing a single `BlendModeKey<BlendMode>` type (or a typealias-producing generic struct) in a shared file within `Shared/Wallpaper/Sources/Wallpaper/Core/` eliminates the triplication while preserving the distinct nominal identities via typealiases if needed. No restraint markers are present on any record.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "BlendModeKey",
+      "replaces": [
+        "PlaybackBlendModeKey",
+        "MaterialBlendModeKey",
+        "OverlayBlendModeKey"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "BlendMode"
+        }
+      ]
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MaterialBlendModeKey_OverlayBlendModeKey_PlaybackBlendModeKey.json",
+  "row_index": 19,
+  "trial": 1
+}

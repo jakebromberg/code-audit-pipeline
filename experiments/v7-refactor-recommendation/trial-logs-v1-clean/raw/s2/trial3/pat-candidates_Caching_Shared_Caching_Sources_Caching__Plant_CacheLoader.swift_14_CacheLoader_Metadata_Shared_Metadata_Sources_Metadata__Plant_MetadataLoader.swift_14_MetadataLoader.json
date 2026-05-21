@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheLoadable\",\n      \"associated_type\": \"Payload\",\n      \"constraints\": [],\n      \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n    },\n    \"rationale\": \"Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single protocol with an `associatedtype Payload` and a `load:() async throws -> Payload` requirement would unify both interfaces without loss of type safety. `CacheLoader` would conform with `Payload == Data` and `MetadataLoader` with `Payload == PlaycutMetadata`. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the refactor is safe to pursue. The shared field count of 4 with only one differing slot strongly supports a generic abstraction rather than two parallel protocols.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4, \\\"differing_slots\\\": [{\\\"a\\\": [\\\"load:() async throws -> Data\\\"], \\\"b\\\": [\\\"load:() async throws -> PlaycutMetadata\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"CacheLoadable\",\n        \"children\": [\"CacheLoader\", \"MetadataLoader\"],\n        \"moved_members\": [\"cacheKey:String\", \"invalidate:() async\", \"lastLoadedAt:Date?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If a PAT is considered too abstract for current call-sites (e.g., no generic consumers exist yet), a simpler protocol-inheritance approach could extract the three shared members into a base protocol `CacheLoadable` that both `CacheLoader` and `MetadataLoader` inherit, leaving each child to declare its own typed `load` requirement. This avoids associated types at the cost of not fully unifying the `load` signature.\"\n    },\n    \"confidence\": 0.87\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UApDy38DEDzTH28Jk5S1YD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2692,
+    "output_tokens": 660,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records are in test files (paths contain `Tests/` and `Tests` in the file names: `ArtworkServiceTests.swift` and `NowPlayingServiceTests.swift`)\n- Both records have all context flags set to `false`, including `is_test: false`\n- However, the file paths clearly place both records inside test targets (`Shared/Artwork/Tests/ArtworkTests/` and `Shared/AppServices/Tests/AppServicesTests/`)\n- The cluster is a `name-collisions` query on `MockArtworkService`, a name that is semantically a mock/test fixture\n- Both are `type-alias-object` kinds with empty `fields_or_signature` and empty `name` fields \u2014 minimal structural evidence\n- The `is_test` and `is_mock` flags are `false` per the metadata, but the file paths and the name `MockArtworkService` strongly indicate test/mock context; the flags may simply be mis-tagged by the pipeline\n- No structural evidence (jaccard, shared_ancestor, shared_field_count are all null)\n- With no actionable structural signal and both records residing in test directories under a mock-named type, the coincidental/test-fixture framing dominates\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockArtworkService\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records are `type-alias-object` entries with empty `name` and empty `fields_or_signature`, providing zero structural evidence for a meaningful refactor. Despite `is_test` and `is_mock` being flagged `false` in the metadata, both files reside unambiguously in test targets \u2014 `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (package: Artwork) and `Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift` (package: AppServices) \u2014 and the cluster name `MockArtworkService` is semantically a test/mock fixture. All structural evidence fields (jaccard, shared_ancestor, shared_field_count, differing_slots) are null, meaning the pipeline found no shared shape to act on. The name collision across two separate test packages is coincidental and expected for a commonly named local mock alias.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.85\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WBzVE6hxuKvMu5d7NqspVN",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2496,
+    "output_tokens": 615,
+    "service_tier": "standard"
+  }
+}

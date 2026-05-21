@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the context flags and file paths.\n\nThe second member is located at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample app directory. Per the decision rules, any participating record under `Examples/` or `SampleApp/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`, regardless of what `is_sample_app` reports. The flag value `is_sample_app: false` appears to be a metadata gap, but the path evidence is unambiguous and dominates.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"Although `is_sample_app` is marked false on both records, the second member's file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` places it unambiguously inside an `Examples/WallpaperSampleApp/` directory \u2014 a canonical sample-app location. The duplication of `MetricRow.body` in that file is almost certainly a local copy made to keep the sample app self-contained and runnable in isolation, not an accidental divergence. Lifting the production `DebugPanel` implementation into a shared location to satisfy this cluster would couple the production `DebugPanel` package to sample-app semantics, which is the exact anti-pattern the restraint rule guards against. The `is_sample_app` flag appears to be a metadata gap rather than a deliberate override.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Qu2ZR8KNzNKbVu3gTrg5rP",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2591,
+    "output_tokens": 558,
+    "service_tier": "standard"
+  }
+}

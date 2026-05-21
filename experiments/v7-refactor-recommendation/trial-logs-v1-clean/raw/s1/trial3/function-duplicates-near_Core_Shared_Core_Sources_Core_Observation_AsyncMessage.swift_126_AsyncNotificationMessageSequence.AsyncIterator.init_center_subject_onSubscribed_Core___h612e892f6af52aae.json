@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        {\n          \"name\": \"Sequence\",\n          \"constraint\": \"AsyncSequence or a protocol capturing the shared iterator shape\"\n        }\n      ],\n      \"new_name\": \"NotificationMessageAsyncIterator.init(center:subject:onSubscribed:)\",\n      \"replaces\": [\n        \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n        \"MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `AsyncMessage.swift` line 126) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (in `MainActorMessage.swift` line 152) share an identical parameter label signature `(center:subject:onSubscribed:)` within the same `Core` package, with a Jaccard similarity of 0.857 \u2014 indicating near-identical bodies. The only structural difference is the enclosing type (`AsyncNotificationMessageSequence` vs `MainActorNotificationMessageSequence`), suggesting the initializer logic is the same and the divergence is purely in the actor-isolation context of the outer sequence type. The shared initializer body should be extracted into a common generic or protocol-based helper within `Shared/Core/Sources/Core/Observation/`, allowing both iterator types to delegate to it and eliminating the near-duplicate. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate.\",\n    \"evidence_quote\": \"AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Core\",\n        \"type_name\": \"NotificationMessageIteratorBase\",\n        \"remove_from\": [\n          \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"Rather than a generic function, a shared concrete helper struct `NotificationMessageIteratorBase` could be introduced in `Shared/Core/Sources/Core/Observation/` within the `Core` package, holding the common `(center:subject:onSubscribed:)` initialisation logic. Both `AsyncNotificationMessageSequence.AsyncIterator` and `MainActorNotificationMessageSequence.AsyncIterator` would then compose or delegate to it, keeping actor-isolation concerns in the outer types while removing the near-duplicate body (Jaccard 0.857).\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MepuJDd3ucPXMJVQWQg9Wf",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2624,
+    "output_tokens": 888,
+    "service_tier": "standard"
+  }
+}

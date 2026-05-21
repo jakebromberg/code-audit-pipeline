@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DefaultAuthNetworkClient+PlaylistDataSourceV2",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"PlaylistDataSourceV2\", \"package\": \"Playlist\" ... \"name\": \"DefaultAuthNetworkClient\", \"package\": \"MusicShareKit\" ... \"shared_field_count\": 1",
+    "rationale": "Both `PlaylistDataSourceV2` (package `Playlist`, `Shared/Playlist/Sources/Playlist/V2/PlaylistDataSourceV2.swift:20`) and `DefaultAuthNetworkClient` (package `MusicShareKit`, `Shared/MusicShareKit/Sources/MusicShareKit/Auth/AuthNetworkClient.swift:43`) are `type-alias-object` declarations with empty `fields_or_signature` lists and a `shared_field_count` of 1. Their structural similarity is entirely superficial: one is a playlist data-source alias in the `Playlist` package and the other is an authenticated network-client alias in `MusicShareKit`. The names, domain concepts, and owning packages are unrelated; the coincidence is purely that both happen to be zero-field type aliases. Merging or extracting them would conflate unrelated domain abstractions and create an artificial cross-package dependency.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_DefaultAuthNetworkClient_PlaylistDataSourceV2.json",
+  "row_index": 49,
+  "trial": 2
+}

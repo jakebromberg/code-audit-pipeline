@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:SheetDraggingKey+ThemePickerActiveKey+UITestingModeKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"SheetDraggingKey\" ... \"name\": \"ThemePickerActiveKey\" ... \"name\": \"UITestingModeKey\" ... \"shared_field_count\": 1",
+    "rationale": "All three types \u2014 `SheetDraggingKey` in `WXUI/OverlaySheet.swift`, `ThemePickerActiveKey` in `Wallpaper/ThemePickerState.swift`, and `UITestingModeKey` also in `Wallpaper/ThemePickerState.swift` \u2014 are `type-alias-object` declarations with empty `fields_or_signature`. The structural similarity (shared_field_count: 1, all zero-field type aliases) is purely coincidental: each key encodes a distinct SwiftUI `EnvironmentKey` identity for an unrelated domain concept (sheet dragging state, theme picker activation, and UI testing mode). Merging or extracting them would conflate unrelated concerns and provide no meaningful reduction in code. The packages (`WXUI` and `Wallpaper`) serve different responsibilities, and the key names themselves confirm the domain divergence.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_SheetDraggingKey_ThemePickerActiveKey_UITestingModeKey.json",
+  "row_index": 20,
+  "trial": 1
+}

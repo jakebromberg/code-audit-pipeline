@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "RadioPlayer+AudioPlayerProtocol.swift\n...kind: extension\n\nRadioPlayer.swift\n...kind: type-alias-object",
+    "rationale": "Both records reside in the same package ('Playback') and the same directory ('Shared/Playback/Sources/RadioPlayer/Player/'). One is a type-alias-object declared in 'RadioPlayer.swift' and the other is an extension on that same type declared in 'RadioPlayer+AudioPlayerProtocol.swift'. This is the standard Swift pattern of splitting a type's conformances into separate '+Protocol' extension files; the name collision is intentional and load-bearing, not a duplication to be resolved. No structural evidence (jaccard, shared_field_count, differing_slots) was surfaced, and neither record carries any restraint marker, but the split-file extension pattern is idiomatic Swift and no refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_RadioPlayer.json",
+  "row_index": 37,
+  "trial": 2
+}

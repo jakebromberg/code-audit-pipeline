@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.7142857142857143 between `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354), both in `Shared/Core/Sources/Core/Deque.swift` in the `Core` package. This high similarity strongly suggests the two methods share a common structural skeleton \u2014 likely capacity-check, buffer-reallocation, and element-copy logic \u2014 differing only in the direction of the resize. No restraint markers are set on either record. Extracting the shared body into a private helper within the same file would eliminate the near-duplicate without changing the public surface of `_DequeStorage` or coupling unrelated concerns.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private generic/closure-parameterised method \u2014 and have both `_growIfNeeded` and `_shrinkIfNeeded` delegate to it. The two methods retain their distinct public names and call-sites; only the duplicated body logic is centralised.",
+      "why_no_category_fits": "Neither 'generic-parameterization' nor 'default-implementation' nor 'subclass-lift' fits cleanly: these are two private methods on the same concrete class (`_DequeStorage`) in the same file, not separate types or protocol conformers. The duplication is a classic 'grow/shrink mirror' pattern where the logic is structurally symmetric (Jaccard 0.71) but semantically inverse; the right fix is a private shared helper, not a protocol, a generic type, or a lifted base-class method. 'extract-to-common' does not apply because both methods already live in the same file and package."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 2
+}

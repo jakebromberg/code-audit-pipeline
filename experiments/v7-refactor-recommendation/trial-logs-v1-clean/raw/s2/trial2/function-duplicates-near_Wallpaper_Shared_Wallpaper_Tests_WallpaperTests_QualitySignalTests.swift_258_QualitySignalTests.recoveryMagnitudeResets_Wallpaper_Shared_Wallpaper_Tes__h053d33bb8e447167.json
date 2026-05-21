@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:258:QualitySignalTests.recoveryMagnitudeResets+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:272:QualitySignalTests.recoveryMagnitudeSeed\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `QualitySignalTests.recoveryMagnitudeResets` (line 258) and `QualitySignalTests.recoveryMagnitudeSeed` (line 272) \u2014 carry `is_test: true` and reside in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift`. Per the decision rules, any cluster where even one record is test-marked must default to no-action. Here both records are test methods, and their structural similarity (Jaccard 0.714) is expected: they are distinct test scenarios exercising related but separate behaviours of `QualitySignal` (reset vs. seed paths for recovery magnitude), so the near-duplication is intentional test-fixture patterning rather than accidental redundancy. Merging or extracting them would obscure the distinct test intent and couple unrelated assertions.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CWsihXm6pWvncxPYvoyWfc",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2632,
+    "output_tokens": 400,
+    "service_tier": "standard"
+  }
+}

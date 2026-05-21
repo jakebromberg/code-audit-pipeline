@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration \u2014 likely by deleting the duplicate at line 192 and merging any distinct logic into the canonical `body` at line 60. If the two declarations represent intentionally different `MaterialView` types (e.g., parameterised differently via `#if` or generic constraints), add a comment explaining the divergence and suppress the lint signal.\",\n      \"why_no_category_fits\": \"Both records are the same computed property name (`MaterialView.body`) in the same file (`MaterialView.swift`) and same package (`Wallpaper`), just at different line numbers (60 and 192). This is not a cross-file or cross-package duplication amenable to 'extract-to-common', nor a protocol/subclass/generic pattern. The most likely cause is an accidental duplicate type or extension declaration within one file, which requires an intra-file merge or deletion rather than any of the standard refactor categories. 'extension-consolidation' is the closest named category but that schema targets consolidating extensions across multiple files, not resolving a within-file duplicate `body` property.\"\n    },\n    \"rationale\": \"Both members share the name `MaterialView.body`, are `computed-property` kind, reside in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, and carry a Jaccard similarity of 0.833 \u2014 indicating near-identical implementations. Having two `body` computed properties in the same file almost certainly means either two `struct MaterialView` declarations or two `extension MaterialView` blocks each defining `body`, which is either a compile error masked by conditional compilation or a latent bug. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so this is live production code that warrants consolidation.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"kind\\\": \\\"computed-property\\\", \\\"line\\\": 60, \\\"name\\\": \\\"MaterialView.body\\\"\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` properties live in separate `extension MaterialView` blocks within the same file, consolidating them into a single extension (keeping the implementation at line 60 and removing the near-duplicate at line 192) would eliminate the redundancy. This is a weaker fit because the schema targets multi-file consolidation, but it is the closest named category.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01URZLajVC5Sbkhiv29hnmXJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 875,
+    "service_tier": "standard"
+  }
+}

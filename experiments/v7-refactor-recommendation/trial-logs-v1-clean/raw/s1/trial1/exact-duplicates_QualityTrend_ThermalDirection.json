@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze two `type-alias-union` declarations in the same file (`QualitySignal.swift`) within the `Wallpaper` package: `QualityTrend` (line 191) and `ThermalDirection` (line 208). Both share 3 fields (per `shared_field_count: 3`), have no restraint markers, and live in the same package and file.\n\nThe `exact-duplicates` signal with `shared_field_count: 3` and `differing_slots: null` suggests these two type aliases expand to structurally identical union shapes. However, they carry distinct domain names \u2014 `QualityTrend` and `ThermalDirection` \u2014 which represent different semantic concepts in a throttling/quality-signal context, even if their underlying union cases happen to coincide (e.g., both likely alias something like `up | down | stable`). This is a classic coincidental structural match: two domain concepts that independently need the same small set of directional/trend cases. Merging them or extracting a shared type would conflate semantically distinct concepts and reduce readability at call sites. No restraint markers are present, but the coincidental reason class applies.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:QualityTrend+ThermalDirection\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `QualityTrend` (line 191) and `ThermalDirection` (line 208) are `type-alias-union` declarations in `Shared/Wallpaper/Sources/Wallpaper/Throttling/QualitySignal.swift` within the `Wallpaper` package, and the structural evidence shows `shared_field_count: 3` with `differing_slots: null`. Despite the identical shape, the two names encode distinct domain concepts \u2014 quality trending and thermal direction \u2014 within the throttling subsystem. Collapsing them into a single shared type or alias would conflate these semantics at every call site, harming readability and making future divergence (e.g., adding a `QualityTrend.unknown` case without a thermal analogue) harder to express. The coincidence of their current union shape is incidental to their separate roles.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityTrend\\\", \\\"kind\\\": \\\"type-alias-union\\\", \\\"line\\\": 191 ... \\\"name\\\": \\\"ThermalDirection\\\", \\\"kind\\\": \\\"type-alias-union\\\", \\\"line\\\": 208 ... \\\"shared_field_count\\\": 3, \\\"differing_slots\\\": null\",\n    \"alternative\": null,\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019wWHKc43PMnLMHbpJz2CCY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2530,
+    "output_tokens": 665,
+    "service_tier": "standard"
+  }
+}

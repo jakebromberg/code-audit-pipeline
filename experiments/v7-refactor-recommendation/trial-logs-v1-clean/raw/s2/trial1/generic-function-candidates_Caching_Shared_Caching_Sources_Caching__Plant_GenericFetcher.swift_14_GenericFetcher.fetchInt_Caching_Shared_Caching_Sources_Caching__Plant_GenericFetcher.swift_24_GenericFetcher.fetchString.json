@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        {\n          \"name\": \"T\",\n          \"constraint\": null\n        }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\n        \"GenericFetcher.fetchInt\",\n        \"GenericFetcher.fetchString\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two methods, `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24), both residing in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` within the `Caching` package. Their Jaccard similarity of 0.75 and the `_Plant_` prefix in the filename strongly suggest these are planted exemplars of a type-varying fetch pattern that should be collapsed into a single generic function `fetch<T>() -> T`. No restraint markers are set on either record, so there is no barrier to the refactor. Replacing the two concrete variants with one generic function eliminates the per-type boilerplate and makes the `GenericFetcher` type extensible to future value types without further method proliferation.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `fetchInt` and `fetchString` have meaningfully different internal implementations beyond their return type (e.g., different cache key strategies or serialization paths not visible in the empty `fields_or_signature` arrays), collapsing them into a generic could obscure intentional specialization. In that case no-action is appropriate until the full method bodies are inspected.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Sc64G1t4J8jDFCJNqGy7rH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2587,
+    "output_tokens": 600,
+    "service_tier": "standard"
+  }
+}

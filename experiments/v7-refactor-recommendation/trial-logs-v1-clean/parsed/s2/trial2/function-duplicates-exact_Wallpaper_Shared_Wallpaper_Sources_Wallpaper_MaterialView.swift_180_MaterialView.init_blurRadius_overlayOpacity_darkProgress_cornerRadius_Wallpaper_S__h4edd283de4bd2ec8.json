@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "Both members are `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in the exact same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 48 and 180 respectively. Swift does not allow two initializers with identical external signatures on the same concrete type outside of conditional compilation, so one of these is almost certainly a copy-paste artifact or stale leftover. No restraint markers are set (all context flags are false), confirming this is live production code. The fix is to audit both bodies and remove the redundant declaration at line 180, keeping line 48 as the canonical definition.",
+    "specifics": {
+      "proposed_action": "Remove the duplicate initializer declaration at line 180 of Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift, retaining only the one at line 48. Before deleting, diff the two bodies to confirm they are truly identical (or determine which is the canonical version); if they differ in any meaningful way, reconcile the differences into the surviving declaration. Swift does not permit two initializers with the same external parameter labels on the same type, so one of these is either dead code, a copy-paste artifact, or lives inside a conditional compilation block (#if) \u2014 the exact cause should be confirmed before deletion.",
+      "why_no_category_fits": "Both records are the same initializer signature in the same file and same type within the same package. This is not a cross-location extraction problem, a protocol/generic/subclass problem, or a macro problem. The correct action is simply to delete the duplicate definition within the single file, which does not map cleanly to any of the named refactor categories (all of which assume the duplication spans types, packages, or protocols). 'extension-consolidation' is the closest named category but is specifically about extension declarations, not duplicate method bodies within a single type."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 2
+}

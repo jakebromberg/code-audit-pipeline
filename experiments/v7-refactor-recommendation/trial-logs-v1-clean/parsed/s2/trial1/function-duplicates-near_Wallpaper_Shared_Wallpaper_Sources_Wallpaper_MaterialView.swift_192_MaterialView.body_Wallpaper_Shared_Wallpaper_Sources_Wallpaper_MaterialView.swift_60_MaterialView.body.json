@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"MaterialView.body\", \"file\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\", \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both members are named `MaterialView.body` (a `computed-property`) in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 60 and 192, within the `Wallpaper` package. A Jaccard similarity of 0.8333 indicates the two implementations are nearly identical, strongly suggesting accidental duplication \u2014 likely from a copy-paste or a stale second extension block. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate. The duplicate at line 192 should be removed and any divergent logic folded into the canonical `body` at line 60.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration. The shared logic (Jaccard 0.83) should be extracted into a private helper method or a shared ViewBuilder sub-expression within the single surviving `body`, and the duplicate declaration at line 192 should be removed. Both members live in the same file and package (`Wallpaper`), so no cross-package movement is required.",
+      "why_no_category_fits": "The two near-duplicate `body` computed properties share the same name, same file, same type name (`MaterialView`), and same package \u2014 they are not two distinct types or protocols, so 'extract-to-common', 'protocol-inheritance', 'default-implementation', 'generic-parameterization', and 'subclass-lift' do not apply. 'extension-consolidation' is the closest named category, but the cluster signal is a near-duplicate *function* body (Jaccard 0.83), not merely scattered extension declarations; the primary action is deduplicating the implementation logic, not just moving extension sites. Hence 'other' with an inline consolidation recommendation is the most precise fit."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 1
+}

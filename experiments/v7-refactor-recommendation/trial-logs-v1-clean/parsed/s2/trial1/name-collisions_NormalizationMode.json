@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:NormalizationMode",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"kind\": \"type-alias-union\" ... \"kind\": \"extension\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both members reside in the same package ('PlayerHeaderView') and neither carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). However, the structural evidence is entirely null (no jaccard, no shared fields, no shared ancestor, no differing slots), and both records have empty fields_or_signature lists with blank names \u2014 one is a 'type-alias-union' in VisualizerDataSource.swift at line 30 and the other is an 'extension' in Normalizer.swift at line 138. Without any substantive structural overlap to ground an action recommendation, the name collision signal alone (on what appear to be anonymous or unnamed nodes) is insufficient to justify a refactor. The coincidence of the 'NormalizationMode' name across these two files within the same package warrants a manual review to confirm whether the type-alias and the extension refer to the same underlying type, but no automated refactor is safe to prescribe.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_NormalizationMode.json",
+  "row_index": 32,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackController",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"differing_slots\": null,\n            \"jaccard\": null,\n            \"shared_ancestor\": null,\n            \"shared_field_count\": null",
+    "rationale": "The cluster surfaces two records in the `Playback` package that share the name `PlaybackController`: an `extension` at `Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:31` and an `interface` at `Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27`. The structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are all `null`, meaning the pipeline found no field-level or shape overlap \u2014 only a name collision. The extension record carries no `name` value and lives in a test-utilities harness, strongly suggesting it is an extension *on* `PlaybackController` (the protocol) rather than a competing definition of it. This is the canonical pattern of a protocol defined in `Sources` and extended in a test-support harness; no refactoring is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_PlaybackController.json",
+  "row_index": 35,
+  "trial": 3
+}

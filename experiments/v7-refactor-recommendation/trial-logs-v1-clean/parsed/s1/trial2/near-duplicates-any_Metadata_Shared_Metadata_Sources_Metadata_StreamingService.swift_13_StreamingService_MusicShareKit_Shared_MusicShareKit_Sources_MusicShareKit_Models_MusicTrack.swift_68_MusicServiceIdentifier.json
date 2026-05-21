@@ -1,0 +1,25 @@
+{
+  "cluster_id": "near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier",
+    "rationale": "The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` in `Shared/Metadata/Sources/Metadata/StreamingService.swift` (line 13) and `MusicServiceIdentifier` in `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift` (line 68), indicating approximately 5 of 6 structural slots are shared. Both types reside in separate `Shared/` packages, strongly suggesting independent, uncoordinated modelling of the same streaming-service-identity concept rather than intentional specialization. `Shared/Metadata` is the more semantically neutral package and the better canonical home; `Shared/MusicShareKit` can import it as a dependency. Consolidating to `StreamingService` in `Shared/Metadata` eliminates the structural drift and gives downstream consumers a single source of truth.",
+    "specifics": {
+      "remove_from": [
+        "Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift"
+      ],
+      "target_package": "Shared/Metadata",
+      "type_name": "StreamingService"
+    }
+  },
+  "query": "near-duplicates-any",
+  "raw_response_path": "raw/s1/trial2/near-duplicates-any_Metadata_Shared_Metadata_Sources_Metadata_StreamingService.swift_13_StreamingService_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Models_MusicTrack.swift_68_MusicServiceIdentifier.json",
+  "row_index": 6,
+  "trial": 2
+}

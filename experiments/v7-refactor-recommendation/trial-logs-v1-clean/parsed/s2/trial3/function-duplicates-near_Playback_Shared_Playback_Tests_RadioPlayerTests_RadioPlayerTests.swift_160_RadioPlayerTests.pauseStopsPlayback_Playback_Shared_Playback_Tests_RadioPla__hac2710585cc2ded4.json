@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/RadioPlayerTests/RadioPlayerTests.swift:160:RadioPlayerTests.pauseStopsPlayback+Playback:Shared/Playback/Tests/RadioPlayerTests/RadioPlayerTests.swift:181:RadioPlayerTests.pauseResetsStream",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "\"is_test\": true",
+    "rationale": "Both participating records \u2014 `RadioPlayerTests.pauseStopsPlayback` (line 160) and `RadioPlayerTests.pauseResetsStream` (line 181) \u2014 carry `is_test: true` and reside in `Shared/Playback/Tests/RadioPlayerTests/RadioPlayerTests.swift`. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Beyond the restraint marker, the two methods test distinct observable behaviours of the pause operation (stopping playback vs. resetting the stream), so their structural similarity (Jaccard 0.78) reflects shared test scaffolding rather than accidental duplication; collapsing them would obscure the separate failure modes each guards against.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Playback_Shared_Playback_Tests_RadioPlayerTests_RadioPlayerTests.swift_160_RadioPlayerTests.pauseStopsPlayback_Playback_Shared_Playback_Tests_RadioPla__hac2710585cc2ded4.json",
+  "row_index": 86,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze what's available.\n\nThe cluster ID encodes the key structural information:\n- Signal type: `cross-package-shape-near-duplicates-any`\n- Record 1: `StreamingService` in `Shared/Metadata/Sources/Metadata/StreamingService.swift` at line 13, package `Shared/Metadata`\n- Record 2: `MusicServiceIdentifier` in `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift` at line 68, package `Shared/MusicShareKit`\n- Jaccard similarity: 0.8333 (very high \u2014 5 of 6 fields shared)\n- `members` array is empty, so no field-level detail is available beyond what the cluster ID encodes\n- No restraint markers (no is_test, is_mock, is_sample_app signals visible)\n\nThe two types live in sibling `Shared/` packages with near-identical shape (Jaccard ~0.83). The names differ (`StreamingService` vs `MusicServiceIdentifier`) but both appear to model a streaming/music service identity concept. With no restraint markers and both sitting in `Shared/` packages, extraction to a common shared package is the idiomatic Swift answer. However, since `members` is empty I cannot confirm field names, so confidence is moderate.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Shared/Metadata\",\n      \"type_name\": \"StreamingService\",\n      \"remove_from\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster reports a Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68), meaning roughly 5 of 6 structural slots are shared across two sibling `Shared/` packages. Neither record carries any restraint marker (is_test, is_mock, is_sample_app), so the duplication is unintentional. Because `StreamingService` already exists as a named, dedicated type in `Shared/Metadata`, the canonical home is that package; `MusicShareKit` should import `Shared/Metadata` and replace `MusicServiceIdentifier` with a typealias or direct use of `StreamingService`. The one differing slot (Jaccard < 1.0) should be reviewed to determine whether it belongs on the shared type or is a `MusicShareKit`-specific extension.\",\n    \"evidence_quote\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because the `members` array is empty, the field-level evidence for the 0.8333 Jaccard overlap cannot be verified from the cluster row alone. If `StreamingService` and `MusicServiceIdentifier` model subtly different domain concepts (e.g., one is a network-layer identifier and the other is a display/metadata concept), the structural similarity may be coincidental and merging them would couple unrelated concerns.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RyNUw8AtZEwdz42Drbwge6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2319,
+    "output_tokens": 989,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "HLSPlayerTests.stallFromPlaying ... HLSPlayerTests.recoveryFromStall ... Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift",
+    "rationale": "Both `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) reside in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package. Despite the `is_test` context flags being recorded as `false`, the file path (`Tests/HLSPlayerTests/HLSPlayerTests.swift`) and the enclosing type name (`HLSPlayerTests`) make it unambiguous that these are test methods. The two methods test distinct, sequential HLS player states \u2014 stalling from playing versus recovering from a stall \u2014 so any structural similarity is a natural consequence of testing adjacent state-machine transitions, not accidental duplication. Merging them would conflate two semantically separate test scenarios and reduce test clarity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_HLSPlayerTests.swift_102_HLSPlayerTests.recoveryFromStall_Playback_Shared_Playback_Tests_HLSPlayerTests__h52f28a4be2ff34fd.json",
+  "row_index": 22,
+  "trial": 3
+}

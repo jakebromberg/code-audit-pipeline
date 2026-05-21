@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:279:URLTagTests.parsesURLLink+Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:315:URLTagTests.parsesURLWithComplexQueryString\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `URLTagTests.parsesURLLink` (line 279) and `URLTagTests.parsesURLWithComplexQueryString` (line 315) \u2014 carry `is_test: true` and reside in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift`. Per the restraint rules, any cluster where a participating record is a test fixture must default to no-action. Although the Jaccard similarity of 0.714 suggests structural overlap, the two test methods are intentionally distinct test cases exercising different URL inputs (a plain link vs. a complex query string), and their near-duplication is a normal pattern in parameterizable unit tests rather than a production-code smell. Consolidating them would risk obscuring the distinct failure modes each case is designed to surface.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Refactor `URLTagTests.parsesURLLink` and `URLTagTests.parsesURLWithComplexQueryString` in `DiscogsMarkupParserTests.swift` into a single data-driven test method using a parameterised input table (e.g., Swift Testing's `@Test` with arguments, or an XCTest loop over a `[(input, expected)]` array), keeping both URL cases as distinct table rows.\",\n        \"why_no_category_fits\": \"This is a test-internal cleanup \u2014 not an extract-to-common, protocol, generic, or macro change \u2014 so none of the production-code categories apply. The action is purely about reducing test boilerplate while preserving coverage of both URL shapes.\"\n      },\n      \"rationale\": \"If the team decides to reduce test boilerplate despite the test-fixture restraint, the two methods share enough structure (Jaccard 0.714, same file, same test class `URLTagTests`) to be collapsed into one parameterised test. This is the idiomatic Swift Testing / XCTest approach and avoids duplicating assertion logic without merging unrelated concerns.\"\n    },\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01REzUu9r4ytfkCFMvt56th3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2602,
+    "output_tokens": 644,
+    "service_tier": "standard"
+  }
+}

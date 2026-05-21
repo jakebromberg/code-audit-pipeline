@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)",
+    "rationale": "Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 in AsyncMessage.swift) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 in MainActorMessage.swift) share an identical parameter label signature and a Jaccard similarity of 0.857, indicating near-identical bodies. The only meaningful difference is the enclosing type \u2014 one is actor-isolated (`MainActor`) and the other is not \u2014 but the initialization logic for wiring up a notification center subscription with an `onSubscribed` callback is the same. Introducing a shared protocol (e.g., `NotificationMessageIterating`) with an associated `center`, `subject`, and `onSubscribed` closure, and providing a default `init` implementation in a protocol extension, would eliminate the duplication while allowing each concrete iterator to retain its actor-isolation annotation. Both records are production code in the same `Core` package with no restraint markers, making this a safe consolidation.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Core/Sources/Core/Observation/MainActorMessage.swift",
+        "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"
+      ],
+      "method": "init(center:subject:onSubscribed:)",
+      "protocol": "NotificationMessageIterator",
+      "target_location": "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_126_AsyncNotificationMessageSequence.AsyncIterator.init_center_subject_onSubscribed_Core___h612e892f6af52aae.json",
+  "row_index": 55,
+  "trial": 1
+}

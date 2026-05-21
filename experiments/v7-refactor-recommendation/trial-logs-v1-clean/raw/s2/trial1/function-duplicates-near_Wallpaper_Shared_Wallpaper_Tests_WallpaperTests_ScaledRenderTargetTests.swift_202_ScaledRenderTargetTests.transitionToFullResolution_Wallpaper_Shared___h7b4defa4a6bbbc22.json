@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ScaledRenderTargetTests.swift:202:ScaledRenderTargetTests.transitionToFullResolution+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ScaledRenderTargetTests.swift:59:ScaledRenderTargetTests.noTextureAtFullScale\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `ScaledRenderTargetTests.noTextureAtFullScale` (line 59) and `ScaledRenderTargetTests.transitionToFullResolution` (line 202) \u2014 carry `is_test: true` and reside in `Shared/Wallpaper/Tests/WallpaperTests/ScaledRenderTargetTests.swift` within the `Wallpaper` package. Per the restraint rules, any cluster where even one record is a test fixture warrants no-action; here both records are test methods. Although the Jaccard similarity of 0.706 suggests structural overlap, the two methods test distinct behaviours (`noTextureAtFullScale` vs. `transitionToFullResolution`), and merging or extracting them risks coupling unrelated test scenarios and obscuring test intent. Deduplication of test bodies should be handled locally within the test file (e.g., a shared `setUp` helper) only if the authors judge it appropriate, not as a cross-codebase refactor.\",\n    \"evidence_quote\": \"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012BBCxQ8b3q5QCi4hvdeQ2m",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2642,
+    "output_tokens": 438,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "default-impl-candidates:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "All three types \u2014 `HSBColor` (package `ColorPalette`, `HSBColor.swift:31`), `HSBOffset` (`ThemeColors.swift:198`), and `AccentColor` (`ThemeColors.swift:62`) \u2014 share the initializer label `init(hue:saturation:brightness:)`, but the structural evidence shows `shared_field_count: 0` and `jaccard: null`, meaning no field-level overlap was confirmed. `HSBOffset` encodes a relative delta in HSB space, which is a semantically distinct concept from the concrete color types `HSBColor` and `AccentColor`; the initializer label coincidence is a natural consequence of the HSB parameter domain, not a sign of shared logic. Introducing a protocol with a default implementation would either force a semantically incorrect body onto `HSBOffset` or produce a vacuous protocol that adds indirection without eliminating any real duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "default-impl-candidates",
+  "raw_response_path": "raw/s2/trial1/default-impl-candidates_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wall__h7c7c3da0e01e674f.json",
+  "row_index": 5,
+  "trial": 1
+}

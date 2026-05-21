@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"MaterialView.body\", \"package\": \"Wallpaper\" ... \"line\": 60 ... \"line\": 192 ... \"jaccard\": 0.8333333333333334",
+    "rationale": "Both cluster members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package, at lines 60 and 192 respectively. A Jaccard similarity of 0.8333 indicates the two implementations are nearly identical but not exact, suggesting one is a stale or diverged copy of the other. No restraint markers are set (all context flags are false), so this is live production code. Having two `body` properties on the same SwiftUI view type will either cause a compile error (if in the same type body) or silent shadowing (if in separate extensions), both of which are defects that warrant immediate consolidation.",
+    "specifics": {
+      "proposed_action": "Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration \u2014 likely by identifying which of the two (line 60 vs. line 192) is the canonical one, deleting the near-duplicate, and extracting any differing logic into a private helper method or a conditional branch within the single `body`. The target location for the unified implementation is `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` within the `Wallpaper` package.",
+      "why_no_category_fits": "Both records are the same computed property name (`MaterialView.body`) in the same file and package, differing only by line number (60 vs. 192) with a Jaccard similarity of 0.83. This is not a cross-type or cross-package duplication that fits 'extract-to-common', 'protocol-inheritance', 'default-implementation', or 'generic-parameterization'. It is most likely an accidental double definition or a stale copy of a `body` property within the same source file. The correct fix is an in-file consolidation/deletion, which none of the named categories precisely describe. 'extension-consolidation' is the closest named category but that schema targets multiple extension *declaration sites* for a type, whereas here the issue is two near-identical property bodies within what appears to be a single type's file."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 1
+}

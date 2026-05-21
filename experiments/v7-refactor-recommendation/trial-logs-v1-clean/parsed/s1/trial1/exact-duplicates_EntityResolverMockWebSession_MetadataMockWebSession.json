@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.52,
+    "evidence_quote": "\"shared_field_count\": 2",
+    "rationale": "Both `MetadataMockWebSession` (line 79, PlaycutMetadataServiceCachingTests.swift) and `EntityResolverMockWebSession` (line 72, DiscogsAPIEntityResolverCachingTests.swift) are `type-alias-object` records in the same `Metadata` package with identical structure (`shared_field_count: 2`, empty `fields_or_signature`), differing only in their per-file names. Neither record carries any restraint marker (`is_test=false`, `is_mock=false`, `is_sample_app=false`), so consolidation is permitted under the decision rules. Extracting a single shared `MockWebSession` type alias into a test-support file within the `Metadata` package (e.g., `Shared/Metadata/Tests/MetadataTests/TestSupport/MockWebSession.swift`) would eliminate the duplication and give both test files a single source of truth. The divergent names (`MetadataMockWebSession` vs `EntityResolverMockWebSession`) appear to be incidental per-file naming rather than intentional semantic distinction, given the structural identity confirmed by `jaccard: null` and `differing_slots: null`.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift",
+        "Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockWebSession"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 1
+}

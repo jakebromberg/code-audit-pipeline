@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:191:SwiftUI.Image.logo+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:28:SwiftUI.Image.logo",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"SwiftUI.Image.logo\", \"kind\": \"computed-property\" ... \"jaccard\": 0.8823529411764706",
+    "rationale": "Both `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:191) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift:28) define an identical computed property `SwiftUI.Image.logo` with a Jaccard similarity of 0.882, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. The property should be extracted into a shared extension file (e.g., a new `WXYC/Shared/Extensions/Image+Logo.swift`) that both the iOS and WatchXYC targets can import, eliminating the duplication. If a dedicated shared module already exists in the project, that is the preferred target; otherwise a new shared Swift file accessible to both targets is the minimal viable approach.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.logo"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_191_SwiftUI.Image.logo_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_28_SwiftUI.Image.logo.json",
+  "row_index": 49,
+  "trial": 2
+}

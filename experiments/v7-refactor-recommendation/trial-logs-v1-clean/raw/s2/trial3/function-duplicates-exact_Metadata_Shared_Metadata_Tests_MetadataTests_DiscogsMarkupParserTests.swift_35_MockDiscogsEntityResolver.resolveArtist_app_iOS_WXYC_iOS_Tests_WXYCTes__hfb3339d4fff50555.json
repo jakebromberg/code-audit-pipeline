@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test=false`, `is_mock=false`, `is_sample_app=false`, `is_codegen=false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver` \u2014 these are clearly test-support/mock types living inside test targets, even though the pipeline did not set the context flags. The method name `MockDiscogsEntityResolver.resolveArtist` is a mock implementation. The files reside under `Tests/MetadataTests/` and `Tests/WXYCTests/` respectively.\n\nDespite the flags reading `false`, the structural evidence (file paths ending in `Tests/`, type name prefixed `Mock`) makes this a test-fixture duplication. The two packages (`Metadata` and `app:iOS`) each have their own test target that independently defines the same mock helper. The right action is to extract the shared mock into a common test-support module \u2014 but the restraint rules say any test-fixture involvement \u2192 no-action. Since I cannot override the restraint without arguing the marked record is a removable prototype (and these appear to be deliberate fixtures), I'll recommend no-action, but I'll note the alternative consolidation in the alternative field.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records are methods named `MockDiscogsEntityResolver.resolveArtist` residing in test-target files (`Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`). Although the pipeline emitted `is_test=false` and `is_mock=false` for both, the file paths (under `Tests/MetadataTests/` and `Tests/WXYCTests/`) and the `Mock`-prefixed type name `MockDiscogsEntityResolver` unambiguously identify these as test-fixture helpers. Lifting a shared mock into production-visible shared code would couple test semantics into the production dependency graph, which is the canonical restraint pattern. No refactor is warranted without first establishing a dedicated test-support library that neither production target depends on.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support target (e.g., `MetadataTestSupport` inside the `Metadata` package) were introduced, `MockDiscogsEntityResolver` and its `resolveArtist` method could be defined once there and imported by both `MetadataTests` and `WXYCTests`, eliminating the exact duplicate. This is only safe if the `app:iOS` test target is permitted to take a test-only dependency on the `Metadata` package's test-support library, which requires explicit architectural sign-off.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Cbmdak8d4tx3NjtYkaqKnp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 957,
+    "service_tier": "standard"
+  }
+}

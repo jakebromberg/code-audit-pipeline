@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The two `body` computed properties in `SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView` share a Jaccard similarity of 0.714, indicating substantial structural overlap in their SwiftUI view bodies. Both live in the same package (`app:iOS`) and the same directory (`WXYC/iOS/NowPlayingWidget/Views/`), and neither carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The divergence between small and medium widget layouts is typically parameterisable (e.g., via a `widgetFamily` or size enum), so a single shared `NowPlayingWidgetEntryView` that accepts a size parameter can replace both, eliminating the near-duplicate `body` implementations.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift",
+        "WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "NowPlayingWidgetEntryView"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 1
+}

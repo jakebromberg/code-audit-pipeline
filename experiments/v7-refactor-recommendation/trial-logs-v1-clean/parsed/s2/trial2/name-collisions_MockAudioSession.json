@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockAudioSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift",
+    "rationale": "All four participating records reside under test or mock directories: 'Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift', 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' (lines 18 and 99), and 'Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift'. Despite the pipeline reporting is_mock=false and is_test=false on every record, the file paths contain 'Tests/' and 'Mocks/' path segments and the type name 'MockAudioSession' is unambiguously a test fixture. Consolidating these across the Playback and PartyHorn packages would couple test-support infrastructure across package boundaries without production benefit, and the two occurrences in MockAudioSession.swift at different lines suggest intentional local scoping within the test utilities target.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_MockAudioSession.json",
+  "row_index": 4,
+  "trial": 2
+}

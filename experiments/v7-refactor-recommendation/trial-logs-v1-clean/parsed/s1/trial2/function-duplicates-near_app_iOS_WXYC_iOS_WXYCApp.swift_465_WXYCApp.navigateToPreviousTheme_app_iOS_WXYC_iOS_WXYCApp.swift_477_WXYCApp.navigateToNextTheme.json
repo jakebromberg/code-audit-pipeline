@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.75",
+    "rationale": "The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package. The names are antonyms of each other, which is the canonical signal for a direction-parameterised helper: the only meaningful difference between the two bodies is the direction of navigation. Neither method carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Collapsing them into `navigateTheme(direction:)` or `navigateTheme(offset:)` removes the duplicated logic and makes future theme-navigation changes a single-site edit.",
+    "specifics": {
+      "proposed_action": "Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method, e.g. `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)`, where the direction/offset parameter encodes whether to step backward or forward. Both call sites become one-liners delegating to the shared helper, eliminating the near-duplicate body (Jaccard 0.75).",
+      "why_no_category_fits": "The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of instance methods on the same class (`WXYCApp`) in the same file. None of the structured categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) cleanly describe collapsing two near-identical sibling methods into a single parameterised helper on the same type. The closest named category would be `generic-parameterization` with `generic_kind: 'function'`, but the variation here is a directional enum or integer offset \u2014 not a type parameter \u2014 making that schema a poor fit. 'Other' with a parameterised-helper refactor is the most precise recommendation."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 2
+}

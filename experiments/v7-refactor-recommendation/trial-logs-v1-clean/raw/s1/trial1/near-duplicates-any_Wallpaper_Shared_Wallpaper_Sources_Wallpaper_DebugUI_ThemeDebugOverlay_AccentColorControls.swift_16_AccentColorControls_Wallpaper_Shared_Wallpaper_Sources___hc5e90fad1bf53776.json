@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array, meaning no field or method lists, context flags (is_test, is_mock, is_sample_app, is_codegen), or kind information were surfaced for either `AccentColorControls` (AccentColorControls.swift:16) or `MaterialControls` (MaterialControls.swift:15). Without concrete member evidence it is impossible to ground a refactor recommendation: the Jaccard similarity of 0.75 is suggestive but the two types reside in a DebugUI/ThemeDebugOverlay path and likely share structural shape (e.g., SwiftUI control scaffolding) while encoding distinct domain concepts \u2014 accent-color selection versus material selection. Recommending extraction or protocol introduction without member-level evidence risks coupling two intentionally separate debug controls. Per the decision rules, when evidence cannot be grounded in the cluster row the safe default is no-action with reason_class 'coincidental'.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift:16:AccentColorControls+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift:15:MaterialControls\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ThemeDebugControlsBase\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/AccentColorControls.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/MaterialControls.swift\"\n        ]\n      },\n      \"rationale\": \"If a follow-up inspection of the two files confirms that the shared 75% of structure is reusable scaffolding (e.g., a common SwiftUI body layout, shared state bindings, or identical preview providers), extracting that scaffolding into a shared base view or helper within the same `Wallpaper` package's DebugUI layer would eliminate the duplication without crossing package boundaries. This alternative should only be pursued once member lists are available to confirm the overlap is structural rather than coincidental.\"\n    },\n    \"confidence\": 0.2\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0168bN1hDrDfPyqMTAUvVrnF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2331,
+    "output_tokens": 743,
+    "service_tier": "standard"
+  }
+}

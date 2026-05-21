@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:20:StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although `StreamingService.name` (package `Metadata`, line 20) and `MusicServiceIdentifier.displayName` (package `MusicShareKit`, line 76) share a high Jaccard similarity of 0.875, they are computed properties on two distinct domain types in two distinct packages. `StreamingService.name` describes a streaming service entity, while `MusicServiceIdentifier.displayName` describes a music-service identifier attached to a track model. The structural near-duplication is almost certainly coincidental: both properties likely return a human-readable string derived from an enum or raw value, which is a ubiquitous pattern that does not imply shared semantics. Merging or extracting them would couple unrelated domain concepts and create an artificial dependency between `Metadata` and `MusicShareKit`.\",\n    \"evidence_quote\": \"StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"DisplayNamed\",\n        \"children\": [\"StreamingService\", \"MusicServiceIdentifier\"],\n        \"moved_members\": [\"name / displayName \u2192 displayName\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If a future audit confirms that both types are genuinely part of the same 'music service identity' domain, a lightweight `DisplayNamed` protocol with a single `var displayName: String { get }` requirement could unify them. However, the current evidence does not establish shared semantics \u2014 only structural similarity \u2014 so this alternative should not be pursued without explicit domain confirmation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KUp1cNyFmqfHrheDqr46H2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 552,
+    "service_tier": "standard"
+  }
+}

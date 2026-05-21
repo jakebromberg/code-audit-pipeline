@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method, e.g. `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)`, where the direction/offset parameter encodes whether to step backward or forward. Both call sites become one-liners delegating to the shared helper, eliminating the near-duplicate body (Jaccard 0.75).\",\n      \"why_no_category_fits\": \"The two methods are not separate types, protocols, or structs \u2014 they are a symmetric pair of instance methods on the same class (`WXYCApp`) in the same file. None of the structured categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) cleanly describe collapsing two near-identical sibling methods into a single parameterised helper on the same type. The closest named category would be `generic-parameterization` with `generic_kind: 'function'`, but the variation here is a directional enum or integer offset \u2014 not a type parameter \u2014 making that schema a poor fit. 'Other' with a parameterised-helper refactor is the most precise recommendation.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package. The names are antonyms of each other, which is the canonical signal for a direction-parameterised helper: the only meaningful difference between the two bodies is the direction of navigation. Neither method carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Collapsing them into `navigateTheme(direction:)` or `navigateTheme(offset:)` removes the duplicated logic and makes future theme-navigation changes a single-site edit.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `navigateToPreviousTheme` and `navigateToNextTheme` have subtly different side-effects beyond simple index arithmetic (e.g., different animation curves, boundary-wrapping semantics, or async behaviour not visible from the signature alone), keeping them separate preserves clarity at the call site and avoids a direction-flag anti-pattern. The `fields_or_signature` arrays are empty in the cluster row, so the exact parameter and return types are not confirmed; if the bodies diverge more than the 0.75 Jaccard score suggests, no-action is the safer choice.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015JeUEi3vnqMYz9rTXeHsS7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 886,
+    "service_tier": "standard"
+  }
+}

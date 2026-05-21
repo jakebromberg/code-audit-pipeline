@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/` \u2014 this is a sample-app location. The decision rules state: \"ANY participating record \u2026 sits under `Examples/` or `SampleApp/`\" triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`, even though `is_sample_app` is flagged `false` in the context flags. The path evidence is authoritative here; the flag may simply not have been set correctly by the pipeline, but the structural signal (the `Examples/WallpaperSampleApp/` directory segment) is unambiguous. The rules explicitly list path-based evidence alongside the flag. I will not override this default because there is no argument in the cluster row that the sample-app copy is a removable leftover prototype \u2014 it is a `DebugHUD` in a sample app, which is a canonical demonstration fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:41:DebugMetricsProvider.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:82:DebugMetricsProvider.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location. Per the restraint rules, any cluster where a participating record resides under Examples/ or SampleApp/ must be treated as a sample-app mirror and left alone. The duplicate 'DebugMetricsProvider.init' in the sample app is almost certainly a local convenience initializer written to bootstrap the debug HUD in the demo target, not a production type that should be unified with the one in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift'. Merging them would couple the production DebugPanel package to sample-app demonstration semantics, which is the exact anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JQjZXnTQVg8EjjJbadN3Co",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2609,
+    "output_tokens": 678,
+    "service_tier": "standard"
+  }
+}

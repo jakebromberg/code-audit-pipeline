@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CGImage+CGImage+Image+Image",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\"",
+    "rationale": "Two of the four participating records live in 'Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift' (package: Artwork), which is a test file. Under the decision rules, any cluster containing even one test-resident record must be treated as a test-fixture and no refactor should be recommended. Lifting the CGImage extensions from ArtworkServiceTests into shared production code (e.g., Core) would couple production infrastructure to test-only helpers. The two Image extensions in 'Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift' may themselves be worth consolidating within that file, but that is a separate, intra-file concern not surfaced by this cluster.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_CGImage_CGImage_Image_Image.json",
+  "row_index": 11,
+  "trial": 3
+}

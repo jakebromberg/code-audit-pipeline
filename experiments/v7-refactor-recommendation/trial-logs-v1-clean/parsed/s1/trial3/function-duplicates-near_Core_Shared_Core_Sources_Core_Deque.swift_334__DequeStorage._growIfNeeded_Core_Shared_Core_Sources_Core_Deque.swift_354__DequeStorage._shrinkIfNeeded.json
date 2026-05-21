@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) reside in the same file (`Shared/Core/Sources/Core/Deque.swift`) and package (`Core`), carry no restraint markers, and share a Jaccard similarity of 0.7143 \u2014 meaning roughly 5/7 of their token-level structure is identical. The names reveal symmetric, inverse operations on the same storage buffer, a classic pattern where the differing logic (grow vs. shrink predicate and target-capacity expression) can be passed as parameters to a single private helper, reducing the duplicated body to one authoritative location.",
+    "specifics": {
+      "proposed_action": "Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private generic/closure-parameterised method \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at the call sites.",
+      "why_no_category_fits": "The two members are methods on the same private class (`_DequeStorage`) in the same file, so 'extract-to-common' (cross-file/package move) is not applicable. They are not protocols, generics, subclasses, PATs, or macros. The closest named category would be 'generic-parameterization' of a function, but the duplication here is a classic 'parameterise-by-behaviour' refactor (pass a predicate and a capacity expression) rather than a type-parameter generalisation. 'extension-consolidation' does not apply because both methods already live in the same declaration. The most precise description is an inline private-helper extraction within the existing file."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 3
+}

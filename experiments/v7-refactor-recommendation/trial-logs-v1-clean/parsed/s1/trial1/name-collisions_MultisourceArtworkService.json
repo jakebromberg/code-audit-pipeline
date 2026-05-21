@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MultisourceArtworkService",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"structural_evidence\": {\"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null}",
+    "rationale": "The cluster surfaces two records sharing the name 'MultisourceArtworkService': a type-alias-object in 'Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift' (package: Artwork) and an extension in 'Shared/AppServices/Sources/AppServices/PreviewFixtures.swift' (package: AppServices). The structural evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, and both records have empty fields_or_signature lists, meaning there is no demonstrated field or method overlap to act on. The extension in PreviewFixtures.swift most likely retroactively extends the Artwork type for preview/fixture convenience within AppServices \u2014 a deliberate cross-package extension pattern rather than an accidental duplication. No restraint markers are set, but the absence of any structural similarity evidence makes any refactor action ungrounded.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_MultisourceArtworkService.json",
+  "row_index": 31,
+  "trial": 1
+}

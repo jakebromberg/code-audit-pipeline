@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CPUTestEvent+QualityTestEvent+TestEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"All three records \u2014 `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 reside in `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`, a file whose path places it unambiguously inside the test target for the `Analytics` package. Although the pipeline did not set `is_test=true` on these records, the file path `Tests/AnalyticsTests/` is the canonical Swift Package Manager test-target layout, making these type-alias objects test fixtures by location. They are likely distinct named aliases used to exercise different analytics-event-name scenarios within the same test file, and collapsing them would reduce test-case expressiveness without any production benefit.\",\n    \"evidence_quote\": \"Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012JxWxGQBpAUoK7hLeH84sQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2648,
+    "output_tokens": 292,
+    "service_tier": "standard"
+  }
+}

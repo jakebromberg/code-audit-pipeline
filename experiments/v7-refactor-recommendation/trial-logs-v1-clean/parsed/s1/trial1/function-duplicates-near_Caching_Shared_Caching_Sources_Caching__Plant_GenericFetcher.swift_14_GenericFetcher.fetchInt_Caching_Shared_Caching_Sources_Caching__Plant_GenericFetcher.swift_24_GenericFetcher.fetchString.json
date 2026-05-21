@@ -1,0 +1,32 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.82,
+    "evidence_quote": "GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+    "rationale": "The two methods `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` share a Jaccard similarity of 0.75, indicating near-identical bodies that differ only in the concrete return/parameter type (Int vs String). The `_Plant_` prefix in the filename strongly suggests this file was scaffolded as a planting/seed example of exactly this pattern \u2014 i.e., the two type-specific variants exist to demonstrate the need for a single generic function. Collapsing them into a single `func fetch<T>(...) -> T` (or with an appropriate constraint such as `T: Decodable` if the body warrants it) eliminates the duplication and fulfils the apparent design intent. No restraint markers are present on either record, so the action is unambiguous.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "fetch",
+      "replaces": [
+        "GenericFetcher.fetchInt",
+        "GenericFetcher.fetchString"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_14_GenericFetcher.fetchInt_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_24_GenericFetcher.fetchString.json",
+  "row_index": 108,
+  "trial": 1
+}

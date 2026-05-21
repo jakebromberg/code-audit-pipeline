@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DefaultAuthNetworkClient+PlaylistDataSourceV2",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\", \"shared_field_count\": 1",
+    "rationale": "Both `PlaylistDataSourceV2` (package `Playlist`, `Shared/Playlist/Sources/Playlist/V2/PlaylistDataSourceV2.swift`, line 20) and `DefaultAuthNetworkClient` (package `MusicShareKit`, `Shared/MusicShareKit/Sources/MusicShareKit/Auth/AuthNetworkClient.swift`, line 43) are `type-alias-object` declarations with empty `fields_or_signature` lists and a `shared_field_count` of 1. The structural match is entirely superficial: both are type aliases with no fields, so the 'exact duplicate' signal reflects only the trivial shape of a bare type alias, not any shared domain logic. The two names encode unrelated domain concepts \u2014 playlist data sourcing versus authenticated network communication \u2014 and live in separate packages with distinct responsibilities. Merging or extracting them would create a false coupling between unrelated concerns.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_DefaultAuthNetworkClient_PlaylistDataSourceV2.json",
+  "row_index": 49,
+  "trial": 1
+}

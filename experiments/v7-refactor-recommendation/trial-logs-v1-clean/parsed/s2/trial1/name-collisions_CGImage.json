@@ -1,0 +1,31 @@
+{
+  "cluster_id": "name-collisions:CGImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.55,
+    "evidence_quote": "\"file\": \"Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift\", \"kind\": \"extension\", \"line\": 36, \"name\": \"\", \"package\": \"Artwork\"",
+    "rationale": "Eight unnamed `extension` declarations on `CGImage` are scattered across four files in two packages (`Artwork`, `AppServices`) and the `app:iOS` target. The production-side extensions in `Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift` and `WXYC/iOS/NowPlayingInfoCenterManager.swift` suggest shared CGImage helpers that have been re-declared in-place rather than centralised. The test-file extensions (four entries across `ArtworkServiceTests.swift` and `ArtworkFetcherTests.swift` and two in `NowPlayingServiceTests.swift`) likely duplicate the same convenience constructors or factory helpers needed for test setup. Consolidating the production helpers into a single `CGImage+Artwork.swift` extension file within the `Artwork` package (which both `AppServices` and `app:iOS` already depend on) would eliminate the scatter; test-only helpers can be consolidated into a single `CGImage+TestHelpers.swift` within the test support layer.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:61",
+        "Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:91",
+        "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:46",
+        "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:61",
+        "Shared/Artwork/Sources/Artwork/MultisourceArtworkService.swift:36",
+        "Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:250",
+        "Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift:280",
+        "WXYC/iOS/NowPlayingInfoCenterManager.swift:136"
+      ],
+      "target_type": "CGImage"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_CGImage.json",
+  "row_index": 2,
+  "trial": 1
+}

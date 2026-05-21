@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease",
+    "rationale": "Both `MockDiscogsEntityResolver.resolveRelease` methods are exact duplicates (query: function-duplicates-exact) living in test files across two packages: `Metadata` (Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45) and `app:iOS` (WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41). The type name `MockDiscogsEntityResolver` indicates a shared test double for a `DiscogsEntityResolver` protocol that already lives in the `Metadata` package, making `Metadata`'s test-support target the natural canonical home. Extracting the mock into a dedicated test-support library within the `Metadata` package (e.g., `MetadataTestSupport`) would allow `app:iOS` tests to import it rather than redeclare it, eliminating drift risk as the resolver protocol evolves. All four context flags are `false` on both records, so no restraint marker blocks this consolidation.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_45_MockDiscogsEntityResolver.resolveRelease_app_iOS_WXYC_iOS_Tests_WXYCTe__h956b25383b3a0cf1.json",
+  "row_index": 21,
+  "trial": 2
+}

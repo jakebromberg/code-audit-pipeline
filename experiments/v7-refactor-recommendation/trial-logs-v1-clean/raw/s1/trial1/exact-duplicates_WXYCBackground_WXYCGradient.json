@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:WXYCBackground+WXYCGradient\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are, delete one alias and replace all call-sites with the surviving name \u2014 preferring `WXYCGradient` as the more semantically precise identifier \u2014 or, if both names carry distinct semantic intent (background vs. gradient), add a comment to each alias file explicitly documenting the distinction to prevent future confusion and re-duplication.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-object` kinds with zero fields (`fields_or_signature: []`) and `shared_field_count: 2` in the structural evidence, meaning the aliases themselves share two structural slots (likely the same aliased type and the same access level). This is not a case of extracting a shared concrete type (the aliases already live in the same package, `WXUI`), nor of introducing a protocol, generic, or default implementation. The actionable decision is purely a naming/deduplication judgment: either collapse to one alias or document the intentional split. None of the named refactor categories model 'decide between two type aliases for the same underlying type.'\"\n    },\n    \"rationale\": \"Both `WXYCBackground` (`BackgroundGradient.swift:13`) and `WXYCGradient` (`WXYCGradient.swift:14`) are `type-alias-object` records in the same `WXUI` package with `shared_field_count: 2` and no differing slots (`differing_slots: null`), strongly suggesting they alias the same concrete type. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so this is live production duplication. Because both already reside in `WXUI`, extraction to a common package is not applicable; the fix is a within-package alias consolidation or an explicit documented split.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\" ... \\\"shared_field_count\\\": 2 ... \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` intentionally alias different underlying SwiftUI types (e.g., one aliases `LinearGradient` and the other aliases a custom `BackgroundStyle`) and the `shared_field_count: 2` reflects only coincidental structural overlap (same access modifier and same module), then the duplication is purely coincidental and no merge is warranted. However, the cluster row does not supply enough evidence to confirm this, so the primary recommendation favours investigation and consolidation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PCrrmB9f4DsX9fV6WQvJqV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2522,
+    "output_tokens": 784,
+    "service_tier": "standard"
+  }
+}

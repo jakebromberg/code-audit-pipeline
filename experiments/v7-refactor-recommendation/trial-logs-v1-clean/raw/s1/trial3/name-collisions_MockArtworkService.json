@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint rules apply.\n\nBoth records are located in test files (`ArtworkTests/ArtworkServiceTests.swift` and `AppServicesTests/NowPlayingServiceTests.swift`), and both are `type-alias-object` kinds \u2014 almost certainly local `typealias MockArtworkService = ...` declarations used as test fixtures within their respective test targets. Despite the context flags showing `is_test: false`, the file paths unambiguously place both records inside `Tests/` directories, which is the canonical test-fixture pattern. The `is_test` flag appears to be a tagging gap rather than a semantic signal that these are production types.\n\nEven setting aside the file-path evidence, the structural evidence is entirely null (no Jaccard, no shared fields, no shared ancestor), meaning there is no actionable shape overlap to refactor \u2014 only a name collision between two test-local aliases in separate packages. Merging or extracting these would couple `Artwork` test infrastructure to `AppServices` test infrastructure with no benefit.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockArtworkService\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records are `type-alias-object` declarations named `MockArtworkService` residing in test directories: `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (package `Artwork`, line 29) and `Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift` (package `AppServices`, line 30). The collision is purely nominal \u2014 all structural evidence fields (`jaccard`, `shared_field_count`, `shared_ancestor`, `differing_slots`) are null, meaning no shared shape has been detected. These are almost certainly independent test-local type aliases that happen to share a name across two unrelated test targets; extracting or unifying them would couple `Artwork` test infrastructure to `AppServices` test infrastructure without any structural justification.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0167oDjhPJwhdGtQJMwsaHCc",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2496,
+    "output_tokens": 542,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both records carry all context flags as false, so no restraint marker applies directly. However, the second member `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 the `CoreTesting` module and the `_Plant_Mock` filename prefix are strong conventional signals that this type is a hand-authored or generated test-support mock fixture, even though `is_mock` is not set to true in the metadata. The structural match (3 shared fields, empty `fields_or_signature`) between `MainActorNotificationMessage` and `MockNotificationMessage` is almost certainly intentional: the mock mirrors the production protocol so that test infrastructure can substitute it. Merging or extracting these two would couple production observation semantics in `Core` to testing infrastructure in `CoreTesting`, which is the canonical anti-pattern the restraint rules are designed to prevent.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VX8RovwFGJjNYZZracRToJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2501,
+    "output_tokens": 325,
+    "service_tier": "standard"
+  }
+}

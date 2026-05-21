@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:WXYCBackground+WXYCGradient\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are, delete one alias and replace all call-sites with the surviving name \u2014 preferring the more semantically precise name (likely `WXYCGradient`, since the file is named after it). If they intentionally alias different underlying types that happen to share the same two fields, add a comment to each file explaining the distinction so future analysis does not re-flag them.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-object` kinds with zero fields listed and `shared_field_count: 2`, meaning the structural signal is that the two aliases resolve to structurally identical shapes. There is nothing to extract to a common package (they are already in the same package, `WXUI`), no protocol hierarchy to introduce, and no generic parameterization needed \u2014 the issue is simply a redundant or ambiguously-named alias pair within a single package. The correct fix is a rename/deletion decision, not any of the standard refactor categories.\"\n    },\n    \"rationale\": \"Both `WXYCBackground` and `WXYCGradient` are `type-alias-object` declarations living in the same package (`WXUI`) with `shared_field_count: 2` and no differing slots, indicating they alias structurally identical types. Having two aliases for the same shape in the same package under different names (`WXYCBackground` in `BackgroundGradient.swift` and `WXYCGradient` in `WXYCGradient.swift`) creates confusion about which name is canonical. No restraint markers are present (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so this is live production code. The right action is to consolidate to one alias name rather than applying any of the structural refactor patterns, which are designed for type/function bodies rather than alias declarations.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\" ... \\\"shared_field_count\\\": 2 ... \\\"package\\\": \\\"WXUI\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` intentionally alias different concrete types that happen to share the same structural shape (e.g., one is a background color gradient and the other is a decorative gradient with a coincidentally identical field layout), the duplication is purely structural and the distinct names are load-bearing domain vocabulary. In that case no action is warranted and a clarifying comment in each file is sufficient.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QStgzDc3WNYJ6YFCoaFKf8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2522,
+    "output_tokens": 768,
+    "service_tier": "standard"
+  }
+}

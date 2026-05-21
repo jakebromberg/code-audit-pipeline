@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveArtist",
+    "rationale": "Both occurrences of `MockDiscogsEntityResolver.resolveArtist` reside in test files \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`) \u2014 and the owning type name `MockDiscogsEntityResolver` is an unambiguous mock fixture. Although the pipeline emitted `is_mock=false` and `is_test=false` for both records, the `Tests/` path segments and the `Mock` prefix in the type name make the test-fixture nature of these methods evident from the cluster row itself. Extracting a shared mock into production-reachable code would couple the `Metadata` and `app:iOS` packages to test-only semantics, which is the canonical restraint pattern. The duplication is intentional: each test suite independently stubs `DiscogsEntityResolver` to exercise its own formatter or parser logic in isolation.",
+    "specifics": {
+      "reason_class": "mock-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_35_MockDiscogsEntityResolver.resolveArtist_app_iOS_WXYC_iOS_Tests_WXYCTes__hfb3339d4fff50555.json",
+  "row_index": 26,
+  "trial": 1
+}

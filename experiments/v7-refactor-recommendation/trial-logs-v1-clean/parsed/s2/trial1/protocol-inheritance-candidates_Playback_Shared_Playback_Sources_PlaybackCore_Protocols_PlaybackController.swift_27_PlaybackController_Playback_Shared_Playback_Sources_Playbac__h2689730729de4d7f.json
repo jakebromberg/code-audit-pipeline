@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27:PlaybackController+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "shared_field_count: 0",
+    "rationale": "Although both `PlaybackController` and `TimeShiftablePlayer` live in the same package (`Playback`) and share a handful of members (`installRenderTap:()`, `removeRenderTap:()`, `isPlaying:Bool`, `makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>`, `play:`, `stop:`), the structural evidence explicitly reports `shared_field_count: 0` and `jaccard: null`, indicating the pipeline found no statistically significant overlap. More importantly, the two protocols encode distinct domain responsibilities: `PlaybackController` models high-level playback control with `PlaybackReason`-parameterised `play`/`stop`/`toggle`, `PlaybackState`, and a loading indicator (`isLoading:Bool`), while `TimeShiftablePlayer` models a lower-level, time-shiftable audio player with DVR semantics (`seek:`, `seekToLive:`, `secondsBehindLive:`, `maxLookbackSeconds:`, `isAtLiveEdge:Bool`, `stateStream`, `timePositionStream`, `eventStream`). Introducing a parent protocol would force an artificial coupling between two intentionally separate abstraction layers, and the differing signatures for `play` (`(reason: PlaybackReason) throws` vs `()`) and `stop` (`(reason: PlaybackReason)` vs `()`) confirm the shared names are not semantically equivalent.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial1/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_PlaybackCore_Protocols_PlaybackController.swift_27_PlaybackController_Playback_Shared_Playback_Sources_Playbac__h2689730729de4d7f.json",
+  "row_index": 2,
+  "trial": 1
+}

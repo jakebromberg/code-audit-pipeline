@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` (in `_Plant_ShowContainer.swift:19`) and `TrackContainerProtocol` (in `_Plant_TrackContainer.swift:19`) share three identical members \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of `item`: `Show` vs `Track`. This is the canonical PAT pattern: the varying slot (`item`) becomes an `associatedtype Item`, and the three invariant members move to the parent protocol. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the refactor is safe. Introducing `ContainerProtocol<Item>` eliminates the structural duplication while preserving the distinct concrete semantics of `Show` and `Track` at each call site.\",\n    \"evidence_quote\": \"\\\"isStale:Bool\\\", \\\"item:Show\\\", \\\"lastRefreshedAt:Date?\\\", \\\"pageToken:String?\\\" ... \\\"isStale:Bool\\\", \\\"item:Track\\\", \\\"lastRefreshedAt:Date?\\\", \\\"pageToken:String?\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If downstream code already holds references typed as `ShowContainerProtocol` or `TrackContainerProtocol` and a PAT would introduce existential-boxing friction (e.g., `any ContainerProtocol` in Swift 5.7+ contexts), a plain protocol-inheritance hierarchy \u2014 where a non-generic `ContainerProtocol` parent carries the three shared members and each child refines it by adding the typed `item` property \u2014 is a lower-disruption alternative. The three shared fields (`isStale`, `lastRefreshedAt`, `pageToken`) move to the parent, and each child retains only its concrete `item` declaration.\"\n    },\n    \"confidence\": 0.87\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PF3BRhycTz8Nx3Jg7de7ng",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2646,
+    "output_tokens": 728,
+    "service_tier": "standard"
+  }
+}

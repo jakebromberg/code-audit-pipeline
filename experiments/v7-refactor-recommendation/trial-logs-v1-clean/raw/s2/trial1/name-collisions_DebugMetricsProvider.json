@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- `cluster_id`: `name-collisions:DebugMetricsProvider`\n- Two `type-alias-object` records share the name `DebugMetricsProvider`\n- One lives in `DebugPanel` (production package), the other in `Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`\n- The second record's file path contains `Examples/WallpaperSampleApp` \u2014 a sample app path, which triggers the `is_sample_app` / `Examples/` restraint rule regardless of the `is_sample_app` flag value\n- Both have empty `fields_or_signature`, so there is no structural evidence of meaningful shared shape beyond the name collision\n\nThe `Examples/WallpaperSampleApp` path is a canonical sample-app location. Per decision rule 1, any record sitting under `Examples/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DebugMetricsProvider\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' in the 'Wallpaper' package \u2014 a path that falls squarely under the Examples/ sample-app subtree. Per the restraint rules, any cluster containing a record under Examples/ is treated as a sample-app mirror and warrants no-action. Lifting or merging the production 'DebugPanel' type-alias with a sample-app alias would couple production semantics to demonstration code. Additionally, both records carry empty fields_or_signature, so there is no structural evidence of shared shape beyond the coincidental name collision.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015TvNVZHncmQC2KhEJ1emSK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 520,
+    "service_tier": "standard"
+  }
+}

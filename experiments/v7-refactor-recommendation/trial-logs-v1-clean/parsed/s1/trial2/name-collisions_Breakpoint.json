@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Breakpoint",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.2,
+    "evidence_quote": "\"name\": \"\", \"fields_or_signature\": []",
+    "rationale": "Both records in this cluster have empty `name` fields and empty `fields_or_signature` lists, which means the pipeline has surfaced a name-collision signal without enough structural content to identify what is actually colliding or whether the collision is meaningful. One record is a `type-alias-object` in `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` at line 51 and the other is an `extension` in `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift` at line 56 \u2014 both within the `Playlist` package. Without knowing the actual names or members involved, there is no grounded basis for recommending a structural change; the coincidence of whatever unnamed construct triggered this signal does not warrant action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_Breakpoint.json",
+  "row_index": 17,
+  "trial": 2
+}

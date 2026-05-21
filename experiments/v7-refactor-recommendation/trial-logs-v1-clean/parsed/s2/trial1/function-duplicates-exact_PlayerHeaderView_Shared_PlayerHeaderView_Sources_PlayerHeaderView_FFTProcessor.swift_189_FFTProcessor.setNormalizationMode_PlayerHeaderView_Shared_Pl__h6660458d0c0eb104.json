@@ -1,0 +1,28 @@
+{
+  "cluster_id": "function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.82,
+    "evidence_quote": "RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:61:RMSProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:189:FFTProcessor.setNormalizationMode+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:60:AverageProcessor.setNormalizationMode",
+    "rationale": "The pipeline has flagged `RMSProcessor.setNormalizationMode`, `FFTProcessor.setNormalizationMode`, and `AverageProcessor.setNormalizationMode` as exact function duplicates, all residing in the same `PlayerHeaderView` package. Because the bodies are identical across three distinct processor types, the method is a strong candidate for a default protocol extension implementation. Introducing (or extending) a shared `AudioProcessor` protocol with a `default` implementation of `setNormalizationMode(_:)` in a new file `AudioProcessor.swift` within the same package would eliminate all three copies while preserving per-type override capability. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are present on any record, so no intentional-duplication concern applies.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift",
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift",
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift"
+      ],
+      "method": "setNormalizationMode(_:)",
+      "protocol": "AudioProcessor",
+      "target_location": "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_PlayerHeaderView_Shared_PlayerHeaderView_Sources_PlayerHeaderView_FFTProcessor.swift_189_FFTProcessor.setNormalizationMode_PlayerHeaderView_Shared_Pl__h6660458d0c0eb104.json",
+  "row_index": 6,
+  "trial": 1
+}

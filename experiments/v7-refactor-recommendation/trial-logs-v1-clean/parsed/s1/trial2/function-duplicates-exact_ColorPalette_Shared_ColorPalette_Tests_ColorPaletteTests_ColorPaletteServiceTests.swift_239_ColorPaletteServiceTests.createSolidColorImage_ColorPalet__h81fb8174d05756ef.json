@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+    "rationale": "Both `ColorPaletteServiceTests.createSolidColorImage` (line 239) and `DominantColorExtractorTests.createSolidColorImage` (line 278) are exact-duplicate methods residing in the same package (`ColorPalette`) and the same test directory (`Shared/ColorPalette/Tests/ColorPaletteTests/`). The pipeline flags them as `function-duplicates-exact`, meaning their implementations are identical. Extracting this helper into a shared test utility file (e.g., `TestHelpers.swift` or `ImageTestHelpers.swift`) within the same test target eliminates the duplication without crossing any production/test boundary, since both call sites are already in the test target. Note: although `is_test` is flagged `false` by the pipeline, the file paths and class names (`ColorPaletteServiceTests`, `DominantColorExtractorTests`) make clear these are test-only methods; the extraction target should remain within the test target to avoid leaking test utilities into production code.",
+    "specifics": {
+      "remove_from": [
+        "Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift",
+        "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift"
+      ],
+      "target_package": "ColorPalette",
+      "type_name": "createSolidColorImage"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 2
+}

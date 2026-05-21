@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:38:ReviewRequestServiceTests.recordRequestSentIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordRequestSentIncrementsCount` (line 38) and `recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 are distinct test cases that verify separate behaviors of `ReviewRequestService` (recording a review request vs. recording a song addition). Although their structural shape is similar (Jaccard 0.75), each test exercises a different code path and must remain independently named and independently runnable. Merging or abstracting them would obscure test intent and violate the principle that each test should have a single, clearly named reason to fail.\",\n    \"evidence_quote\": \"is_test: true ... ReviewRequestServiceTests.recordRequestSentIncrementsCount ... ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012TBfLUBXRd9xsDMQDHut7U",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 386,
+    "service_tier": "standard"
+  }
+}

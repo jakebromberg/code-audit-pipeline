@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:EnvironmentValues",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"file\": \"Shared/AppServices/Sources/AppServices/PlaylistServiceEnvironment.swift\"\n\"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AccentColorEnvironment.swift\"\n\"file\": \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\"",
+    "rationale": "All 11 members are unnamed `extension` declarations on `EnvironmentValues` spread across 5 distinct packages (`AppServices`, `Playback`, `WXUI`, `Wallpaper`, `PlayerHeaderView`). The SwiftUI pattern of extending `EnvironmentValues` in the file that owns the corresponding key is idiomatic and intentional \u2014 each extension adds domain-specific keys (e.g., `PlaylistServiceEnvironment.swift`, `AccentColorEnvironment.swift`, `RadioPlayerControllerEnvironment.swift`) that are unrelated to one another. The `fields_or_signature` arrays are all empty, so there is no evidence of shared members that could be consolidated. Merging these extensions would couple unrelated packages and violate the single-responsibility principle without any structural benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_EnvironmentValues.json",
+  "row_index": 1,
+  "trial": 1
+}

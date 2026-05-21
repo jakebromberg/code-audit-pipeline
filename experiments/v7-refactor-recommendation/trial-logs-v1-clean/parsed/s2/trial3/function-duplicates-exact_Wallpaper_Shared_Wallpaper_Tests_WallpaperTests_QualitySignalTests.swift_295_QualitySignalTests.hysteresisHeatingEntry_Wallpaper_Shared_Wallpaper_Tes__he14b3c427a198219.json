@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift",
+    "rationale": "Both methods \u2014 `QualitySignalTests.hysteresisHeatingEntry` (line 295) and `QualitySignalTests.hysteresisHeatingExit` (line 312) \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift`, a path that sits unambiguously inside a `Tests/WallpaperTests/` directory and belongs to a type named `QualitySignalTests`. Although the pipeline has emitted `is_test: false` on both records (likely a flag-extraction gap for this file), the file path and enclosing type name are literal evidence that these are test-fixture helpers exercising hysteresis heating entry and exit scenarios. Merging or extracting these duplicate bodies into shared production code would couple the `Wallpaper` production target to test-scenario semantics, which is the canonical restraint pattern. The correct resolution, if the duplication is a maintenance concern, is a private test-scoped helper within the same test file \u2014 not a cross-target extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_QualitySignalTests.swift_295_QualitySignalTests.hysteresisHeatingEntry_Wallpaper_Shared_Wallpaper_Tes__he14b3c427a198219.json",
+  "row_index": 16,
+  "trial": 3
+}

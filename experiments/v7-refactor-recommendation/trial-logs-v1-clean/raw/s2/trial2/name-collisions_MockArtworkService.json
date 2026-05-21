@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records are in test files (paths contain `Tests/` and `Tests` in the file names: `ArtworkServiceTests.swift` and `NowPlayingServiceTests.swift`)\n- Both records have all context flags set to `false`, including `is_test: false`\n- However, the file paths clearly place both records inside test targets (`Shared/Artwork/Tests/ArtworkTests/` and `Shared/AppServices/Tests/AppServicesTests/`)\n- The cluster signal is `name-collisions` on `MockArtworkService`, a name that strongly implies mock/test fixture usage\n- Both are `type-alias-object` kinds with empty `fields_or_signature` and empty `name` fields \u2014 minimal structural evidence to act on\n- The context flags appear to be mislabeled (the pipeline did not tag these as test fixtures despite their test file paths), but the file paths are unambiguous\n\nGiven the file paths unambiguously place both records in test targets, and the name `MockArtworkService` is a canonical test-fixture name, the restraint rule applies. There is no actionable production-code duplication here.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:MockArtworkService\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records reside in test target directories \u2014 'Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift' (package: Artwork) and 'Shared/AppServices/Tests/AppServicesTests/NowPlayingServiceTests.swift' (package: AppServices) \u2014 making them test fixtures by file-path evidence even though the pipeline emitted is_test=false. The name 'MockArtworkService' is a canonical mock/test-double identifier. Both records are type-alias-objects with empty fields_or_signature and empty name fields, providing no structural basis for a shared abstraction. Consolidating these across two separate test packages would couple unrelated test suites without benefit.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01YTDXy6W3tsXAsNcv2v4axx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2496,
+    "output_tokens": 549,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint rules apply.\n\nBoth records have `is_test=false` and `is_mock=false` according to their `context_flags`. However, the file paths tell a different story: both files live under `Tests/` directories (`WallpaperTests/AdaptiveQualityControllerTests.swift` and `CachingTests/CacheCoordinatorTests.swift`). These are clearly test files by location and naming convention, even though the pipeline did not set `is_test=true`. The decision rules say to apply \"test-fixture\" when `is_test=true` on any record \u2014 the flags as given do not technically trigger the restraint rule.\n\nThat said, the structural evidence is thin (`shared_field_count: 2`, no differing slots, no Jaccard score, both are `type-alias-object` with empty `fields_or_signature`). These are type aliases in separate test targets (`Wallpaper` and `Caching`) that happen to alias something clock-related. Lifting them into shared production code would couple test infrastructure across unrelated packages. The coincidental-shape signal dominates here.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (Wallpaper package, `AdaptiveQualityControllerTests.swift:19`) and `MockClock` (Caching package, `CacheCoordinatorTests.swift:41`) are `type-alias-object` declarations with empty `fields_or_signature` living in separate, unrelated test targets. The structural evidence is minimal \u2014 only `shared_field_count: 2` with no Jaccard score and no differing slots \u2014 indicating the similarity is a shallow coincidence of shape rather than a meaningful semantic overlap. Extracting a shared alias into a common package would couple two independent test suites (`WallpaperTests` and `CachingTests`) through a production or shared dependency purely to eliminate a trivial alias, which is not a net improvement. The different names (`MockQualityClock` vs `MockClock`) further suggest they are independently named for their respective domain contexts.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\\\" ... \\\"file\\\": \\\"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\\\" ... \\\"kind\\\": \\\"type-alias-object\\\" ... \\\"fields_or_signature\\\": [] ... \\\"shared_field_count\\\": 2\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SM5PYBHL7nHXxbxoEs8Vp9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2524,
+    "output_tokens": 672,
+    "service_tier": "standard"
+  }
+}

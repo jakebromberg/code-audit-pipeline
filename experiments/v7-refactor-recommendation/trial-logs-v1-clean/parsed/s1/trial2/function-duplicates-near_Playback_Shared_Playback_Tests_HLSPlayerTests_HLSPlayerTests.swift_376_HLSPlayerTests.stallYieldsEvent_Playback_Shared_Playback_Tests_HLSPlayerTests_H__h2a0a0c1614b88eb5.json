@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:376:HLSPlayerTests.stallYieldsEvent+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:402:HLSPlayerTests.recoveryYieldsEvent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true ... HLSPlayerTests.stallYieldsEvent ... HLSPlayerTests.recoveryYieldsEvent ... Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift",
+    "rationale": "Both participating records \u2014 `HLSPlayerTests.stallYieldsEvent` (line 376) and `HLSPlayerTests.recoveryYieldsEvent` (line 402) \u2014 carry `is_test: true` and reside in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift`. Under the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Here both records are test methods that verify distinct observable outcomes (a stall event vs. a recovery event); their structural similarity (Jaccard 0.78) reflects the natural pattern of similarly-shaped XCTest assertion sequences exercising related but semantically different code paths, not accidental duplication that warrants production refactoring.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_HLSPlayerTests_HLSPlayerTests.swift_376_HLSPlayerTests.stallYieldsEvent_Playback_Shared_Playback_Tests_HLSPlayerTests_H__h2a0a0c1614b88eb5.json",
+  "row_index": 88,
+  "trial": 2
+}

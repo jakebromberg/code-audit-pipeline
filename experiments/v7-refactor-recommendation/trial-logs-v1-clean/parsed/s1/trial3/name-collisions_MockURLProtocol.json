@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockURLProtocol",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift ... Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift",
+    "rationale": "Both participating records reside in test files: 'Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift' (package: AppServices) and 'Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceHTTPTests.swift' (package: Metadata). Although the context_flags do not explicitly mark is_test=true, the file paths unambiguously place both type-alias-object declarations inside *Tests targets, which are test fixtures by location. Each test package independently defines a local MockURLProtocol alias scoped to its own test bundle; this is the canonical pattern for isolating URL-loading stubs per test module. Consolidating them into a shared target would couple two otherwise independent test packages and risk leaking test infrastructure into production dependency graphs.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_MockURLProtocol.json",
+  "row_index": 30,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+    "rationale": "Both participating records reside under `Tests/` subdirectories (`Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) and carry `Mock`-prefixed type names (`MockHLSAVPlayer.play`, `MockPlayer.play`). Although the pipeline emitted `is_mock=false` for both entries, the file paths and naming conventions are unambiguous literal evidence from the cluster row that these are test-double fixtures. Each mock exists to satisfy a distinct protocol stub (`MockHLSAVPlayer` for the HLS-specific player contract, `MockPlayer` for the general player contract), so the coincident `play` method body is an expected artefact of independent stub implementations rather than accidental duplication. Merging or extracting these would couple two separate test-support targets and risk polluting `PlaybackTestUtilities` with HLS-specific concerns.",
+    "specifics": {
+      "reason_class": "mock-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 1
+}

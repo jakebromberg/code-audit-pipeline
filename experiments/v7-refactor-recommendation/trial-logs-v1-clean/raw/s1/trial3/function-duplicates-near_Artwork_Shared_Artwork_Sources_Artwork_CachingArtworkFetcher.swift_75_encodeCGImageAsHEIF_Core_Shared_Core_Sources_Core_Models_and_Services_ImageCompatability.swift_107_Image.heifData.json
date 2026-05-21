@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two near-duplicate functions \u2014 `encodeCGImageAsHEIF` in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (package `Artwork`) and `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`) \u2014 with a Jaccard similarity of 0.706, indicating substantial shared logic for HEIF encoding. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). Since `Core` already hosts `Image.heifData` in an `ImageCompatability.swift` file that is clearly the canonical home for image-format utilities, the `Artwork` package's `encodeCGImageAsHEIF` should be removed and replaced with a call to the `Core` implementation, which `Artwork` presumably already depends on.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Expose `Image.heifData` (or a free function equivalent) as a public API on a shared `ImageEncoding` protocol in `Core`, and have `CachingArtworkFetcher` in `Artwork` conform to or call through that protocol, rather than deleting `encodeCGImageAsHEIF` outright.\",\n        \"why_no_category_fits\": \"If `encodeCGImageAsHEIF` wraps `CGImage` while `Image.heifData` wraps a platform `Image` type, the two may not be straightforwardly merged; a protocol-based abstraction over the encoding step would let both call sites share the HEIF-encoding logic without forcing a type-level unification.\"\n      },\n      \"rationale\": \"The cluster records show one is a `method` on `Image` and the other is a free `function` operating on `CGImage`, suggesting a possible type-level mismatch that a simple extract-to-common might not fully resolve without an intermediate abstraction.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017c4gegFX2FvTNjdBCrFnF6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 697,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift",
+    "rationale": "Both `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) reside in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift`, a file whose path places it squarely inside the `Tests/PlaybackTests/` directory. The owning type `MockAudioPlayerForController` is a test-local mock by name and location. Although the pipeline's `is_test` and `is_mock` flags are both `false`, the file path and type name are literal evidence of test-fixture intent that overrides the flag mislabeling. Consolidating two structurally similar computed properties inside a single mock type in a single test file yields no production benefit and risks coupling test infrastructure unnecessarily.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_AudioPlayerControllerTests.swift_248_MockAudioPlayerForController.stateStream_Playback_Shared_Playback_T__h6345b38100a17bf2.json",
+  "row_index": 39,
+  "trial": 3
+}

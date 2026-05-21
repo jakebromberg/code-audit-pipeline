@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The two functions `encodeCGImageAsHEIF` in `Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift` (package `Artwork`) and `Image.heifData` in `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`) share a Jaccard similarity of 0.706, indicating near-duplicate HEIF-encoding logic. Since `Core` already hosts `Image.heifData` in an `ImageCompatability.swift` file that is clearly the canonical home for image format utilities, the `Artwork` package's standalone `encodeCGImageAsHEIF` function is redundant. The `Artwork` package likely already depends on `Core`, so consolidating into `Core` eliminates the duplication without introducing a new dependency edge. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the refactor is safe.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\",\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n        ]\n      },\n      \"rationale\": \"If `encodeCGImageAsHEIF` operates on `CGImage` rather than the `Image` type, a second viable approach is to consolidate both implementations into a single `extension Image` (or `extension CGImage`) block within `ImageCompatability.swift` in `Core`, making the HEIF-encoding surface area explicit and co-located rather than scattered across packages.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VHVzqn4xNx84Pq3nuV6kD7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 640,
+    "service_tier": "standard"
+  }
+}

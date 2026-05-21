@@ -1,0 +1,34 @@
+{
+  "cluster_id": "name-collisions:EnvironmentValues",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.52,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\nShared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\nShared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\nShared/Wallpaper/Sources/Wallpaper/ThemePickerState.swift\nShared/Wallpaper/Sources/Wallpaper/ThemeAppearance.swift",
+    "rationale": "Eleven unnamed `extension` declarations on `EnvironmentValues` are scattered across five packages (AppServices, Playback, WXUI, Wallpaper, PlayerHeaderView). This is the canonical SwiftUI pattern of adding `EnvironmentValues` keys in the same file as the feature that owns them, which is intentional and idiomatic \u2014 each extension lives next to its declaring key type (e.g., `PlaylistServiceEnvironment.swift`, `AccentColorEnvironment.swift`, `PlaybackBlendMode.swift`). No restraint markers are present, but the scatter is domain-driven rather than accidental duplication: each extension adds a distinct key scoped to its package. The only actionable consolidation is within the `Wallpaper` package, where four separate files (`PlaybackBlendMode.swift`, `MaterialBlendMode.swift`, `_Plant_OverlayBlendMode.swift`, `ThemeAppearance.swift`, `ThemePickerState.swift`) each extend `EnvironmentValues`; grouping those into a single `Wallpaper+EnvironmentValues.swift` file would reduce intra-package fragmentation without coupling packages.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/AppServices/Sources/AppServices/PlaylistServiceEnvironment.swift",
+        "Shared/AppServices/Sources/AppServices/ReviewRequestServiceEnvironment.swift",
+        "Shared/Playback/Sources/RadioPlayer/Controller/RadioPlayerControllerEnvironment.swift",
+        "Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift",
+        "Shared/WXUI/Sources/WXUI/OverlaySheet.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/ThemePickerState.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/ThemeAppearance.swift",
+        "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AccentColorEnvironment.swift"
+      ],
+      "target_type": "EnvironmentValues"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_EnvironmentValues.json",
+  "row_index": 1,
+  "trial": 1
+}

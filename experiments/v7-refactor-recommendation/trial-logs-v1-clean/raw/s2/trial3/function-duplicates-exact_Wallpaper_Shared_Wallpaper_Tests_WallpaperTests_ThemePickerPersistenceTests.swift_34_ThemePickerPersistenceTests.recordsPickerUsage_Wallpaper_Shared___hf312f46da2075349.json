@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the no-action restraint rules apply.\n\nBoth records live in `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` \u2014 a file whose name ends in `Tests.swift` and whose class is `ThemePickerPersistenceTests`. Despite the `is_test` flag being `false` on both records (likely a tagging gap in the pipeline), the file path and class name are unambiguous test-fixture signals: `ThemePickerPersistenceTests` is a test class, and the methods `recordsPickerUsage` / `recordPickerUsageIdempotent` are distinct test cases exercising different behavioral properties (basic recording vs. idempotency). These are intentionally separate test cases that happen to share structural shape; collapsing them would destroy test coverage semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:34:ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both methods \u2014 `ThemePickerPersistenceTests.recordsPickerUsage` (line 34) and `ThemePickerPersistenceTests.recordPickerUsageIdempotent` (line 43) \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift` within the `ThemePickerPersistenceTests` class. Although the pipeline's `is_test` flag reads `false` (a likely tagging gap), the file path suffix `Tests.swift` and the class name `ThemePickerPersistenceTests` are unambiguous test-fixture indicators. The two methods encode distinct behavioral assertions \u2014 basic usage recording versus idempotency \u2014 so their structural similarity is expected and load-bearing; merging them would silently drop a test scenario. No refactor is warranted.\",\n    \"evidence_quote\": \"ThemePickerPersistenceTests.recordsPickerUsage+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/ThemePickerPersistenceTests.swift:43:ThemePickerPersistenceTests.recordPickerUsageIdempotent\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Y7mxvCY4jKzEiDsQ969Yp3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2647,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

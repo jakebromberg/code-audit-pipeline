@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift",
+    "rationale": "All four `SequentialMockSession` type-alias-objects reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside test classes (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`). Although the pipeline reports `is_test: false` on every record, the file path under `Tests/ArtworkTests/` and the `*Tests.*` qualified names are unambiguous evidence of test-fixture context. Each alias is scoped to its enclosing test class, so the repetition is intentional isolation \u2014 each test suite owns its own local `SequentialMockSession` alias to avoid cross-suite coupling. Lifting these into a shared location would couple independent test suites and obscure which mock session belongs to which service under test.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_DiscogsArtworkServiceTests.SequentialMockSession_DiscogsArtworkServiceTests.SequentialMockSession_LastFMArtworkServiceTests.SequentialMockSession_iTunesArtworkServiceTests.SequentialMockSession.json",
+  "row_index": 12,
+  "trial": 2
+}

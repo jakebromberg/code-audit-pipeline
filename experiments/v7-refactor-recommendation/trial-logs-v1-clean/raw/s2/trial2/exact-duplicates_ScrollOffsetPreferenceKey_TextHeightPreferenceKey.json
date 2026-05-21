@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:ScrollOffsetPreferenceKey+TextHeightPreferenceKey\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"ScrollOffsetPreferenceKey\",\n      \"remove_from\": [\n        \"WXYC/WatchXYC/PlayerPage.swift\",\n        \"WXYC/iOS/Views/Playlist/Playcut Detail/PlaycutRowView.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster identifies two `type-alias-object` declarations \u2014 `TextHeightPreferenceKey` in `app:WatchXYC` (PlayerPage.swift:140) and `ScrollOffsetPreferenceKey` in `app:iOS` (PlaycutRowView.swift:74) \u2014 flagged as exact duplicates with `shared_field_count: 1` and no differing slots, meaning their underlying structure is identical despite carrying different names. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Because these are SwiftUI `PreferenceKey` type-alias objects with identical shape, they should be consolidated into a single shared definition. However, the cluster does not surface a dedicated shared/common package in the catalog; the closest actionable target is to place the canonical type in a shared module or, at minimum, deduplicate by having `app:WatchXYC` import and reuse the definition from `app:iOS`. The differing names suggest each was independently authored for the same structural purpose, which is the canonical case for extraction.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"The two types carry different names (`TextHeightPreferenceKey` vs `ScrollOffsetPreferenceKey`) and live in separate app targets (`app:WatchXYC` vs `app:iOS`), which could indicate they are independently named for domain-specific scroll/layout tracking purposes whose structural coincidence is accidental. If the watch and iOS targets do not share a common dependency layer, extraction may introduce an undesirable cross-target coupling.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012BNJMFPsT5wJAihrHZoKrb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2527,
+    "output_tokens": 581,
+    "service_tier": "standard"
+  }
+}

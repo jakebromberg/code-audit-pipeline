@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"BlendMode\", \"constraint\": null }\n      ],\n      \"new_name\": \"BlendModeKey\",\n      \"replaces\": [\"PlaybackBlendModeKey\", \"MaterialBlendModeKey\", \"OverlayBlendModeKey\"]\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendModeKey`, `MaterialBlendModeKey`, and `OverlayBlendModeKey` \u2014 are `type-alias-object` declarations at exactly line 89 in their respective files within the `Wallpaper` package, with `shared_field_count: 1` and no differing slots, indicating structurally identical bodies. Since they differ only in the blend-mode domain they name (Playback, Material, Overlay), a single generic `BlendModeKey<BlendMode>` type parameterised on the blend-mode type would unify all three without loss of type safety. All three files reside in `Shared/Wallpaper/Sources/Wallpaper/Core/`, so the extracted type can live in a new or existing file in that same directory. No restraint markers are present on any record.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\",\\n      \\\"line\\\": 89\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendModeKey\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three blend-mode domains must remain distinct nominal types (e.g., for `EnvironmentKey` conformance where each key needs its own identity), a single non-generic `BlendModeKey` base definition extracted into a shared file within the `Wallpaper` package \u2014 with the three existing names becoming typealiases \u2014 avoids duplication while preserving distinct key identities.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FiQfycgDo2moNVtoXrfYWF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2688,
+    "output_tokens": 653,
+    "service_tier": "standard"
+  }
+}

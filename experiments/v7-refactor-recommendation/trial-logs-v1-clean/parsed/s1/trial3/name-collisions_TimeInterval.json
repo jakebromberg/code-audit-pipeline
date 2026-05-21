@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:TimeInterval",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/ExponentialBackoffTimer.swift\" ... \"file\": \"Shared/Core/Sources/Core/Models and Services/ServiceTypes.swift\" ... \"kind\": \"extension\" ... \"package\": \"Core\"",
+    "rationale": "Both records are unnamed extensions (kind: 'extension', name: '') on what the cluster identifies as 'TimeInterval', both living in the same package 'Core'. Having two separate extension declarations on the same type scattered across 'ExponentialBackoffTimer.swift' (line 78) and 'ServiceTypes.swift' (line 13) fragments the type's augmented interface across unrelated files. Consolidating them into a single dedicated file (e.g., 'Shared/Core/Sources/Core/TimeInterval+Core.swift') within the Core package would improve discoverability and reduce the risk of conflicting or redundant member definitions. No restraint markers are present on either record, so consolidation is appropriate.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Core/Sources/Core/ExponentialBackoffTimer.swift",
+        "Shared/Core/Sources/Core/Models and Services/ServiceTypes.swift"
+      ],
+      "target_type": "TimeInterval"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_TimeInterval.json",
+  "row_index": 43,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift:112:AppConfigurationTests.configReturnsDefaultsOnBadStatusCode+AppServices:Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift:130:AppConfigurationTests.configReturnsDefaultsOnMalformedJson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records in this cluster carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/AppConfigurationTests.swift`. The two methods \u2014 `configReturnsDefaultsOnBadStatusCode` (line 112) and `configReturnsDefaultsOnMalformedJson` (line 130) \u2014 are distinct test cases that verify different failure modes of `AppConfiguration` (a bad HTTP status code versus malformed JSON). Although their structural similarity is high (Jaccard 0.714), each test encodes a semantically distinct error scenario; collapsing them into a shared helper would obscure the intent of each failure path and make test failures harder to diagnose. The restraint marker `is_test: true` on every member dominates the action signal per the decision rules.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_AppServices_Shared_AppServices_Tests_AppServicesTests_AppConfigurationTests.swift_112_AppConfigurationTests.configReturnsDefaultsOnBadStatusCode_AppSe__h295bcd91a9547ca1.json",
+  "row_index": 135,
+  "trial": 3
+}

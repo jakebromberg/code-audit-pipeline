@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- **cluster_id**: `name-collisions:DisplayLinkSequence.AsyncIterator`\n- Two `type-alias-object` records, both named `DisplayLinkSequence.AsyncIterator` (the `name` field is empty, but the cluster key encodes the name)\n- One lives in `DebugPanel` (production), the other in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 which is under `Examples/WallpaperSampleApp/`, a sample-app path, and has `is_sample_app: false` but the path itself is a canonical sample-app location\n- However, the second record has `is_sample_app: false` per the context flags\n\nWait \u2014 re-reading the rules: restraint markers are the `context_flags` values, not path heuristics. The second record has `is_sample_app: false`. Neither record has any restraint marker set to `true`. But the path `Examples/WallpaperSampleApp/` is a strong structural signal of sample-app intent. The rules say \"sits under Examples/ or SampleApp/\" triggers `reason_class: \"sample-app-mirror\"` even if the flag is false \u2014 the path criterion is listed alongside the flag as an OR condition.\n\nThis is a name-collision cluster with no shared fields, no Jaccard score, and no structural evidence beyond the name match. The second record sits under `Examples/WallpaperSampleApp/`, which is an explicit sample-app path per the decision rules. This warrants `no-action` with `reason_class: \"sample-app-mirror\"`.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DisplayLinkSequence.AsyncIterator\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path \u2014 a canonical sample-app location per the decision rules. The name collision between this record in the 'Wallpaper' package and the production record in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: 'DebugPanel') is therefore a sample-app mirror pattern, not a refactorable duplication. Additionally, both records carry empty field lists and the cluster provides no Jaccard score or shared-field count, meaning there is no structural evidence of meaningful shared shape beyond the name \u2014 further undermining any case for extraction.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017bRk5WDQub5u4vTWa2LJbL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2514,
+    "output_tokens": 709,
+    "service_tier": "standard"
+  }
+}

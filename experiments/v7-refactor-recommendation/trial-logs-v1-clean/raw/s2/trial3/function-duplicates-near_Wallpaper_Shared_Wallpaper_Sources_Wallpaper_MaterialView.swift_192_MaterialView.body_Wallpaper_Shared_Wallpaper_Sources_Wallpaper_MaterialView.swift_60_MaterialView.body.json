@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView: View` declarations in the same file, each with its own `body` computed property at line 60 and line 192). If so, collapse the two declarations into one, extracting any differing sub-views into private helper `View` types or `@ViewBuilder` helper methods within the single `MaterialView` definition. The surviving `body` should live at the earlier declaration site (line 60) and the duplicate at line 192 should be removed.\",\n      \"why_no_category_fits\": \"Both records are the same computed-property name (`MaterialView.body`) in the same file (`MaterialView.swift`) at two distinct line numbers (60 and 192) with a Jaccard similarity of 0.83. This is not a cross-file extraction problem (`extract-to-common`), not a protocol/default-implementation issue, and not a generic-parameterization candidate. The most likely cause is an accidental duplicate type declaration or a copy-paste remnant within a single file, which requires an intra-file consolidation that none of the named categories precisely describe.\"\n    },\n    \"rationale\": \"Both members are `MaterialView.body` computed properties residing in the identical file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192 respectively, with a Jaccard similarity of 0.8333. Having two `body` properties with near-identical structure in the same file strongly suggests either two accidental `MaterialView` type declarations or a stale copy of the `body` implementation that was never removed after editing. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so this is live production code that should be reconciled. The correct fix is an intra-file consolidation rather than any cross-package extraction.\",\n    \"evidence_quote\": \"MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the two `body` implementations live in separate `extension MaterialView` blocks within the same file, an extension-consolidation pass that merges them into a single extension (keeping the canonical implementation from line 60 and deleting the near-duplicate at line 192) would also resolve the duplication, though the root cause is still an intra-file redundancy rather than a cross-file extension scatter.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HbLciJFUKKHxDsW8RYy4fN",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 829,
+    "service_tier": "standard"
+  }
+}

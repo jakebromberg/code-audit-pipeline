@@ -1,0 +1,27 @@
+{
+  "cluster_id": "generic-function-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.62,
+    "evidence_quote": "ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName",
+    "rationale": "Both `ShaderDirectiveStore.humanReadableName` (line 71 of `ShaderDirectiveStore.swift`) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102 of `ShaderDirectiveControls.swift`) are methods with the same name and a high structural similarity (Jaccard 0.8) living in the same `Wallpaper` package. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Rather than a generic free function, the idiomatic Swift approach is to introduce a protocol `HumanReadableNamed` with a `humanReadableName` requirement so that both types declare conformance, enabling call-site polymorphism and a single point of documentation. A default implementation can be added in a protocol extension if the bodies are sufficiently similar, further reducing duplication.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [],
+      "new_protocol": "HumanReadableNamed",
+      "replaces": [
+        "ShaderDirectiveStore.humanReadableName",
+        "ShaderDirectiveControlsDisclosure.humanReadableName"
+      ]
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_ShaderDirectiveStore.swift_71_ShaderDirectiveStore.humanReadableName_Wallpaper_Shared_Wallpaper_S__h999cd2bcf6a7945a.json",
+  "row_index": 7,
+  "trial": 2
+}

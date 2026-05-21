@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"name-collisions:RequestServiceError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"The cluster contains two members in the MusicShareKit package: a production `type-alias-union` at `Shared/MusicShareKit/Sources/MusicShareKit/RequestService.swift:167` and an `extension` at `Shared/MusicShareKit/Tests/MusicShareKitTests/RequestServiceTests.swift:76`. Although neither record carries `is_test=true` in its context flags, the file path `Tests/MusicShareKitTests/RequestServiceTests.swift` unambiguously places the second member inside the test target. Per the decision rules, any participating record that is a test fixture dominates action signals. The name collision between the test-file extension and the production type-alias-union is the canonical pattern of a test helper extending or shadowing a production error type \u2014 lifting or merging them would couple production semantics to test infrastructure.\",\n    \"evidence_quote\": \"Shared/MusicShareKit/Tests/MusicShareKitTests/RequestServiceTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01J3vJ7FX4at5FQLcpo2B8p2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2494,
+    "output_tokens": 312,
+    "service_tier": "standard"
+  }
+}

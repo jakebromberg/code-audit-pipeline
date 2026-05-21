@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:115:AudioEnginePlayerTests.testPlay+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:365:AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true ... AudioEnginePlayerTests.testPlay ... AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown ... jaccard: 0.8333333333333334",
+    "rationale": "Both participating records in this cluster carry is_test=true and reside in Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift. Decision rule 1 mandates no-action whenever any participating record is a test fixture. Although the Jaccard similarity of 0.833 is high, the two methods \u2014 AudioEnginePlayerTests.testPlay (line 115) and AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown (line 365) \u2014 are distinct test scenarios: one exercises the baseline play path and the other verifies recovery after engine tear-down. Their structural similarity is expected because both must set up the same AudioEnginePlayer harness, not because they are accidental duplicates. Merging or extracting them would obscure the intent of each test case and couple unrelated failure modes.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Playback_Shared_Playback_Tests_MP3StreamerTests_AudioEnginePlayerTests.swift_115_AudioEnginePlayerTests.testPlay_Playback_Shared_Playback_Tests_MP3Str__hb096f2327028c8c4.json",
+  "row_index": 58,
+  "trial": 1
+}

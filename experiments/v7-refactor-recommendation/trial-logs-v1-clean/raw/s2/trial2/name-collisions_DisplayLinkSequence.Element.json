@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- **Cluster type**: `name-collisions` for `DisplayLinkSequence.Element`\n- **Members**: Two `type-alias-other` records \u2014 one in `DebugPanel/DebugMetricsProvider.swift` and one in `Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`\n- **Key flag**: The second record lives under `Examples/WallpaperSampleApp/`, which maps to the `is_sample_app` restraint pattern (even though the flag itself reads `false`, the path `Examples/WallpaperSampleApp/` is explicitly called out in the decision rules as a sample-app location)\n- **Decision rule**: Any record sitting under `Examples/` or `SampleApp/` triggers `reason_class: \"sample-app-mirror\"` regardless of the flag value, per the rules.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DisplayLinkSequence.Element\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift' \u2014 a path that falls under the 'Examples/WallpaperSampleApp/' directory, which the decision rules treat as a sample-app location regardless of the is_sample_app flag value. The other record is a production type-alias in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). This is the canonical restraint pattern: a mixed cluster where one record is a demonstration/sample artifact and the other is production code. Merging or extracting these would couple production DebugPanel semantics to sample-app demonstration code, which is undesirable. No structural evidence (jaccard, shared_field_count, shared_ancestor) is provided to suggest the aliases are even equivalent in content.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Jke8PJtCCrePmsHAfTTjxR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2512,
+    "output_tokens": 554,
+    "service_tier": "standard"
+  }
+}

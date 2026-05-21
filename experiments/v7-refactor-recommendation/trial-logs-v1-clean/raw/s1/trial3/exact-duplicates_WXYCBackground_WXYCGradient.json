@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:WXYCBackground+WXYCGradient\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are, delete one alias and replace all call-sites with the surviving name \u2014 preferring `WXYCGradient` as the more semantically precise identifier \u2014 then remove `BackgroundGradient.swift`. If they intentionally alias different underlying types that happen to share the same two fields, add a code comment to each file documenting the distinction so future analysis does not re-flag them.\",\n      \"why_no_category_fits\": \"Both records are `type-alias-object` kinds, not concrete structs, classes, or functions. The standard categories (extract-to-common, generic-parameterization, protocol-inheritance, etc.) all presuppose concrete declarations with movable members or implementations. For type aliases the correct action is either consolidation-by-deletion of one alias or explicit disambiguation \u2014 neither of which maps cleanly to any named category. `extension-consolidation` is the closest fit but applies to extension declarations, not type aliases.\"\n    },\n    \"rationale\": \"Both `WXYCBackground` and `WXYCGradient` are `type-alias-object` records in the same package (`WXUI`) with `shared_field_count: 2` and no differing slots (`differing_slots: null`), indicating they are structurally identical aliases. They live in separate files (`BackgroundGradient.swift` and `WXYCGradient.swift`) within `Shared/WXUI/Sources/WXUI/`, which is unusual for type aliases that resolve to the same shape. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so this is a production-code duplication that warrants resolution. The most likely cause is an unremediated rename where `WXYCBackground` was the original alias and `WXYCGradient` was introduced as a replacement but the old alias was never removed.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\" ... \\\"shared_field_count\\\": 2 ... \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` alias genuinely different underlying types (e.g., one is a `LinearGradient` alias and the other a `RadialGradient` alias) whose structural similarity is coincidental, no consolidation is appropriate. The cluster row does not expose the aliased type names, so this cannot be ruled out from the available evidence alone.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012aKQKM3yW3oDcc9XBBNsKq",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2522,
+    "output_tokens": 775,
+    "service_tier": "standard"
+  }
+}

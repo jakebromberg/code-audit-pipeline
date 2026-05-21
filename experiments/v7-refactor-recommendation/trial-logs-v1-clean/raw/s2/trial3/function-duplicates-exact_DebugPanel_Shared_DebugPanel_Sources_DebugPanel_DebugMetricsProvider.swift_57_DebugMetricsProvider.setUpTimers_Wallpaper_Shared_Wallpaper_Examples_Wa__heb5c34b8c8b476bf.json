@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the restraint markers carefully.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a canonical sample-app location per the decision rules, even though `is_sample_app` is flagged `false` in the context flags. However, the decision rules explicitly call out \"sits under Examples/ or SampleApp/\" as a restraint marker triggering `sample-app-mirror` no-action, independent of the boolean flag.\n\nThe file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` unambiguously sits under `Examples/WallpaperSampleApp/`, making this a mixed cluster: one production record (`DebugPanel`) and one sample-app record (`WallpaperSampleApp`). Lifting the shared method into common code would couple production `DebugPanel` to sample-app semantics \u2014 exactly the anti-pattern the restraint rule guards against.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:57:DebugMetricsProvider.setUpTimers+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:96:DebugMetricsProvider.setUpTimers\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app boolean value. The production copy in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel) is the authoritative implementation; the WallpaperSampleApp copy is a demonstration fixture that intentionally mirrors it. Consolidating the two would couple the production DebugPanel package to sample-app semantics, which is the exact anti-pattern the restraint rule is designed to prevent. The correct resolution, if the duplication is unwanted, is to have the sample app import and call the DebugPanel implementation directly \u2014 not to extract shared code.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QgBD71m4TXDcRe7ebG4Zah",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2619,
+    "output_tokens": 697,
+    "service_tier": "standard"
+  }
+}

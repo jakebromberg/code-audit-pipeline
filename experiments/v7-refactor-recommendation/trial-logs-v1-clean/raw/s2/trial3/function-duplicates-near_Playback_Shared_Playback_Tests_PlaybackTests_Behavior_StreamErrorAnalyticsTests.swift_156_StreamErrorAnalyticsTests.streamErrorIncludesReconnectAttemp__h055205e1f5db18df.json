@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/StreamErrorAnalyticsTests.swift:156:StreamErrorAnalyticsTests.streamErrorIncludesReconnectAttemptCount+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/StreamErrorAnalyticsTests.swift:98:StreamErrorAnalyticsTests.streamErrorIncludesSessionDuration\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTests/Behavior/StreamErrorAnalyticsTests.swift`. The two methods \u2014 `streamErrorIncludesSessionDuration` (line 98) and `streamErrorIncludesReconnectAttemptCount` (line 156) \u2014 are distinct test cases within `StreamErrorAnalyticsTests` that each verify a separate analytics property on a stream error event. Although their structural shape is similar (Jaccard 0.73), the behavioral intent of each test is deliberately different: one asserts session duration is captured, the other asserts reconnect attempt count is captured. Merging or abstracting them would obscure the individual failure signal each test is designed to surface, which is the canonical reason to leave near-duplicate test methods in place.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UQeZWbi25UTd8Ek9dVAkmR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2638,
+    "output_tokens": 386,
+    "service_tier": "standard"
+  }
+}

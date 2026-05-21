@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ActiveStateRepresentable\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\"PlayerState.isActive\", \"PlaybackState.isActive\"]\n    },\n    \"rationale\": \"Both `PlayerState.isActive` (line 72, `Shared/Playback/Sources/PlaybackCore/PlayerState.swift`) and `PlaybackState.isActive` (line 96, `Shared/Playback/Sources/PlaybackCore/PlaybackState.swift`) are computed properties of the same name and shape within the same `Playback` package, with a Jaccard similarity of 0.71. Rather than a generic function (which doesn't apply cleanly to computed properties on distinct types), the idiomatic Swift approach is to introduce a protocol `ActiveStateRepresentable` with a required `var isActive: Bool { get }` declaration in the `PlaybackCore` module. Both `PlayerState` and `PlaybackState` can then conform, enabling call-site polymorphism and a single point of documentation for what 'active' means in the playback domain. No restraint markers are present on either record, so refactoring is safe.\",\n    \"evidence_quote\": \"PlayerState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"ActiveStateRepresentable\",\n        \"method\": \"var isActive: Bool { get }\",\n        \"target_location\": \"Shared/Playback/Sources/PlaybackCore/PlayerState.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Playback/Sources/PlaybackCore/PlayerState.swift\",\n          \"Shared/Playback/Sources/PlaybackCore/PlaybackState.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `isActive` implementations are truly identical in body (Jaccard 0.71 suggests near-identical logic), a default implementation on a protocol extension in `PlaybackCore` could eliminate both bodies entirely, leaving only the conformance declarations on `PlayerState` and `PlaybackState`. This is secondary to the PAT introduction because the body source is not confirmed identical from the cluster data alone.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MY8TJsxHzYv1q65dtz4GvF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2568,
+    "output_tokens": 670,
+    "service_tier": "standard"
+  }
+}

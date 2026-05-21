@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:442:ArtworkServiceTests.doesNotCacheServerErrors+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:563:ArtworkServiceTests.doesNotCacheTransientErrors",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.95,
+    "evidence_quote": "is_test: true ... ArtworkServiceTests.doesNotCacheServerErrors ... ArtworkServiceTests.doesNotCacheTransientErrors ... jaccard: 0.7142857142857143",
+    "rationale": "Both participating records in this cluster carry `is_test: true` and reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`. The two methods \u2014 `ArtworkServiceTests.doesNotCacheServerErrors` (line 442) and `ArtworkServiceTests.doesNotCacheTransientErrors` (line 563) \u2014 are test fixtures that verify distinct error-category behaviours (server errors vs. transient errors). Although their Jaccard similarity is 0.714, the structural overlap is expected: both tests exercise the same caching-suppression contract but with semantically different inputs. Merging or extracting them risks obscuring the intent of each failure scenario and couples test semantics in a way that reduces diagnostic clarity.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkServiceTests.swift_442_ArtworkServiceTests.doesNotCacheServerErrors_Artwork_Shared_Artwork_Tests_Artw__he7e59f4f8eb7577c.json",
+  "row_index": 133,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records \u2014 `ProcessInfo.ThermalState.description` in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 carries `is_sample_app: true`, which is a restraint marker that dominates action signals under the decision rules. Although the production-side record `PerformanceControls.thermalStateLabel` in `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift` is unmarked and the Jaccard similarity is 0.75, lifting the shared logic into a common location would couple production code to sample-app semantics. The two computed properties also carry different names and live in structurally distinct roles (a `ProcessInfo.ThermalState` extension in the sample HUD vs. a label helper on `PerformanceControls`), suggesting the sample-app copy is an intentional, self-contained debug convenience rather than a leftover prototype.\",\n    \"evidence_quote\": \"is_sample_app\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TDb9HXZhTjyBJprg4zKQ2C",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2641,
+    "output_tokens": 443,
+    "service_tier": "standard"
+  }
+}

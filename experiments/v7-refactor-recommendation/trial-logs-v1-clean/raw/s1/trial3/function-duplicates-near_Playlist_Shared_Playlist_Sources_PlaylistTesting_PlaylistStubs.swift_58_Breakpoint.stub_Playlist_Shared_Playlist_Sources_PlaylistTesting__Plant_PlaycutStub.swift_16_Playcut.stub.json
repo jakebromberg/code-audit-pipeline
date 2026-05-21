@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playlist:Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift:58:Breakpoint.stub+Playlist:Shared/Playlist/Sources/PlaylistTesting/_Plant_PlaycutStub.swift:16:Playcut.stub\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` \u2014 `Playcut.stub` in `_Plant_PlaycutStub.swift` (line 16) and `Breakpoint.stub` in `PlaylistStubs.swift` (line 58) are test-fixture stub factories within the `PlaylistTesting` source group of the `Playlist` package. Per the decision rules, any cluster where even one record is a test fixture warrants no-action; here both are. Consolidating these stubs would couple distinct domain-model test helpers (`Playcut` vs `Breakpoint`) to a shared factory, risking fragility in test isolation for no production benefit. The structural similarity (Jaccard 0.71) is expected for stub factories that follow the same `.stub` naming convention across different model types.\",\n    \"evidence_quote\": \"is_test: true ... Playcut.stub ... _Plant_PlaycutStub.swift ... Breakpoint.stub ... PlaylistStubs.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Dxc2gTFBPcVvgtYpAjNxhJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2572,
+    "output_tokens": 377,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "The cluster reports two exact-duplicate initializers \u2014 both named `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` \u2014 residing in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 48 and 180, within the same `Wallpaper` package. No restraint markers are set on either record (is_test, is_mock, is_sample_app, is_codegen are all false). Swift does not allow two initializers with identical external parameter labels on the same type outside of conditional compilation, so one of these is almost certainly a stale copy. The fix is to delete the duplicate at line 180 (or whichever body is non-canonical) rather than any cross-file or cross-package restructuring.",
+    "specifics": {
+      "proposed_action": "Remove the duplicate initializer declaration at line 180 of Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift, retaining only the one at line 48. Before deleting, diff the two bodies to confirm they are truly identical (or determine which is the canonical version); if they differ in any meaningful way, reconcile the differences into the surviving declaration. Swift does not permit two initializers with the same external signature on the same type, so one of these is either dead code, guarded by a conditional compilation block (#if), or a copy-paste artifact that was never cleaned up.",
+      "why_no_category_fits": "Both records are in the exact same file (Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift) and the same package (Wallpaper), so 'extract-to-common' is inapplicable. There is nothing to lift to a protocol, generic, macro, or base class \u2014 the issue is simply two declarations of the identical initializer signature within one file. The correct action is deletion of the redundant copy, which does not map cleanly to any of the named refactor categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 1
+}

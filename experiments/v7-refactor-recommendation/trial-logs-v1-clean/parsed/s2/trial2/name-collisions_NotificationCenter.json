@@ -1,0 +1,25 @@
+{
+  "cluster_id": "name-collisions:NotificationCenter",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.55,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\" ... \"file\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\" ... \"kind\": \"extension\" ... \"package\": \"Core\"",
+    "rationale": "Both members are unnamed extensions (kind: 'extension', name: '') on what the cluster identifies as 'NotificationCenter', living in the same package ('Core') under the same directory ('Shared/Core/Sources/Core/Observation/'). Having two separate files each contributing an extension on the same Foundation type within the same package creates fragmented, hard-to-discover surface area. Consolidating them into a single file \u2014 e.g., 'Shared/Core/Sources/Core/Observation/NotificationCenter+Core.swift' \u2014 would centralise all Core-specific NotificationCenter behaviour without any cross-package or restraint concerns, since all context flags are false for both records.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Core/Sources/Core/Observation/MainActorMessage.swift",
+        "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"
+      ],
+      "target_type": "NotificationCenter"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_NotificationCenter.json",
+  "row_index": 33,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 but the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver`. The context flags are the authoritative signal per the decision rules; the file names and type name prefix are suggestive but the flags say `is_test: false` and `is_mock: false`. I must go with the flags as given.\n\nHowever, the type name `MockDiscogsEntityResolver` strongly implies this is a test double, and both files live under `Tests/` paths. The flags may be miscalibrated, but I cannot override them \u2014 I can only cite the evidence I'm given. The files are in test directories (`Shared/Metadata/Tests/MetadataTests/` and `WXYC/iOS/Tests/WXYCTests/`), and the type name carries the `Mock` prefix, which is the canonical mock-fixture pattern. Since the flags say `is_mock: false` and `is_test: false`, I'll proceed with an action recommendation, but note the strong contextual signals in the rationale.\n\nThe duplicate `MockDiscogsEntityResolver.resolveMaster` method lives in two test-adjacent packages (`Metadata` and `app:iOS`). The natural extraction target would be a shared test-support module that both packages can depend on.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveMaster` is duplicated exactly between `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`, line 55) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`, line 51). Both files reside under `Tests/` directory paths and the type carries the `Mock` prefix, strongly suggesting this is a shared test double that has been copy-pasted across packages. The canonical home for this mock is the `Metadata` package, since `MockDiscogsEntityResolver` is clearly a stand-in for a `Metadata`-owned protocol (`DiscogsEntityResolver`); the `app:iOS` test target should import it from there rather than redeclare it. Consolidating here eliminates the risk of the two implementations silently diverging.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Both context-flag objects explicitly set `is_test: false` and `is_mock: false`. If those flags are authoritative and the `Mock` prefix and `Tests/` paths are misleading (e.g., the type is a lightweight production stub rather than a test fixture), then the two implementations may be intentionally scoped to their respective packages and coupling them via a shared module would be inappropriate. In that case no-action is the safer choice until the flag discrepancy is resolved.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01C7b7Ea8NLjGJBdyKLStGyd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 987,
+    "service_tier": "standard"
+  }
+}

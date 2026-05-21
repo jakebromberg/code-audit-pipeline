@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Two `MetricRow` type-alias-objects with identical shape (`shared_field_count: 3`, `differing_slots: null`)\n- One lives in `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift`\n- The other lives in `Wallpaper` package at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`\n\nThe second record's file path contains `Examples/WallpaperSampleApp/` \u2014 this triggers the **sample-app-mirror** restraint. Per decision rule 1, any participating record under `Examples/` mandates `no-action` with `reason_class: \"sample-app-mirror\"` unless the marked record is demonstrably a removable leftover prototype. There is no evidence in the cluster row to support that override; the sample app copy appears to be a deliberate local mirror of the debug HUD for demonstration purposes.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MetricRow+MetricRow\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two `MetricRow` type-alias-object records resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` subtree \u2014 a canonical sample-app location. Per the restraint rules, any cluster containing a record under `Examples/` must be treated as a sample-app mirror and left alone. Lifting the shared definition into a common package would couple the production `DebugPanel` package to sample-app semantics, or force the sample app to take a dependency it may intentionally avoid. No evidence in the cluster row suggests the sample-app copy is a removable prototype rather than a deliberate local fixture.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Mv2ZEHs1N44VJzCo2Sp7uW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2519,
+    "output_tokens": 538,
+    "service_tier": "standard"
+  }
+}

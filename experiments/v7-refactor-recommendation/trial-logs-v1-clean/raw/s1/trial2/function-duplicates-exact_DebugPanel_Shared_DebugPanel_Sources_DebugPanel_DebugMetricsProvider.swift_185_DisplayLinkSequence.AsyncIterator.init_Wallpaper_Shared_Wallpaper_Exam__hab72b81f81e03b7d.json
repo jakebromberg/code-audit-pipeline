@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the restraint markers carefully.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is explicitly called out in the decision rules as a sample-app location triggering `reason_class: \"sample-app-mirror\"`, even though `is_sample_app` is flagged `false` on the record. The path evidence is unambiguous: this file sits under an `Examples/` directory in a `SampleApp` subfolder.\n\nAdditionally, even setting aside the path signal, the two copies live in entirely different packages (`DebugPanel` vs `Wallpaper`), and the sample-app copy in `DebugHUD.swift` is almost certainly a local convenience re-implementation for the demo HUD \u2014 a deliberate mirror of the production utility rather than an accidental duplicate. Lifting it into shared code would couple the `Wallpaper` sample app's debug tooling to the `DebugPanel` production package, which is the exact coupling the restraint pattern is designed to prevent.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under an Examples/WallpaperSampleApp/ directory \u2014 a canonical sample-app location per the decision rules. Even though the is_sample_app flag reads false, the file path is dispositive. The duplicate 'DisplayLinkSequence.AsyncIterator.init' in DebugHUD.swift is a deliberate local re-implementation for the demo HUD, not an accidental copy. Extracting it into a shared location would couple the Wallpaper sample app's debug tooling to the DebugPanel production package, which is precisely the coupling the sample-app-mirror restraint is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WUGKcDCmKR55EygTg8d9rR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2617,
+    "output_tokens": 660,
+    "service_tier": "standard"
+  }
+}

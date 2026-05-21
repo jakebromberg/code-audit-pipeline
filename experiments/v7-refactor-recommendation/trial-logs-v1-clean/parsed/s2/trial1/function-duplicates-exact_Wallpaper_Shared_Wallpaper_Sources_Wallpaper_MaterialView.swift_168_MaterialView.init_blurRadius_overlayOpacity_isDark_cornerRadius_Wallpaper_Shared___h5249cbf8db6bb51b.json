@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:168:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:35:MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)",
+    "rationale": "The cluster surfaces two initializers with the identical signature `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 35 and 168, both in the `Wallpaper` package, with no restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). Having two initializers with the same external label set in the same type is either a compiler error (if bodies are truly identical) or a latent maintenance hazard (if they diverged silently). The correct action is to remove the duplicate at line 168 or refactor it into an explicit delegation call to the definition at line 35.",
+    "specifics": {
+      "proposed_action": "Investigate whether the two definitions of `MaterialView.init(blurRadius:overlayOpacity:isDark:cornerRadius:)` at lines 35 and 168 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` are truly identical. If they are exact duplicates (same body), delete the one at line 168 and retain the canonical definition at line 35. If they differ subtly (e.g., one is a convenience initializer delegating to the other), make the delegation explicit by having the secondary initializer call `self.init(...)` on the primary, eliminating the body duplication. Either way, a single file should not contain two initializers with the same external signature.",
+      "why_no_category_fits": "Both records live in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) and share the same type (`MaterialView`) and package (`Wallpaper`). The appropriate fix is not extraction to a common package (they are already co-located), not a protocol default implementation, and not generic parameterization \u2014 it is simply deduplication or explicit delegation within the existing file. None of the named refactor categories cleanly describe 'remove one of two identical initializers in the same file'."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_168_MaterialView.init_blurRadius_overlayOpacity_isDark_cornerRadius_Wallpaper_Shared___h5249cbf8db6bb51b.json",
+  "row_index": 30,
+  "trial": 1
+}

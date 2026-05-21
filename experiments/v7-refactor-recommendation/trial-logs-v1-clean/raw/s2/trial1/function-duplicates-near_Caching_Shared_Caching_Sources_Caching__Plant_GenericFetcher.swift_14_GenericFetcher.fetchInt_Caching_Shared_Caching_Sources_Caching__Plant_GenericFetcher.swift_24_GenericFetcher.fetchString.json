@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"T\", \"constraint\": null }\n      ],\n      \"new_name\": \"fetch\",\n      \"replaces\": [\"GenericFetcher.fetchInt\", \"GenericFetcher.fetchString\"]\n    },\n    \"rationale\": \"The two methods `GenericFetcher.fetchInt` (line 14) and `GenericFetcher.fetchString` (line 24) in `Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift` share a Jaccard similarity of 0.75, indicating near-identical structure that differs only in the concrete return/parameter type (Int vs String). The `_Plant_` prefix in the filename strongly suggests this file was planted as a scaffold to illustrate exactly this pattern. Replacing both with a single generic function `fetch<T>` on `GenericFetcher` eliminates the type-specific duplication while preserving all behaviour, and is the idiomatic Swift resolution for type-varying method pairs. No restraint markers are present on either record, so the refactor is safe to apply.\",\n    \"evidence_quote\": \"GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `fetchInt` and `fetchString` have meaningfully different caching semantics (e.g., different serialisation paths or cache-key strategies for each type) that are not visible in the signature alone, the structural similarity may be coincidental and the methods should remain separate to allow independent evolution.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GK64NGCefKzjgWe1dXx9Qs",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2589,
+    "output_tokens": 569,
+    "service_tier": "standard"
+  }
+}

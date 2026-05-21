@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The cluster reports a Jaccard similarity of 0.7142857142857143 between `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) in `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`, both in the `ColorPalette` package. Both are computed properties on the same type with no context-flag restraints, meaning the near-duplication is production code that can be safely refactored. The high structural overlap strongly suggests the two properties share the same HSB-component extraction logic and differ only in the final platform type constructed. Collapsing them via a `PlatformColor` typealias or a shared private helper would reduce maintenance surface and ensure both properties stay in sync when the conversion logic changes.",
+    "specifics": {
+      "proposed_action": "Introduce a private helper method on `HSBColor` (e.g., `func makeColor(usingUIKit: Bool) -> <PlatformColor>` or a shared `func colorComponents() -> (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)`) that encapsulates the shared HSB-to-platform-color conversion logic. Both `uiColor` and `nsColor` then delegate to this helper, differing only in which platform type they construct (`UIColor` vs `NSColor`). Alternatively, use a `#if canImport(UIKit) / canImport(AppKit)` typealias (`typealias PlatformColor = UIColor / NSColor`) and collapse both properties into a single `var color: PlatformColor` computed property, eliminating the duplication entirely.",
+      "why_no_category_fits": "The two properties (`uiColor` returning `UIColor` and `nsColor` returning `NSColor`) are platform-specific variants of the same conversion, not generic-parameterizable in the usual sense (the return types are distinct platform types, not a single type parameter), not candidates for protocol inheritance or default-implementation (they are concrete computed properties on a struct, not protocol members), and not a subclass-lift scenario. The most idiomatic Swift resolution is either a shared private helper or a platform-conditional typealias collapse \u2014 neither of which maps cleanly to any named category. The Jaccard similarity of 0.714 confirms the bodies are nearly identical, making the duplication real and worth addressing."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 136,
+  "trial": 3
+}

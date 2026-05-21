@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ErrorEvent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"structural_evidence\": {\"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null}",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning the cluster surface evidence is limited to a shared name (`ErrorEvent`) across two distinct packages (`Playback` and `Analytics`). The structural evidence block carries all-null values (no Jaccard similarity, no shared field count, no shared ancestor), so there is no structural overlap to consolidate \u2014 only a name collision. A `type-alias-object` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` (line 203) is almost certainly aliasing a playback-domain error concept, while the one in `Shared/Analytics/Sources/Analytics/Events/ErrorEvents.swift` (line 18) lives in the general analytics event hierarchy; these are domain-distinct uses of the same name. With no field evidence and no structural similarity, any merge or extraction would be speculative.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_ErrorEvent.json",
+  "row_index": 24,
+  "trial": 1
+}

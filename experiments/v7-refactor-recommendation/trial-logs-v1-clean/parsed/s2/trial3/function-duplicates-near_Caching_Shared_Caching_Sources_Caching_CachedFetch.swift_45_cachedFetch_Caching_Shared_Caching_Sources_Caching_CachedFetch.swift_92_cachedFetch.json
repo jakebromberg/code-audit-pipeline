@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.55,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "The cluster identifies two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 indicating substantial but not identical bodies. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so action is warranted. Because both functions live in the same file and package, cross-package extraction is inappropriate; the right fix is intra-file deduplication via a shared private helper or a single overload with defaulted parameters. The empty `fields_or_signature` arrays prevent confirming exact parameter differences, so the recommendation is conditional on inspection.",
+    "specifics": {
+      "proposed_action": "Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is limited to a small number of call-site parameters (e.g., a cache policy, expiry duration, or key strategy), unify them into a single generic or defaulted-parameter function, removing the near-duplicate body. If the two overloads are genuinely distinct entry points that happen to share ~70 % of their body, extract the shared logic into a private `_cachedFetch(...)` implementation function called by both public overloads.",
+      "why_no_category_fits": "Both records are in the same file and same package (`Caching`), so `extract-to-common` (cross-package extraction) does not apply. The cluster reports two free functions, not types, so `generic-parameterization` for a struct/class is wrong. The signatures are not provided (`fields_or_signature: []`), so we cannot confirm a protocol conformance pattern that would justify `default-implementation` or `pat-introduction`. The most precise recommendation is to consolidate the shared body into a private helper \u2014 a pattern that does not map cleanly to any named category because it is an intra-file, intra-function deduplication rather than a cross-type or cross-package concern."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift",
+    "rationale": "Both `MockQualityClock` (Wallpaper package, `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift:19`) and `MockClock` (Caching package, `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift:41`) reside under `Tests/` subdirectories and carry semantically mock names, making them test-support fixtures despite the pipeline's `is_test: false` tag. Extracting these into a shared target would couple two otherwise independent packages (`Wallpaper` and `Caching`) through a shared test-support dependency, which is an anti-pattern that inflates the test-dependency graph without production benefit. Each package's clock fake is intentionally local to its own test suite, and the structural coincidence (both are `type-alias-object` with 2 shared fields) reflects the narrow surface area of a clock abstraction rather than meaningful duplication worth consolidating.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 1
+}

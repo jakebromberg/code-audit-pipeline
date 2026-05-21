@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the file paths and context flags.\n\nThe second member is at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. Although its `is_sample_app` flag is `false`, the file path contains `Examples/WallpaperSampleApp/` \u2014 which the decision rules explicitly call out as a restraint marker path (\"sits under Examples/ or SampleApp/\"). The rule states this triggers `reason_class: \"sample-app-mirror\"` regardless of the flag value, because the path itself is the canonical signal.\n\nThis is the classic pattern: a production implementation in `DebugPanel` has been duplicated into a sample app's debug HUD, likely for convenience during development of the Wallpaper sample. Lifting the sample app copy into shared code would couple the production `DebugPanel` package to sample/demo semantics, which is exactly what the restraint rule guards against.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path hierarchy \u2014 a canonical sample-app restraint path per the decision rules, regardless of the is_sample_app flag value. The duplication of 'DebugMetricsProvider.measureCPUUsage' in that file is a deliberate local copy for the sample app's debug HUD, not a production abstraction opportunity. Merging or extracting this copy would couple the production 'DebugPanel' package to sample-app demonstration semantics, which is the exact anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LiH9SoJYf9Lq2DEdGfFtLA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2627,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "Although the `is_sample_app` context flag is false on both records, the second member resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits directly under the `Examples/WallpaperSampleApp/` path hierarchy \u2014 an explicit restraint-marker path per the decision rules. The canonical production copy of `DebugMetricsProvider.measureCPUUsage` lives in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`), while the duplicate in `DebugHUD.swift` is a local re-implementation inside a sample application, likely copied for self-contained demonstration purposes. Lifting the sample-app copy to depend on the `DebugPanel` package would couple the sample app's build graph to a production debug framework, which is the exact coupling the restraint pattern is designed to prevent. No refactor is warranted unless the `WallpaperSampleApp` copy is confirmed to be a leftover prototype that should simply be deleted.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_112_DebugMetricsProvider.measureCPUUsage_Wallpaper_Shared_Wallpaper_Exampl__heffcbe4193230801.json",
+  "row_index": 9,
+  "trial": 1
+}

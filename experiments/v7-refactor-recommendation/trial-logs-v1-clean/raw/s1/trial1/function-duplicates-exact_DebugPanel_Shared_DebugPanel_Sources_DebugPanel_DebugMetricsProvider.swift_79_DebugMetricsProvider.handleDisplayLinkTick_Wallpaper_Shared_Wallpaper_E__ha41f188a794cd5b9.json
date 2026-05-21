@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully assess the context flags and file paths.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. Although `is_sample_app` is marked `false` in the context flags, the file path itself contains `Examples/WallpaperSampleApp/` \u2014 a canonical sample-app directory. The decision rules state that records sitting under `Examples/` trigger the `sample-app-mirror` restraint regardless of the flag value, because the path is the structural signal. The first member is a legitimate production method in `DebugPanel`. This is the canonical mixed-cluster restraint pattern: lifting the production method into shared code would couple it to sample-app semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the canonical Examples/WallpaperSampleApp/ directory \u2014 a sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The production copy of 'DebugMetricsProvider.handleDisplayLinkTick' in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel) is the authoritative implementation. The WallpaperSampleApp copy is a deliberate local re-implementation for demonstration purposes; merging or extracting it would couple the production DebugPanel package to sample-app semantics. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LkuBTBCJdE7PE5T8X7GXjL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2627,
+    "output_tokens": 589,
+    "service_tier": "standard"
+  }
+}

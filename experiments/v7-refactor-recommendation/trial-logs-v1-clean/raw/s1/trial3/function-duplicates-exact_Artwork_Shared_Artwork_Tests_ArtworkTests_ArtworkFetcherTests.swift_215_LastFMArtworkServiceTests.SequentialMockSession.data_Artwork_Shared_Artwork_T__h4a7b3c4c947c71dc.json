@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"no-action\": {\n        \"reason_class\": \"test-fixture\"\n      }\n    },\n    \"rationale\": \"All four participating records reside in 'Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift', a test file in the Artwork package. Although the pipeline has flagged is_test=false on each record (likely a classification gap caused by the enclosing type names \u2014 iTunesArtworkServiceTests, LastFMArtworkServiceTests, DiscogsArtworkServiceTests \u2014 not being picked up as test classes), the file path unambiguously places every member inside the Tests/ target. The SequentialMockSession.data methods are mock/stub helpers nested inside per-service test classes; consolidating them would couple test-internal mock infrastructure across otherwise independent test suites. No production code is involved, so no production benefit accrues from extraction.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"SequentialMockSession\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the project decides to share a single SequentialMockSession helper across all artwork-service test classes, the four identical .data implementations (at lines 88, 215, 321, 367) could be collapsed into one top-level SequentialMockSession type in a shared test-support file within the Artwork test target, removing the per-class nesting. This is only worth pursuing if the mock is expected to grow in complexity and be reused by future service tests.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011M3wMcuackiMu3pk44Jk9C",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2993,
+    "output_tokens": 685,
+    "service_tier": "standard"
+  }
+}

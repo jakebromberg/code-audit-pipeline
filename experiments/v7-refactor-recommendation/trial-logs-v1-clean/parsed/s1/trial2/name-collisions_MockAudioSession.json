@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MockAudioSession",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift",
+    "rationale": "All four participating records reside under test target directories: 'Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift', 'Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockAudioSession.swift' (two declarations), and 'Shared/PartyHorn/Tests/PartyHornTests/SoundPlayerTests.swift'. Although the pipeline emitted is_test=false and is_mock=false on every record, the file paths are authoritative: the Mocks/ subdirectory and Tests/ parent directories confirm these are test-fixture and mock-fixture declarations. Consolidating or extracting these type-alias-objects would couple production or shared infrastructure to test/mock semantics. Furthermore, all structural_evidence fields are null and no name or fields_or_signature are populated, making any concrete action recommendation impossible to ground without hallucination.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_MockAudioSession.json",
+  "row_index": 4,
+  "trial": 2
+}

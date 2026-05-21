@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"SequentialMockSession\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"All four participating records are exact duplicates of the `data` method, each nested inside a per-test-class `SequentialMockSession` inner type \u2014 `iTunesArtworkServiceTests.SequentialMockSession.data` (line 88), `LastFMArtworkServiceTests.SequentialMockSession.data` (line 215), `DiscogsArtworkServiceTests.SequentialMockSession.data` (lines 321 and 367) \u2014 all living in the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package. Because the method body is identical across all four sites, the `SequentialMockSession` type (including its `data` method) should be extracted into a single shared helper within the `Artwork` test target, and each per-suite inner class should be replaced with a reference to that shared type. Note: although the context flags report `is_test: false`, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the naming pattern (`*Tests.SequentialMockSession`) make clear these are test-support helpers; the flag appears to be a pipeline mis-classification, and the recommendation is scoped entirely within the test target.\",\n    \"evidence_quote\": \"iTunesArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"no-action\": {\n          \"reason_class\": \"test-fixture\"\n        }\n      },\n      \"rationale\": \"If the pipeline's `is_test: false` flags are taken at face value and the inner `SequentialMockSession` types are considered intentional per-suite isolation fixtures (e.g., to allow independent mutation in future tests), leaving them duplicated is defensible. However, the file path and naming strongly suggest test context, so extraction is the stronger recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012eTj2DYesN73wbHbrmWW1W",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2993,
+    "output_tokens": 924,
+    "service_tier": "standard"
+  }
+}

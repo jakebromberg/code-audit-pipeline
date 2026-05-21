@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NotificationMessage\",\n      \"associated_type\": \"Subject\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` (in `Shared/Core/Sources/Core/Observation/AsyncMessage.swift`) and `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) are interfaces in the same `Core` package sharing 3 of 3 members: `name: Notification.Name`, `makeNotification(_ message: Self, object: Subject?) -> Notification`, and a `makeMessage` factory. The sole structural difference is that `MainActorNotificationMessage.makeMessage` annotates its parameter as `sending Notification` (for actor-isolation transfer), while `AsyncNotificationMessage` omits that qualifier. Introducing a base PAT `NotificationMessage` with the shared `name` and `makeNotification` requirements \u2014 and letting each child protocol refine `makeMessage` with its own concurrency annotation \u2014 eliminates the duplicated surface while preserving the distinct isolation semantics. Both protocols live in the same package and neither carries any restraint markers, making this a clean, low-risk consolidation.\",\n    \"evidence_quote\": \"shared_field_count: 3\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\n          \"AsyncNotificationMessage\",\n          \"MainActorNotificationMessage\"\n        ],\n        \"moved_members\": [\n          \"name:Notification.Name\",\n          \"makeNotification:(_ message: Self, object: Subject?) -> Notification\"\n        ],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the two protocols must remain distinct named types for API-clarity reasons, a classical protocol-inheritance hierarchy achieves the same deduplication: a parent `NotificationMessage` protocol carries `name` and `makeNotification`, and each child refines only `makeMessage` with its concurrency-specific signature. This is slightly less idiomatic than a PAT when `Subject` is already an associated type, but it avoids any generic-constraint complexity at call sites.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BWX7F6taYjopEe3CciZU6T",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2696,
+    "output_tokens": 660,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-union\", \"shared_field_count\": 4",
+    "rationale": "All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift:34`, `Breakpoint.CodingKeys` in `PlaylistEntry.swift:72`, and `Talkset.CodingKeys` in `PlaylistEntry.swift:111` \u2014 are flagged as `exact-duplicates` with `shared_field_count: 4` and `kind: type-alias-union`, all within the same `Playlist` package. Because these are nested `CodingKeys` enums required by Swift's `Codable` synthesis, a naive `extract-to-common` would break the compiler's ability to resolve the nested type; the correct fix is either a shared concrete enum that each parent type aliases, or a protocol that constrains the associated `CodingKeys` type. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on any record, so deduplication is warranted.",
+    "specifics": {
+      "proposed_action": "Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base enum) in the `Playlist` package \u2014 for example in a new file `Shared/Playlist/Sources/Playlist/PlaylistCodingKeys.swift` \u2014 and replace each nested `CodingKeys` type-alias-union with a `typealias CodingKeys = PlaylistCodingKeys` (or remove the redundant declarations entirely if the parent types can share the same `Codable` key set). If the three types diverge in any keys not captured by the cluster's `shared_field_count: 4`, consider a protocol-based approach where a `PlaylistEntryCodable` protocol declares the common keys.",
+      "why_no_category_fits": "The records are `type-alias-union` kinds, not plain structs, classes, or functions, so `generic-parameterization` and `subclass-lift` do not apply. They are nested `CodingKeys` enums inside three distinct `Codable` types (`Announcement`, `Breakpoint`, `Talkset`), so `extract-to-common` in the plain sense would break `Codable` synthesis unless the parent types are also restructured. A `default-implementation` on a protocol extension cannot synthesise a nested enum. The most accurate recommendation is a targeted deduplication of the `CodingKeys` enum body \u2014 either via a shared typealias target or a protocol with an associated `CodingKeys` type \u2014 which does not map cleanly to any single named category."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 2
+}

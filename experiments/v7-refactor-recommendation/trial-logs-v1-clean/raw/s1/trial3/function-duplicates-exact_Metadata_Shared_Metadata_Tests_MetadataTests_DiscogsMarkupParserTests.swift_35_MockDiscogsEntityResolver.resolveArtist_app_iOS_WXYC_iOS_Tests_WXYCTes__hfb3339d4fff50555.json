@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test=false`, `is_mock=false`, `is_sample_app=false`, `is_codegen=false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver` \u2014 a mock type living inside test files. The context flags say `is_mock=false` and `is_test=false`, but the file paths and the `Mock` prefix in the type name are strong structural signals that these are test fixtures. The pipeline's flag inference appears to have missed these.\n\nDespite the flags being `false`, the evidence from the file paths (`*Tests.swift`) and the `Mock` prefix on the type name is unambiguous: these are test-support mock objects inside test files. Lifting them into shared production code would couple production targets to test/mock semantics. The correct action is to consolidate the mock into a shared test-support module \u2014 not into production code \u2014 but since the cluster signal is \"exact duplicate mock in two test targets,\" the primary recommendation is `extract-to-common` targeting a shared test-support location, with a note that the flags appear misfired.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"Both records define an identical method `MockDiscogsEntityResolver.resolveArtist` \u2014 one in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and one in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Despite the pipeline reporting `is_mock=false` and `is_test=false` on both records, the file paths (`*Tests.swift`) and the `Mock` prefix on the enclosing type name are unambiguous evidence that this is a test-support mock duplicated across two test targets. The canonical home for this mock is the `Metadata` package's test infrastructure, since `MockDiscogsEntityResolver` is a mock of a `Metadata`-owned protocol (`DiscogsEntityResolver`); the `app:iOS` test target should import it from there rather than redeclare it. Consolidating here eliminates drift risk if the protocol signature changes.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"If the pipeline's context flags are authoritative and these files are intentionally kept separate (e.g., the two mocks are expected to diverge as the respective test suites evolve independently), the duplication is a deliberate test-fixture pattern and no structural change is warranted. The `Mock` prefix and `*Tests.swift` file paths suggest the flags may be misfired, but absent confirmation that the flags are wrong, restraint is appropriate.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01D7EgJ6wMqCidJ5Ah41C9eT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 952,
+    "service_tier": "standard"
+  }
+}

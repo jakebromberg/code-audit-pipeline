@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nThe context flags show `is_test: false` on all four records, but the file path is `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and the type names include `iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, and `DiscogsArtworkServiceTests` \u2014 these are clearly test-suite nested types living in a test file. The structural pipeline's context-flag tagging appears to have missed marking them as test fixtures (the file sits under `Tests/` and the enclosing types are named `*Tests`).\n\nHowever, my decision rules say I must rely on the cluster row's context flags as given \u2014 I cannot override `is_test: false` based on inferred path semantics alone without hallucinating. That said, the names and paths are literal evidence from the cluster row, and the `is_mock: false` flag combined with the `SequentialMockSession` name and `*Tests` enclosing types is strong structural evidence these are test-internal type aliases. I'll recommend the consolidation action but note the test-fixture caveat prominently.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four records are `type-alias-object` declarations named `SequentialMockSession`, each nested inside a different test-suite type (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests` \u00d72) but all living in the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package. The `shared_field_count: 1` and `jaccard: null` confirm they are structurally identical type aliases. Because they are co-located in one file, the fix is simply to hoist a single top-level `typealias SequentialMockSession = \u2026` declaration at file scope (or into a shared test helper within the same package) and delete the four redundant nested aliases. Note: although the pipeline flags `is_test: false` on all records, the file path (`Tests/ArtworkTests/`) and enclosing type names (`*Tests`) strongly indicate these are test-internal aliases; the recommendation is safe because the target package remains `Artwork` and no production code is affected.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"If the pipeline's `is_test: false` flags are treated as authoritative, the enclosing type names (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`) and the `Tests/` path segment still suggest these are deliberate per-suite scoping aliases whose duplication is intentional to keep each test class self-contained. In that reading, no consolidation is warranted.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GWURTLxLxf8jYdUGCmm2AH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2878,
+    "output_tokens": 910,
+    "service_tier": "standard"
+  }
+}

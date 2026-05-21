@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to carefully examine the context flags and file paths.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a canonical sample-app location. Although `is_sample_app` is marked `false` in the context flags, the file path itself is unambiguous evidence of sample-app placement. The decision rules state that records sitting under `Examples/` trigger the `sample-app-mirror` restraint regardless of the flag value, because the path is the ground truth for intent.\n\nThe production copy in `DebugPanel` is the authoritative implementation; the `WallpaperSampleApp` copy is a local convenience duplicate for the demo app. Lifting the sample-app copy into shared production code would couple the `Wallpaper` sample app's debug HUD to the `DebugPanel` package in a way that is almost certainly not desired.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location that triggers the sample-app-mirror restraint. The production copy of 'DebugMetricsProvider.handleDisplayLinkTick' belongs to the 'DebugPanel' package; the second copy is a local convenience duplicate inside the Wallpaper sample app's debug HUD. Consolidating these would couple the sample app's debug overlay to the production 'DebugPanel' package, which is an undesirable dependency direction. The duplication is intentional: the sample app maintains its own self-contained debug instrumentation.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013w2uoSDCdNhLLynBAyrKMU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2627,
+    "output_tokens": 635,
+    "service_tier": "standard"
+  }
+}

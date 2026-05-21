@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:71:AudioPlayerCoreStateTests.stopTransitionsToIdle+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:88:AudioPlayerCoreStateTests.isPlayingFalseAfterStop\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift`. Although the Jaccard similarity of 0.778 indicates structural overlap, `stopTransitionsToIdle` (line 71) and `isPlayingFalseAfterStop` (line 88) are distinct behavioral assertions about the `AudioPlayerCoreStateTests` suite \u2014 one verifies a state transition to idle, the other verifies a boolean flag \u2014 and their near-duplicate shape is a natural consequence of the arrange-act-assert test pattern rather than accidental duplication. Merging or extracting them would obscure test intent and couple unrelated assertions. The restraint marker `is_test: true` on every member dominates any action signal here.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Pxbddta68g1vXNp4A6rRMU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2628,
+    "output_tokens": 379,
+    "service_tier": "standard"
+  }
+}

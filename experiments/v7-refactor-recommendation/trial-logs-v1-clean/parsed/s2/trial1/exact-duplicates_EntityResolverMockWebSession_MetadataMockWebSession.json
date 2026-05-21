@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift",
+    "rationale": "Both participating records reside under 'Shared/Metadata/Tests/MetadataTests/' \u2014 'PlaycutMetadataServiceCachingTests.swift' and 'DiscogsAPIEntityResolverCachingTests.swift' \u2014 making them test-only fixtures despite the pipeline reporting is_test=false (likely a tagging gap). Their names, 'MetadataMockWebSession' and 'EntityResolverMockWebSession', both embed 'Mock' and are scoped to distinct test classes, so each alias is intentionally local to its own test context. Merging them into a shared helper would couple two unrelated test suites and obscure which mock belongs to which test scenario. The restraint rule for test fixtures dominates the exact-duplicate action signal here.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 1
+}

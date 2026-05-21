@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the cross-package shape near-duplicate signal between `MockStructuredAnalytics.CPUSessionEventProxy+Playback` in the Analytics testing package and `CPUSessionEvent` in the PlaybackCore package.\n\nThe critical observation is the file path: `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` \u2014 the `AnalyticsTesting` source group strongly indicates this is a test/mock fixture. The type name `MockStructuredAnalytics` further confirms this is a mock. Even though the cluster's `members` array is empty (no explicit `is_mock` flag surfaced), the file path and type name prefix `Mock` are unambiguous restraint markers per the decision rules.\n\nA mixed cluster where one record is a production type (`CPUSessionEvent` in `PlaybackCore`) and the other is a mock fixture (`MockStructuredAnalytics` in `AnalyticsTesting`) is the canonical restraint pattern \u2014 lifting production code into shared code here would couple production semantics to test/mock infrastructure.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.CPUSessionEventProxy+Playback` declared at line 97 of `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift`. The `AnalyticsTesting` source group and the `Mock` prefix on the enclosing type are unambiguous mock-fixture markers. The other record, `CPUSessionEvent` at line 272 of `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift`, is a production type. Per the restraint rules, a mixed cluster containing any mock-marked record must be left as-is: consolidating the two would couple production `PlaybackCore` semantics to test/mock infrastructure in `AnalyticsTesting`. The high Jaccard similarity (0.875) reflects intentional mirroring of the production shape by the mock, not accidental duplication.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01T2a2saqX43BR76ZromurWG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2325,
+    "output_tokens": 678,
+    "service_tier": "standard"
+  }
+}

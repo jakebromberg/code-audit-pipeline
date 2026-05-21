@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MainActorNotificationMessage+MockNotificationMessage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift",
+    "rationale": "Both records carry all context flags as false, so no restraint marker applies directly. However, the second member `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 the `CoreTesting` module and the `_Plant_Mock` filename prefix are strong conventional signals that this type is a hand-authored or generated test-support mock fixture, even though `is_mock` is not set to true in the metadata. The structural match (3 shared fields, empty `fields_or_signature`) between `MainActorNotificationMessage` and `MockNotificationMessage` is almost certainly intentional: the mock mirrors the production protocol so that test infrastructure can substitute it. Merging or extracting these two would couple production observation semantics in `Core` to testing infrastructure in `CoreTesting`, which is the canonical anti-pattern the restraint rules are designed to prevent.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MainActorNotificationMessage_MockNotificationMessage.json",
+  "row_index": 44,
+  "trial": 2
+}

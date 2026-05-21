@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test: false` and `is_mock: false` \u2014 but the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver`. The context flags are the authoritative signal per the decision rules; I cannot override them based on file-name inference alone without hallucinating. However, the file paths contain `Tests/` directories and the type name is prefixed `Mock`, which is strong structural evidence that these are test/mock fixtures even if the flags say otherwise.\n\nThe decision rules say restraint markers on the records are load-bearing \u2014 but the flags explicitly say `is_mock: false` and `is_test: false`. I must go with the flags as given. The duplicate `MockDiscogsEntityResolver.resolveMaster` exists in two test packages (`Metadata` and `app:iOS`), and the right action is to extract the shared mock to a common test-support target.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"MockDiscogsEntityResolver\",\n      \"remove_from\": [\n        \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n        \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n      ]\n    },\n    \"rationale\": \"The method `MockDiscogsEntityResolver.resolveMaster` is an exact duplicate appearing at line 55 in `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and at line 51 in `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Both records carry `is_test: false` and `is_mock: false` per the authoritative context flags, so no restraint-marker override applies. Because the `app:iOS` package already depends on the `Metadata` package (the shared Discogs domain lives there), extracting `MockDiscogsEntityResolver` \u2014 including `resolveMaster` \u2014 into a dedicated test-support library within the `Metadata` package (e.g., `Shared/Metadata/Tests/MetadataTestSupport/`) eliminates the duplication without coupling production code to test semantics. Both call-site files would then import that shared test-support target and delete their local copies.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Despite the `is_test: false` / `is_mock: false` flags, both files reside under `Tests/` directories and the type is named `MockDiscogsEntityResolver`, strongly suggesting these are deliberate test fixtures. If the flags are erroneous metadata and these are in fact test/mock fixtures, the correct answer is no-action under the test-fixture or mock-fixture restraint rule, since coupling two independent test targets through a shared mock helper can introduce unwanted cross-test-target dependencies.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018EsqPHp3fwJCJtyvc4oLiR",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2599,
+    "output_tokens": 953,
+    "service_tier": "standard"
+  }
+}

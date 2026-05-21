@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) in `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package are flagged as exact function duplicates sharing the identical signature `init(service:artist:album:)`. The most idiomatic Swift resolution is to introduce a shared protocol (e.g., `LinkTappedEvent`) that both types conform to, then provide a default implementation of `init(service:artist:album:)` in a protocol extension, eliminating the duplicated body in each conforming type. Both records carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is safe. Because both types live in the same file, the protocol and its extension can be declared in the same file with minimal disruption.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Analytics/Sources/Analytics/Events/UIEvents.swift"
+      ],
+      "method": "init(service:artist:album:)",
+      "protocol": "LinkTappedEvent",
+      "target_location": "Shared/Analytics/Sources/Analytics/Events/UIEvents.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 3
+}

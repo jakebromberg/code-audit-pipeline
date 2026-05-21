@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 4",
+    "rationale": "All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift` line 34, `Breakpoint.CodingKeys` in `PlaylistEntry.swift` line 72, and `Talkset.CodingKeys` in `PlaylistEntry.swift` line 111 \u2014 are flagged as `exact-duplicates` with `shared_field_count: 4` and no differing slots, meaning their `CodingKeys` enumerations are byte-for-byte identical. All three live in the same `Playlist` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so deduplication is safe. Maintaining three identical `CodingKeys` definitions creates a silent drift risk: a future field rename applied to one will silently diverge from the others.",
+    "specifics": {
+      "proposed_action": "Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base enum) in the `Playlist` package \u2014 for example in a new file `Shared/Playlist/Sources/Playlist/PlaylistCodingKeys.swift` \u2014 and replace each nested `CodingKeys` with a `typealias CodingKeys = PlaylistCodingKeys` (or a direct conformance reuse). If the three types share a common protocol or base type, the `CodingKeys` enum can be declared once on that shared abstraction and inherited by all three.",
+      "why_no_category_fits": "The cluster records are `type-alias-union` kinds, not plain structs, classes, or functions, so `generic-parameterization`, `subclass-lift`, and `default-implementation` do not apply directly. `extract-to-common` is the closest match but the specifics schema for that category assumes a full type extraction, whereas here the right move is to deduplicate a nested `CodingKeys` enum that is shared across three sibling Codable types (`Announcement`, `Breakpoint`, `Talkset`) within the same package \u2014 a pattern that is better described as a shared enum declaration with typealiases, which none of the named categories capture precisely."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_Announcement.CodingKeys_Breakpoint.CodingKeys_Talkset.CodingKeys.json",
+  "row_index": 16,
+  "trial": 2
+}

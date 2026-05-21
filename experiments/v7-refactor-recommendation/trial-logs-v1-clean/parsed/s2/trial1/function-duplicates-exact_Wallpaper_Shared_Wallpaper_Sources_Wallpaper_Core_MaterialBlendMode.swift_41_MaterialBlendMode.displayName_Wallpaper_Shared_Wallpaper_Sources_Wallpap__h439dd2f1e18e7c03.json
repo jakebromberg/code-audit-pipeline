@@ -1,0 +1,30 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.88,
+    "evidence_quote": "function-duplicates-exact",
+    "rationale": "All three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently defines an identical `displayName` computed property at line 41 of their respective files. Because the implementations are exactly duplicated (query: `function-duplicates-exact`) and all context flags are false (no test, mock, codegen, or sample-app markers), this is unambiguous production duplication. Introducing a `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension within the `Wallpaper` package eliminates all three copies while preserving each type's distinct identity. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` suggests it may be a candidate for future consolidation, but the protocol approach is safe regardless.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [
+        "RawRepresentable where RawValue == String"
+      ],
+      "new_protocol": "BlendModeDisplayable",
+      "replaces": [
+        "MaterialBlendMode.displayName",
+        "PlaybackBlendMode.displayName",
+        "OverlayBlendMode.displayName"
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_MaterialBlendMode.swift_41_MaterialBlendMode.displayName_Wallpaper_Shared_Wallpaper_Sources_Wallpap__h439dd2f1e18e7c03.json",
+  "row_index": 1,
+  "trial": 1
+}

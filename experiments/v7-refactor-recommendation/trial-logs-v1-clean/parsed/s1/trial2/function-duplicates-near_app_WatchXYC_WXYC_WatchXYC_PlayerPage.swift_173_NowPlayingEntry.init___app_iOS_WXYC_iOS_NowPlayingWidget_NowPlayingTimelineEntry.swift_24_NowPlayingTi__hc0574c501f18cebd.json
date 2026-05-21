@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"jaccard\": 0.7777777777777778, \"shared_field_count\": 0",
+    "rationale": "The two initializers \u2014 `NowPlayingEntry.init(_:)` in `app:WatchXYC` (PlayerPage.swift:173) and `NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)` in `app:iOS` (NowPlayingWidget/NowPlayingTimelineEntry.swift:24) \u2014 serve structurally similar but platform-distinct purposes: one feeds a watchOS Now Playing UI entry and the other feeds an iOS WidgetKit timeline entry. Their Jaccard similarity of 0.78 reflects shared domain vocabulary (now-playing data) rather than shared logic, and their differing signatures (`_:` vs `nowPlayingItem:recentItems:family:`) confirm they accept different inputs for different platform APIs. Merging or extracting a common initializer would couple watchOS and iOS widget targets, which are intentionally separate packages (`app:WatchXYC` vs `app:iOS`), without meaningful reduction in complexity. The `shared_field_count` of 0 further confirms there are no concrete shared fields to extract.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_173_NowPlayingEntry.init___app_iOS_WXYC_iOS_NowPlayingWidget_NowPlayingTimelineEntry.swift_24_NowPlayingTi__hc0574c501f18cebd.json",
+  "row_index": 94,
+  "trial": 2
+}

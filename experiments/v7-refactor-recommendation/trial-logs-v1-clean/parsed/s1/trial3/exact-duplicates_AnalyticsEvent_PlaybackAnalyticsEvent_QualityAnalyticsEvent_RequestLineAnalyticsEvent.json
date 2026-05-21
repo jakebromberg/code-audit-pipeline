@@ -1,0 +1,28 @@
+{
+  "cluster_id": "exact-duplicates:AnalyticsEvent+PlaybackAnalyticsEvent+QualityAnalyticsEvent+RequestLineAnalyticsEvent",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.82,
+    "evidence_quote": "\"name\": \"AnalyticsEvent\", \"package\": \"Analytics\" ... \"name\": \"PlaybackAnalyticsEvent\", \"package\": \"Playback\" ... \"name\": \"QualityAnalyticsEvent\", \"package\": \"Wallpaper\" ... \"name\": \"RequestLineAnalyticsEvent\", \"package\": \"MusicShareKit\"",
+    "rationale": "All four records are empty interfaces (fields_or_signature: []) with shared_field_count: 2, flagged as exact-duplicates across four production packages: Analytics, Playback, Wallpaper, and MusicShareKit. A canonical base protocol `AnalyticsEvent` already exists in `Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift`, making it the natural parent. The three domain-specific variants \u2014 `PlaybackAnalyticsEvent`, `QualityAnalyticsEvent`, and `RequestLineAnalyticsEvent` \u2014 should be declared as refinements of `AnalyticsEvent` (i.e., `protocol PlaybackAnalyticsEvent: AnalyticsEvent {}`), eliminating the structural duplication while preserving domain-specific type identity for each package. No restraint markers are present on any record, so the refactor is safe.",
+    "specifics": {
+      "children": [
+        "PlaybackAnalyticsEvent",
+        "QualityAnalyticsEvent",
+        "RequestLineAnalyticsEvent"
+      ],
+      "moved_members": [],
+      "parent": "AnalyticsEvent",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_AnalyticsEvent_PlaybackAnalyticsEvent_QualityAnalyticsEvent_RequestLineAnalyticsEvent.json",
+  "row_index": 9,
+  "trial": 3
+}

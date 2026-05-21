@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:353:PlayerControllerTestHarness.postInterruptionBegan+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:367:PlayerControllerTestHarness.postInterruptionEnded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `PlayerControllerTestHarness.postInterruptionBegan` (line 353) and `PlayerControllerTestHarness.postInterruptionEnded` (line 367) \u2014 reside in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift` and carry `is_test: true`. Per the decision rules, any cluster where even one record is test-marked must be treated as a test fixture and left alone. Although the two methods share a high structural similarity (Jaccard 0.833), they model semantically distinct interruption lifecycle events (began vs. ended) and their near-identical shape is expected in a test harness that mirrors a symmetric notification API. Merging them into a generic helper would obscure intent and couple production refactoring decisions to test infrastructure.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LoTSQkfuv5ade3vKsD7eHn",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2640,
+    "output_tokens": 392,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the cross-package shape near-duplicate signal between `StreamingService` in `Shared/Metadata` and `MusicServiceIdentifier` in `Shared/MusicShareKit`.\n\nKey observations:\n- High Jaccard similarity of 0.8333 (83%) between the two types\n- Both are in `Shared/` packages (not test, mock, sample app, or codegen)\n- `StreamingService` lives at `Shared/Metadata/Sources/Metadata/StreamingService.swift:13`\n- `MusicServiceIdentifier` lives at `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68`\n- The `members` array is empty, so I cannot inspect field lists directly\n- The cluster type is `cross-package-shape-near-duplicates-any`, meaning they share structural shape across package boundaries\n- The names differ (`StreamingService` vs `MusicServiceIdentifier`) but the shapes are 83% similar \u2014 this is a strong structural overlap signal\n- Both sit in `Shared/` subtrees, suggesting neither is a test fixture or sample app mirror\n- No restraint markers are present on any record\n\nThe 83% Jaccard with no restraint markers and cross-package placement is a meaningful signal, but with empty `members` I cannot name specific fields to move. The most defensible Swift-idiomatic action is to introduce a shared protocol that both types conform to, capturing the ~83% overlapping shape, rather than collapsing them (their differing names suggest intentional domain distinction). An alternative extract-to-common is also defensible if the types are truly redundant.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MusicServiceIdentifiable\",\n      \"associated_type\": \"ServiceID\",\n      \"constraints\": [\"Hashable\", \"Codable\"],\n      \"replaces\": [\"StreamingService\", \"MusicServiceIdentifier\"]\n    },\n    \"rationale\": \"The Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68) indicates that roughly 5 out of 6 structural slots are shared across two separate Shared/ packages. Their distinct names suggest they model the same concept from different domain perspectives rather than being accidental duplicates, making a unifying protocol the idiomatic Swift answer over a full merge. Introducing `MusicServiceIdentifiable` in a common dependency (e.g., `Shared/Metadata`, which `MusicShareKit` likely already depends on) lets both types retain their identity while the shared shape is expressed once. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are present on either record, so no no-action override applies.\",\n    \"evidence_quote\": \"jaccard: 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Metadata\",\n        \"type_name\": \"StreamingService\",\n        \"remove_from\": [\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n        ]\n      },\n      \"rationale\": \"If `MusicServiceIdentifier` at line 68 of MusicTrack.swift is a secondary definition that crept in alongside `MusicTrack` rather than a deliberate domain type, the simpler fix is to delete it and have `MusicShareKit` import and reuse `StreamingService` from `Shared/Metadata` directly, eliminating the cross-package duplication without introducing a new protocol abstraction.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PRVwQKDDM6UAMfU7RPBoYJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2319,
+    "output_tokens": 1018,
+    "service_tier": "standard"
+  }
+}

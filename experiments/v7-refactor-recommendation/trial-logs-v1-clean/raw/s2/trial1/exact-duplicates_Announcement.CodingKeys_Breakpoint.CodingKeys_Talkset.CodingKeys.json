@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Announcement.CodingKeys+Breakpoint.CodingKeys+Talkset.CodingKeys\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit whether `Announcement.CodingKeys`, `Breakpoint.CodingKeys`, and `Talkset.CodingKeys` are all `typealias`-union enums with the same 4 shared fields. If so, define a single shared `CodingKeys` enum (or a common base set of raw values) in a protocol or a common parent type within the `Playlist` package, and have each nested `CodingKeys` either be replaced by a direct typealias to the shared enum or be removed in favour of a protocol-provided default. Concretely: introduce a `PlaylistEntryCodable` protocol in `Shared/Playlist/Sources/Playlist/` with an associated or concrete `CodingKeys` enum carrying the 4 shared cases, and conform `Announcement`, `Breakpoint`, and `Talkset` to it, deleting the three redundant nested `CodingKeys` declarations.\",\n      \"why_no_category_fits\": \"The three duplicates are nested `CodingKeys` enums (kind: `type-alias-union`) rather than free-standing structs, classes, or functions. The most idiomatic Swift fix is neither a plain `extract-to-common` (the type must remain nested or accessible as `CodingKeys` for `Codable` synthesis to work) nor a straightforward `default-implementation` (there is no protocol method to default \u2014 the duplication is in an enum declaration). A `macro-synthesis` approach (`@CodingKeys` macro) is the closest named category but the cluster row provides no evidence that a macro already exists or that the population is large enough to justify authoring one. The correct action is a protocol-based shared `CodingKeys` definition, which straddles `extract-to-common` and `default-implementation` without fitting either cleanly.\"\n    },\n    \"rationale\": \"All three members \u2014 `Announcement.CodingKeys` in `_Plant_Announcement.swift:34`, `Breakpoint.CodingKeys` in `PlaylistEntry.swift:72`, and `Talkset.CodingKeys` in `PlaylistEntry.swift:111` \u2014 are flagged as exact duplicates with `shared_field_count: 4` and `differing_slots: null`, meaning their 4 coding-key cases are identical. All three live in the same `Playlist` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so consolidation is safe. Because `CodingKeys` must satisfy `Swift.CodingKey` and is referenced by name during `Codable` synthesis, a simple file-level extraction is insufficient; a protocol-based or typealias-based approach is required to preserve `Codable` conformance on each parent type.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4, \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"macro-synthesis\",\n      \"specifics\": {\n        \"macro_name\": \"@SharedPlaylistCodingKeys\",\n        \"applies_to\": [\"struct\"],\n        \"synthesizes\": \"A nested `CodingKeys` enum conforming to `CodingKey` with the 4 shared cases, attached to any `Playlist`-package struct that opts in, eliminating the need for hand-written duplicate nested enums.\",\n        \"population_size_evidence\": \"3 exact-duplicate members across 2 files in the Playlist package\",\n        \"use_swift_builtin\": false\n      },\n      \"rationale\": \"A Swift attached macro could synthesise the identical `CodingKeys` body on each conforming struct, removing all three hand-written duplicates. However, with only 3 call sites the macro authoring cost likely outweighs the benefit, making the protocol/typealias approach the more pragmatic primary recommendation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012jrmmaGTNsSMu8T9dTgQyp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2660,
+    "output_tokens": 997,
+    "service_tier": "standard"
+  }
+}

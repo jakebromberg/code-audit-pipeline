@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"BlendModeDisplayable\",\n      \"associated_type\": null,\n      \"constraints\": [\"RawRepresentable where RawValue == String\"],\n      \"replaces\": [\"PlaybackBlendMode.displayName\", \"MaterialBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each independently defines an identical `displayName` computed property at line 41 of their respective files. Because the implementations are exactly duplicated (query: `function-duplicates-exact`) and no restraint markers are set on any record, the idiomatic Swift resolution is to introduce a protocol `BlendModeDisplayable` with a default implementation of `displayName` in a protocol extension, eliminating all three redundant copies. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` suggests it may be a staging/prototype file, but it carries no `is_codegen`, `is_mock`, or `is_sample_app` flag, so it is treated as production code. A protocol extension default implementation is preferred over a free generic function here because these are enum-like blend-mode types that naturally conform to a shared capability.\",\n    \"evidence_quote\": \"function-duplicates-exact\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a full PAT feels over-engineered for three concrete enum types, the same deduplication can be achieved by declaring a `BlendModeDisplayable` protocol with a `var displayName: String { get }` requirement and providing a single default implementation in a protocol extension housed in a new file `BlendModeDisplayable.swift` within the same `Wallpaper` package. Each conforming type then drops its local `displayName` body entirely.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UrDEi93uTiEeRjtq6KkK8x",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2790,
+    "output_tokens": 813,
+    "service_tier": "standard"
+  }
+}

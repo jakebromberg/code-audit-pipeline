@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"WXYCBackgroundStyle\",\n      \"method\": \"var wxycBackgroundDark: <ReturnType> { get }\",\n      \"target_location\": \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\",\n      \"conformers_simplified\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundDark` (line 30 in `BackgroundGradient.swift`) and `WXYCGradient.wxycBackgroundDark` (line 31 in `WXYCGradient.swift`) are exact-duplicate computed properties within the same `WXUI` package. Because the query is `function-duplicates-exact` and neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), the duplication is unintentional. The idiomatic Swift resolution is to introduce a shared protocol (e.g., `WXYCBackgroundStyle`) in the `WXUI` package, provide a single default implementation of `wxycBackgroundDark` in a protocol extension, and have both `WXYCBackground` and `WXYCGradient` conform to it, eliminating the per-type copies.\",\n    \"evidence_quote\": \"WXYCGradient.wxycBackgroundDark\\\", \\\"file\\\": \\\"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\\\", \\\"kind\\\": \\\"computed-property\\\", \\\"line\\\": 31\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"WXUI\",\n        \"type_name\": \"WXYCBackgroundColors\",\n        \"remove_from\": [\n          \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n          \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n        ]\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` are not related by protocol, the duplicate computed property could instead be extracted into a standalone value type or namespace `WXYCBackgroundColors` within the same `WXUI` package, and both call sites replaced with a reference to that shared definition. This avoids introducing a protocol when the relationship between the two types is purely coincidental sharing of a color value.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GnGCfSvBz6sXV2ummEKpET",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2605,
+    "output_tokens": 795,
+    "service_tier": "standard"
+  }
+}

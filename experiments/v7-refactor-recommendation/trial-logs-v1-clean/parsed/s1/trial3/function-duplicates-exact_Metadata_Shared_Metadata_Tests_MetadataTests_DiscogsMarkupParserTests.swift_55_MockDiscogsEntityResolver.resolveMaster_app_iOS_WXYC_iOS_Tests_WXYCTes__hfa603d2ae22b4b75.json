@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+    "rationale": "The method `MockDiscogsEntityResolver.resolveMaster` is duplicated exactly between `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`, line 55) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`, line 51). Both files reside under `Tests/` directory paths and the type carries the `Mock` prefix, strongly suggesting this is a shared test double that has been copy-pasted across packages. The canonical home for this mock is the `Metadata` package, since `MockDiscogsEntityResolver` is clearly a stand-in for a `Metadata`-owned protocol (`DiscogsEntityResolver`); the `app:iOS` test target should import it from there rather than redeclare it. Consolidating here eliminates the risk of the two implementations silently diverging.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_55_MockDiscogsEntityResolver.resolveMaster_app_iOS_WXYC_iOS_Tests_WXYCTes__hfa603d2ae22b4b75.json",
+  "row_index": 24,
+  "trial": 3
+}

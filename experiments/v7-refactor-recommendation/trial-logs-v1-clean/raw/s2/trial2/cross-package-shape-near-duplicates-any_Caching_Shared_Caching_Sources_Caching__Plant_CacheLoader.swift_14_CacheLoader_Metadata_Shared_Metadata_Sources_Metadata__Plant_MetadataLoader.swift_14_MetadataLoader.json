@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array and `null` values for all structural evidence fields (`differing_slots`, `shared_ancestor`, `shared_field_count`), meaning no concrete field or method lists were surfaced to ground any refactor recommendation. Although the cluster_id encodes two candidate types \u2014 `CacheLoader` in `Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift` and `MetadataLoader` in `Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift` \u2014 with a Jaccard similarity of 1.0, the absence of member data makes it impossible to verify what members would be extracted, moved, or unified without hallucinating evidence. Per the decision rules, when a recommendation cannot be grounded in the cluster row, `no-action` with reason_class `coincidental` is the correct answer.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"differing_slots\\\": null, \\\"shared_ancestor\\\": null, \\\"shared_field_count\\\": null\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"ResourceLoader\",\n        \"associated_type\": \"Resource\",\n        \"constraints\": [],\n        \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n      },\n      \"rationale\": \"The cluster_id signals a Jaccard similarity of 1.0 between `CacheLoader` (Caching package) and `MetadataLoader` (Metadata package), suggesting identical shape. If member data were available and confirmed identical load/fetch signatures, introducing a shared `ResourceLoader` PAT in a common package would eliminate the structural duplication. However, this cannot be confirmed from the empty `members` list, so it remains a speculative alternative only.\"\n    },\n    \"confidence\": 0.15\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01RjDyXUctKx3M9JjLnNUuZp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2310,
+    "output_tokens": 564,
+    "service_tier": "standard"
+  }
+}

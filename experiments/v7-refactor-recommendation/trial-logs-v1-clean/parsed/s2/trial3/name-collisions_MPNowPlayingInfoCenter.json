@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MPNowPlayingInfoCenter",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"jaccard\": null, ... \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name is empty string in both cases) on what the cluster query labels 'MPNowPlayingInfoCenter' \u2014 a MediaPlayer framework system type. One extension lives in 'Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift' (package: Playback) and the other in 'WXYC/iOS/NowPlayingInfoCenterManager.swift' (package: app:iOS). Without field or method lists (fields_or_signature is empty for both, all Jaccard/shared-field metrics are null), there is no structural evidence that the two extensions share members that could be consolidated. The 'name-collisions' query signal here reflects only that both extend the same system type across two packages, not that they duplicate logic. Merging them would couple the app-layer iOS target to the Playback shared package in a direction that is likely intentionally separated.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_MPNowPlayingInfoCenter.json",
+  "row_index": 25,
+  "trial": 3
+}

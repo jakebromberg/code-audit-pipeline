@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.55,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\", \"line\": 28, \"name\": \"Image.heifData\" ... \"line\": 107, \"name\": \"Image.heifData\" ... \"jaccard\": 0.75",
+    "rationale": "Both `Image.heifData` methods reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` within the `Core` package, at lines 28 and 107 respectively, with a Jaccard similarity of 0.75 \u2014 high enough to flag near-duplication but not identical. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so intentional-duplication restraint rules do not apply. The empty `fields_or_signature` arrays mean the precise difference between the two implementations cannot be determined from the cluster data alone, making a prescriptive structural refactor (e.g., generic parameterization or default-implementation extraction) unsupported by available evidence. An in-file review is the minimum safe action.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method definitions at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. They share a Jaccard similarity of 0.75, suggesting near-duplicate implementations in the same file. Determine whether one is a platform-conditional variant (e.g., `#if os(macOS)` vs `#if os(iOS)`) or a legacy overload. If they are platform branches, ensure they are clearly delimited with `#if`/`#else`/`#endif` and add a comment explaining the divergence. If one is a dead or superseded implementation, delete it. If they are genuinely distinct overloads (e.g., differing parameter labels or return types not captured in the signature field), rename or document them to make the distinction explicit.",
+      "why_no_category_fits": "Both records live in the same file and same package (`Core`, `ImageCompatability.swift`), so 'extract-to-common' does not apply \u2014 there is nothing to move across a boundary. The near-duplicate signal (Jaccard 0.75, not 1.0) means this is not a clean exact-duplicate removal. The empty `fields_or_signature` arrays prevent confirming whether the methods differ by parameter label, return type, or platform guard, so a confident 'generic-parameterization' or 'default-implementation' recommendation cannot be grounded. The most appropriate action is an in-file audit and cleanup, which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 2
+}

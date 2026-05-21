@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess the restraint markers carefully.\n\nThe second member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a canonical sample-app location per the decision rules, even though `is_sample_app` is flagged `false` in the context flags. However, the decision rules explicitly call out \"sits under Examples/ or SampleApp/\" as a restraint marker triggering `sample-app-mirror` no-action, independent of the boolean flag.\n\nThe path evidence is unambiguous: `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` sits under `Examples/WallpaperSampleApp/`. This is a sample-app mirror of the production `DebugMetricsProvider.setUpTimers` in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`. Lifting the shared implementation would couple the production `DebugPanel` package to sample-app demonstration semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:57:DebugMetricsProvider.setUpTimers+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:96:DebugMetricsProvider.setUpTimers\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location that triggers the sample-app-mirror restraint regardless of the is_sample_app boolean value. The duplicate of 'DebugMetricsProvider.setUpTimers' in that file is a deliberate local copy for demonstration purposes within the Wallpaper sample app. Consolidating it into the production 'DebugPanel' package (Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift) would couple production infrastructure to sample-app semantics, which is the canonical anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EPkyJgcLz7gBamFw12SZgQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2619,
+    "output_tokens": 675,
+    "service_tier": "standard"
+  }
+}

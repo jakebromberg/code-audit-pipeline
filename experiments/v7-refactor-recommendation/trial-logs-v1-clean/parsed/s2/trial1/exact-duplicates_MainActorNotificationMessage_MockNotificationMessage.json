@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MainActorNotificationMessage+MockNotificationMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\"",
+    "rationale": "Both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) carry all four context flags as false, so no restraint marker applies. However, the two types serve structurally distinct roles: `MainActorNotificationMessage` is a production interface in the Core observation layer, while `MockNotificationMessage` lives in a `CoreTesting` source group and carries the `_Plant_` prefix convention typical of generated or planted test-support types. Their shared field count of 3 with an empty `fields_or_signature` list provides no concrete member evidence to justify extraction, and the names encode unrelated domain concepts (a main-actor-dispatched notification contract vs. a testing stand-in). Merging or extracting them would conflate production and test-support semantics without a demonstrated shared abstraction.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MainActorNotificationMessage_MockNotificationMessage.json",
+  "row_index": 44,
+  "trial": 1
+}

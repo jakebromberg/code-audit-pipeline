@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records live under `Shared/Metadata/Tests/MetadataTests/` \u2014 clearly test files by path, even though the pipeline has `is_test: false` on both records (likely a tagging gap).\n- They are type aliases used as mock web sessions inside caching test files (`PlaycutMetadataServiceCachingTests.swift` and `DiscogsAPIEntityResolverCachingTests.swift`).\n- The names themselves (`MetadataMockWebSession`, `EntityResolverMockWebSession`) are test-fixture mock helpers.\n- The path evidence (`Tests/MetadataTests/`) is unambiguous: these are test-support types, and the `is_test` flag is simply misfired by the pipeline.\n- Merging them into a shared alias would couple two distinct test suites that may intentionally scope their mock differently (one for `PlaycutMetadataService`, one for `DiscogsAPIEntityResolver`).\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both records reside under 'Shared/Metadata/Tests/MetadataTests/' \u2014 'PlaycutMetadataServiceCachingTests.swift' and 'DiscogsAPIEntityResolverCachingTests.swift' \u2014 making them unambiguous test-support types despite the pipeline reporting is_test=false (a likely tagging gap). The names 'MetadataMockWebSession' and 'EntityResolverMockWebSession' are mock web session aliases scoped to distinct test suites testing different subsystems (PlaycutMetadataService vs. DiscogsAPIEntityResolver). Merging them into a shared alias would couple two independent test fixtures and risk obscuring the intent of each suite. The structural coincidence of shared_field_count=2 reflects the narrow surface area of a mock alias, not a meaningful duplication opportunity.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01B7zLUiEXaCwNw5B23FUd75",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 556,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared structural skeleton of `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` into a private helper method \u2014 e.g., `_resizeIfNeeded(condition: (Int, Int) -> Bool, newCapacity: (Int) -> Int)` or a small private generic/closure-parameterised method \u2014 and have both methods delegate to it. This eliminates the near-duplicate body (Jaccard 0.71) while preserving the distinct grow/shrink semantics at the call sites.\",\n      \"why_no_category_fits\": \"The two members are methods on the same private class (`_DequeStorage`) in the same file, so 'extract-to-common' (cross-file/package move) is not applicable. They are not protocols, generics, subclasses, PATs, or macros. The closest named category would be 'generic-parameterization' of a function, but the duplication here is a classic 'parameterise-by-behaviour' refactor (pass a predicate and a capacity expression) rather than a type-parameter generalisation. 'extension-consolidation' does not apply because both methods already live in the same declaration. The most precise description is an inline private-helper extraction within the existing file.\"\n    },\n    \"rationale\": \"Both `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) reside in the same file (`Shared/Core/Sources/Core/Deque.swift`) and package (`Core`), carry no restraint markers, and share a Jaccard similarity of 0.7143 \u2014 meaning roughly 5/7 of their token-level structure is identical. The names reveal symmetric, inverse operations on the same storage buffer, a classic pattern where the differing logic (grow vs. shrink predicate and target-capacity expression) can be passed as parameters to a single private helper, reducing the duplicated body to one authoritative location.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"_resizeIfNeeded\",\n        \"replaces\": [\"_DequeStorage._growIfNeeded\", \"_DequeStorage._shrinkIfNeeded\"]\n      },\n      \"rationale\": \"If the differing slots between the two methods reduce purely to a numeric or boolean expression, a single non-generic private function parameterised by a closure or enum case (`enum ResizeDirection { case grow, shrink }`) could replace both. This is weaker than the 'other' recommendation because the cluster reports `differing_slots: null`, making it impossible to confirm the exact nature of the divergence without inspecting the source; the 'other' approach is therefore more conservatively grounded.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01GSf2fZ3GGqHVwuogyAdHG8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2558,
+    "output_tokens": 833,
+    "service_tier": "standard"
+  }
+}

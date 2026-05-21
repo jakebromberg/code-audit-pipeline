@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift\", \"kind\": \"type-alias-object\" ... \"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift\", \"kind\": \"extension\" ... \"file\": \"WXYC/iOS/PlaybackReason+App.swift\", \"kind\": \"extension\"",
+    "rationale": "All four records are production code (no restraint markers), but the cluster signal here is 'name-collisions', not structural duplication. The canonical definition lives in 'Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift' (package: Playback) as a type-alias-object, while the remaining three records are extensions in separate packages \u2014 'PlayerHeaderView' (PlaybackReason+PlayerHeaderView.swift) and 'app:iOS' (PlaybackReason+App.swift) \u2014 each adding package-specific behaviour to the same type. This is the idiomatic Swift pattern of extending a core type at the boundary of each consuming module; the name collision is intentional and load-bearing, not accidental duplication. No consolidation is warranted because collapsing the extensions into the core Playback package would introduce inappropriate upward dependencies on UI (PlayerHeaderView) and app-layer (app:iOS) concerns.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 3
+}

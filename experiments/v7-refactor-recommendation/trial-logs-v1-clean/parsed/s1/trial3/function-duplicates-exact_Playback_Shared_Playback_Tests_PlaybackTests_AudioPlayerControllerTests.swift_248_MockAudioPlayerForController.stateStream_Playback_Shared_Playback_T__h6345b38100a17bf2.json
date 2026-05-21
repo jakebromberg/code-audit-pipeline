@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+    "rationale": "Both `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) live in the same file `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` and share identical computed-property shape, but they represent semantically distinct stream concepts \u2014 state changes versus discrete events \u2014 whose structural coincidence is incidental to the mock's protocol conformance requirements. Merging or extracting them would conflate two separate parts of the `AudioPlayer` protocol surface. Additionally, the type name `MockAudioPlayerForController` strongly indicates this is test-support infrastructure, and collapsing the two properties would degrade the mock's expressiveness as a test double even though the pipeline did not set `is_test` or `is_mock` flags.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_AudioPlayerControllerTests.swift_248_MockAudioPlayerForController.stateStream_Playback_Shared_Playback_T__h6345b38100a17bf2.json",
+  "row_index": 39,
+  "trial": 3
+}

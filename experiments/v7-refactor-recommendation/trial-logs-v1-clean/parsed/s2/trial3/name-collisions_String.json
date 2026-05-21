@@ -1,0 +1,27 @@
+{
+  "cluster_id": "name-collisions:String",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift\"\n\"file\": \"Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift\"\n\"file\": \"Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift\"\n\"file\": \"Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift\"",
+    "rationale": "Four separate `extension` declarations on `String` are spread across three distinct packages (`Playlist`, `AnalyticsMacros`, `Analytics`) with no restraint markers on any record. The cluster signal is `name-collisions:String`, indicating the same extended type is being extended in multiple places, creating potential for shadowing or redundant helpers. The most actionable consolidation is within the `Playlist` package itself, where two files (`String+HTMLDecoding.swift` and `V2/FlowsheetEntryType.swift`) both extend `String` \u2014 these should be merged into the existing `String+HTMLDecoding.swift`. The cross-package extensions in `AnalyticsMacros` and `Analytics` should be reviewed for overlap; if their helpers are general-purpose string utilities, they are candidates for extraction into a shared `StringExtensions` module, but if they are domain-specific (e.g., analytics event formatting), they may legitimately remain in their respective packages.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/Playlist/Sources/Playlist/String+HTMLDecoding.swift",
+        "Shared/Playlist/Sources/Playlist/V2/FlowsheetEntryType.swift",
+        "Shared/AnalyticsMacros/Sources/AnalyticsMacrosPlugin/AnalyticsEventMacro.swift",
+        "Shared/Analytics/Sources/Analytics/AnalyticsEvent.swift"
+      ],
+      "target_type": "String"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_String.json",
+  "row_index": 6,
+  "trial": 3
+}

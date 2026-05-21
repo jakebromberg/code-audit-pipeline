@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster have `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordPlaybackStartedIncrementsCount` (line 22) and `recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 are near-duplicate test cases (Jaccard 0.75) that each verify a distinct user action increments a counter. Although their structure is similar, they intentionally exercise different code paths (`recordPlaybackStarted` vs. `recordSongAddedToLibrary`), and collapsing them would obscure which behaviour is under test. The restraint rule for test fixtures dominates any action signal here.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MUMjpqr6URAAMrFGdtyQW4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2605,
+    "output_tokens": 354,
+    "service_tier": "standard"
+  }
+}

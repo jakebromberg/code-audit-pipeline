@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nThe context flags show `is_test: false` on all four records, but the file path is `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and the type names include `iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, and `DiscogsArtworkServiceTests` \u2014 these are clearly test-fixture types living in a test file. The structural pipeline has apparently not set `is_test: true` on these records (possibly because type-alias-objects inside test classes aren't always flagged at the alias level), but the evidence from the file path and enclosing class names is unambiguous: these are test fixtures.\n\nHowever, the decision rules say I must rely on the cluster row data, not inferred knowledge. The flags say `is_test: false`. I should note the file path evidence but apply the rules as given. Since no restraint marker is set, I can evaluate the duplication on its merits.\n\nAll four are `type-alias-object` records with empty `fields_or_signature`, all in the same file (`ArtworkFetcherTests.swift`), all in the `Artwork` package. Three are named `SequentialMockSession` nested under different test class scopes, with one appearing twice under `DiscogsArtworkServiceTests`. The duplication is real and consolidatable \u2014 a single `SequentialMockSession` typealias at file scope (or in a shared test helper) would serve all four test classes.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Artwork\",\n      \"type_name\": \"SequentialMockSession\",\n      \"remove_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift\"\n      ]\n    },\n    \"rationale\": \"All four records are `type-alias-object` declarations named `SequentialMockSession`, all residing in the single file `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` within the `Artwork` package, at lines 84, 211, 317, and 363. They are nested redundantly under `iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, and `DiscogsArtworkServiceTests` (the last appearing twice). Because they share identical shape (`shared_field_count: 1`, `differing_slots: null`, `jaccard: null`) and live in the same file, a single file-scoped or test-helper-scoped `typealias SequentialMockSession` would eliminate all four duplicates. The two `DiscogsArtworkServiceTests.SequentialMockSession` entries at lines 317 and 363 are a direct exact duplicate within the same enclosing scope and should be reduced to one regardless.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"DiscogsArtworkServiceTests.SequentialMockSession\\\", \\\"package\\\": \\\"Artwork\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"test-fixture\"\n      },\n      \"rationale\": \"Although the context flags report `is_test: false` on all four records, the file path `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and the enclosing class names (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`) strongly indicate these are test-scoped type aliases. If the pipeline's flag is incorrect and these are genuine test fixtures, the restraint rule mandates no-action with reason_class `test-fixture`, since lifting them would couple test infrastructure into shared production-visible scope.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015Z7JPWFdFj2Y4oVcNqSwnk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2878,
+    "output_tokens": 1010,
+    "service_tier": "standard"
+  }
+}

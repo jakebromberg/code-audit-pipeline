@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:LCDMaxOffsetKey+LCDMinOffsetKey",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "LCDMinOffsetKey\", \"kind\": \"type-alias-object\", \"line\": 31 ... \"LCDMaxOffsetKey\", \"kind\": \"type-alias-object\", \"line\": 35",
+    "rationale": "Both `LCDMinOffsetKey` and `LCDMaxOffsetKey` are type-alias-objects in the same file (`AccentColorEnvironment.swift`, lines 31 and 35) within the `PlayerHeaderView` package. Although they share structural shape (both are empty type-alias-objects with `shared_field_count: 1`), they encode semantically distinct concepts \u2014 a minimum offset key and a maximum offset key \u2014 that are intentionally paired as separate SwiftUI `EnvironmentKey` types. Merging or extracting them would destroy the semantic distinction between the two bounds. No restraint markers are present, but the coincidental structural similarity does not justify a refactor.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_LCDMaxOffsetKey_LCDMinOffsetKey.json",
+  "row_index": 35,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualityMetricsAggregatorTests.swift:319:QualityMetricsAggregatorTests.calculatesAvgShaderFPS+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualityMetricsAggregatorTests.swift:461:QualityMetricsAggregatorTests.recordsInterpolatorResets\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `QualityMetricsAggregatorTests.calculatesAvgShaderFPS` (line 319) and `QualityMetricsAggregatorTests.recordsInterpolatorResets` (line 461) \u2014 carry `is_test: true` in their context flags. Although the structural similarity is notable (Jaccard 0.7778), the two methods test distinct behaviours (average shader FPS calculation vs. interpolator reset recording), so their shared shape is a natural consequence of the test-method boilerplate pattern rather than accidental duplication. Lifting shared setup into a helper is a valid internal refactor within the test file, but it does not warrant cross-file extraction or any production-code change, and the restraint rule for test fixtures dominates.\",\n    \"evidence_quote\": \"is_test\\\": true\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract the shared test scaffolding (setUp/tearDown logic or common assertion helpers) into a private helper method or a dedicated `XCTestCase` extension within `QualityMetricsAggregatorTests.swift` to reduce the intra-file duplication indicated by the 0.78 Jaccard score.\",\n        \"why_no_category_fits\": \"This is a purely intra-file, intra-test-class refactor. None of the cross-file or production-code categories apply, and the change is cosmetic/maintainability-only within the test target.\"\n      },\n      \"rationale\": \"The 0.7778 Jaccard similarity between the two test methods in `QualityMetricsAggregatorTests.swift` suggests repeated boilerplate (e.g., aggregator construction, metric feeding, assertion patterns). Extracting that boilerplate into a private helper inside the same file would improve readability without touching production code or violating the test-fixture restraint.\"\n    },\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01829s7UBLGBxmsZq9n1Yqx6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2672,
+    "output_tokens": 645,
+    "service_tier": "standard"
+  }
+}

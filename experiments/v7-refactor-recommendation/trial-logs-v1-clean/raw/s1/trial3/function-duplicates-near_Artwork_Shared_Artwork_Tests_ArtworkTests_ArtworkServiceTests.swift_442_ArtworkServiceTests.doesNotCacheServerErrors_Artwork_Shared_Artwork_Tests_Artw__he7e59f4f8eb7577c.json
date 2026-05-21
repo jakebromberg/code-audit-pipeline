@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:442:ArtworkServiceTests.doesNotCacheServerErrors+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:563:ArtworkServiceTests.doesNotCacheTransientErrors\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `ArtworkServiceTests.doesNotCacheServerErrors` (line 442) and `ArtworkServiceTests.doesNotCacheTransientErrors` (line 563) \u2014 carry `is_test: true` in their context flags. Per the decision rules, any cluster where even one record is test-marked must default to no-action with reason_class 'test-fixture'. Here both records are test methods in the same test file (`Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`), and their structural similarity (Jaccard 0.714) likely reflects that they exercise related but intentionally distinct error-handling scenarios \u2014 server errors vs. transient errors \u2014 which are deliberately kept as separate test cases for clarity and independent failure reporting. Collapsing them into a shared helper would obscure which error category a failure belongs to.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JBa9agJHeySCcVCMt8LRrE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2600,
+    "output_tokens": 374,
+    "service_tier": "standard"
+  }
+}

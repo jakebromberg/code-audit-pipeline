@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- **cluster_id**: `name-collisions:DisplayLinkSequence.AsyncIterator`\n- **signal type**: `name-collisions` (cross-package shadows / name collision)\n- One record is in `DebugPanel` package at `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift`\n- The other record is in `Wallpaper` package at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`\n\nThe second record's file path contains `Examples/WallpaperSampleApp/` \u2014 this is a sample app path, which triggers the restraint rule: **`is_sample_app` path \u2192 reason_class: \"sample-app-mirror\"**. Even though the `is_sample_app` context flag is `false`, the file path `Examples/WallpaperSampleApp/` is explicitly called out in the decision rules as a sample-app indicator. The cluster mixes a production record with a sample-app record, so no-action is warranted.\n\n```json\n[\n  {\n    \"cluster_id\": \"name-collisions:DisplayLinkSequence.AsyncIterator\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives under 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits inside an Examples/SampleApp subtree. Per the restraint rules, any cluster where a record resides under Examples/ or SampleApp/ is treated as a sample-app-mirror and warrants no-action. Merging or consolidating the production type-alias in DebugPanel with the sample-app type-alias in WallpaperSampleApp would couple production semantics to demonstration code. Both records carry empty fields_or_signature, providing no structural evidence that a meaningful shared abstraction exists beyond the coincidental name collision.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WcqenkZFSeWbVGSiJtXuDB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2514,
+    "output_tokens": 549,
+    "service_tier": "standard"
+  }
+}

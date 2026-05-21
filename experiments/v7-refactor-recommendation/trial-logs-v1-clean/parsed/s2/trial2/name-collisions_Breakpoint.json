@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Breakpoint",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"fields_or_signature\": [], ... \"jaccard\": null, ... \"shared_field_count\": null",
+    "rationale": "Both records have empty `name` fields and empty `fields_or_signature` lists, and the structural evidence carries all-null values (jaccard, shared_field_count, shared_ancestor, differing_slots). The cluster surfaces a name-collision signal for something called 'Breakpoint', but the participating records are a `type-alias-object` at line 51 of `Shared/Playlist/Sources/Playlist/PlaylistEntry.swift` and an `extension` at line 56 of `Shared/Playlist/Sources/PlaylistTesting/PlaylistStubs.swift` \u2014 two structurally unrelated constructs whose only apparent link is the collision label, not any shared shape or content. With no grounded evidence of duplicated logic or redundant declarations, no refactor action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_Breakpoint.json",
+  "row_index": 17,
+  "trial": 2
+}

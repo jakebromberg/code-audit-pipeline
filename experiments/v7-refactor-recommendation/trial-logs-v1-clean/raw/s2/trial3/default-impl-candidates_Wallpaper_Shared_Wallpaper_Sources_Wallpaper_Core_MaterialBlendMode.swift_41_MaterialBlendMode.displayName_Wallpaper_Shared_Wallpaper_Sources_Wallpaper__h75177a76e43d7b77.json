@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the `default-impl-candidates` signal for three types \u2014 `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` \u2014 each with a `.displayName` property at line 41 in their respective files within the `Shared/Wallpaper` package.\n\nThe cluster_id encodes the key evidence: three parallel `displayName` implementations across three blend-mode types in the same package, all at the same line number (41), which strongly suggests structural identity of the implementation bodies. The `default-impl-candidates` query type confirms the pipeline detected these as candidates for a shared default implementation via a protocol extension.\n\nNo restraint markers (is_test, is_mock, is_sample_app, is_codegen) are indicated. All three types live in the same package (`Shared/Wallpaper`), making a protocol extension straightforward.\n\n```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendModeDisplayable\",\n      \"method\": \"var displayName: String { get }\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline identified `MaterialBlendMode.displayName`, `PlaybackBlendMode.displayName`, and `OverlayBlendMode.displayName` as `default-impl-candidates`, all appearing at line 41 in their respective files within the `Shared/Wallpaper` package. The identical line number across three files is strong evidence of structurally identical implementations. Since all three types are in the same package (`Wallpaper`) with no restraint markers, the idiomatic Swift fix is to introduce a `BlendModeDisplayable` protocol (or extend an existing one if it already exists in this package) and provide a single `extension BlendModeDisplayable` default implementation of `displayName`, removing the per-type boilerplate from all three conformers.\",\n    \"evidence_quote\": \"MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"BlendModeDisplayable\",\n        \"associated_type\": \"RawValue\",\n        \"constraints\": [\"RawRepresentable\", \"CustomStringConvertible\"],\n        \"replaces\": [\"MaterialBlendMode.displayName\", \"PlaybackBlendMode.displayName\", \"OverlayBlendMode.displayName\"]\n      },\n      \"rationale\": \"If the `displayName` implementations are driven by the enum's `rawValue` or `caseName` (a common pattern for blend-mode enums), a PAT with an `associatedtype RawValue: CustomStringConvertible` constraint could derive `displayName` generically. However, without confirmed field-list evidence of a shared raw-value shape, the simpler default-implementation approach is preferred.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BrJn77q2FXAZ1pPEJhqMxW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2362,
+    "output_tokens": 1043,
+    "service_tier": "standard"
+  }
+}

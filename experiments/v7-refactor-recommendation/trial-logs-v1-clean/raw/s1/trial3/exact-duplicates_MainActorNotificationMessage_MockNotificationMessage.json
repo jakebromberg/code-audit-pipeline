@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) carry all four context flags as false, so no restraint marker applies. However, the names encode distinct domain roles: `MainActorNotificationMessage` is a production `@MainActor`-bound message type, while `MockNotificationMessage` lives under a `CoreTesting` source tree and carries the `_Plant_` prefix convention typical of generated or planted test-support fixtures. Their structural coincidence (3 shared fields, empty `fields_or_signature` list) most likely reflects that the mock was deliberately shaped to mirror the production interface for substitutability, not that the two types should be merged or that one should be extracted. Collapsing them would couple the production `Core` module to testing semantics or force the mock to inherit production `@MainActor` constraints.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"NotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\", \"MockNotificationMessage\"],\n        \"moved_members\": [],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If the 3 shared fields represent a stable contract, a new `NotificationMessage` protocol in `Core` could capture that contract, letting `MainActorNotificationMessage` conform in production and `MockNotificationMessage` conform in `CoreTesting`. This would make the substitutability relationship explicit without merging the types. However, the empty `fields_or_signature` list means the shared members cannot be named precisely from the cluster data alone, making this speculative.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0172Vsp3rVziE2oUwS8QwV7u",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2501,
+    "output_tokens": 534,
+    "service_tier": "standard"
+  }
+}

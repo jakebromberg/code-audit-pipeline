@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Unify `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single private helper method \u2014 e.g., `navigateTheme(direction: ThemeNavigationDirection)` or `navigateTheme(offset: Int)` \u2014 where the direction/offset parameter encodes whether to step backward or forward. The two public call-sites become one-liners that pass `.previous`/`.next` (or `-1`/`+1`). This eliminates the near-duplicate body (Jaccard 0.75) while keeping the two descriptive entry-points if they are part of a public or @objc interface; otherwise the entry-points themselves can be collapsed.\",\n      \"why_no_category_fits\": \"Both methods live in the same file and same type (`WXYCApp`), so 'extract-to-common' (cross-file/package extraction) is not the right frame. They are concrete methods, not protocol requirements, so 'default-implementation' and 'protocol-inheritance' do not apply. The duplication is a single varying axis (direction: previous vs. next), which is best expressed as a parameter rather than a type parameter, making 'generic-parameterization' a poor fit. No macro synthesis, subclass hierarchy, or PAT is involved. The most idiomatic Swift remedy is a shared private helper with a direction argument \u2014 a refactor that falls between 'extract-to-common' and 'generic-parameterization' and is most accurately described as a parameter-extraction / helper-consolidation.\"\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.75 between `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477), both in `WXYC/iOS/WXYCApp.swift` in package `app:iOS`. The high overlap strongly suggests the two methods share the same navigation logic and differ only in the direction of traversal. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. Because both methods belong to the same type in the same file, the correct remedy is a shared private helper parameterised on direction rather than a cross-package extraction or a generic type.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"Direction\", \"constraint\": \"ThemeNavigationDirection\" }\n        ],\n        \"new_name\": \"navigateTheme(direction:)\",\n        \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n      },\n      \"rationale\": \"If `ThemeNavigationDirection` is or becomes a protocol with associated behaviour (e.g., it computes an index offset), a generic function parameterised on that protocol is idiomatic Swift. However, for a simple two-case enum the overhead of a generic is unnecessary, making the plain parameter-extraction approach the stronger primary recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XjV2vsSzQL3jMH6q8KsLaC",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 938,
+    "service_tier": "standard"
+  }
+}

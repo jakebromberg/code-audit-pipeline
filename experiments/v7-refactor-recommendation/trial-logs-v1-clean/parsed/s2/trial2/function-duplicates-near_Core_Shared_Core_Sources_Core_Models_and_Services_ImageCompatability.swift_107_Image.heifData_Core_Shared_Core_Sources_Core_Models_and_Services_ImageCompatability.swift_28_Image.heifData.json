@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"name\": \"Image.heifData\", \"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\", \"line\": 28 ... \"line\": 107 ... \"jaccard\": 0.75",
+    "rationale": "Both members are named `Image.heifData`, reside in the identical file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`), and carry no restraint flags (is_test=false, is_mock=false, is_sample_app=false, is_codegen=false). The Jaccard score of 0.75 indicates substantial but not total overlap, implying a near-duplicate rather than an exact copy \u2014 consistent with platform-conditional branches or a stale overload. Because both definitions are in the same file, the appropriate action is intra-file consolidation rather than cross-package extraction, which none of the named categories describe precisely.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method definitions at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. With a Jaccard similarity of 0.75 they are near-duplicates but not identical, suggesting one may be a platform-conditional variant (e.g., `#if canImport(AppKit)` vs `#if canImport(UIKit)`) or a legacy overload. Determine whether the two definitions can be unified into a single implementation \u2014 possibly using a `#if os(macOS)` / `#else` block or a shared helper \u2014 and remove the redundant definition. If the divergence is intentional (e.g., different compression parameters per platform), add a comment explaining the distinction so future readers do not treat it as accidental duplication.",
+      "why_no_category_fits": "Both records live in the same file and same package, so 'extract-to-common' does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved \u2014 these are two concrete method definitions on `Image`. The near-duplicate signal (Jaccard 0.75, same file, same name, different lines) most likely reflects a platform-conditional split or an accidental copy; the correct fix is intra-file consolidation or an explanatory comment, neither of which maps cleanly to any of the named categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 2
+}

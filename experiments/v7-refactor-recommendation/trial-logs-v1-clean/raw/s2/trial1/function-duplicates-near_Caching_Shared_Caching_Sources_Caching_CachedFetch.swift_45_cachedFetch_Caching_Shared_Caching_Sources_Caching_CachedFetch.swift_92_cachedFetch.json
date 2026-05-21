@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` overloads at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` to determine whether they share a common implementation body that can be extracted into a private helper. If the divergence is only in parameter types or calling conventions, consider collapsing them into a single generic function parameterized over the differing type (e.g., `cachedFetch<T>(...)`). If one overload is a thin wrapper around the other, delete the wrapper and let callers use the canonical overload directly.\",\n      \"why_no_category_fits\": \"Both functions live in the same file and same package (`Caching`), so 'extract-to-common' (which targets cross-package deduplication) does not apply. The Jaccard similarity of 0.7 suggests near- but not exact-duplication, meaning a straight deletion is premature without inspecting the differing ~30 % of body. 'generic-parameterization' is the closest named category, but the cluster provides no signature information (`fields_or_signature` is empty for both members), so it is impossible to confirm that the divergence is type-parametric rather than logic-parametric. Recommending a generic refactor without that evidence would violate the no-hallucination rule. The safest grounded recommendation is therefore a manual inspection step with a conditional action path, which does not map cleanly to any single named category.\"\n    },\n    \"rationale\": \"The two `cachedFetch` functions in `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92, package `Caching`) share a Jaccard similarity of 0.7, indicating substantial but not total overlap. Both records carry all context flags as `false`, ruling out every restraint-based no-action reason. However, `fields_or_signature` is empty for both members, so the exact nature of the divergence \u2014 whether it is type-parametric, argument-label-based, or logic-based \u2014 cannot be determined from the cluster data alone. Without that information, prescribing a specific refactor category risks hallucination; a targeted inspection is the correct first step.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": null }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch (line 45)\", \"cachedFetch (line 92)\"]\n      },\n      \"rationale\": \"If inspection reveals that the two overloads differ only in a single concrete type parameter, collapsing them into a single generic `cachedFetch<T>` in `Shared/Caching/Sources/Caching/CachedFetch.swift` would eliminate the near-duplication while preserving call-site compatibility. This is the most idiomatic Swift resolution for same-file near-duplicate functions that diverge on type.\"\n    },\n    \"confidence\": 0.45\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018y83qZGAt7skmLpFoE5PXT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2565,
+    "output_tokens": 866,
+    "service_tier": "standard"
+  }
+}

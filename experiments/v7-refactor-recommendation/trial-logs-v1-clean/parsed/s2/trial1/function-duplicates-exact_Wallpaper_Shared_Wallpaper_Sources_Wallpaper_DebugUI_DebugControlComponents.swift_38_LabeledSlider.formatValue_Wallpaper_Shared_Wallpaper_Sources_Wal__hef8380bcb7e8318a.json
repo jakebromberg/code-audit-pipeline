@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/DebugControlComponents.swift:38:LabeledSlider.formatValue+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/DebugControlComponents.swift:90:OverridableSlider.formatValue",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.72,
+    "evidence_quote": "function-duplicates-exact\nLabeledSlider.formatValue\nOverridableSlider.formatValue\nShared/Wallpaper/Sources/Wallpaper/DebugUI/DebugControlComponents.swift",
+    "rationale": "Both `LabeledSlider.formatValue` (line 38) and `OverridableSlider.formatValue` (line 90) are flagged as exact function duplicates residing in the same file `DebugControlComponents.swift` within the `Wallpaper` package. Because the implementations are identical, the body can be moved into a protocol extension default implementation, eliminating the duplication. A lightweight protocol (e.g., `SliderFormatting`) can be introduced in the same file, with both `LabeledSlider` and `OverridableSlider` conforming to it; the shared default implementation lives in the protocol extension and neither type needs its own copy. No restraint markers are present on either record, so action is warranted.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Wallpaper/Sources/Wallpaper/DebugUI/DebugControlComponents.swift"
+      ],
+      "method": "formatValue() -> String",
+      "protocol": "SliderFormatting",
+      "target_location": "Shared/Wallpaper/Sources/Wallpaper/DebugUI/DebugControlComponents.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_DebugUI_DebugControlComponents.swift_38_LabeledSlider.formatValue_Wallpaper_Shared_Wallpaper_Sources_Wal__hef8380bcb7e8318a.json",
+  "row_index": 13,
+  "trial": 1
+}

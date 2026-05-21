@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"artwork:Image?\"], \"b\": [\"artwork:UIImage?\"]}], \"shared_field_count\": 2",
+    "rationale": "Both `NowPlayingItem` (AppServices, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (app:iOS, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` records sharing two fields \u2014 `playcut:Playcut` and an artwork field \u2014 differing only in the concrete image type (`Image?` vs `UIImage?`). This is a textbook PAT opportunity: the shared structure is `playcut:Playcut` plus an artwork image whose concrete type varies by platform/layer. Introducing a `PlaycutDisplayable` protocol with `associatedtype ArtworkImage` and required members `playcut: Playcut` and `artwork: ArtworkImage?` lets both types conform without collapsing the platform-specific image type distinction, while making the shared shape explicit and checkable by the compiler. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app` are all false), so the action signal is unobstructed.",
+    "specifics": {
+      "associated_type": "ArtworkImage",
+      "constraints": [],
+      "new_protocol": "PlaycutDisplayable",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial3/pat-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 7,
+  "trial": 3
+}

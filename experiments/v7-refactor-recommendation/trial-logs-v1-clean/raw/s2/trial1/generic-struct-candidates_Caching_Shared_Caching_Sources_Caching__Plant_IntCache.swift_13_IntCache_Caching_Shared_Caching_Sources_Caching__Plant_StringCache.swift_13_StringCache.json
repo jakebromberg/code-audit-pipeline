@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-struct-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        {\n          \"name\": \"Key\",\n          \"constraint\": \"Hashable\"\n        }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` (in `_Plant_StringCache.swift:13`) and `IntCache` (in `_Plant_IntCache.swift:13`) within the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?` \u2014 and differ only in the key type of `storage`: `[String: CacheEntry]` vs `[Int: CacheEntry]`. This is the canonical motivation for generic parameterization: a single generic struct `Cache<Key: Hashable>` with `storage: [Key: CacheEntry]` would subsume both, eliminating the duplication entirely. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint applies. The `_Plant_` filename prefix suggests these were scaffold-generated specializations intended to be collapsed into a generic form.\",\n    \"evidence_quote\": \"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"CacheProtocol\",\n        \"associated_type\": \"Key\",\n        \"constraints\": [\"Hashable\"],\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"If `StringCache` and `IntCache` need to remain as concrete types (e.g., for separate conformance or storage-backend reasons), a protocol-with-associated-type `CacheProtocol` with `associatedtype Key: Hashable` and shared property requirements (`capacity`, `hitCount`, `lastAccess`, `storage`) could unify call-site handling. However, since the structs are structurally identical except for the key type and live in the same package with no divergent behaviour evident, a generic struct is more idiomatic and eliminates the types outright rather than merely abstracting over them.\"\n    },\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0119XNF27mtcqHkfBnayfoLb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2690,
+    "output_tokens": 679,
+    "service_tier": "standard"
+  }
+}

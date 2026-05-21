@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "The cluster surfaces two initializers with the identical signature `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` declared at lines 48 and 180 of the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in the `Wallpaper` package. No restraint markers are set (all context flags are false), so this is genuine unintentional duplication. Because both definitions are in the same file and same type, the fix is an intra-file deletion rather than any cross-package extraction or protocol refactor. The second definition at line 180 should be removed (or the two reconciled if they diverge under conditional compilation).",
+    "specifics": {
+      "proposed_action": "Investigate whether the two definitions of `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 48 and 180) are truly identical duplicates within the same file. If they are exact duplicates, delete the second definition at line 180, retaining only the one at line 48. If they differ in subtle ways (e.g., one is inside a conditional compilation block such as `#if os(iOS)` / `#if os(macOS)`), consolidate them into a single implementation using platform-appropriate branching inside one initializer body, or factor out the differing logic into a private helper.",
+      "why_no_category_fits": "Both records live in the exact same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) and the same package (`Wallpaper`), so 'extract-to-common' is inapplicable \u2014 there is nowhere else to move the code. 'Generic-parameterization', 'protocol-inheritance', 'default-implementation', and the other structural categories do not apply to a straightforward intra-file duplicate initializer. The correct fix is simply to remove the redundant definition (or unify conditional variants), which is a deletion/consolidation action that none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 1
+}

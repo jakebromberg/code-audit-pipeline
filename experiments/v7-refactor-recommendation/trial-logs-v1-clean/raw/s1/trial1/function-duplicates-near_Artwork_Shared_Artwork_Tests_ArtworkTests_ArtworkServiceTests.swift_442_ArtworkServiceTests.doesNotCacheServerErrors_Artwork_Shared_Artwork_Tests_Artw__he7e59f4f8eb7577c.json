@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:442:ArtworkServiceTests.doesNotCacheServerErrors+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:563:ArtworkServiceTests.doesNotCacheTransientErrors\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster carry `is_test: true` and reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`. The two methods \u2014 `ArtworkServiceTests.doesNotCacheServerErrors` (line 442) and `ArtworkServiceTests.doesNotCacheTransientErrors` (line 563) \u2014 are test fixtures that verify distinct error-category behaviours (server errors vs. transient errors). Although their Jaccard similarity is 0.714, the structural overlap is expected: both tests exercise the same caching-suppression contract but with semantically different inputs. Merging or extracting them risks obscuring the intent of each failure scenario and couples test semantics in a way that reduces diagnostic clarity.\",\n    \"evidence_quote\": \"is_test: true ... ArtworkServiceTests.doesNotCacheServerErrors ... ArtworkServiceTests.doesNotCacheTransientErrors ... jaccard: 0.7142857142857143\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01HSiSDyYRTrinVQKEYHejje",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2600,
+    "output_tokens": 390,
+    "service_tier": "standard"
+  }
+}

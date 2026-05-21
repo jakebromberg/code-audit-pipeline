@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence+MainActorNotificationMessageSequence\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence` (line 129 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence` (line 103 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with no fields listed. Despite sharing 3 structural slots (Jaccard and differing_slots are null, suggesting the pipeline matched on shape alone), the names encode meaningfully distinct concepts: one is scoped to `@MainActor` dispatch semantics and the other to a general async notification sequence. Collapsing them would erase that semantic distinction and could silently break call-sites that rely on the actor-isolation guarantee implied by the `MainActor` alias. No restraint markers are present, but the domain divergence is sufficient to prefer no-action over extraction.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MainActorNotificationMessageSequence\\\" ... \\\"name\\\": \\\"AsyncNotificationMessageSequence\\\" ... \\\"shared_field_count\\\": 3 ... \\\"jaccard\\\": null\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Audit whether `MainActorNotificationMessageSequence` is simply a `@MainActor`-isolated typealias over the same underlying generic type that `AsyncNotificationMessageSequence` aliases. If so, document the relationship explicitly with a comment in both files rather than merging, so future readers understand the intentional split between actor-isolated and actor-agnostic usage.\",\n        \"why_no_category_fits\": \"The cluster involves two type aliases, not concrete types with extractable implementations. None of the action categories (extract-to-common, generic-parameterization, etc.) apply cleanly to a pair of typealiases whose only difference may be actor-isolation context rather than structural content.\"\n      },\n      \"rationale\": \"Because both declarations live in the same `Core` package and the structural evidence shows identical shape (`shared_field_count: 3`, null Jaccard), a documentation-only clarification of their relationship is lower-risk than any structural change and preserves the actor-isolation contract implied by `MainActorNotificationMessageSequence`.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016vCqhyUwfzCgcoZJLxpjn6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2514,
+    "output_tokens": 599,
+    "service_tier": "standard"
+  }
+}

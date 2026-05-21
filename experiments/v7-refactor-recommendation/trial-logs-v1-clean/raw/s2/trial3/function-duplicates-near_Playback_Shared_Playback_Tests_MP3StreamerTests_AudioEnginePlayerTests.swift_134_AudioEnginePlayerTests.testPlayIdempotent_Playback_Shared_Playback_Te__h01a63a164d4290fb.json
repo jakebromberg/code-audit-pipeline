@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:134:AudioEnginePlayerTests.testPlayIdempotent+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:365:AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster carry `is_test: true` and reside in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift`. The two methods \u2014 `testPlayIdempotent` (line 134) and `testPlaySucceedsAfterEngineTearDown` (line 365) \u2014 are distinct test scenarios: one verifies idempotent play behaviour and the other verifies recovery after engine tear-down. Although their token-level Jaccard similarity is high (0.769), the structural overlap is expected because both tests must set up the same `AudioEnginePlayer` harness before exercising different code paths. Merging or extracting them would obscure test intent and couple unrelated failure modes, which is the canonical restraint pattern for test fixtures.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01N3TZ1j3DnJiiVDSX8AsicX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2622,
+    "output_tokens": 371,
+    "service_tier": "standard"
+  }
+}

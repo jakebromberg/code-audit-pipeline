@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"HSBInitializable\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": [\n        \"HSBColor.init(hue:saturation:brightness:)\",\n        \"AccentColor.init(hue:saturation:brightness:)\",\n        \"HSBOffset.init(hue:saturation:brightness:)\"\n      ]\n    },\n    \"rationale\": \"Three distinct production types \u2014 `HSBColor` in package `ColorPalette` and `AccentColor` and `HSBOffset` in package `Wallpaper` \u2014 each independently define an identical `init(hue:saturation:brightness:)` initializer, as flagged by the `function-duplicates-exact` query. None of the records carry any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). The shared initializer signature strongly suggests a common HSB-component construction contract that can be expressed as a protocol `HSBInitializable` with a default implementation provided in a protocol extension, eliminating the three redundant bodies. The `ColorPalette` package is the natural home for this protocol since `HSBColor` already lives there and `Wallpaper` already depends on color-domain concepts; alternatively the protocol could live in a thin shared `ColorPalette` module that both packages import.\",\n    \"evidence_quote\": \"HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"HSBInitializable\",\n        \"method\": \"init(hue:saturation:brightness:)\",\n        \"target_location\": \"Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift\"\n        ]\n      },\n      \"rationale\": \"If the three types cannot share a protocol-level default (e.g., because their stored properties differ in name), a weaker alternative is to declare `HSBInitializable` in `ColorPalette` with a default-implementation extension that covers the common body, and have `AccentColor` and `HSBOffset` in `ThemeColors.swift` conform and delete their bespoke implementations, keeping only `HSBColor`'s definition as the canonical reference.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01M3PXoWjEVTisTRMCRRMLMy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2799,
+    "output_tokens": 885,
+    "service_tier": "standard"
+  }
+}

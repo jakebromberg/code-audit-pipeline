@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:20:WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"WXYCGradient\",\n      \"consolidate_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundLight` (line 20 of `BackgroundGradient.swift`) and `WXYCGradient.wxycBackgroundLight` (line 21 of `WXYCGradient.swift`) are exact-duplicate computed properties living in the same `WXUI` package with no restraint markers. The duplication suggests that `WXYCBackground` is either a type alias, a thin wrapper, or a legacy name for `WXYCGradient`, and the property was defined twice rather than consolidated. The canonical definition should live on `WXYCGradient` in `WXYCGradient.swift`; `WXYCBackground.wxycBackgroundLight` in `BackgroundGradient.swift` should be removed (or, if `WXYCBackground` must remain, it should delegate to `WXYCGradient.wxycBackgroundLight` rather than re-implement it).\",\n    \"evidence_quote\": \"WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` intentionally model distinct domain concepts (e.g., a background colour vs. a gradient asset) and the identical computed property is a coincidence of naming rather than a true duplicate, no consolidation is warranted. However, the exact-duplicate signal and the shared `WXUI` package make this unlikely without further domain evidence.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SwhRydg9WjgabE7aUBM1mG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2601,
+    "output_tokens": 650,
+    "service_tier": "standard"
+  }
+}

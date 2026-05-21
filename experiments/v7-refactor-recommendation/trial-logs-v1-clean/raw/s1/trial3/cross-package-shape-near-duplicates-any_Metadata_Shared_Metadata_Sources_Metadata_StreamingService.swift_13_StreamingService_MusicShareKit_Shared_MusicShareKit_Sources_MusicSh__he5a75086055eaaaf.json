@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to analyze the cross-package shape near-duplicate signal between `StreamingService` in `Shared/Metadata` and `MusicServiceIdentifier` in `Shared/MusicShareKit`.\n\nKey observations:\n- High Jaccard similarity of 0.8333 (83%) between the two types\n- Both are in `Shared/` packages (not test, mock, sample app, or codegen)\n- `StreamingService` lives in `Shared/Metadata/Sources/Metadata/StreamingService.swift:13`\n- `MusicServiceIdentifier` lives in `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68`\n- The `members` array is empty, so I cannot inspect field lists directly\n- The names differ (`StreamingService` vs `MusicServiceIdentifier`) but the structural shape is nearly identical\n- Both appear to model the concept of a music/streaming service identity\n- No restraint markers are present on either record\n\nThe names are semantically related (both describe a streaming/music service identity concept) and the 83% Jaccard similarity is strong evidence of structural convergence, not coincidence. However, without field-level evidence from `members`, I cannot precisely name moved members. The safest grounded recommendation is extraction to a common type, with the `Shared/Metadata` package as the natural home since it already carries the more general `StreamingService` name and sits in a dedicated metadata package that `MusicShareKit` could depend on.\n\n```json\n[\n  {\n    \"cluster_id\": \"cross-package-shape-near-duplicates-any:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:13:StreamingService+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68:MusicServiceIdentifier\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"StreamingService\",\n      \"remove_from\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift\"\n      ]\n    },\n    \"rationale\": \"The pipeline reports a Jaccard similarity of 0.8333 between `StreamingService` (Shared/Metadata/Sources/Metadata/StreamingService.swift:13) and `MusicServiceIdentifier` (Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:68), indicating the two types share nearly identical structure. Both reside in `Shared/` packages with no restraint markers (is_test, is_mock, is_sample_app, is_codegen are all absent), so the duplication is not intentional by fixture convention. The `Metadata` package already owns the more general name `StreamingService` and is the natural canonical home; `MusicShareKit` should import and reuse it rather than maintaining a near-duplicate `MusicServiceIdentifier` inline inside `MusicTrack.swift`. Consolidating here removes the 83% structural overlap and gives both packages a single source of truth for streaming-service identity.\",\n    \"evidence_quote\": \"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"Because the `members` array is empty, field-level evidence cannot be directly inspected. If `StreamingService` and `MusicServiceIdentifier` encode subtly different domain semantics (e.g., one is a UI display model and the other is a network identity token), the 83% shape overlap may be coincidental and extraction could couple unrelated concerns. In that case no-action is appropriate until field lists are confirmed.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01E1GXhq8Uh27mGPAQX5PdhF",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2319,
+    "output_tokens": 932,
+    "service_tier": "standard"
+  }
+}

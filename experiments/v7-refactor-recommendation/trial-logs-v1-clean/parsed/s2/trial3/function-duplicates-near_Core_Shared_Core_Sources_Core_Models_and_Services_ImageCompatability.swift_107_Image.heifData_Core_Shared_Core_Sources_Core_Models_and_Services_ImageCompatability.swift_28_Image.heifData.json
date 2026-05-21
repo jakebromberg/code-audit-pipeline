@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.55,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\", \"line\": 28 ... \"line\": 107 ... \"jaccard\": 0.75 ... \"differing_slots\": null",
+    "rationale": "Both `Image.heifData` methods reside in the same file (`Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`) at lines 28 and 107, within the `Core` package, with no restraint markers. A Jaccard similarity of 0.75 \u2014 high but not identical \u2014 is the canonical fingerprint of platform-conditional twin definitions (e.g., one branch for `NSImage` on macOS, another for `UIImage` on iOS) rather than a pure copy-paste error. Because the cluster provides no differing-slots detail (`differing_slots: null`) and the file name explicitly signals cross-platform image compatibility work, the safest recommendation is to inspect the conditional structure before acting. If the divergence is purely in the platform-specific HEIF API call, a private shared helper can absorb the common logic while each conditional branch retains only its platform-specific line.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method definitions at lines 28 and 107 within the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They are near-duplicates (Jaccard 0.75) living in the same file. Determine whether they are platform-conditional overloads (e.g., `#if os(macOS)` / `#if os(iOS)`) or simply an accidental duplication. If they are platform guards, add a clarifying comment and leave them as-is (or consolidate shared logic into a private helper). If one is a leftover or redundant definition, delete it. If they share substantial body logic, extract that logic into a private `Image` extension method and have both call it.",
+      "why_no_category_fits": "Both records are in the exact same file and package, so 'extract-to-common' does not apply. They are methods, not protocols or classes, so 'protocol-inheritance', 'subclass-lift', and 'pat-introduction' do not apply. The near-duplicate signal (Jaccard 0.75, not 1.0) and the fact that they coexist in one file strongly suggests they are platform-conditional variants (a common pattern in `ImageCompatability.swift` files that bridge AppKit/UIKit). The right first step is inspection, not mechanical consolidation, making 'other' the most honest category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 3
+}

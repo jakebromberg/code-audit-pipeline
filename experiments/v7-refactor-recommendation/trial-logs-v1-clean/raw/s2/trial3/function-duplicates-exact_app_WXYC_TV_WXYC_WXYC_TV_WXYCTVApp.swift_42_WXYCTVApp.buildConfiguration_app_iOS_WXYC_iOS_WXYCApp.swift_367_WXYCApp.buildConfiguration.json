@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:42:WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"extract-to-common\": {\n        \"target_package\": \"app:WXYC TV\",\n        \"type_name\": \"buildConfiguration\",\n        \"remove_from\": [\n          \"WXYC/WXYC TV/WXYCTVApp.swift\",\n          \"WXYC/iOS/WXYCApp.swift\"\n        ]\n      }\n    },\n    \"rationale\": \"The cluster identifies `WXYCTVApp.buildConfiguration` (line 42, `WXYC/WXYC TV/WXYCTVApp.swift`) and `WXYCApp.buildConfiguration` (line 367, `WXYC/iOS/WXYCApp.swift`) as exact function duplicates across two production app targets (`app:WXYC TV` and `app:iOS`). Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so the duplication is unintentional. The method should be extracted into a shared Swift package or a common file (e.g., a `SharedAppSupport` module or a cross-target utility file) that both `WXYCTVApp` and `WXYCApp` can import, eliminating the divergence risk. Because the cluster reports `differing_slots: null` and `jaccard: null` (exact duplicate), no adaptation is needed at the call sites beyond updating the call to the shared location.\",\n    \"evidence_quote\": \"WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"other\": {\n          \"proposed_action\": \"Define a free function or a protocol with a default implementation of `buildConfiguration` in a shared Swift package, and have both `WXYCTVApp` and `WXYCApp` conform to or call it, rather than extracting a concrete shared type.\",\n          \"why_no_category_fits\": \"A protocol-with-default-implementation approach is viable here because both app entry-point types already share the method name and exact body, but neither is a class hierarchy, making `subclass-lift` inapplicable; the primary `extract-to-common` recommendation is more direct for a free/static function.\"\n        }\n      },\n      \"rationale\": \"If the two app types cannot share a common import (e.g., due to platform-specific SDK constraints between tvOS and iOS targets), a protocol with a default implementation of `buildConfiguration` in a shared module would achieve the same deduplication without requiring a concrete shared type, at the cost of slightly more indirection.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WJZkxCsqZoykiuFqmjYnLQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 782,
+    "service_tier": "standard"
+  }
+}

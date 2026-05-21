@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockNowPlayingInfoCenter+NowPlayingInfoCenterProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift",
+    "rationale": "The file path 'WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift' places `MockNowPlayingInfoCenter` squarely inside the test target. Although the `is_test` context flag is recorded as false, the file path unambiguously identifies it as a test fixture \u2014 the flag appears to be a metadata gap rather than a genuine production classification. Per the decision rules, any participating record that lives in a test file is a restraint marker that dominates action signals. Lifting `NowPlayingInfoCenterProtocol` or merging it with the mock would couple production code to test semantics, which is the canonical anti-pattern the restraint rule is designed to prevent. The `shared_field_count: 1` overlap is consistent with `MockNowPlayingInfoCenter` being a type alias or thin conformance wrapper over the protocol, a normal and intentional test-fixture pattern.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_MockNowPlayingInfoCenter_NowPlayingInfoCenterProtocol.json",
+  "row_index": 47,
+  "trial": 2
+}

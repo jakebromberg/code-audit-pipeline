@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:WXYCBackground+WXYCGradient",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"shared_field_count\": 2 ... \"differing_slots\": null",
+    "rationale": "Both `WXYCBackground` and `WXYCGradient` are `type-alias-object` records in the same package (`WXUI`) and the same source tree (`Shared/WXUI/Sources/WXUI/`), with `shared_field_count: 2` and no differing slots (`differing_slots: null`). This strongly suggests they alias the same underlying type under two different names, which is redundant. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional production-code redundancy. Because both are already in the same package, 'extract-to-common' does not apply; the fix is a direct alias consolidation or explicit documentation of intent.",
+    "specifics": {
+      "proposed_action": "Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are identical type aliases, delete one and replace all call-sites with the surviving name \u2014 preferring the more semantically precise name (likely `WXYCGradient`, since `WXYCBackground` is broader and could be confused with a non-gradient background). If they intentionally alias different underlying types that happen to share the same two fields, add a clarifying comment to each file and leave them separate.",
+      "why_no_category_fits": "Both records are `type-alias-object` kinds with zero fields listed and `shared_field_count: 2`, meaning the structural signal is that they share two fields but no field names are surfaced in the cluster row. A type alias cannot be meaningfully 'extracted to common' (it already lives in the same package, `WXUI`) nor generified, subclassed, or given a default implementation. The correct action is a naming/deduplication decision at the alias level \u2014 either collapse to one alias or document the intentional distinction \u2014 which does not map cleanly to any of the named categories."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_WXYCBackground_WXYCGradient.json",
+  "row_index": 51,
+  "trial": 2
+}

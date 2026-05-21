@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:WXYCBackground+WXYCGradient",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"shared_field_count\": 2 ... \"differing_slots\": null",
+    "rationale": "Both `WXYCBackground` and `WXYCGradient` are `type-alias-object` records in the same package (`WXUI`) with `shared_field_count: 2` and no differing slots (`differing_slots: null`), indicating they are structurally identical aliases. They live in separate files (`BackgroundGradient.swift` and `WXYCGradient.swift`) within `Shared/WXUI/Sources/WXUI/`, which is unusual for type aliases that resolve to the same shape. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so this is a production-code duplication that warrants resolution. The most likely cause is an unremediated rename where `WXYCBackground` was the original alias and `WXYCGradient` was introduced as a replacement but the old alias was never removed.",
+    "specifics": {
+      "proposed_action": "Investigate whether `WXYCBackground` (in `Shared/WXUI/Sources/WXUI/BackgroundGradient.swift`, line 13) and `WXYCGradient` (in `Shared/WXUI/Sources/WXUI/WXYCGradient.swift`, line 14) are aliases for the same underlying type. If they are, delete one alias and replace all call-sites with the surviving name \u2014 preferring `WXYCGradient` as the more semantically precise identifier \u2014 then remove `BackgroundGradient.swift`. If they intentionally alias different underlying types that happen to share the same two fields, add a code comment to each file documenting the distinction so future analysis does not re-flag them.",
+      "why_no_category_fits": "Both records are `type-alias-object` kinds, not concrete structs, classes, or functions. The standard categories (extract-to-common, generic-parameterization, protocol-inheritance, etc.) all presuppose concrete declarations with movable members or implementations. For type aliases the correct action is either consolidation-by-deletion of one alias or explicit disambiguation \u2014 neither of which maps cleanly to any named category. `extension-consolidation` is the closest fit but applies to extension declarations, not type aliases."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial3/exact-duplicates_WXYCBackground_WXYCGradient.json",
+  "row_index": 51,
+  "trial": 3
+}

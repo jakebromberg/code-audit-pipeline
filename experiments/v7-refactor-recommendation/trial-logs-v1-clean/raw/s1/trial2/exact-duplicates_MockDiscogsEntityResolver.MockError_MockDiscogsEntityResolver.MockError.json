@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records live in test targets: one in 'Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift' (package: Metadata) and the other in 'WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift' (package: app:iOS). Although the context flags do not set is_test=true, the file paths unambiguously place both declarations inside test bundles (the 'Tests/' directory segments and the 'Tests' package suffixes). The duplication is a classic test-fixture pattern where each test file defines its own local mock error type scoped to its own MockDiscogsEntityResolver helper, and consolidating them would couple two otherwise independent test targets. No production code is involved, so there is no shared-code benefit to extraction.\",\n    \"evidence_quote\": \"\\\"file\\\": \\\"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver.MockError\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If a shared test-support library already exists or is planned within the Metadata package, the identical type-alias-union 'MockDiscogsEntityResolver.MockError' (shared_field_count: 2, exact duplicate) could be extracted there and reused by both test targets. However, this couples the app:iOS test target to the Metadata test-support module, which is typically undesirable.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VamXnLLkiZzgteKCdad6hB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2537,
+    "output_tokens": 543,
+    "service_tier": "standard"
+  }
+}

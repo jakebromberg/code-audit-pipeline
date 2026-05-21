@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift:119:AudioPlayerTestHarness.init(player:testCase:notificationCenter:mockPlayer:mockHTTPClient:mockAudioEngine:mockAnalytics:)+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift:137:AudioPlayerTestHarness.init(player:testCase:notificationCenter:mockPlayer:mockAnalytics:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true ... AudioPlayerTestHarness.init(player:testCase:notificationCenter:mockPlayer:mockHTTPClient:mockAudioEngine:mockAnalytics:) ... AudioPlayerTestHarness.init(player:testCase:notificationCenter:mockPlayer:mockAnalytics:)",
+    "rationale": "Both participating records carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/AudioPlayerTestHarness.swift`. The two initializers \u2014 one at line 119 accepting `mockHTTPClient` and `mockAudioEngine` in addition to the shared parameters, and one at line 137 omitting those arguments \u2014 are deliberate convenience overloads for test harness construction, allowing test cases to opt out of providing HTTP and audio-engine mocks when those collaborators are irrelevant to the scenario under test. Merging or collapsing them would either force every call site to supply unused mock arguments or introduce optional parameters that obscure test intent. The Jaccard similarity of 0.71 reflects shared structure, not accidental duplication.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Harness_AudioPlayerTestHarness.swift_119_AudioPlayerTestHarness.init_player_testCase_notification__hac1d35fef5fd3419.json",
+  "row_index": 137,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"BlendMode\", \"constraint\": null }\n      ],\n      \"new_name\": \"BlendModeKey\",\n      \"replaces\": [\"PlaybackBlendModeKey\", \"MaterialBlendModeKey\", \"OverlayBlendModeKey\"]\n    },\n    \"rationale\": \"All three type-alias-object declarations \u2014 `PlaybackBlendModeKey` (PlaybackBlendMode.swift:89), `MaterialBlendModeKey` (MaterialBlendMode.swift:89), and `OverlayBlendModeKey` (_Plant_OverlayBlendMode.swift:89) \u2014 are exact duplicates residing in the same `Wallpaper` package, all at line 89, with zero differing slots and a shared_field_count of 1. Because they differ only in the blend-mode domain they name, a single generic `BlendModeKey<BlendMode>` type (or a type-parameterised typealias) in the `Wallpaper` package can replace all three, with the three existing names becoming typealiases (`typealias PlaybackBlendModeKey = BlendModeKey<PlaybackBlendMode>`) to preserve call-site compatibility during migration.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendModeKey\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three blend-mode key types are structurally identical but intentionally kept non-generic (e.g., for SwiftUI EnvironmentKey conformance where the Value type differs), a single concrete `BlendModeKey` extracted to a shared file within the `Wallpaper` package \u2014 with each original file providing only the domain-specific `EnvironmentValues` extension \u2014 eliminates the triplication without introducing a type parameter.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019eqVKszsUu4P5gkCsgsraa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2688,
+    "output_tokens": 666,
+    "service_tier": "standard"
+  }
+}

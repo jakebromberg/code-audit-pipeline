@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift:405:DiscogsMarkupParser.renderToken+Metadata:Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift:158:ResolvedBioToken.attributedString\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Metadata\",\n      \"type_name\": \"AttributedStringRenderer\",\n      \"remove_from\": [\n        \"Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift\",\n        \"Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift\"\n      ]\n    },\n    \"rationale\": \"The two members \u2014 `DiscogsMarkupParser.renderToken` (line 405) and `ResolvedBioToken.attributedString` (line 158) \u2014 share a Jaccard similarity of 0.913, indicating near-identical logic despite living in different types within the same `Metadata` package. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so the duplication is unintentional. Because both files already reside under `Shared/Metadata/Sources/Metadata/`, the shared logic can be extracted into a free function or small helper type (e.g., `AttributedStringRenderer`) within the same package, and both call sites can delegate to it. This eliminates the near-duplicate body while keeping the public surface of `DiscogsMarkupParser` and `ResolvedBioToken` unchanged.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.9130434782608695\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BioTokenRendering\",\n        \"method\": \"attributedString(for token: Token) -> NSAttributedString\",\n        \"target_location\": \"Shared/Metadata/Sources/Metadata/BioTokenRendering.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift\",\n          \"Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift\"\n        ]\n      },\n      \"rationale\": \"If `DiscogsMarkupParser` and `ResolvedBioToken` both need to expose attributed-string rendering as part of a shared contract, introducing a `BioTokenRendering` protocol with a default implementation in a protocol extension is idiomatic Swift. However, because `ResolvedBioToken.attributedString` is a computed property and `DiscogsMarkupParser.renderToken` is a method, aligning their signatures requires a small API change, making the plain extract-to-common approach lower-risk as the primary recommendation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011RQsm1EXst1bjpj6Kwtfhb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2586,
+    "output_tokens": 720,
+    "service_tier": "standard"
+  }
+}

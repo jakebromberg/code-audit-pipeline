@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have `is_test=false`, `is_mock=false`, `is_sample_app=false`, and `is_codegen=false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver` \u2014 these are clearly test fixtures (mock objects inside test files), even though the pipeline did not set the context flags accordingly. The flags appear to be mislabeled or the pipeline failed to detect the test/mock context from the file path and type name.\n\nDespite the flag mislabeling, the evidence is unambiguous: both files live under `Tests/` directories (`MetadataTests/DiscogsMarkupParserTests.swift` and `WXYCTests/DiscogsFormatterTests.swift`), and the type name is `MockDiscogsEntityResolver` \u2014 a canonical mock fixture pattern. Applying the spirit of the restraint rules, this is a mock-in-test-file scenario. Coupling production packages to a shared mock would be inappropriate.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"Both occurrences of `MockDiscogsEntityResolver.resolveArtist` reside in test files \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`) \u2014 and the owning type name `MockDiscogsEntityResolver` is an unambiguous mock fixture. Although the pipeline emitted `is_mock=false` and `is_test=false` for both records, the `Tests/` path segments and the `Mock` prefix in the type name make the test-fixture nature of these methods evident from the cluster row itself. Extracting a shared mock into production-reachable code would couple the `Metadata` and `app:iOS` packages to test-only semantics, which is the canonical restraint pattern. The duplication is intentional: each test suite independently stubs `DiscogsEntityResolver` to exercise its own formatter or parser logic in isolation.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the project adopts a dedicated test-support library (e.g., a `MetadataTestSupport` target inside the `Metadata` package), the shared mock could be extracted there and re-imported by both `MetadataTests` and `WXYCTests`, eliminating the duplication without touching production code. This is only worth pursuing if the mock grows in complexity or if additional test targets need the same stub; at present the duplication is low-cost.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Em7oSveZ2WLJjnZhHg1JCd",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 922,
+    "service_tier": "standard"
+  }
+}

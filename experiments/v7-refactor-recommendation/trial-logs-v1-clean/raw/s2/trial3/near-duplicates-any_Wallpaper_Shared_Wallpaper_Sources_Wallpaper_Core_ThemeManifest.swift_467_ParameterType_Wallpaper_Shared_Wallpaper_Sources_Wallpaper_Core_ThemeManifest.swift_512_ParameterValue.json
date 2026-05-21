@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:467:ParameterType+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:512:ParameterValue\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The cluster row carries an empty `members` array, meaning no participating record details (package, file path, kind, field/method list, or context flags) are available to ground any structural recommendation. The only concrete evidence is that two declarations \u2014 `ParameterType` at line 467 and `ParameterValue` at line 512 of `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift` \u2014 share a Jaccard similarity of 0.8, but without field lists or kind information it is impossible to determine whether the shared shape reflects a refactorable abstraction or merely a coincidental structural resemblance between a type-descriptor enum/struct and a value-descriptor enum/struct. Recommending an extraction or protocol introduction without that evidence would violate the no-hallucination rule.\",\n    \"evidence_quote\": \"\\\"members\\\": [], \\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Shared/Wallpaper\",\n        \"type_name\": \"ParameterDescriptor\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift\"\n        ]\n      },\n      \"rationale\": \"If member inspection were to confirm that `ParameterType` and `ParameterValue` share a common set of fields or cases (consistent with a 0.8 Jaccard score), a shared base protocol or generic descriptor type named `ParameterDescriptor` within the same `Shared/Wallpaper` package would be the idiomatic Swift consolidation. This alternative is held back to secondary because the empty `members` array prevents verification.\"\n    },\n    \"confidence\": 0.1\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01S59RY4Que2agCYycpmTtQK",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2313,
+    "output_tokens": 566,
+    "service_tier": "standard"
+  }
+}

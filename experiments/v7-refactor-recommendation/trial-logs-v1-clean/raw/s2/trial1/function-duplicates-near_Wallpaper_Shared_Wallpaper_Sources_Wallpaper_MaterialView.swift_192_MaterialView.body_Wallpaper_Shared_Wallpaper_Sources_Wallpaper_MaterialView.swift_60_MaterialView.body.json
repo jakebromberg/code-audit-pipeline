@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate whether `MaterialView` in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` is defined twice (e.g., two separate `struct MaterialView` declarations or two `extension MaterialView` blocks each providing a `body` computed property). If so, consolidate the two `body` implementations into a single declaration. The shared logic (Jaccard 0.83) should be extracted into a private helper method or a shared ViewBuilder sub-expression within the single surviving `body`, and the duplicate declaration at line 192 should be removed. Both members live in the same file and package (`Wallpaper`), so no cross-package movement is required.\",\n      \"why_no_category_fits\": \"The two near-duplicate `body` computed properties share the same name, same file, same type name (`MaterialView`), and same package \u2014 they are not two distinct types or protocols, so 'extract-to-common', 'protocol-inheritance', 'default-implementation', 'generic-parameterization', and 'subclass-lift' do not apply. 'extension-consolidation' is the closest named category, but the cluster signal is a near-duplicate *function* body (Jaccard 0.83), not merely scattered extension declarations; the primary action is deduplicating the implementation logic, not just moving extension sites. Hence 'other' with an inline consolidation recommendation is the most precise fit.\"\n    },\n    \"rationale\": \"Both members are named `MaterialView.body` (a `computed-property`) in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` at lines 60 and 192, within the `Wallpaper` package. A Jaccard similarity of 0.8333 indicates the two implementations are nearly identical, strongly suggesting accidental duplication \u2014 likely from a copy-paste or a stale second extension block. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate. The duplicate at line 192 should be removed and any divergent logic folded into the canonical `body` at line 60.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MaterialView.body\\\", \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60\",\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192\"\n        ]\n      },\n      \"rationale\": \"If the duplication arises from two separate `extension MaterialView` blocks each declaring `body`, collapsing them into a single extension (or the primary struct body) would eliminate the redundancy. This is a lighter-touch refactor than rewriting shared logic into a helper, and is appropriate if the two `body` implementations are structurally identical rather than merely similar.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01ADKEJU6ujViHzR4RULDCiH",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2574,
+    "output_tokens": 882,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ProcessInfo.ThermalState",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "One of the three participating extension records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp' path \u2014 a canonical sample-app location per the decision rules, regardless of the is_sample_app flag value. Lifting a shared extension on ProcessInfo.ThermalState into common code while that cluster includes a sample-app file would couple production packages (DebugPanel, Wallpaper) to demonstration semantics. Additionally, all three records carry empty fields_or_signature arrays, so there is no verifiable evidence of shared members to extract; any consolidation recommendation would require hallucinating content. The safest and most grounded answer is no-action.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_ProcessInfo.ThermalState.json",
+  "row_index": 12,
+  "trial": 3
+}

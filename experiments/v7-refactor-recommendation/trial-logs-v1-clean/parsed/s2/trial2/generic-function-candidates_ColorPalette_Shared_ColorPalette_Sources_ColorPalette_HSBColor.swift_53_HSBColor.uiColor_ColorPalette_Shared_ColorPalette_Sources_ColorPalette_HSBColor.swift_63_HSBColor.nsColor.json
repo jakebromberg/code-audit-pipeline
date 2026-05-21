@@ -1,0 +1,22 @@
+{
+  "cluster_id": "generic-function-candidates:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:53:HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "HSBColor.uiColor+ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:63:HSBColor.nsColor",
+    "rationale": "Both `HSBColor.uiColor` (line 53) and `HSBColor.nsColor` (line 63) live in the same file (`Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift`) within the `ColorPalette` package, carry no restraint flags, and share a Jaccard similarity of 0.71 \u2014 strong evidence that their bodies perform the same HSB-to-platform-color conversion with only the return type differing (`UIColor` vs `NSColor`). The idiomatic Swift remedy is not a generic function (computed properties cannot carry type parameters) but rather extracting the shared conversion arithmetic into a `private` helper and/or using `#if canImport(UIKit)` / `#if canImport(AppKit)` conditional compilation to unify the surface. This avoids the maintenance risk of the two properties drifting apart when the colour math changes.",
+    "specifics": {
+      "proposed_action": "Introduce a single generic or platform-conditional computed property on HSBColor that returns a platform-native color type. Concretely, add a `nativeColor` computed property (or use `#if canImport(UIKit)` / `#if canImport(AppKit)` conditional compilation) inside `Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift` that collapses `uiColor` (line 53) and `nsColor` (line 63) into one declaration. If both platforms must be supported simultaneously (e.g., Catalyst), keep both properties but extract the shared HSB\u2192RGB conversion logic into a private helper method that both call, eliminating the body duplication that the Jaccard score of 0.71 implies.",
+      "why_no_category_fits": "The two members are computed properties, not free functions or initialisers, so `generic-parameterization` (which targets functions, structs, or classes) does not cleanly apply \u2014 Swift computed properties cannot be made generic in the same way. The idiomatic Swift answer for platform-divergent color properties is conditional compilation (`#if canImport(UIKit)`) or a shared private helper, neither of which maps to the generic-function, protocol, or extraction categories. The cluster signal is real (Jaccard 0.71, same file, structurally near-identical bodies), but the correct remedy is platform-conditional consolidation or private-helper extraction rather than any of the named refactor categories."
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_53_HSBColor.uiColor_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_63_HSBColor.nsColor.json",
+  "row_index": 25,
+  "trial": 2
+}

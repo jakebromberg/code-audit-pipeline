@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist",
+    "rationale": "The method `MockDiscogsEntityResolver.resolveArtist` appears identically in two separate test files \u2014 `DiscogsMarkupParserTests.swift` in the `Metadata` package and `DiscogsFormatterTests.swift` in the `app:iOS` package \u2014 with no differing slots and an exact-duplicate signal. Both context-flag sets report `is_test: false` and `is_mock: false`, so the restraint-marker rule does not formally apply; however, the file paths (both under `Tests/` directories) and the `Mock` prefix on the type name strongly suggest this is a shared test double that has been copy-pasted across packages. The correct resolution is to extract `MockDiscogsEntityResolver` (including `resolveArtist`) into a dedicated test-support module within the `Metadata` package (e.g., `Shared/Metadata/Tests/MetadataTestSupport/`) so that `app:iOS` tests can import it rather than redeclare it. This eliminates the drift risk if the `DiscogsEntityResolver` protocol signature changes.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+        "WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "MockDiscogsEntityResolver"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_35_MockDiscogsEntityResolver.resolveArtist_app_iOS_WXYC_iOS_Tests_WXYCTes__hfb3339d4fff50555.json",
+  "row_index": 26,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nAll three records have `is_test: false`, `is_mock: false`, `is_sample_app: false`, and `is_codegen: false` \u2014 so no restraint marker fires on the flag values alone.\n\nHowever, the file path is `Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift`. The path contains `Tests/AnalyticsTests/` and the filename ends in `Tests.swift`. The type names are `TestEvent`, `QualityTestEvent`, and `CPUTestEvent` \u2014 all clearly test-fixture types used to exercise analytics event name logic. The structural pipeline has apparently not set `is_test: true` on these records despite their unambiguous test-file location, but the file path evidence is conclusive: these are test-only type aliases living inside a test target. Lifting them into shared production code would couple production to test semantics. The correct call is `no-action` with `reason_class: \"test-fixture\"`, citing the file path as the grounding evidence.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:CPUTestEvent+QualityTestEvent+TestEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Although the pipeline did not set is_test=true on any of the three records, all three type-alias objects (TestEvent at line 64, QualityTestEvent at line 68, CPUTestEvent at line 72) reside in 'Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift' \u2014 a file whose path unambiguously places it inside a test target. Their names ('TestEvent', 'QualityTestEvent', 'CPUTestEvent') further confirm they are test-fixture types used to exercise analytics event-name logic. Extracting them to shared production code would couple production targets to test semantics, which is the canonical restraint pattern. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Analytics/Tests/AnalyticsTests/AnalyticsEventNameTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BsGiEnixA31X39LChP1Y7K",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2648,
+    "output_tokens": 550,
+    "service_tier": "standard"
+  }
+}

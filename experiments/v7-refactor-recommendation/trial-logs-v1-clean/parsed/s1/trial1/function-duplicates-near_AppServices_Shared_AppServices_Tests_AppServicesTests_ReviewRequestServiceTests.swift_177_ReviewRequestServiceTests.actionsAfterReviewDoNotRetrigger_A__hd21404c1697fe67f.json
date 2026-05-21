@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:177:ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:90:ReviewRequestServiceTests.shouldRequestReviewAtThreshold",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true ... ReviewRequestServiceTests.shouldRequestReviewAtThreshold ... ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger ... jaccard: 0.8181818181818182",
+    "rationale": "Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The high Jaccard similarity (0.818) between `ReviewRequestServiceTests.shouldRequestReviewAtThreshold` (line 90) and `ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger` (line 177) most likely reflects shared test-setup boilerplate (e.g., arranging a `ReviewRequestService` with a threshold, asserting on review-request state) rather than accidental duplication of production logic. Each test method encodes a distinct behavioural scenario \u2014 threshold triggering vs. post-review suppression \u2014 so their structural similarity is intentional and load-bearing for test clarity. Merging or extracting them would obscure test intent without reducing production complexity.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_AppServices_Shared_AppServices_Tests_AppServicesTests_ReviewRequestServiceTests.swift_177_ReviewRequestServiceTests.actionsAfterReviewDoNotRetrigger_A__hd21404c1697fe67f.json",
+  "row_index": 66,
+  "trial": 1
+}

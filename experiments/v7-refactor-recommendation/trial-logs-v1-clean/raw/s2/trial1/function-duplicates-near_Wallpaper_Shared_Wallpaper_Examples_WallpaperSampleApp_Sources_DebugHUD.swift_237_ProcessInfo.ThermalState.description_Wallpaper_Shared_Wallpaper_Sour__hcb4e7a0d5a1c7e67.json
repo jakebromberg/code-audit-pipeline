@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:237:ProcessInfo.ThermalState.description+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift:152:PerformanceControls.thermalStateLabel\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records \u2014 `ProcessInfo.ThermalState.description` in `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 carries `is_sample_app: true`, which is a restraint marker that dominates action signals per the decision rules. Although the production-side record `PerformanceControls.thermalStateLabel` in `Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift` is not sample-app code, lifting the shared logic into a common location would couple production debug UI to sample-app semantics. The Jaccard similarity of 0.75 confirms near-duplication, but the mixed restraint context makes consolidation inadvisable without first confirming the sample-app copy is a removable prototype rather than a deliberate fixture.\",\n    \"evidence_quote\": \"is_sample_app\\\": true\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"ProcessInfo.ThermalState\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/PerformanceControls.swift\"\n        ]\n      },\n      \"rationale\": \"If the sample-app copy in DebugHUD.swift is confirmed to be a redundant prototype (not a deliberate standalone fixture), a `description` extension on `ProcessInfo.ThermalState` could be extracted into the Wallpaper package's shared debug utilities, eliminating the 0.75-Jaccard near-duplication and letting both DebugHUD and PerformanceControls consume a single authoritative implementation.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01N1uFVweA9SDpgjx9fvqhnk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2641,
+    "output_tokens": 653,
+    "service_tier": "standard"
+  }
+}

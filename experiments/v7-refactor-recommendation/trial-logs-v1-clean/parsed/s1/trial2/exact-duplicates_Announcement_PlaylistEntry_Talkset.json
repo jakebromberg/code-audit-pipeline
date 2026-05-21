@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"file\": \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\"",
+    "rationale": "All three records are in the `Playlist` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false). The `structural_evidence` shows `shared_field_count: 4` with `differing_slots: null`, meaning the shapes are structurally identical. `Announcement` is a `type-alias-object` in `_Plant_Announcement.swift` and `Talkset` is a `type-alias-object` in `PlaylistEntry.swift`, while `PlaylistEntry` is the `interface` \u2014 the canonical type. The leading underscore in `_Plant_Announcement.swift` suggests a transitional or generated-plant file that may no longer be needed. Collapsing or documenting these aliases will reduce confusion about which name to use at call sites.",
+    "specifics": {
+      "proposed_action": "Investigate whether `Announcement` (line 13, `_Plant_Announcement.swift`) and `Talkset` (line 90, `PlaylistEntry.swift`) are type aliases for `PlaylistEntry` (line 22, `PlaylistEntry.swift`). If so, consolidate the canonical definition into `PlaylistEntry` and retain the aliases only where a distinct semantic name is required by an external API contract. If the aliases are purely internal convenience names with no external consumers, remove them and use `PlaylistEntry` directly throughout the `Playlist` package.",
+      "why_no_category_fits": "The three members are a mix of `interface` and `type-alias-object` kinds within the same package (`Playlist`). The structural signal is `exact-duplicates` with `shared_field_count: 4` and no differing slots, strongly suggesting `Announcement` and `Talkset` are type aliases that shadow `PlaylistEntry` rather than independent types. The appropriate action is alias-consolidation or alias-retention with documentation \u2014 not extraction to a common package (they are already co-located), not a protocol hierarchy, not generic parameterization, and not a default-implementation change. None of the named categories precisely describe 'audit and collapse redundant type aliases onto their underlying type'."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 2
+}

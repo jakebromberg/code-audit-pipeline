@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:ThemeManifest",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"differing_slots\": null,\n            \"jaccard\": null,\n            \"shared_ancestor\": null,\n            \"shared_field_count\": null",
+    "rationale": "The cluster surfaces three records all within the `Wallpaper` package: a `type-alias-object` at `Shared/Wallpaper/Sources/Wallpaper/Core/ThemeManifest.swift:15`, an extension on that same type at line 579 of the same file, and a second extension inside `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockThemeRegistry.swift:49`. The structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are all null, and `fields_or_signature` is empty for every record, meaning there is no field-level or signature-level overlap to act on. The 'name-collision' signal here most likely reflects the parser encountering the same `ThemeManifest` name across a type alias declaration and two extensions in the same package \u2014 a normal Swift pattern of splitting a type's implementation across extensions \u2014 rather than a genuine duplication problem. Although the test-file path contains `Mocks/`, the context flags do not mark any record as `is_mock=true` or `is_test=true`, so the restraint rule does not formally apply; nonetheless, the absence of any structural evidence makes any refactor action ungrounded.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_ThemeManifest.json",
+  "row_index": 14,
+  "trial": 3
+}

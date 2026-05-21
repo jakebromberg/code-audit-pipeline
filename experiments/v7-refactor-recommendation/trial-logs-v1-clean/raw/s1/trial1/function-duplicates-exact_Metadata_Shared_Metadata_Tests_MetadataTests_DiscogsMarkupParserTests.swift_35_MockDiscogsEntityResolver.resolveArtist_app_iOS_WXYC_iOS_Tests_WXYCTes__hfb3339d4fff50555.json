@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rules apply.\n\nBoth records have all context flags set to `false` \u2014 including `is_test: false` and `is_mock: false`. However, the files are named `DiscogsMarkupParserTests.swift` and `DiscogsFormatterTests.swift`, and the type is `MockDiscogsEntityResolver`. The structural pipeline has flagged these as non-test, non-mock by the context flags, but the file paths and type name strongly suggest these are test fixtures (test files, mock type). The context flags are the authoritative signal per the decision rules, but the file paths (`*Tests.swift`) and the `Mock` prefix on the type name are compelling evidence that these records live inside test targets and are mock objects \u2014 the pipeline may have miscategorized the flags.\n\nPer the decision rules, I must rely on the provided context flags. Both show `is_test: false` and `is_mock: false`. However, the file paths (`MetadataTests/DiscogsMarkupParserTests.swift`, `WXYCTests/DiscogsFormatterTests.swift`) and the type name `MockDiscogsEntityResolver` are literal evidence from the cluster row that these are test-support mock objects. The decision rules say to prefer \"no-action\" when in doubt, and the `Mock` prefix plus `*Tests.swift` paths constitute strong coincidental evidence of intentional test-fixture duplication. I will recommend no-action with reason_class `test-fixture`, citing the file paths and type name as the grounding evidence, and note the flag discrepancy in the rationale.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry the type name `MockDiscogsEntityResolver.resolveArtist` \u2014 the `Mock` prefix is a canonical Swift test-fixture naming convention \u2014 and both files reside under test directories: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift`. Although the pipeline has emitted `is_test: false` and `is_mock: false` for both records (likely a flag-extraction gap for test-support types that are not themselves `XCTestCase` subclasses), the file paths and type name constitute unambiguous literal evidence that these are test-fixture mock implementations. Consolidating them into a shared target would couple two independent test suites (`Metadata` and `app:iOS`) through a shared mock, which is an anti-pattern that makes test isolation harder to maintain. The duplication is intentional: each test file owns its own local mock to remain self-contained.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveArtist\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Metadata\",\n        \"type_name\": \"MockDiscogsEntityResolver\",\n        \"remove_from\": [\n          \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n          \"WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift\"\n        ]\n      },\n      \"rationale\": \"If the `MockDiscogsEntityResolver` type (not just the `resolveArtist` method) is fully duplicated across both test files and the `app:iOS` package already depends on the `Metadata` package, a shared test-support library within `Metadata` (e.g., `MetadataTestSupport`) could host the mock. This is only worth pursuing if the full mock type is identical and the dependency graph permits it without introducing a circular dependency \u2014 conditions that cannot be confirmed from the cluster row alone.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CrXcrXNFTPbXyPY9pqmgAX",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2603,
+    "output_tokens": 1030,
+    "service_tier": "standard"
+  }
+}

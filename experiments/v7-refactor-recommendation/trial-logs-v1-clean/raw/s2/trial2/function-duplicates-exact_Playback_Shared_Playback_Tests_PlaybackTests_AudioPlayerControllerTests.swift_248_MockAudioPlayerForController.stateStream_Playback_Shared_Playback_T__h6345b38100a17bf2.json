@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the no-action restraint rules apply.\n\nThe two members are both in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` \u2014 a file path that contains `Tests/PlaybackTests/`, which is clearly a test file. However, the `context_flags` on both records show `is_test: false`, `is_mock: false`, `is_sample_app: false`, `is_codegen: false`. The pipeline has not flagged these as test fixtures despite the file path strongly suggesting they are part of a test target (the type name `MockAudioPlayerForController` and the path `Tests/PlaybackTests/` are unambiguous signals).\n\nThe decision rules say restraint markers on participating records are load-bearing \u2014 but the flags as given are all `false`. I must not hallucinate evidence not in the cluster row. However, the type name `MockAudioPlayerForController` and the file path `Tests/PlaybackTests/` are literal substrings in the cluster row, and I can cite them as evidence that this is coincidental/test-context duplication even without the flags being set. The two properties (`stateStream` and `eventStream`) are semantically distinct stream types on the same mock type \u2014 their structural similarity is likely coincidental (both are simple computed properties returning async streams or similar, hence identical shape), not a sign that one should be extracted.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockAudioPlayerForController.stateStream` (line 248) and `MockAudioPlayerForController.eventStream` (line 254) live in `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift` and belong to the same mock helper type `MockAudioPlayerForController`. Although the pipeline did not set `is_test=true` on either record, the file path `Tests/PlaybackTests/` and the type name prefix `Mock` make clear this is test-support code. More importantly, the two properties represent semantically distinct concepts \u2014 a state stream and an event stream \u2014 whose structural identity (both are empty-signature computed properties) is purely coincidental: they happen to have the same shape because both are trivial async-stream stubs, not because they encode the same domain logic. Merging or extracting them would conflate unrelated protocol requirements and obscure the intent of each stub.\",\n    \"evidence_quote\": \"MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012UEqKFaemTuwkcESj1p77K",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2587,
+    "output_tokens": 745,
+    "service_tier": "standard"
+  }
+}

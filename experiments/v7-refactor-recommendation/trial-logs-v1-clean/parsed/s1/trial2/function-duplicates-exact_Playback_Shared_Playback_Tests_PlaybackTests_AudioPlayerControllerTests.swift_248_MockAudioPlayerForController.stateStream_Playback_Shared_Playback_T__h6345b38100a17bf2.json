@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:248:MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "MockAudioPlayerForController.stateStream+Playback:Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift:254:MockAudioPlayerForController.eventStream",
+    "rationale": "Both members are computed properties on `MockAudioPlayerForController` inside `Shared/Playback/Tests/PlaybackTests/AudioPlayerControllerTests.swift`. Despite the `is_test` and `is_mock` flags reading false, the file path sits under `Tests/PlaybackTests/` and the owning type is explicitly named `MockAudioPlayerForController`, making this a test-fixture mock in practice. More importantly, all structural evidence fields (`jaccard`, `differing_slots`, `shared_field_count`, `shared_ancestor`) are null, so there is no grounded evidence of shared implementation body \u2014 only that both are computed properties on the same type. `stateStream` and `eventStream` are semantically distinct concerns (state vs. event delivery) whose structural coincidence as zero-argument computed properties is incidental to their role in the mock protocol conformance.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_PlaybackTests_AudioPlayerControllerTests.swift_248_MockAudioPlayerForController.stateStream_Playback_Shared_Playback_T__h6345b38100a17bf2.json",
+  "row_index": 39,
+  "trial": 2
+}

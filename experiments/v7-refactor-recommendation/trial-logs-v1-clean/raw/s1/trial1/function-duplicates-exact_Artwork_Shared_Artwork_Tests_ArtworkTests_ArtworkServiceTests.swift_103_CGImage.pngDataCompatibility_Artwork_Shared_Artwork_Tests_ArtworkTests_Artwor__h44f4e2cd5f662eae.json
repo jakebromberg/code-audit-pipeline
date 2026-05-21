@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"CGImage\",\n      \"consolidate_from\": [\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73\",\n        \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103\"\n      ]\n    },\n    \"rationale\": \"Both members are exact duplicates of the computed property `CGImage.pngDataCompatibility` defined twice within the same file `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift` (lines 73 and 103) in the `Artwork` package. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so the duplication is not intentional by fixture convention. The two declarations are in the same file, making this a straightforward intra-file deduplication: one definition should be removed and the remaining one consolidated into a single extension on `CGImage`, ideally extracted to a dedicated helper file within the `Artwork` package so it can be shared across any other test or production code that needs it.\",\n    \"evidence_quote\": \"CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Artwork\",\n        \"type_name\": \"CGImage\",\n        \"remove_from\": [\n          \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift\"\n        ]\n      },\n      \"rationale\": \"If `pngDataCompatibility` is useful beyond the test file (e.g., in production artwork-loading code), it could be extracted into a `CGImage` extension in the main `Artwork` package sources rather than living in the test target, eliminating both duplicates at once and making the property available to all consumers of the package.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01S6e6SXGLxX292NDZ2bgHu7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2577,
+    "output_tokens": 613,
+    "service_tier": "standard"
+  }
+}

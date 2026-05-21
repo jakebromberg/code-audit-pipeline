@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint rules apply.\n\nBoth records live in test files (`AdaptiveQualityControllerTests.swift` and `CacheCoordinatorTests.swift`) even though the pipeline has tagged `is_test: false` on both. The file paths unambiguously place both types inside `Tests/` subdirectories \u2014 `Shared/Wallpaper/Tests/WallpaperTests/` and `Shared/Caching/Tests/CachingTests/`. The names `MockQualityClock` and `MockClock` are also semantically mock/test fixtures. The `is_mock` flag is `false`, but the file-path evidence and naming convention are conclusive: these are test-support types. The restraint rule says \"any participating record has `is_test=true`\" triggers no-action, but the spirit of the rule \u2014 and the explicit instruction to prefer no-action when in doubt \u2014 applies here because coupling two test packages' internal clock fakes through shared production infrastructure would couple test semantics across unrelated packages.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (Wallpaper package, `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift:19`) and `MockClock` (Caching package, `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift:41`) reside under `Tests/` subdirectories and carry semantically mock names, making them test-support fixtures despite the pipeline's `is_test: false` tag. Extracting these into a shared target would couple two otherwise independent packages (`Wallpaper` and `Caching`) through a shared test-support dependency, which is an anti-pattern that inflates the test-dependency graph without production benefit. Each package's clock fake is intentionally local to its own test suite, and the structural coincidence (both are `type-alias-object` with 2 shared fields) reflects the narrow surface area of a clock abstraction rather than meaningful duplication worth consolidating.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01P5VmE6j7zMiVer6GJFUuRw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2524,
+    "output_tokens": 604,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.82,
+    "evidence_quote": "PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode",
+    "rationale": "Three distinct enum types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 all in the `Wallpaper` package each carry an identically-shaped computed property `blendMode` at exactly line 62 of their respective files, flagged as `function-duplicates-exact`. Because all three records share the same package and none carry any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), the duplication is unambiguously accidental. The idiomatic Swift resolution is to introduce a `BlendModeConvertible` protocol with a `blendMode` computed-property requirement, provide a single default implementation in a protocol extension, and remove the redundant per-type implementations. This keeps each enum's domain identity intact while eliminating the triplicated logic.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift"
+      ],
+      "method": "var blendMode: <BlendMode> { get }",
+      "protocol": "BlendModeConvertible",
+      "target_location": "Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeConvertible.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_MaterialBlendMode.swift_62_MaterialBlendMode.blendMode_Wallpaper_Shared_Wallpaper_Sources_Wallpaper__ha4d281c6b5a31151.json",
+  "row_index": 2,
+  "trial": 1
+}

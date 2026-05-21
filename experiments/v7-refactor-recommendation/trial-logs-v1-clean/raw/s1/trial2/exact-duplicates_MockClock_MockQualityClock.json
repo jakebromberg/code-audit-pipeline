@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the no-action restraint rules apply.\n\nBoth records live in test files (`AdaptiveQualityControllerTests.swift` and `CacheCoordinatorTests.swift`), even though their `is_test` flags are marked `false`. The file paths unambiguously place them inside `Tests/` directories \u2014 `Shared/Wallpaper/Tests/WallpaperTests/` and `Shared/Caching/Tests/CachingTests/`. The `is_test=false` flag appears to be a metadata gap, not evidence that these are production types. Both are `type-alias-object` kinds named `MockClock` / `MockQualityClock`, which are classic test-fixture names. The restraint rule says \"ANY participating record has is_test=true\" \u2014 but the spirit of the rule is about test fixtures, and the file-path evidence is conclusive. However, I must apply the rules as written: `is_test=false` for both.\n\nSince neither flag is set, I proceed to substantive analysis. These are `type-alias-object` records with no fields listed, living in separate packages (`Wallpaper`, `Caching`). Extracting a shared mock clock into production shared infrastructure would couple test scaffolding into a non-test target, which is the exact anti-pattern the restraint rules guard against. The `reason_class: \"coincidental\"` fits: two test-support type aliases that happen to alias the same underlying clock type, in separate packages, for separate domain tests. Lifting them would be wrong.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockClock+MockQualityClock\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `MockQualityClock` (Wallpaper package, `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift:19`) and `MockClock` (Caching package, `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift:41`) are `type-alias-object` declarations that live exclusively inside per-package test directories. Although the pipeline's `is_test` flags are `false`, the file paths place both unambiguously in `Tests/` subtrees, and their names follow the canonical mock-fixture naming convention. Extracting a shared clock alias into a common production target would introduce test scaffolding into non-test infrastructure and couple two otherwise independent packages (`Wallpaper`, `Caching`) for no domain reason. The structural coincidence \u2014 `shared_field_count: 2` with no differing slots \u2014 reflects that both are thin aliases to the same underlying clock type, not a sign of duplicated business logic that warrants consolidation.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019YFYKEufcj21u2qePFQHV4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2524,
+    "output_tokens": 731,
+    "service_tier": "standard"
+  }
+}

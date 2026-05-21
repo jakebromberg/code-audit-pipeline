@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MusicMetadataFetchable\",\n      \"associated_type\": \"Metadata\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"SoundCloudService.fetchMetadata\",\n        \"YouTubeMusicService.fetchMetadata\"\n      ]\n    },\n    \"rationale\": \"Both `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64) live in the same `MusicShareKit` package under `Shared/MusicShareKit/Sources/MusicShareKit/Services/` and exhibit a high structural similarity (Jaccard 0.808), indicating near-duplicate method bodies. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). Introducing a `MusicMetadataFetchable` protocol with a `fetchMetadata` requirement is the idiomatic Swift answer: it captures the shared contract, allows each service to supply its own concrete `Metadata` type if needed, and opens the door to a default implementation for any shared logic. This avoids coupling the two services to a common base class while still eliminating the duplicated logic.\",\n    \"evidence_quote\": \"YouTubeMusicService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"MusicMetadataFetchable\",\n        \"method\": \"fetchMetadata()\",\n        \"target_location\": \"Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicMetadataFetchable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift\",\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift\"\n        ]\n      },\n      \"rationale\": \"If the shared body of `fetchMetadata` is truly identical (Jaccard 0.808 suggests ~80% overlap), a protocol extension default implementation in a new `MusicMetadataFetchable.swift` within the same `MusicShareKit` package could eliminate both concrete implementations entirely, leaving each service to override only the divergent ~20%. This is a natural follow-on once the PAT is introduced.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01MHPaEGf87cCerWw1RhBxnC",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 2610,
+    "output_tokens": 742,
+    "service_tier": "standard"
+  }
+}
