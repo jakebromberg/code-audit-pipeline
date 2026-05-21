@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:EntityResolverMockWebSession+MetadataMockWebSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift",
+    "rationale": "Both participating records live under test file paths \u2014 `Shared/Metadata/Tests/MetadataTests/PlaycutMetadataServiceCachingTests.swift` and `Shared/Metadata/Tests/MetadataTests/DiscogsAPIEntityResolverCachingTests.swift` \u2014 making them test fixtures by location even though the `is_test` flag is recorded as false. The types `MetadataMockWebSession` and `EntityResolverMockWebSession` are type-alias objects with no declared fields, suggesting they are lightweight local stubs scoped to their respective test files. Merging them into a shared helper would couple two independent test suites and risk obscuring the distinct intent each alias encodes for its own caching test scenario.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_EntityResolverMockWebSession_MetadataMockWebSession.json",
+  "row_index": 48,
+  "trial": 1
+}

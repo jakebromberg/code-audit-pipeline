@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The two computed properties `SmallNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift`) and `MediumNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift`) share a Jaccard similarity of 0.714, indicating substantial but not identical layout logic. Both are production code (all context flags false) in the same `app:iOS` package and the same subdirectory, so cross-package extraction is unnecessary. The idiomatic SwiftUI remedy is to compose a shared child `View` struct that encapsulates the common layout, with size-specific parameters passed at the call site from each entry view's `body`.",
+    "specifics": {
+      "proposed_action": "Extract the shared SwiftUI layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared private or internal SwiftUI `View` subcomponent (e.g., `NowPlayingWidgetContentView`) within the `WXYC/iOS/NowPlayingWidget/Views/` directory, parameterised by any size-specific values (e.g., font size, image size, or layout constants) that differ between the two widget sizes. Each entry view's `body` would then delegate to this shared subcomponent, passing the appropriate size-specific arguments.",
+      "why_no_category_fits": "Neither `extract-to-common` nor `generic-parameterization` fits cleanly. Both files already live in the same package (`app:iOS`) and the same directory (`WXYC/iOS/NowPlayingWidget/Views/`), so there is no cross-package extraction to perform. The duplication is a SwiftUI view-composition problem \u2014 the right Swift idiom is to factor the shared layout into a child `View` struct parameterised by size-specific values, not to introduce a generic function or a protocol hierarchy. The `fields_or_signature` lists are empty, so the precise differing slots are not surfaced in the cluster data, but the Jaccard similarity of 0.714 confirms meaningful shared structure alongside some divergence that is likely size-driven."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 1
+}

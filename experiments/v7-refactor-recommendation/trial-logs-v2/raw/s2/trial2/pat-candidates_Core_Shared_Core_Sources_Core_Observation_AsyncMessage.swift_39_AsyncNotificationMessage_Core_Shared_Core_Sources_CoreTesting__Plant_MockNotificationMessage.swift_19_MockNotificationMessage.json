@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"The second participating record, `MockNotificationMessage` in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`, carries `is_test: true`. Under the decision rules, any cluster where at least one record is test-marked must be treated as a test-fixture and no structural refactor should be applied. The sole meaningful difference between the two interfaces \u2014 `makeMessage:(_ notification: Notification) -> Self?` vs. `makeMessage:(_ notification: sending Notification) -> Self?` \u2014 is itself a deliberate divergence: the `sending` ownership annotation in the mock variant reflects test-context concurrency semantics that should not be unified with the production `AsyncNotificationMessage` protocol. Merging these into a shared PAT would couple production observation infrastructure to test-fixture semantics.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012p1E7bbazhQScuRu3S8bCw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3956,
+    "output_tokens": 333,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:183:FFTProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:55:RMSProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:54:AverageProcessor.reset\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"AudioProcessor\",\n      \"method\": \"reset()\",\n      \"target_location\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor+Defaults.swift\",\n      \"conformers_simplified\": [\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n        \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n      ]\n    },\n    \"rationale\": \"Three sibling types in the same `PlayerHeaderView` package \u2014 `RMSProcessor.reset` (line 55), `FFTProcessor.reset` (line 183), and `AverageProcessor.reset` (line 54) \u2014 are flagged as exact function duplicates, meaning their `reset()` bodies are identical. Because all three processors live in the same package and share a common conceptual role (audio signal processing), the idiomatic Swift fix is to declare a shared protocol (e.g., `AudioProcessor`) and provide a default implementation of `reset()` in a protocol extension, eliminating the three redundant copies. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on any record, so no no-action override applies. Note: the `protocol` field names `AudioProcessor` as the intended protocol; if a differently-named processor protocol already exists in the package it should be used instead \u2014 the cluster row does not surface an existing protocol name, so this name is the recommended one to introduce.\",\n    \"evidence_quote\": \"RMSProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift:55:RMSProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift:183:FFTProcessor.reset+PlayerHeaderView:Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift:54:AverageProcessor.reset\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"PlayerHeaderView\",\n        \"type_name\": \"ProcessorResetBehavior\",\n        \"remove_from\": [\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/RMSProcessor.swift\",\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/FFTProcessor.swift\",\n          \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/_Plant_AverageProcessor.swift\"\n        ]\n      },\n      \"rationale\": \"If the three processor types do not share a protocol hierarchy, the identical `reset()` logic could alternatively be extracted into a mixin struct or free function `ProcessorResetBehavior` within the same `PlayerHeaderView` package, and each processor could delegate to it. This is less idiomatic Swift than a protocol default implementation but avoids introducing a new protocol if the types are otherwise unrelated.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015GK19mKffEszmgPmAi5nv3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3990,
+    "output_tokens": 877,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:AVAudioSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name: \"\") with empty fields_or_signature lists, one in Shared/Playback/Sources/PlaybackCore/Protocols/AudioSessionProtocol.swift (package: Playback) and one in Shared/PartyHorn/Sources/PartyHorn/SoundPlayer.swift (package: PartyHorn). The cluster carries no structural evidence \u2014 jaccard, shared_field_count, shared_ancestor, and differing_slots are all null \u2014 meaning the only signal is that both files extend AVAudioSession. Extensions on a system framework type in two different packages are a routine pattern in iOS codebases and do not imply duplicated logic; the coincidence is purely nominal. Without field or method overlap to ground an action recommendation, any refactor would be speculative.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_AVAudioSession.json",
+  "row_index": 15,
+  "trial": 2
+}

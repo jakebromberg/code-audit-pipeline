@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"BlendMode\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"All three records \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` declarations in the same `Wallpaper` package, sharing 16 fields with no differing slots (Jaccard/differing_slots both null), meaning their union members are structurally identical. Because they are all in the same package and none carry any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), consolidating them into a single canonical `BlendMode` type within `Wallpaper` eliminates the redundancy without any cross-package coupling concerns. The three separate names (`PlaybackBlendMode`, `MaterialBlendMode`, `OverlayBlendMode`) can then become `typealias` declarations pointing to the single `BlendMode` type if call-site source compatibility must be preserved, or be removed outright if callers can be migrated.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 16\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the three names intentionally encode distinct semantic domains (material rendering, overlay compositing, playback compositing) and the 16-field overlap is coincidental rather than a true duplicate, keeping them separate preserves domain clarity. However, the `exact-duplicates` query signal and zero differing slots make this unlikely.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TLdm9KgnLkyEyHV5cBgezp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3938,
+    "output_tokens": 566,
+    "service_tier": "standard"
+  }
+}

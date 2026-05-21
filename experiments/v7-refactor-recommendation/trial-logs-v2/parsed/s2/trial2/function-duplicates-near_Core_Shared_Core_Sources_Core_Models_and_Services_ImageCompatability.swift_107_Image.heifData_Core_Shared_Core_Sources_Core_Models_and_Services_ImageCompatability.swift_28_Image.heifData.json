@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\", \"line\": 28, \"name\": \"Image.heifData\" ... \"line\": 107, \"name\": \"Image.heifData\" ... \"jaccard\": 0.75",
+    "rationale": "Both participating records are `Image.heifData` methods in the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` (package `Core`), at lines 28 and 107, with no restraint markers (all context flags false). A Jaccard score of 0.75 indicates substantial but imperfect overlap, consistent with two platform-conditional variants (UIKit vs AppKit) that share most of their body. The right fix is intra-file consolidation \u2014 extracting shared logic into a private helper or unifying the conditional branches \u2014 rather than any cross-package or protocol-level refactor.",
+    "specifics": {
+      "proposed_action": "Investigate the two `Image.heifData` method declarations at lines 28 and 107 within `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift`. With a Jaccard similarity of 0.75 they are near-duplicates but not identical, suggesting one may be a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`). Consolidate into a single implementation \u2014 either by unifying the shared logic into one method body with conditional branches, or by extracting the common logic into a private helper and having each variant delegate to it \u2014 then delete the redundant declaration.",
+      "why_no_category_fits": "Both records live in the same file (`ImageCompatability.swift`) and the same package (`Core`), so `extract-to-common` (which requires moving to a different package) does not apply. There is no protocol, subclass hierarchy, or generic type involved, so `protocol-inheritance`, `default-implementation`, `pat-introduction`, `generic-parameterization`, `subclass-lift`, and `macro-synthesis` do not apply. The duplication is within a single file between two method overloads/variants, making this an intra-file deduplication task best described as a targeted consolidation that does not map cleanly to any named category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_107_Image.heifData_Core_Shared_Core_Sources_Core_Models_and_Services_ImageCompatability.swift_28_Image.heifData.json",
+  "row_index": 99,
+  "trial": 2
+}

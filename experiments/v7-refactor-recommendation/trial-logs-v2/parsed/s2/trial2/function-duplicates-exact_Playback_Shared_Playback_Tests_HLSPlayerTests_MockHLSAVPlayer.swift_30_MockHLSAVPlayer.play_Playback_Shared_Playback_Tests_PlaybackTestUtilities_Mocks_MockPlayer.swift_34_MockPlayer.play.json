@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift",
+    "rationale": "Both participating records reside under `Tests/` directory subtrees \u2014 `Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift` \u2014 and carry `Mock` prefixes in both their type names (`MockHLSAVPlayer`, `MockPlayer`) and file paths, marking them as deliberate test fixtures. Although the pipeline flags `is_mock: false` and `is_test: false`, the file-path and naming evidence is unambiguous: these are mock stand-ins for distinct collaborators (`HLSAVPlayer` vs. a generic `Player`), and their `play` implementations are independently contractual to their respective test suites. Additionally, `fields_or_signature` is empty for both records, so there is no grounded method-body evidence to support a safe extraction. Merging or lifting these mocks would couple two separate test contracts and risk masking divergence in future mock evolution.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 2
+}

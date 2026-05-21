@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which is an Examples/SampleApp directory \u2014 a restraint marker under the decision rules (`reason_class: \"sample-app-mirror\"`), regardless of the `is_sample_app` flag value. The rule states that records sitting under `Examples/` or `SampleApp/` trigger the sample-app-mirror restraint.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the Examples/WallpaperSampleApp/ directory \u2014 a canonical sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. Lifting the shared 'DisplayLinkSequence.AsyncIterator.init' initializer out of the production 'DebugPanel' package into a common location would couple production code to demonstration semantics. The duplication is intentional: the sample app replicates the initializer locally to remain self-contained and independent of the DebugPanel package.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017cxaSeDUrMvEn9KZdV6zrJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3879,
+    "output_tokens": 514,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "cluster_id": "pat-candidates:AppServices:Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23:NowPlayingItem+app:iOS:WXYC/iOS/Views/Playlist/PlaylistView.swift:23:PlaycutSelection",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"artwork:Image?\"], \"b\": [\"artwork:UIImage?\"]}], \"shared_field_count\": 2",
+    "rationale": "Both `NowPlayingItem` (package `AppServices`, `Shared/AppServices/Sources/AppServices/NowPlayingService.swift:23`) and `PlaycutSelection` (package `app:iOS`, `WXYC/iOS/Views/Playlist/PlaylistView.swift:23`) are `type-alias-object` records sharing two fields \u2014 `playcut:Playcut` identically, and `artwork` differing only in image type (`Image?` vs `UIImage?`). The structural evidence confirms `shared_field_count: 2` with a single differing slot on the artwork type, which is precisely the pattern a PAT with an `associated_type` for the image type resolves. Introducing `PlaycutRepresentable` with `associatedtype ArtworkImage` and a required `playcut: Playcut` property lets `AppServices` constrain `ArtworkImage` to `Image` (SwiftUI) while `app:iOS` constrains it to `UIImage` (UIKit), eliminating the structural duplication without coupling the two packages. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint override is needed.",
+    "specifics": {
+      "associated_type": "ArtworkImage",
+      "constraints": [],
+      "new_protocol": "PlaycutRepresentable",
+      "replaces": [
+        "NowPlayingItem",
+        "PlaycutSelection"
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial1/pat-candidates_AppServices_Shared_AppServices_Sources_AppServices_NowPlayingService.swift_23_NowPlayingItem_app_iOS_WXYC_iOS_Views_Playlist_PlaylistView.swift_23_PlaycutSelection.json",
+  "row_index": 7,
+  "trial": 1
+}

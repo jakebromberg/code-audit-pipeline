@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is defined twice \u2014 once for each branch of a `#if` compiler condition or for two distinct `extension MaterialView` blocks with different `where` clauses. If the two bodies are truly redundant, consolidate them into a single `body` implementation, extracting the differing sub-expression into a private helper (e.g., `private var backgroundLayer: some View`) that encapsulates the varying part. If the split is load-bearing (e.g., one branch targets macOS material styles and the other targets iOS), add a comment documenting the intentional divergence so future readers do not re-flag it.\",\n      \"why_no_category_fits\": \"Both records are the same computed property name (`MaterialView.body`) in the same file (`MaterialView.swift`) at different line numbers (60 and 192). This is not a cross-type or cross-package duplication, so `extract-to-common` does not apply. There is no protocol involved, so `default-implementation`, `protocol-inheritance`, and `pat-introduction` do not apply. The property is not a free function or struct, so `generic-parameterization` does not apply. There is no class hierarchy, so `subclass-lift` does not apply. There are no repetitive member syntheses, so `macro-synthesis` does not apply. The duplication is intra-file and intra-type, making `extension-consolidation` the closest fit, but that category targets dispersed extensions of a single type across multiple files \u2014 not two property definitions within one file. The correct action is an intra-file deduplication whose shape (conditional compilation branch vs. genuine redundancy) cannot be determined from the cluster metadata alone, warranting manual inspection before any mechanical change.\"\n    },\n    \"rationale\": \"Both participating records are `MaterialView.body` computed properties in the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192, with a Jaccard similarity of 0.8333, indicating substantial but not identical content. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set, so no restraint marker applies. Because both records share the same type name, file, and package (`Wallpaper`), this is an intra-file near-duplicate that does not map cleanly to any cross-file or cross-type refactor category. The high Jaccard score suggests one body may be a copy-paste of the other with minor variation, but the zero `shared_field_count` and null `differing_slots` in the structural evidence mean the exact divergence point cannot be identified without reading the source, making a precise mechanical recommendation premature.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `body` definitions exist because `MaterialView` is extended in two separate `extension` blocks within the same file (a common SwiftUI pattern), consolidating them into a single extension and merging the `body` implementations into one computed property with an internal helper would eliminate the near-duplication. This is the closest named category, though it is a weaker fit because `extension-consolidation` conventionally addresses multi-file dispersion rather than intra-file redundancy.\"\n    },\n    \"confidence\": 0.45\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LXggtiYwP26zjenefsr499",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 1031,
+    "service_tier": "standard"
+  }
+}

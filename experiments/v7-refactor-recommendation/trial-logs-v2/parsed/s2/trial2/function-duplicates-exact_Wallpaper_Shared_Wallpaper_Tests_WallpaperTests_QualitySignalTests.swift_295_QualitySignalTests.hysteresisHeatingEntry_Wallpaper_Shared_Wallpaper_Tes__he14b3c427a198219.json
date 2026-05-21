@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift",
+    "rationale": "Both participating records \u2014 `QualitySignalTests.hysteresisHeatingEntry` at line 295 and `QualitySignalTests.hysteresisHeatingExit` at line 312 \u2014 reside in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift`, a test file within the `Wallpaper` package. Although the context flags report `is_test: false`, the file path unambiguously places both methods inside a `Tests/WallpaperTests/` directory and the enclosing type is named `QualitySignalTests`, making these test-fixture helpers. The two methods model the entry and exit sides of a hysteresis heating scenario, which are semantically distinct test cases that happen to share structural shape; merging or extracting them would obscure the intent of each test boundary. No production code is involved, so no refactor is warranted.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_QualitySignalTests.swift_295_QualitySignalTests.hysteresisHeatingEntry_Wallpaper_Shared_Wallpaper_Tes__he14b3c427a198219.json",
+  "row_index": 16,
+  "trial": 2
+}

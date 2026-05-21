@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates living in the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is implemented twice via `#if` branches, two separate `extension` blocks, or two distinct `@ViewBuilder` overloads \u2014 each covering a different material/configuration variant. Determine which variant is canonical: if both are live code paths, extract the shared sub-tree into a private helper `@ViewBuilder` function (e.g., `private func commonBackground() -> some View`) called from both `body` implementations; if one is dead code or a leftover draft, delete it. Because both records share the same file, package (`Wallpaper`), and type name, no cross-package extraction is needed.\",\n      \"why_no_category_fits\": \"Both records are computed properties named `MaterialView.body` in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`), not free functions or structs, so `generic-parameterization` and `extract-to-common` do not apply. There is no protocol involved, ruling out `default-implementation`, `pat-introduction`, and `protocol-inheritance`. There is no class hierarchy, ruling out `subclass-lift`. The duplication is within a single SwiftUI `View` type's `body` property \u2014 the idiomatic fix is a private `@ViewBuilder` helper extracted within the same file, which does not map cleanly to any named category.\"\n    },\n    \"rationale\": \"The cluster surfaces two `MaterialView.body` computed-property declarations in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) at lines 60 and 192, with a Jaccard similarity of 0.83, indicating substantial but not identical overlap. Both records carry all context flags false (not test, not mock, not codegen, not sample-app), so no restraint marker applies. Because both declarations live in the same file and package (`Wallpaper`), the duplication is intra-file rather than cross-package, making `extract-to-common` inappropriate. The correct action is to consolidate the shared `body` sub-tree into a private `@ViewBuilder` helper within `MaterialView`, but this pattern does not map to any of the named refactor categories.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"MaterialView\",\n        \"consolidate_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"\n        ]\n      },\n      \"rationale\": \"If the two `body` implementations exist because `MaterialView` is split across two `extension` blocks in the same file \u2014 a common SwiftUI pattern for conditional conformances \u2014 consolidating them into a single primary type declaration or a single extension would eliminate the near-duplicate signal. This is the weakest alternative because both records already share one file, so the consolidation is purely structural within that file.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016gjykUZC6hCXAeFU2AfS8f",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 941,
+    "service_tier": "standard"
+  }
+}

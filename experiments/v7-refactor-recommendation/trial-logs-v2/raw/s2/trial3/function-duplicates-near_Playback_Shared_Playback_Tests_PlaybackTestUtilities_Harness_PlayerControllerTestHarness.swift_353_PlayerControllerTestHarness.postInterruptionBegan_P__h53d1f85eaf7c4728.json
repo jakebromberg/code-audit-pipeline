@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:353:PlayerControllerTestHarness.postInterruptionBegan+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift:367:PlayerControllerTestHarness.postInterruptionEnded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `PlayerControllerTestHarness.postInterruptionBegan` (line 353) and `PlayerControllerTestHarness.postInterruptionEnded` (line 367) \u2014 carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTestUtilities/Harness/PlayerControllerTestHarness.swift`. Per the restraint rules, any cluster where a participating record is a test fixture must default to no-action. Although the Jaccard similarity of 0.833 suggests near-duplicate bodies, the two methods intentionally model distinct audio-session interruption lifecycle events (began vs. ended), and their structural similarity is an expected consequence of symmetric test-harness scaffolding rather than unintentional duplication. Merging or abstracting them would couple test semantics in a way that obscures the distinct interruption states they exercise.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TGt3a1xEkg85EUWzGFfkq3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3904,
+    "output_tokens": 404,
+    "service_tier": "standard"
+  }
+}

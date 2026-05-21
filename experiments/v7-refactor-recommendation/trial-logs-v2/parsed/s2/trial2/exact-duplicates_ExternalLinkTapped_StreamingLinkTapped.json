@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:ExternalLinkTapped+StreamingLinkTapped",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"StreamingLinkTapped\" ... \"name\": \"ExternalLinkTapped\" ... \"file\": \"Shared/Analytics/Sources/Analytics/Events/UIEvents.swift\"",
+    "rationale": "Both `StreamingLinkTapped` (line 50) and `ExternalLinkTapped` (line 64) are `type-alias-object` declarations in the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package. Although the structural evidence reports `shared_field_count: 3` and `differing_slots: null`, these are distinct named analytics events representing semantically different user interactions \u2014 tapping a streaming link versus tapping an external link. Merging or aliasing them would collapse two intentionally separate event identities into one, losing the ability to distinguish the two actions in analytics reporting. No restraint markers are present, but the coincidence is purely structural; the domain concepts are unrelated.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_ExternalLinkTapped_StreamingLinkTapped.json",
+  "row_index": 24,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "Both `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) live in the same file `Shared/Core/Sources/Core/Deque.swift` and are structurally similar (Jaccard 0.71), but they encode intentionally opposite capacity-management operations on a deque's backing storage: one expands capacity when the buffer is too small, the other contracts it when the buffer is too large. Despite their near-duplicate shape \u2014 which is expected for symmetric grow/shrink logic \u2014 merging or abstracting them would obscure the directional semantics that make each method correct and safe. The `fields_or_signature` lists are both empty, so there is no shared method surface to extract into a common helper without inspecting the bodies, and the structural similarity is almost certainly a consequence of mirrored arithmetic rather than copy-paste redundancy.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 132,
+  "trial": 1
+}

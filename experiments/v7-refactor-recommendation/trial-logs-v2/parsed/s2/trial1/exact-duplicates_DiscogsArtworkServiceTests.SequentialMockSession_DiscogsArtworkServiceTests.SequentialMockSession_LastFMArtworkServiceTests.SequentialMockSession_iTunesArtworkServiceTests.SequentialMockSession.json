@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DiscogsArtworkServiceTests.SequentialMockSession+DiscogsArtworkServiceTests.SequentialMockSession+LastFMArtworkServiceTests.SequentialMockSession+iTunesArtworkServiceTests.SequentialMockSession",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.91,
+    "evidence_quote": "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift",
+    "rationale": "All four records are `type-alias-object` entries named `SequentialMockSession` nested inside test-class namespaces (`iTunesArtworkServiceTests`, `LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`) and reside exclusively in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift`. Although the structural pipeline emitted `is_test: false` on each alias node \u2014 likely because context flags were not propagated down to nested type-alias declarations \u2014 the file path (`Tests/ArtworkTests/`), the `*Tests` enclosing-class names, and the `SequentialMockSession` identifier all unambiguously identify these as test-fixture helpers. Extracting them into a shared production target would couple the `Artwork` package's production surface to test-only mock semantics, which is the canonical restraint pattern. The one genuine local concern \u2014 `DiscogsArtworkServiceTests.SequentialMockSession` appearing at both line 317 and line 363 in the same file \u2014 should be resolved by a simple in-file deduplication within the test target, not by any cross-package extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_DiscogsArtworkServiceTests.SequentialMockSession_DiscogsArtworkServiceTests.SequentialMockSession_LastFMArtworkServiceTests.SequentialMockSession_iTunesArtworkServiceTests.SequentialMockSession.json",
+  "row_index": 12,
+  "trial": 1
+}

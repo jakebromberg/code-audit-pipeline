@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"Direction\", \"constraint\": null }\n      ],\n      \"new_name\": \"navigateToTheme\",\n      \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n    },\n    \"rationale\": \"The two methods `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` share a Jaccard similarity of 0.75, indicating near-duplicate bodies that differ only in the direction of navigation (previous vs. next). Both are production methods in `package: app:iOS` with no restraint markers (is_test, is_mock, is_sample_app, is_codegen all false). The most idiomatic Swift consolidation is a single method parameterised by direction \u2014 either an enum case (`previous`/`next`) or a signed offset \u2014 replacing both callsites. This eliminates the structural duplication while keeping the call-site intent explicit.\",\n    \"evidence_quote\": \"WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Introduce a private helper method `navigateToTheme(offset: Int)` in `WXYC/iOS/WXYCApp.swift` and have both `navigateToPreviousTheme` and `navigateToNextTheme` delegate to it with `offset: -1` and `offset: +1` respectively, preserving the existing public API surface.\",\n        \"why_no_category_fits\": \"If the two public method names are part of a stable API or are referenced by SwiftUI action bindings that cannot be renamed, full generic-parameterization would break callers. A thin-wrapper delegation pattern achieves deduplication without changing the external interface, but this is neither a pure generic-parameterization nor a protocol/extension pattern \u2014 it is a private-helper extraction that doesn't map cleanly to any named category.\"\n      },\n      \"rationale\": \"Preserving `navigateToPreviousTheme` and `navigateToNextTheme` as named entry points (e.g., for SwiftUI `.onTapGesture` or `#selector` references in `WXYC/iOS/WXYCApp.swift`) while still deduplicating the shared body via a private `navigateToTheme(offset:)` helper avoids any call-site churn. The 0.75 Jaccard score confirms the bodies are nearly identical and a shared helper would cover the overlapping logic.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015fsJyqJHW3gKYmTZsacq9i",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3839,
+    "output_tokens": 824,
+    "service_tier": "standard"
+  }
+}

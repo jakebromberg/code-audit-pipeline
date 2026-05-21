@@ -1,0 +1,21 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Playback:Shared/Playback/Sources/PlaybackCore/Protocols/PlaybackController.swift:27:PlaybackController+Playback:Shared/Playback/Sources/PlaybackCore/Protocols/TimeShiftablePlayer.swift:20:TimeShiftablePlayer",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 0",
+    "rationale": "Although `PlaybackController` and `TimeShiftablePlayer` share a handful of member names (`installRenderTap:()`, `removeRenderTap:()`, `isPlaying:Bool`, `makeAudioBufferStream:() -> AsyncStream<AVAudioPCMBuffer>`, `stop:()`), the structural evidence in the cluster row explicitly records `shared_field_count: 0` and `jaccard: null`, indicating the pipeline found no statistically significant overlap. More importantly, the two protocols model distinct domain responsibilities: `PlaybackController` is a high-level playback command surface (with `play:(reason: PlaybackReason) throws`, `toggle:(reason: PlaybackReason) throws`, `state:PlaybackState`) while `TimeShiftablePlayer` is a lower-level, time-aware player interface (with `seek:(secondsBehindLive: TimeInterval) async`, `seekToLive:() async`, `secondsBehindLive:TimeInterval`, `maxLookbackSeconds:TimeInterval`, `eventStream:AsyncStream<AudioPlayerInternalEvent>`). Forcing a parent\u2013child inheritance relationship would couple unrelated abstractions and constrain future evolution of each protocol independently. The overlapping members (`installRenderTap`, `removeRenderTap`, `makeAudioBufferStream`) are low-level audio-tap concerns that could be extracted to a separate focused protocol if desired, but that is not what the cluster proposes.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial1/protocol-inheritance-candidates_Playback_Shared_Playback_Sources_PlaybackCore_Protocols_PlaybackController.swift_27_PlaybackController_Playback_Shared_Playback_Sources_Playbac__h2689730729de4d7f.json",
+  "row_index": 2,
+  "trial": 1
+}

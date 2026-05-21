@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:164:AudioPlayerIdempotencyTests.playAfterStopWorks+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:71:AudioPlayerCoreStateTests.stopTransitionsToIdle\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift`. The two methods \u2014 `AudioPlayerCoreStateTests.stopTransitionsToIdle` (line 71) and `AudioPlayerIdempotencyTests.playAfterStopWorks` (line 164) \u2014 belong to distinct test classes exercising different behavioral contracts (core state transitions vs. idempotency after stop), so their structural similarity (Jaccard 0.7) reflects shared test scaffolding rather than unintentional duplication. Merging or extracting these test methods would couple unrelated behavioral assertions and obscure test intent. Per the restraint rules, any cluster where any participating record has `is_test: true` warrants no-action.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01R4SgtSYSAbnHgw3oC4oWJQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3883,
+    "output_tokens": 380,
+    "service_tier": "standard"
+  }
+}

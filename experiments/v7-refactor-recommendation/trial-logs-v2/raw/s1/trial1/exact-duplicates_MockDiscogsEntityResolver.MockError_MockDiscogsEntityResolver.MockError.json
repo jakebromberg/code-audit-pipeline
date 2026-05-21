@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster:\n\n- Both records are `type-alias-union` named `MockDiscogsEntityResolver.MockError`\n- Both live in **test files** (paths contain `Tests/\u2026Tests/` and filenames end in `Tests.swift`)\n- Neither record has `is_test: true` set in `context_flags`, but the file paths are unambiguous test targets (`MetadataTests/DiscogsMarkupParserTests.swift`, `WXYCTests/DiscogsFormatterTests.swift`)\n\nThe decision rules state that `is_test=true` triggers the restraint. Here the flags say `false`, yet the file paths are conclusively test files. The structural signal is an exact duplicate of a nested mock error type defined locally inside two separate test files. Consolidating these would couple two independent test suites through a shared fixture, which is the canonical restraint pattern. I will apply the spirit of the rule: the evidence from the file paths is sufficient to classify this as a test-fixture duplication, and no-action is the correct call.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MockDiscogsEntityResolver.MockError+MockDiscogsEntityResolver.MockError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records are `MockDiscogsEntityResolver.MockError` type-alias-union declarations that live exclusively inside test targets: `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). Although the `is_test` context flag reads `false` on both records, the file paths place them unambiguously inside `Tests/\u2026Tests/` directories, making them local test-fixture error stubs. Extracting a shared `MockError` type would couple two independent test suites \u2014 one for the `Metadata` package's markup parser and one for the iOS app's formatter \u2014 through a common fixture, which is the canonical restraint pattern the test-fixture rule is designed to prevent. The duplication is intentional: each test file defines the minimal error stub it needs in isolation.\",\n    \"evidence_quote\": \"Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VEaYm2d6jgpMeDhUf2bWvB",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3799,
+    "output_tokens": 594,
+    "service_tier": "standard"
+  }
+}

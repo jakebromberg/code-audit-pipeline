@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift:405:DiscogsMarkupParser.renderToken+Metadata:Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift:158:ResolvedBioToken.attributedString",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.9130434782608695",
+    "rationale": "The near-duplicate signal (Jaccard 0.913) between `DiscogsMarkupParser.renderToken` at line 405 and `ResolvedBioToken.attributedString` at line 158 indicates that the token-to-attributed-string rendering logic is substantially duplicated across two types in the same `Metadata` package. Both records carry no restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false), so the duplication is unintentional. Since both files already reside in `Metadata`, the shared logic can be extracted into a dedicated helper type (e.g., `DiscogsMarkupRenderer`) within the same package, and both call sites can delegate to it, eliminating the near-duplicate body without introducing any new package dependency.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Metadata/Sources/Metadata/DiscogsMarkupParser.swift",
+        "Shared/Metadata/Sources/Metadata/ResolvedBioToken.swift"
+      ],
+      "target_package": "Metadata",
+      "type_name": "DiscogsMarkupRenderer"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Metadata_Shared_Metadata_Sources_Metadata_DiscogsMarkupParser.swift_405_DiscogsMarkupParser.renderToken_Metadata_Shared_Metadata_Sources_Metadata_Reso__h8ebb88fa4f1fc75d.json",
+  "row_index": 46,
+  "trial": 1
+}

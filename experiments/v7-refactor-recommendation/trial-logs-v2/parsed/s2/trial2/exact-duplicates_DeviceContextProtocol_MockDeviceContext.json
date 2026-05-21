@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DeviceContextProtocol+MockDeviceContext",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift",
+    "rationale": "The file `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift` resides under the `Tests/` directory tree, making `MockDeviceContext` a test fixture by location even though the `is_test` and `is_mock` context flags are both recorded as false. The cluster pairs this test-side type alias with the production protocol `DeviceContextProtocol` in `Shared/Wallpaper/Sources/Wallpaper/Throttling/DeviceContext.swift`. Per the decision rules, any participating record that is a test or mock fixture dominates action signals; lifting or merging the mock into production code would couple production semantics to test infrastructure. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_DeviceContextProtocol_MockDeviceContext.json",
+  "row_index": 38,
+  "trial": 2
+}

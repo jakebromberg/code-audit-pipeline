@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared SwiftUI layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared private or internal SwiftUI `View` subcomponent (e.g., `NowPlayingWidgetContentView`) within the same `app:iOS` package, parameterised by any size-specific values (e.g., font size, image dimensions) that differ between the two widget sizes. Both entry view `body` properties would then delegate to this shared subcomponent, passing the appropriate size-specific arguments.\",\n      \"why_no_category_fits\": \"The two duplicated members are `computed-property` declarations (SwiftUI `body` properties), not free functions, structs, or protocols, so `generic-parameterization`, `pat-introduction`, `protocol-inheritance`, and `default-implementation` do not cleanly apply. `extract-to-common` requires naming a target package that is upstream of both consumers, but both records already live in the same package (`app:iOS`), making a cross-package extraction unnecessary and inapplicable per the schema constraint. The right Swift idiom here is to extract a shared child `View` struct within the same package \u2014 a composition/decomposition pattern that sits between `composition` (which addresses a field-ownership relationship) and `extract-to-common` (which addresses cross-package duplication). Neither named category precisely captures 'extract a shared SwiftUI subview within the same package', so `other` is the most accurate classification.\"\n    },\n    \"rationale\": \"Both `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` are computed properties in the same package (`app:iOS`) with a Jaccard similarity of 0.714, indicating substantial shared layout logic. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is actionable. Because both files reside in `app:iOS` there is no upstream package to extract into, ruling out `extract-to-common`. The idiomatic SwiftUI remedy is a shared child view struct parameterised by the differing size-specific slots, keeping both `body` implementations thin delegating wrappers.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"composition\",\n      \"specifics\": {\n        \"composing_type\": \"SmallNowPlayingWidgetEntryView / MediumNowPlayingWidgetEntryView\",\n        \"composed_type\": \"NowPlayingWidgetContentView\",\n        \"field_name\": \"contentView\"\n      },\n      \"rationale\": \"If the shared layout is modelled as a standalone `NowPlayingWidgetContentView` struct, both entry views could hold it as a composed child view (`contentView`), which maps to the `composition` category. However, in SwiftUI the conventional pattern is direct instantiation inside `body` rather than a stored property, making `other` the more idiomatic primary choice.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XepmJP3NteHse3mRuZA2Ra",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 895,
+    "service_tier": "standard"
+  }
+}

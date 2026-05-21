@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:AsyncNotificationMessageSequence.AsyncIterator+MainActorNotificationMessageSequence.AsyncIterator\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"NotificationMessageSequence.AsyncIterator\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\"\n      ]\n    },\n    \"rationale\": \"Both `MainActorNotificationMessageSequence.AsyncIterator` (line 149 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence.AsyncIterator` (line 123 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with identical structural shape (`shared_field_count: 1`, `differing_slots: null`). Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Because both live in the same package under `Shared/Core/Sources/Core/Observation/`, the duplicated alias can be consolidated into a single canonical declaration within that package, eliminating the redundancy without any cross-package movement.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"shared_field_count\\\": 1, \\\"differing_slots\\\": null\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"The two type aliases may be intentionally separate because `MainActorNotificationMessageSequence` and `AsyncNotificationMessageSequence` represent semantically distinct sequence types (one constrained to `@MainActor`, one not), and their `AsyncIterator` nested aliases may need to remain co-located with their parent types for clarity and future divergence. If the parent types are expected to evolve independently, keeping the aliases separate is defensible.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KfDJ6H4qzo9y6HiZzVPwe3",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3792,
+    "output_tokens": 532,
+    "service_tier": "standard"
+  }
+}

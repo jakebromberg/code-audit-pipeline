@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Consolidate the two `cachedFetch` function definitions at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` into a single canonical implementation within that same file. Inspect whether the two overloads differ only in a parameter (e.g., a cache policy, expiry, or key type) and, if so, unify them via a single function with a defaulted or optional parameter. If they differ in effect specifiers or return type, consider whether one can delegate to the other to eliminate the near-duplicate body.\",\n      \"why_no_category_fits\": \"Both records live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), so `extract-to-common` (which requires moving code across packages or files) is not applicable. The cluster reports a Jaccard similarity of 0.7 between two same-named functions in the same file, which is a within-file consolidation problem \u2014 not a cross-file or cross-package duplication. None of the other action categories (protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) fit a within-file function-level near-duplicate scenario. The appropriate fix is an in-place merge or delegation refactor inside the existing file, which falls outside the named category set.\"\n    },\n    \"rationale\": \"The structural evidence shows two functions both named `cachedFetch` in the identical file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 high enough to indicate substantial body overlap but not an exact copy. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. Because both definitions reside in the same file, the fix is a within-file consolidation (merge bodies, introduce a shared helper, or make one delegate to the other) rather than any cross-file or cross-package extraction.\",\n    \"evidence_quote\": \"Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch\", \"cachedFetch\"]\n      },\n      \"rationale\": \"If the two `cachedFetch` overloads differ in a concrete type parameter (e.g., one fetches a specific model type and the other fetches another), a single generic `cachedFetch<T>` constrained to an appropriate protocol could replace both. However, the cluster provides no `fields_or_signature` evidence to confirm this, so generic-parameterization is speculative and the within-file consolidation approach is preferred.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Kti6RD7mFHRVuda4jU7TPg",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3827,
+    "output_tokens": 899,
+    "service_tier": "standard"
+  }
+}

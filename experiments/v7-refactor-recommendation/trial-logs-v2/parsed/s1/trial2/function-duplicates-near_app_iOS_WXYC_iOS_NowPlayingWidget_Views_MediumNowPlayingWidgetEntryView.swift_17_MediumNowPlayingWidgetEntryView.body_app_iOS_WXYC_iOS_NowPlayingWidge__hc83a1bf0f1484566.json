@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "Both `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` are computed properties in the same package (`app:iOS`) with a Jaccard similarity of 0.714, indicating substantial shared layout logic. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is actionable. Because both files reside in `app:iOS` there is no upstream package to extract into, ruling out `extract-to-common`. The idiomatic SwiftUI remedy is a shared child view struct parameterised by the differing size-specific slots, keeping both `body` implementations thin delegating wrappers.",
+    "specifics": {
+      "proposed_action": "Extract the shared SwiftUI layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared private or internal SwiftUI `View` subcomponent (e.g., `NowPlayingWidgetContentView`) within the same `app:iOS` package, parameterised by any size-specific values (e.g., font size, image dimensions) that differ between the two widget sizes. Both entry view `body` properties would then delegate to this shared subcomponent, passing the appropriate size-specific arguments.",
+      "why_no_category_fits": "The two duplicated members are `computed-property` declarations (SwiftUI `body` properties), not free functions, structs, or protocols, so `generic-parameterization`, `pat-introduction`, `protocol-inheritance`, and `default-implementation` do not cleanly apply. `extract-to-common` requires naming a target package that is upstream of both consumers, but both records already live in the same package (`app:iOS`), making a cross-package extraction unnecessary and inapplicable per the schema constraint. The right Swift idiom here is to extract a shared child `View` struct within the same package \u2014 a composition/decomposition pattern that sits between `composition` (which addresses a field-ownership relationship) and `extract-to-common` (which addresses cross-package duplication). Neither named category precisely captures 'extract a shared SwiftUI subview within the same package', so `other` is the most accurate classification."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:28:Image.heifData\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Audit the two `Image.heifData` method declarations at lines 28 and 107 of `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` in the `Core` package. They share a Jaccard similarity of 0.75, indicating near-duplicate bodies within the same file. Determine whether one is a platform-conditional variant (e.g., `#if canImport(UIKit)` vs `#if canImport(AppKit)`) or a legacy overload. If the divergence is purely conditional compilation, consolidate into a single method body using `#if`/`#else` guards. If one is a true duplicate with no meaningful distinction, delete the redundant declaration and retain only the canonical one at line 28.\",\n      \"why_no_category_fits\": \"Both records live in the same file and same package (`Core`), so `extract-to-common` does not apply (there is no second consumer package). The cluster involves a method, not a protocol or conformer, so `default-implementation`, `protocol-inheritance`, and `pat-introduction` do not apply. There is only one method name (`Image.heifData`), so `generic-parameterization` does not apply. The most likely cause is a platform-split conditional block or an accidental duplication within a single file, which is best resolved by in-file consolidation \u2014 a pattern none of the named categories cover precisely.\"\n    },\n    \"rationale\": \"Both participating records are the method `Image.heifData` in the same file `Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift` at lines 28 and 107, within the `Core` package, with no restraint markers set. A Jaccard similarity of 0.75 confirms near-duplicate (not identical) bodies, suggesting a platform-conditional split (e.g., UIKit vs AppKit) or an accidental copy. Because both declarations reside in the same file, the fix is an in-file consolidation rather than any cross-package extraction or protocol abstraction. The empty `fields_or_signature` lists prevent more precise structural analysis, but the line-distance and similarity score together strongly indicate redundancy.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"Image.heifData\\\", \\\"file\\\": \\\"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\\\", \\\"line\\\": 28 ... \\\"line\\\": 107 ... \\\"jaccard\\\": 0.75\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the two `Image.heifData` declarations are intentional platform-specific overloads separated by conditional compilation blocks (e.g., one for UIKit and one for AppKit), the structural near-duplication is load-bearing and no consolidation should be attempted without first confirming the conditional context in the source file.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01B5ZJUkArNNxAKeoDrrxqgo",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3815,
+    "output_tokens": 804,
+    "service_tier": "standard"
+  }
+}

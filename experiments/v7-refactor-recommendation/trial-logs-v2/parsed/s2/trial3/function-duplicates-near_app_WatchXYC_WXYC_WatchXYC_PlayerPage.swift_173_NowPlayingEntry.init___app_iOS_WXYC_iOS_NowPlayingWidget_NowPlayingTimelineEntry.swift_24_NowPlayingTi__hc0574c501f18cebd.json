@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:173:NowPlayingEntry.init(_:)+app:iOS:WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24:NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "NowPlayingEntry.init(_:)\" in package \"app:WatchXYC\" ... \"NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)\" in package \"app:iOS\" ... \"jaccard\": 0.7777777777777778 ... \"fields_or_signature\": []",
+    "rationale": "The two initializers \u2014 `NowPlayingEntry.init(_:)` in `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:173) and `NowPlayingTimelineEntry.init(nowPlayingItem:recentItems:family:)` in `app:iOS` (WXYC/iOS/NowPlayingWidget/NowPlayingTimelineEntry.swift:24) \u2014 live in distinct platform-specific app targets (watchOS vs. iOS widget extension) and carry different external parameter labels, indicating they serve divergent platform contracts. The Jaccard similarity of 0.7778 reflects structural resemblance in their bodies, but `fields_or_signature` is empty for both records, leaving no concrete shared members to extract. Because the two types (`NowPlayingEntry` and `NowPlayingTimelineEntry`) are platform-specific entry-point types whose initializer shapes coincide structurally but encode different domain roles (a Watch player page entry vs. an iOS WidgetKit timeline entry), any forced unification would couple platform-specific concerns without a clear shared upstream package to host the common logic.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_173_NowPlayingEntry.init___app_iOS_WXYC_iOS_NowPlayingWidget_NowPlayingTimelineEntry.swift_24_NowPlayingTi__hc0574c501f18cebd.json",
+  "row_index": 94,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"MetadataRepository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ReleaseRepository\", \"ArtistRepository\"]\n    },\n    \"rationale\": \"Both `ReleaseRepository` and `ArtistRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of `resolve:(id: Int) async throws -> <Entity>`, which is `Release` for `ReleaseRepository` and `Artist` for `ArtistRepository`. This is the canonical PAT pattern: a single varying slot (the resolved entity type) across otherwise identical protocol shapes. Introducing a `MetadataRepository` PAT with `associatedtype Entity` and a `resolve:(id: Int) async throws -> Entity` requirement unifies both protocols, eliminates the structural duplication, and allows call sites to be generic over any `MetadataRepository`. No restraint markers are present on either record.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"resolve:(id: Int) async throws -> Release\\\"], \\\"b\\\": [\\\"resolve:(id: Int) async throws -> Artist\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"MetadataRepository\",\n        \"children\": [\"ReleaseRepository\", \"ArtistRepository\"],\n        \"moved_members\": [\"cacheKey:(for id: Int) -> String\", \"entityKind:String\", \"lastSync:Date?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If callers need to retain the concrete `ReleaseRepository` and `ArtistRepository` protocol names for type-system or API-stability reasons, a protocol-inheritance approach \u2014 lifting the three shared members into a base `MetadataRepository` protocol and having both existing protocols inherit from it \u2014 is a viable alternative. However, this leaves the `resolve` method duplicated in each child with differing return types and does not achieve the full unification that the PAT approach provides, making it the weaker option.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NMHU21w3Jx1ehR33cvPXgm",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3964,
+    "output_tokens": 650,
+    "service_tier": "standard"
+  }
+}

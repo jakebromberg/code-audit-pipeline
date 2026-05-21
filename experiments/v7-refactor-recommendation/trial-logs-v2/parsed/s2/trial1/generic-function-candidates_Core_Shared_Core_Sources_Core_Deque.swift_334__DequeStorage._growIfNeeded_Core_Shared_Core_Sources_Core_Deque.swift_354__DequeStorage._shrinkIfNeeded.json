@@ -1,0 +1,21 @@
+{
+  "cluster_id": "generic-function-candidates:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "Although `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) share a high structural similarity (Jaccard 0.714), they encode semantically opposite and complementary capacity-management operations on a deque's backing storage. Growth and shrink policies typically diverge in their threshold arithmetic, reallocation factors, and guard conditions, making a single generic parameterization likely to obscure intent rather than reduce duplication. Both methods carry no restraint markers and live in the same file, but the directional asymmetry of their domain logic is the dominant signal against merging them into one generic function.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial1/generic-function-candidates_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 23,
+  "trial": 1
+}

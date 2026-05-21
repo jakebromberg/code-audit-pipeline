@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"humanReadableName\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) live in the same `Wallpaper` package and exhibit a Jaccard similarity of 0.8, indicating near-identical implementations. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Because both types reside in the same package, the shared logic can be extracted into a protocol extension or a free function within `Wallpaper` itself \u2014 for example, a `ShaderDirective+HumanReadable.swift` extension file \u2014 eliminating the duplication without introducing any new package dependency.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"HumanReadableShaderDirective\",\n        \"associated_type\": \"DirectiveType\",\n        \"constraints\": [],\n        \"replaces\": [\"ShaderDirectiveStore.humanReadableName\", \"ShaderDirectiveControlsDisclosure.humanReadableName\"]\n      },\n      \"rationale\": \"If `ShaderDirectiveStore` and `ShaderDirectiveControlsDisclosure` represent distinct directive-bearing types that may gain further conformers, introducing a `HumanReadableShaderDirective` protocol with a default `humanReadableName` implementation in a protocol extension would be more extensible than a free function. However, with only two known conformers and no evidence of a broader protocol hierarchy in the cluster row, a simple shared implementation is the more idiomatic and lower-overhead Swift answer.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01TYRd87mn5DrWVsAHaebGZT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3899,
+    "output_tokens": 670,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:42:WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "WXYCTVApp.buildConfiguration+app:iOS:WXYC/iOS/WXYCApp.swift:367:WXYCApp.buildConfiguration",
+    "rationale": "The cluster identifies `WXYCTVApp.buildConfiguration` in `WXYC/WXYC TV/WXYCTVApp.swift` (package `app:WXYC TV`) and `WXYCApp.buildConfiguration` in `WXYC/iOS/WXYCApp.swift` (package `app:iOS`) as exact function duplicates, with no restraint markers (all context flags false on both records). Because both are app-entry-point targets that likely share a common dependency layer, the duplicated `buildConfiguration` logic should be extracted to a shared location \u2014 ideally a shared module already upstream of both app targets \u2014 so that a single implementation is maintained. However, since no upstream shared package is explicitly named among the participating records, the best available named package is `app:WXYC TV`; the iOS app target would then import or reference the shared implementation. The `fields_or_signature` lists are both empty, indicating the method signatures are structurally identical, strengthening the case for a single canonical implementation.",
+    "specifics": {
+      "extract-to-common": {
+        "remove_from": [
+          "WXYC/WXYC TV/WXYCTVApp.swift",
+          "WXYC/iOS/WXYCApp.swift"
+        ],
+        "target_package": "app:WXYC TV",
+        "type_name": "buildConfiguration"
+      }
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_app_WXYC_TV_WXYC_WXYC_TV_WXYCTVApp.swift_42_WXYCTVApp.buildConfiguration_app_iOS_WXYC_iOS_WXYCApp.swift_367_WXYCApp.buildConfiguration.json",
+  "row_index": 19,
+  "trial": 3
+}

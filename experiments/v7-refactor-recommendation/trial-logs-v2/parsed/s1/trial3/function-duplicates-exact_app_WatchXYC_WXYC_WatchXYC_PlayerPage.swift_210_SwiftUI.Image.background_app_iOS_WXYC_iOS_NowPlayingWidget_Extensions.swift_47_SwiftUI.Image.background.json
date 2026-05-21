@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"SwiftUI.Image.background\", \"package\": \"app:WatchXYC\" ... \"name\": \"SwiftUI.Image.background\", \"package\": \"app:iOS\"",
+    "rationale": "The computed property `SwiftUI.Image.background` is declared identically in two separate app targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:210` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:47` \u2014 with no restraint markers (all context flags false) on either record, indicating this is unintentional duplication. Because this is a SwiftUI extension on `Image`, the canonical home is a shared extensions file already present in the iOS target (`WXYC/iOS/NowPlayingWidget/Extensions.swift`), which the WatchXYC target should import or the extension should be moved to a shared module both targets depend on. Consolidating into the existing `Extensions.swift` in `app:iOS` (or a shared utilities layer if one exists) eliminates the drift risk between the two platform implementations. The `query: \"function-duplicates-exact\"` signal confirms the bodies are identical, making this a safe mechanical move.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 3
+}

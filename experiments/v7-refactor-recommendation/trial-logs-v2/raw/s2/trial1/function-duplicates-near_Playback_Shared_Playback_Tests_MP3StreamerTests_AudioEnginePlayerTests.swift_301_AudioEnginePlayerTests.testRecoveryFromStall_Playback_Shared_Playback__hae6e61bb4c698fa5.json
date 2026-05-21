@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:301:AudioEnginePlayerTests.testRecoveryFromStall+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:466:AudioEnginePlayerTests.testBatchSchedulingTriggersRecovery\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records in this cluster carry `is_test: true` and reside in `Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift`. Although the two test methods `testRecoveryFromStall` (line 301) and `testBatchSchedulingTriggersRecovery` (line 466) share a high Jaccard similarity of 0.76, they are distinct test scenarios \u2014 one exercises stall recovery and the other exercises batch-scheduling-triggered recovery \u2014 and their structural overlap is expected for tests that exercise related but separate code paths. Merging or extracting them would obscure test intent and couple unrelated failure modes. The restraint rule for test fixtures dominates any action signal here.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01SKEQagTc8KFqR1CeV1jzah",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3884,
+    "output_tokens": 355,
+    "service_tier": "standard"
+  }
+}

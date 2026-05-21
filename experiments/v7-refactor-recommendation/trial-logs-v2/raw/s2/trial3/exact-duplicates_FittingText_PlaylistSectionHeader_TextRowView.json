@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:FittingText+PlaylistSectionHeader+TextRowView\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"FittingText\",\n      \"remove_from\": [\n        \"WXYC/iOS/Views/Playlist/PlaylistView.swift\",\n        \"WXYC/iOS/Views/Playlist/Playcut Detail/TextRowView.swift\",\n        \"WXYC/iOS/Views/Info Detail/InfoDetailView.swift\"\n      ]\n    },\n    \"rationale\": \"All three records \u2014 `PlaylistSectionHeader` in `PlaylistView.swift`, `TextRowView` in `TextRowView.swift`, and `FittingText` in `InfoDetailView.swift` \u2014 are `type-alias-object` kinds within the same `app:iOS` package and share 2 fields according to `shared_field_count: 2`, indicating they are exact structural duplicates of the same underlying SwiftUI view helper. Because all three live in `app:iOS` and no restraint markers are set, consolidating them into a single canonical declaration (retaining the most semantically general name, `FittingText`) eliminates the redundancy. The two alias sites in `PlaylistView.swift` and `TextRowView.swift` should be removed and their call sites updated to reference the single shared declaration, which can live in a dedicated shared-views file within `app:iOS`.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\" ... \\\"shared_field_count\\\": 2\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the three type aliases intentionally wrap different underlying SwiftUI view types that happen to share the same field shape (e.g., each aliases a distinct generic specialisation), the structural overlap would be coincidental and merging them could break type safety. Without inspecting the aliased target types, this cannot be fully ruled out; however, the `exact-duplicates` signal and `shared_field_count: 2` strongly favour consolidation.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01NdMKS28MVHd3bnrojutg9G",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 560,
+    "service_tier": "standard"
+  }
+}

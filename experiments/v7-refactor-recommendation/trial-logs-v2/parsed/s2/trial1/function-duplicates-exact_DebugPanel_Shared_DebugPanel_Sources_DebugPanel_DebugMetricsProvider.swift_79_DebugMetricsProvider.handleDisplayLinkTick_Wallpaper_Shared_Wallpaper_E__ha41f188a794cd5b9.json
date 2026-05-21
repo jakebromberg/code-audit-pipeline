@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' path \u2014 a restraint marker that triggers the sample-app-mirror rule regardless of the is_sample_app flag value. The canonical production implementation of 'DebugMetricsProvider.handleDisplayLinkTick' resides in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package 'DebugPanel'). The copy in 'DebugHUD.swift' is a deliberate self-contained mirror inside the sample app, which avoids coupling the WallpaperSampleApp example target to the DebugPanel production package. Lifting the sample-app copy into shared code would introduce an undesirable production-to-sample-app dependency inversion.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_79_DebugMetricsProvider.handleDisplayLinkTick_Wallpaper_Shared_Wallpaper_E__ha41f188a794cd5b9.json",
+  "row_index": 12,
+  "trial": 1
+}

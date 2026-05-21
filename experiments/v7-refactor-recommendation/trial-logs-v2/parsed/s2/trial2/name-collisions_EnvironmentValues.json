@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:EnvironmentValues",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\"",
+    "rationale": "All eleven records are unnamed extensions (name: \"\") on what the cluster_id identifies as `EnvironmentValues`, spread across six distinct packages \u2014 `AppServices`, `Playback`, `WXUI`, `Wallpaper`, and `PlayerHeaderView`. Extending `SwiftUI.EnvironmentValues` to inject package-local keys is the canonical SwiftUI pattern; each extension is intentionally scoped to its own package and injects domain-specific values (e.g., `PlaylistServiceEnvironment`, `RadioPlayerControllerEnvironment`, `AccentColorEnvironment`). The structural signal is purely coincidental: the extensions share the extended type name but encode entirely unrelated domain concepts. No `fields_or_signature` data is present to suggest shared members that could be consolidated, and collapsing these across package boundaries would violate package encapsulation without any benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_EnvironmentValues.json",
+  "row_index": 1,
+  "trial": 2
+}

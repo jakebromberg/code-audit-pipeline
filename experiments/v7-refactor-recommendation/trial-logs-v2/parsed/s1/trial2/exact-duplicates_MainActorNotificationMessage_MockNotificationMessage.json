@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MainActorNotificationMessage+MockNotificationMessage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\"",
+    "rationale": "Both `MainActorNotificationMessage` (in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`) and `MockNotificationMessage` (in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift`) carry all-false context flags, so no restraint marker applies. However, the names encode distinct domain roles: `MainActorNotificationMessage` is a production actor-bound message type, while `MockNotificationMessage` \u2014 residing in the `CoreTesting` sub-package and prefixed `_Plant_Mock` \u2014 is a test-support double. Their structural coincidence (3 shared fields, empty `fields_or_signature`) reflects the deliberate mirroring of a production interface by its test stand-in, not accidental duplication. Merging or extracting them would couple production semantics to testing infrastructure without meaningful benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_MainActorNotificationMessage_MockNotificationMessage.json",
+  "row_index": 44,
+  "trial": 2
+}

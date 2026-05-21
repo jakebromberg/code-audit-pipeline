@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster is a `subset-pairs` signal between:\n1. `MockStructuredAnalytics.StoppedEventProxy__Playback` in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68` (package: `Analytics`, path contains `AnalyticsTesting`)\n2. `PlaybackStoppedEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48` (package: `Playback`)\n\nKey observations:\n- The first record lives under `AnalyticsTesting` \u2014 this is a test/mock support target. The name `MockStructuredAnalytics` and the path `AnalyticsTesting` both strongly indicate a mock/test fixture context.\n- The `members` array is empty and all `structural_evidence` fields are null, meaning there is no field-level evidence to ground an action recommendation.\n- Decision rule 1 applies: the `AnalyticsTesting` path and `Mock` prefix on the containing type are canonical restraint markers (mock-fixture pattern). Even without explicit `is_mock=true` flags in the record objects (the members array is empty), the path and naming convention are unambiguous.\n- Without field data, I cannot ground any specifics schema (no `fields_or_signature` to cite, no `moved_members`, no `shared_field_count`).\n\nThe mock-fixture restraint marker dominates, and the absence of structural evidence makes any action recommendation ungroundable.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.StoppedEventProxy__Playback`, declared inside `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift`. Both the `AnalyticsTesting` target path and the `Mock` prefix on the containing type are canonical mock/test-fixture markers, triggering the restraint rule that dominates all action signals. Additionally, the `members` array is empty and every `structural_evidence` field is null, so there is no field-level data available to ground any specifics schema. Lifting the production type `PlaybackStoppedEvent` toward a shared location based on structural overlap with a mock proxy would couple production semantics to test infrastructure, which is precisely the anti-pattern the restraint rule is designed to prevent.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UXgVfM3mH3vs4qTM9sDzHp",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3568,
+    "output_tokens": 759,
+    "service_tier": "standard"
+  }
+}

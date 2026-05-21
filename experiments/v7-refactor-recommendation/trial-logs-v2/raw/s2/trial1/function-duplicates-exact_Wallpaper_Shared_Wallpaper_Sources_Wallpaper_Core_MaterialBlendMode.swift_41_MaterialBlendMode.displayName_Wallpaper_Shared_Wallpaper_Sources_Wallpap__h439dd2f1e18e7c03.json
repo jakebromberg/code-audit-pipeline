@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"macro-synthesis\",\n    \"specifics\": {\n      \"macro_name\": \"@DisplayName\",\n      \"applies_to\": [\"enum\"],\n      \"synthesizes\": \"A computed property `var displayName: String` whose body is identical across `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode`, all at line 41 in their respective files within the `Wallpaper` package. The macro would synthesize this property for any conforming enum, eliminating the three duplicate implementations.\",\n      \"population_size_evidence\": \"3 participating records: MaterialBlendMode.displayName, PlaybackBlendMode.displayName, OverlayBlendMode.displayName \u2014 all exact duplicates at line 41\",\n      \"use_swift_builtin\": false\n    },\n    \"rationale\": \"All three computed properties \u2014 `MaterialBlendMode.displayName`, `PlaybackBlendMode.displayName`, and `OverlayBlendMode.displayName` \u2014 are flagged as `function-duplicates-exact` and all appear at line 41 in their respective files within the same `Wallpaper` package. The structural signal is exact duplication across three parallel enum types that share only the `displayName` property shape. A Swift attached macro `@DisplayName` applied to each enum declaration would synthesize the identical computed property, removing all three duplicate bodies while keeping the logic in one place. No restraint markers are present on any record.\",\n    \"evidence_quote\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"BlendModeDisplayable\",\n        \"associated_type\": \"DisplayName\",\n        \"constraints\": [\"StringProtocol\"],\n        \"replaces\": [\"MaterialBlendMode\", \"PlaybackBlendMode\", \"OverlayBlendMode\"]\n      },\n      \"rationale\": \"A protocol `BlendModeDisplayable` with a default extension providing `var displayName: String` could unify the three implementations without requiring a macro. Each of `MaterialBlendMode`, `PlaybackBlendMode`, and `OverlayBlendMode` in the `Wallpaper` package would conform, and the default implementation in a protocol extension would replace all three duplicate computed properties. This is more conservative than a macro but slightly less ergonomic for future enum additions.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Wg9neMGiB9At7iGHdfsU6C",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4052,
+    "output_tokens": 852,
+    "service_tier": "standard"
+  }
+}

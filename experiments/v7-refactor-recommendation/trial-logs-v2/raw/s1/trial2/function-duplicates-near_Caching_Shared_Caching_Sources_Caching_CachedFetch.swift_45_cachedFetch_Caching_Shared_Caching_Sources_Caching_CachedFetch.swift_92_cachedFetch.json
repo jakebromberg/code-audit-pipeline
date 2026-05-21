@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Consolidate the two `cachedFetch` functions at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` into a single implementation. Inspect the two bodies to determine whether one is a specialisation of the other (e.g., differing default arguments or an extra guard clause); if so, unify them via a single function with a defaulted or optional parameter. If they differ only in a single type or behaviour axis, consider a generic or protocol-constrained overload that subsumes both, removing the near-duplicate body.\",\n      \"why_no_category_fits\": \"Both records live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), so `extract-to-common` (which requires moving code across packages or files) does not apply. No protocol, class hierarchy, or PAT is involved, so `protocol-inheritance`, `default-implementation`, `pat-introduction`, and `subclass-lift` do not apply. The cluster exposes two free functions with the same name in the same file \u2014 the correct action is intra-file deduplication or overload unification, which none of the named categories precisely describe. The Jaccard similarity of 0.7 confirms meaningful overlap without being identical, consistent with a near-duplicate that diverged through incremental edits rather than intentional specialisation.\"\n    },\n    \"rationale\": \"The cluster surfaces two functions both named `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 high enough to indicate substantial shared logic but not a verbatim copy. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so no restraint marker applies. Because both functions are co-located in a single file and package, no cross-package extraction is warranted; the appropriate fix is intra-file consolidation, which falls outside the named category set.\",\n    \"evidence_quote\": \"Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch\", \"cachedFetch\"]\n      },\n      \"rationale\": \"If the two `cachedFetch` bodies differ along a type axis (e.g., one operates on a concrete type the other abstracts), a generic overload with an appropriate type parameter and constraint could unify them. However, the cluster provides no `fields_or_signature` data to confirm this, so generic-parameterization is speculative and the intra-file consolidation path described under `other` is preferred.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XLx6nEEo5qh9m1PQZWADhW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3827,
+    "output_tokens": 872,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.62,
+    "evidence_quote": "DominantColorExtractorTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage",
+    "rationale": "The method `createSolidColorImage` is duplicated exactly across `ColorPaletteServiceTests.createSolidColorImage` (line 239) and `DominantColorExtractorTests.createSolidColorImage` (line 278), both residing in the `ColorPalette` package under `Shared/ColorPalette/Tests/ColorPaletteTests/`. Both files are in the same test target directory, making a shared test-helper file (e.g., `TestHelpers.swift` or `ImageTestHelpers.swift`) within that same directory the natural consolidation point. Extracting the method once \u2014 as a free function or on a dedicated helper type \u2014 eliminates the exact duplication without crossing any package boundary or coupling production code to test infrastructure.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift",
+        "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift"
+      ],
+      "target_type": "createSolidColorImage (shared test helper method)"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 1
+}

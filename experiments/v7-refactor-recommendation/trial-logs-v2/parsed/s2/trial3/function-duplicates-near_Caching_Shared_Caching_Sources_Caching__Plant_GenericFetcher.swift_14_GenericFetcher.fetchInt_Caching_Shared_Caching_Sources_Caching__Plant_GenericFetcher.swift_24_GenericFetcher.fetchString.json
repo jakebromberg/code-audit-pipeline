@@ -1,0 +1,32 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:14:GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.82,
+    "evidence_quote": "GenericFetcher.fetchInt+Caching:Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift:24:GenericFetcher.fetchString",
+    "rationale": "Both `GenericFetcher.fetchInt` and `GenericFetcher.fetchString` reside in the same file (`Shared/Caching/Sources/Caching/_Plant_GenericFetcher.swift`) within the `Caching` package and exhibit a Jaccard similarity of 0.75, indicating near-identical structure that differs only in the concrete return/parameter type (Int vs String). The `_Plant_` prefix in the filename strongly suggests this file was generated as a plant/scaffold to illustrate the pattern, making it an ideal candidate for collapsing into a single generic method. Replacing both with a generic `fetch<T>()` on `GenericFetcher` eliminates the type-specific duplication while preserving all call-site semantics. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so no no-action override applies.",
+    "specifics": {
+      "generic_kind": "function",
+      "new_name": "fetch",
+      "replaces": [
+        "GenericFetcher.fetchInt",
+        "GenericFetcher.fetchString"
+      ],
+      "type_params": [
+        {
+          "constraint": null,
+          "name": "T"
+        }
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_14_GenericFetcher.fetchInt_Caching_Shared_Caching_Sources_Caching__Plant_GenericFetcher.swift_24_GenericFetcher.fetchString.json",
+  "row_index": 108,
+  "trial": 3
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "fields_or_signature\": [],\n      \"file\": \"Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift\"",
+    "rationale": "Both records carry all context flags as false, so no restraint marker formally triggers. However, the structural evidence is entirely absent \u2014 `fields_or_signature` is empty for both `MockHLSAVPlayer.play` and `MockPlayer.play`, and `jaccard`, `shared_field_count`, and `differing_slots` are all null \u2014 making it impossible to confirm the methods share any meaningful implementation. The file paths (`Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) and type names (`MockHLSAVPlayer`, `MockPlayer`) strongly suggest these are intentional, independently scoped mock objects serving different test targets within the `Playback` package; the name collision on `play` is almost certainly a coincidence of both mocks conforming to the same playback interface. Consolidating them without signature evidence risks coupling two distinct test fixtures.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 1
+}

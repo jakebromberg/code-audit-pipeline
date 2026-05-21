@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": [], ... \"package\": \"app:WatchXYC\" ... \"package\": \"app:iOS\"",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists and no structural evidence (Jaccard, shared fields, and differing slots are all null), meaning the pipeline has only detected a name collision \u2014 not a shared shape or duplicated logic. `WXYC/WatchXYC/RootTabView.swift` (package `app:WatchXYC`) and `WXYC/iOS/Views/Root/RootTabView.swift` (package `app:iOS`) are platform-specific root tab views for watchOS and iOS respectively; sharing the name `RootTabView` is idiomatic SwiftUI convention, not accidental duplication. Merging or extracting them would couple two intentionally divergent platform entry points.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordPlaybackStartedIncrementsCount` (line 22) and `recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 are test fixtures that verify distinct user-action paths (`playback started` vs. `song added to library`). Even though their structural shape is similar (Jaccard 0.75), collapsing them into a generic helper would obscure the intent of each individual test case and couple unrelated domain events. The restraint marker dominates the action signal per the decision rules.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01VBSiZqjh1K92ha6W8fgpVU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3865,
+    "output_tokens": 341,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:MPNowPlayingInfoCenter",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.85,
+    "evidence_quote": "\"name\": \"\", \"kind\": \"extension\" ... \"package\": \"Playback\" ... \"package\": \"app:iOS\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both records are unnamed extensions (name: \"\") on what is almost certainly `MPNowPlayingInfoCenter` \u2014 a MediaPlayer framework system type \u2014 living in two different packages: `Playback` (at `Shared/Playback/Sources/PlaybackCore/Protocols/NowPlayingInfoCenterProtocol.swift`) and `app:iOS` (at `WXYC/iOS/NowPlayingInfoCenterManager.swift`). The structural evidence fields (jaccard, shared_field_count, shared_ancestor, differing_slots) are all null, meaning no field-level overlap was detected. Extensions on the same system type in different packages are a normal Swift pattern \u2014 each package legitimately adds its own conformances or helpers to the system type in its own scope. There is no evidence of duplicated logic to consolidate, and merging them would couple the `Playback` framework package to the `app:iOS` application layer, inverting the dependency direction.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial3/name-collisions_MPNowPlayingInfoCenter.json",
+  "row_index": 25,
+  "trial": 3
+}

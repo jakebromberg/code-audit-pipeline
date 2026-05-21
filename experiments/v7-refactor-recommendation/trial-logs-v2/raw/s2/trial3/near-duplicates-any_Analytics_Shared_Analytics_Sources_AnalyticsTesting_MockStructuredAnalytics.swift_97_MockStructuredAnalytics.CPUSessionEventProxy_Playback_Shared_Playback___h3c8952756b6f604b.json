@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze the participating records carefully.\n\nThe cluster involves:\n1. `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback` \u2014 this is in a path containing `AnalyticsTesting` and the type name contains `Mock`, strongly suggesting a test/mock fixture.\n2. `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent` \u2014 this appears to be production code.\n\nThe first record's file path (`AnalyticsTesting`) and type name prefix (`Mock`) are clear restraint markers. Even though `members` is empty (no explicit `is_mock` flag field is populated), the structural evidence from the file path and naming convention is unambiguous: `MockStructuredAnalytics` in an `AnalyticsTesting` source target is a mock/test fixture. The near-duplicate signal (Jaccard 0.875) between a mock proxy and its production counterpart is the canonical pattern the restraint rule is designed to catch \u2014 the mock intentionally mirrors the production type's shape.\n\n```json\n[\n  {\n    \"cluster_id\": \"near-duplicates-any:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:272:CPUSessionEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records lives in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift` and is named `MockStructuredAnalytics.CPUSessionEventProxy+Playback`. Both the `AnalyticsTesting` source target in the file path and the `Mock` prefix in the type name are canonical restraint markers indicating a deliberate test/mock fixture. The high Jaccard similarity (0.875) between this proxy and the production `CPUSessionEvent` in `PlaybackAnalytics.swift` is expected and intentional: the mock mirrors the production type's shape precisely so it can stand in for it during testing. Lifting shared structure into common code would couple production `PlaybackCore` semantics to the `AnalyticsTesting` target, which is the exact anti-pattern the restraint rule guards against.\",\n    \"evidence_quote\": \"Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:97:MockStructuredAnalytics.CPUSessionEventProxy+Playback\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01BthG56e5EoqZCJKr1F4NSb",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3575,
+    "output_tokens": 682,
+    "service_tier": "standard"
+  }
+}

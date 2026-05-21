@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift:69:CompositeWallpaperView.buildShader+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift:48:StitchableWallpaperView.buildShader\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"buildShader\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\"\n      ]\n    },\n    \"rationale\": \"Both `StitchableWallpaperView.buildShader` (line 48) and `CompositeWallpaperView.buildShader` (line 69) reside in the same `Wallpaper` package and exhibit a Jaccard similarity of 0.875, indicating near-identical implementations. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. The most idiomatic Swift approach is to extract the shared `buildShader` logic into a protocol extension or a free function within the same `Wallpaper` package \u2014 for example, in a new file `Shared/Wallpaper/Sources/Wallpaper/Renderers/WallpaperViewShaderSupport.swift` \u2014 and have both view types call through to it, eliminating the near-duplicate bodies. Because both consumers already live in `Wallpaper`, no cross-package movement is required.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.875\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"StitchableWallpaperView\",\n        \"method\": \"buildShader\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/CompositeWallpaperView.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Renderers/StitchableWallpaperView.swift\"\n        ]\n      },\n      \"rationale\": \"If `StitchableWallpaperView` and `CompositeWallpaperView` both conform to a shared renderer protocol already present in the `Wallpaper` package, a protocol extension default implementation of `buildShader` would be equally valid. However, the cluster row does not confirm such a protocol exists, making the free-function / extension extraction the safer primary choice.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017RW6EGMouJvza3yx2BTyx9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3903,
+    "output_tokens": 780,
+    "service_tier": "standard"
+  }
+}

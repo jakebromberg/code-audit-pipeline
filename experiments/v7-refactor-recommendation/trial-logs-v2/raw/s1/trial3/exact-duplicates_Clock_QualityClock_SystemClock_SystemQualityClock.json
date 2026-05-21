@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:Clock+QualityClock+SystemClock+SystemQualityClock\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Caching\",\n      \"type_name\": \"Clock\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two structurally identical interface/type-alias-object pairs: `Clock` + `SystemClock` in package `Caching` (`Shared/Caching/Sources/Caching/Clock.swift`) and `QualityClock` + `SystemQualityClock` in package `Wallpaper` (`Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift`). The `shared_field_count: 1` and `exact-duplicates` query confirm the shapes are identical. Since `Caching` already owns the canonical `Clock` protocol and `SystemClock` typealias, and `Wallpaper` is a sibling shared package that can depend on `Caching`, the cleanest resolution is to have `Wallpaper` import and reuse `Clock`/`SystemClock` directly, removing the redundant `QualityClock`/`SystemQualityClock` declarations from `AdaptiveQualityController.swift`. No restraint markers are present on any record, so consolidation is safe.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"QualityClock\\\", \\\"package\\\": \\\"Wallpaper\\\" ... \\\"name\\\": \\\"Clock\\\", \\\"package\\\": \\\"Caching\\\" ... \\\"shared_field_count\\\": 1\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `Wallpaper` intentionally avoids a dependency on `Caching` for architectural layering reasons, the structural coincidence of `QualityClock` and `Clock` may be acceptable. In that case the duplication is a deliberate isolation choice and no merge should be forced. However, the cluster provides no evidence of such a constraint, so this is a lower-confidence alternative.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XBnnNUSEAkJ6HU56ipmVoi",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4050,
+    "output_tokens": 599,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaybackReason",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Playback/Sources/PlaybackCore/PlaybackReason.swift\"\n\"file\": \"Shared/PlayerHeaderView/Sources/PlayerHeaderView/PlaybackReason+PlayerHeaderView.swift\"\n\"file\": \"WXYC/iOS/PlaybackReason+App.swift\"",
+    "rationale": "All four records in this cluster belong to the same logical type, `PlaybackReason`, spread intentionally across packages as a core type-alias declaration in `Playback/PlaybackCore/PlaybackReason.swift` plus purpose-specific extensions in `PlayerHeaderView` (`PlaybackReason+PlayerHeaderView.swift`) and the app target (`WXYC/iOS/PlaybackReason+App.swift`). This is the standard Swift pattern of declaring a type once and extending it per-consumer package; the 'name collision' signal is a structural artefact of that pattern, not evidence of unintended duplication. No context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set, but the structural evidence fields (`jaccard`, `shared_field_count`, `differing_slots`) are all null, meaning there is no field-level overlap to consolidate. Recommending any merge or extraction would collapse intentional per-layer separation.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial3/name-collisions_PlaybackReason.json",
+  "row_index": 5,
+  "trial": 3
+}

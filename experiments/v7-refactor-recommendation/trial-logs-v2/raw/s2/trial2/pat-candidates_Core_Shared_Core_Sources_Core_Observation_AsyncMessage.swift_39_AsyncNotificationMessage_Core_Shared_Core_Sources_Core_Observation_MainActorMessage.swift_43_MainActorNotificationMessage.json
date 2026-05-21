@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"NotificationMessage\",\n      \"associated_type\": \"Subject\",\n      \"constraints\": [],\n      \"replaces\": [\n        \"AsyncNotificationMessage\",\n        \"MainActorNotificationMessage\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessage` and `MainActorNotificationMessage` in `Shared/Core/Sources/Core/Observation/` share three of three members: `name: Notification.Name`, `makeNotification(_ message: Self, object: Subject?) -> Notification`, and `makeMessage(_ notification: Notification) -> Self?`. The only structural difference is the `sending` ownership annotation on `MainActorNotificationMessage`'s `makeMessage` parameter, which reflects a concurrency-domain distinction rather than a semantic one. Introducing a parent PAT `NotificationMessage` with the shared contract (`name`, `makeNotification`, and a base `makeMessage`) and letting each child protocol refine `makeMessage` with its own concurrency annotation would eliminate the duplicated surface while preserving the actor-isolation distinction. Both protocols live in the same `Core` package with no restraint markers, making this a clean consolidation opportunity.\",\n    \"evidence_quote\": \"shared_field_count: 3\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"AsyncNotificationMessage\",\n        \"children\": [\"MainActorNotificationMessage\"],\n        \"moved_members\": [\n          \"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n          \"name:Notification.Name\"\n        ],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If introducing a brand-new protocol is considered too disruptive, `MainActorNotificationMessage` could inherit from `AsyncNotificationMessage` (or vice versa), with the two shared members `name` and `makeNotification` moved to the parent and `makeMessage` overridden in the child to add the `sending` annotation. However, this creates an asymmetric hierarchy that implies a subtype relationship between async and main-actor messaging semantics, which is likely misleading; a neutral PAT parent is more idiomatic.\"\n    },\n    \"confidence\": 0.78\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_018krjBSjnDhtw48jPkt389c",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3958,
+    "output_tokens": 628,
+    "service_tier": "standard"
+  }
+}

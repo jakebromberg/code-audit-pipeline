@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockNowPlayingInfoCenter+NowPlayingInfoCenterProtocol",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"file\": \"WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift\", \"kind\": \"type-alias-object\", \"name\": \"MockNowPlayingInfoCenter\"",
+    "rationale": "The two records share a `shared_field_count` of 1 but are structurally distinct kinds: `NowPlayingInfoCenterProtocol` is an `interface` in `WXYC/iOS/NowPlayingInfoCenterManager.swift`, while `MockNowPlayingInfoCenter` is a `type-alias-object` in `WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift`. Although neither record carries a restraint flag, the file path of `MockNowPlayingInfoCenter` places it squarely inside the test bundle (`WXYCTests`), and its name prefix `Mock` is a canonical test-fixture naming convention. The single shared field is almost certainly the protocol conformance declaration itself (the alias pointing at the protocol), not a duplicated implementation worth extracting. No refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MockNowPlayingInfoCenter_NowPlayingInfoCenterProtocol.json",
+  "row_index": 47,
+  "trial": 1
+}

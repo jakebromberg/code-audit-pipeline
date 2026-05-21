@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendModeKey+OverlayBlendModeKey+PlaybackBlendModeKey\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Introduce a single generic or parameterized `EnvironmentKey` type alias (e.g., `BlendModeKey`) in the `Wallpaper` package \u2014 or, if these are SwiftUI `EnvironmentKey` conformances, consolidate the three structurally identical `type-alias-object` declarations at line 89 of their respective files into one shared declaration inside `Shared/Wallpaper/Sources/Wallpaper/Core/`. Remove the per-mode duplicate declarations from `PlaybackBlendMode.swift`, `MaterialBlendMode.swift`, and `_Plant_OverlayBlendMode.swift`, leaving only the canonical one (or a single generic wrapper).\",\n      \"why_no_category_fits\": \"All three records are `type-alias-object` kinds with empty `fields_or_signature`, so there are no methods or fields to lift into a protocol, no function bodies to default-implement, and no struct fields to generalize in the usual sense. The duplication is at the type-alias/key-declaration level rather than at the method-body or struct-shape level. `extract-to-common` does not apply because all three already live in the same package (`Wallpaper`). The closest fit is a small inline consolidation or a generic key wrapper, which is best described as 'other'.\"\n    },\n    \"rationale\": \"All three records \u2014 `PlaybackBlendModeKey` (line 89, `PlaybackBlendMode.swift`), `MaterialBlendModeKey` (line 89, `MaterialBlendMode.swift`), and `OverlayBlendModeKey` (line 89, `_Plant_OverlayBlendMode.swift`) \u2014 are `type-alias-object` declarations at the exact same line number with identical empty `fields_or_signature` lists, all residing in the `Wallpaper` package. The `shared_field_count: 1` and `query: exact-duplicates` confirm the structural identity. Because they are type aliases rather than structs or functions, none of the standard action categories (extract-to-common, default-implementation, generic-parameterization) map cleanly; the right fix is to consolidate or genericize the key declaration within the existing `Wallpaper` package.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"line\\\": 89 ... \\\"shared_field_count\\\": 1 ... \\\"package\\\": \\\"Wallpaper\\\"\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Mode\", \"constraint\": null }\n        ],\n        \"new_name\": \"BlendModeKey\",\n        \"replaces\": [\"PlaybackBlendModeKey\", \"MaterialBlendModeKey\", \"OverlayBlendModeKey\"]\n      },\n      \"rationale\": \"If the three type aliases are SwiftUI `EnvironmentKey` conforming structs (a common pattern at a fixed line offset), a single generic `BlendModeKey<Mode>` struct in the `Wallpaper` package could replace all three, with `typealias PlaybackBlendModeKey = BlendModeKey<PlaybackBlendMode>` etc. kept as thin aliases for call-site compatibility. This is defensible but requires confirming the underlying aliased type, which is not visible in the cluster's empty `fields_or_signature`.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FSV2vDqJUCg9pp8ZbEFe36",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3950,
+    "output_tokens": 906,
+    "service_tier": "standard"
+  }
+}

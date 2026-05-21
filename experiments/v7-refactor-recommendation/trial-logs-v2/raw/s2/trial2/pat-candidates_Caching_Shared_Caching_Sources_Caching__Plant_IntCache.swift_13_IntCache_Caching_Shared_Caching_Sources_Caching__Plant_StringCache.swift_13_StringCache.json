@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` and `IntCache` in the `Caching` package share four identical fields (`capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`) and differ only in the key type of their `storage` dictionary (`[String: CacheEntry]` vs `[Int: CacheEntry]`). The structural evidence confirms exactly one differing slot and a shared field count of 4, making this a textbook candidate for a single generic struct `Cache<Key: Hashable>` with `storage: [Key: CacheEntry]`. Both files are production code with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so the lift is safe. Replacing both `_Plant_StringCache.swift` and `_Plant_IntCache.swift` with a single generic type eliminates the duplication entirely and allows any future key type without further proliferation.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}], \\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"CacheProtocol\",\n        \"associated_type\": \"Key\",\n        \"constraints\": [\"Hashable\"],\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"If `StringCache` and `IntCache` need to remain as concrete types (e.g., for separate storage back-ends or conformance requirements), a PAT `CacheProtocol` with `associatedtype Key: Hashable` and shared property requirements (`capacity`, `hitCount`, `lastAccess`, `storage`) would unify their interface. However, since both are currently `type-alias-object` kinds with identical structure and no divergent behaviour is evidenced in the cluster row, the generic struct is the more idiomatic and simpler Swift solution.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QLvut38ZPdUibuweKtrqL7",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3948,
+    "output_tokens": 667,
+    "service_tier": "standard"
+  }
+}

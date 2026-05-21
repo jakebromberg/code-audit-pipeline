@@ -1,0 +1,30 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:43:MainActorNotificationMessage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "protocol-inheritance",
+    "confidence": 0.72,
+    "evidence_quote": "\"makeNotification:(_ message: Self, object: Subject?) -> Notification\",\n            \"name:Notification.Name\"",
+    "rationale": "Both `AsyncNotificationMessage` and `MainActorNotificationMessage` in package `Core` share two identical member declarations \u2014 `makeNotification:(_ message: Self, object: Subject?) -> Notification` and `name:Notification.Name` \u2014 differing only in the `makeMessage` factory signature (`sending Notification` vs plain `Notification`), which reflects the concurrency isolation distinction between the two protocols. The shared members are strong candidates to be hoisted into a common base protocol. Since both protocols already live in `Shared/Core/Sources/Core/Observation/`, the most idiomatic Swift approach is to introduce a base protocol (using one of the existing names, or a new `NotificationMessage` protocol) that carries the shared contract, with `MainActorNotificationMessage` and `AsyncNotificationMessage` refining it and each declaring only their divergent `makeMessage` overload. No restraint markers are present on either record, so no no-action override applies.",
+    "specifics": {
+      "children": [
+        "MainActorNotificationMessage",
+        "AsyncNotificationMessage"
+      ],
+      "moved_members": [
+        "makeNotification:(_ message: Self, object: Subject?) -> Notification",
+        "name:Notification.Name"
+      ],
+      "parent": "AsyncNotificationMessage",
+      "reuse_existing_swift_protocol": false
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial1/protocol-inheritance-candidates_Core_Shared_Core_Sources_Core_Observation_AsyncMessage.swift_39_AsyncNotificationMessage_Core_Shared_Core_Sources_Core_Observation_MainActorMessage.swift_43_MainActorNotificationMessage.json",
+  "row_index": 9,
+  "trial": 1
+}

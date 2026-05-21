@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:45:MockDiscogsEntityResolver.resolveRelease+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:41:MockDiscogsEntityResolver.resolveRelease\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records carry all four context flags as false (is_test=false, is_mock=false, is_sample_app=false, is_codegen=false), yet the method name `MockDiscogsEntityResolver.resolveRelease` strongly implies these are test-fixture mock implementations embedded inside test files (`DiscogsMarkupParserTests.swift` in package `Metadata` and `DiscogsFormatterTests.swift` in package `app:iOS`). The structural evidence fields (jaccard, shared_field_count, differing_slots, shared_ancestor) are all null, providing no positive signal for a shared abstraction. The two mock implementations exist in separate test suites serving distinct concerns (markup parsing vs. formatting), so their coincidental shape does not warrant extraction. Consolidating them would couple unrelated test suites and risk polluting production targets with test-only mock infrastructure.\",\n    \"evidence_quote\": \"MockDiscogsEntityResolver.resolveRelease\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Ae3gjY2JKvwzgjo6jimfj2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3861,
+    "output_tokens": 385,
+    "service_tier": "standard"
+  }
+}

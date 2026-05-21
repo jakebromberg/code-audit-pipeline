@@ -1,0 +1,27 @@
+{
+  "cluster_id": "protocol-inheritance-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.82,
+    "evidence_quote": "\"cacheKey:(for id: Int) -> String\",\n        \"entityKind:String\",\n        \"lastSync:Date?\"",
+    "rationale": "Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of their `resolve:(id: Int) async throws -> <T>` method (`Artist` vs `Release`). This is the canonical PAT pattern: a family of protocols that are structurally identical except for one varying concrete type. Introducing a `Repository` protocol with `associatedtype Entity` and a `resolve:(id: Int) async throws -> Entity` requirement unifies the two protocols without losing type safety, and the shared members (`cacheKey`, `entityKind`, `lastSync`) move to the parent protocol body. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app` are all false), so the refactor is safe to apply.",
+    "specifics": {
+      "associated_type": "Entity",
+      "constraints": [],
+      "new_protocol": "Repository",
+      "replaces": [
+        "ArtistRepository",
+        "ReleaseRepository"
+      ]
+    }
+  },
+  "query": "protocol-inheritance-candidates",
+  "raw_response_path": "raw/s2/trial3/protocol-inheritance-candidates_Metadata_Shared_Metadata_Sources_Metadata__Plant_ArtistRepository.swift_19_ArtistRepository_Metadata_Shared_Metadata_Sources_Metadata__Plant_ReleaseRepository.swift_19_ReleaseRepository.json",
+  "row_index": 6,
+  "trial": 3
+}

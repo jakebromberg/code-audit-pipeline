@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:MockClock+MockQualityClock",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift",
+    "rationale": "Both participating records live inside test target files: `Shared/Wallpaper/Tests/WallpaperTests/AdaptiveQualityControllerTests.swift` (package `Wallpaper`) and `Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift` (package `Caching`). Although the context flags do not set `is_test: true`, the file paths unambiguously place both type-alias objects inside `Tests/` directories, making them test fixtures. Lifting these aliases into shared production code would couple test-only clock-mocking concerns into the production dependency graph of both `Wallpaper` and `Caching`. The structural overlap (shared_field_count: 2) is coincidental to their respective test harnesses and does not justify extraction.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_MockClock_MockQualityClock.json",
+  "row_index": 22,
+  "trial": 1
+}

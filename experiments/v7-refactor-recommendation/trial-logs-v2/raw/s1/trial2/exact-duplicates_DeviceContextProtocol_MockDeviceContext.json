@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:DeviceContextProtocol+MockDeviceContext\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Although neither record carries is_mock=true or is_test=true in its context_flags, the file path for MockDeviceContext is 'Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift', which sits unambiguously inside the Tests/WallpaperTests/Mocks/ directory \u2014 a canonical test-fixture location. The cluster pairs a production protocol (DeviceContextProtocol in Sources/Wallpaper/Throttling/DeviceContext.swift) with a mock type-alias that exists solely to satisfy that protocol in tests. Lifting or merging these would couple production source to test semantics. The shared_field_count of 4 reflects the mock faithfully mirroring the protocol's surface, which is the intended and correct relationship.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PFvTpRYMCAcWUicuzJUwRA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3786,
+    "output_tokens": 313,
+    "service_tier": "standard"
+  }
+}

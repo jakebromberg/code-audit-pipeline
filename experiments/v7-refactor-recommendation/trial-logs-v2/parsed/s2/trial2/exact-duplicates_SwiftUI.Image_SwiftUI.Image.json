@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:SwiftUI.Image+SwiftUI.Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.72,
+    "evidence_quote": "\"shared_field_count\": 2",
+    "rationale": "Two identical extensions on `SwiftUI.Image` exist in separate app targets \u2014 `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift, line 190) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift, line 27) \u2014 with `shared_field_count: 2` and no differing slots, indicating exact duplication. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is appropriate. The extension should be moved to a shared location that both targets already depend on; however, because the cluster does not surface a named shared package upstream of both app targets, the safest immediate action is to consolidate the extension into a single shared file (e.g., a new `Extensions/SwiftUI+Image.swift` within whichever shared module both targets import) and remove the duplicate declarations from both originating files. This eliminates the risk of the two copies drifting apart as image-related helpers evolve.",
+    "specifics": {
+      "consolidate_from": [
+        "WXYC/WatchXYC/PlayerPage.swift",
+        "WXYC/iOS/NowPlayingWidget/Extensions.swift"
+      ],
+      "target_type": "SwiftUI.Image"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_SwiftUI.Image_SwiftUI.Image.json",
+  "row_index": 28,
+  "trial": 2
+}

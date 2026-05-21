@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:SwiftUI.Image",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], \"name\": \"\", \"package\": \"app:WatchXYC\" ... \"package\": \"app:iOS\" ... \"jaccard\": null, \"shared_field_count\": null",
+    "rationale": "Both participating records are unnamed extensions (name: \"\") on SwiftUI.Image living in separate app targets \u2014 `app:WatchXYC` (WXYC/WatchXYC/PlayerPage.swift:190) and `app:iOS` (WXYC/iOS/NowPlayingWidget/Extensions.swift:27). The cluster carries no structural evidence (jaccard, shared_field_count, differing_slots, and shared_ancestor are all null) and no fields_or_signature entries, so there is no demonstrated overlap in members. Extensions on a SwiftUI framework type in distinct platform targets (watchOS widget vs. iOS widget) are routinely platform-specific convenience additions whose coincidental naming reflects the extended type, not shared logic. Without field-level evidence of duplication, consolidation would risk coupling platform-specific image helpers across incompatible targets.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_SwiftUI.Image.json",
+  "row_index": 41,
+  "trial": 1
+}

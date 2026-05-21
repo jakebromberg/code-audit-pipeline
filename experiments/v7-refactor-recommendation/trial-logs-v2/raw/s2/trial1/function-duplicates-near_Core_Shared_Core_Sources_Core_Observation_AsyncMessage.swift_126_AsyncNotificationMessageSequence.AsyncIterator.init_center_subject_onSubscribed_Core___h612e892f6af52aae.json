@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:126:AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)+Core:Shared/Core/Sources/Core/Observation/MainActorMessage.swift:152:MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"NotificationMessageSequenceIteratorBase\",\n      \"remove_from\": [\n        \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n      ]\n    },\n    \"rationale\": \"Both `AsyncNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 126 in `AsyncMessage.swift`) and `MainActorNotificationMessageSequence.AsyncIterator.init(center:subject:onSubscribed:)` (line 152 in `MainActorMessage.swift`) are near-duplicate initializers in the same `Core` package with a Jaccard similarity of 0.857, indicating nearly identical bodies. The only meaningful difference is the actor-isolation context (`MainActor` vs. unconstrained async), which can be handled by a shared internal helper initializer or a generic base type that both `AsyncIterator` types delegate to. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so consolidation is appropriate. Extracting the shared initialization logic into a single location within the existing `Core` package eliminates the duplication without introducing any new package dependency.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8571428571428571\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"AsyncIteratorProtocol\",\n        \"method\": \"init(center:subject:onSubscribed:)\",\n        \"target_location\": \"Shared/Core/Sources/Core/Observation/AsyncMessage.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Core/Sources/Core/Observation/MainActorMessage.swift\"\n        ]\n      },\n      \"rationale\": \"If both `AsyncIterator` types already conform to a shared project-local protocol, a protocol extension with a default implementation of `init(center:subject:onSubscribed:)` could eliminate the duplication. However, because the two types differ in actor isolation (`MainActor` vs. unconstrained), a default implementation on a protocol would require careful use of `@MainActor` annotations and may not be expressible without overloads, making the extract-to-common approach more straightforward.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0198oCMBQZx7n5eUMgRETcV9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3886,
+    "output_tokens": 722,
+    "service_tier": "standard"
+  }
+}

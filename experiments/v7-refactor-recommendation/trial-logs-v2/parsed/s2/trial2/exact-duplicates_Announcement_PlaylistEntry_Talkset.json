@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.55,
+    "evidence_quote": "\"name\": \"Announcement\" ... \"kind\": \"type-alias-object\" ... \"file\": \"Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift\" ... \"name\": \"Talkset\" ... \"kind\": \"type-alias-object\" ... \"shared_field_count\": 4",
+    "rationale": "All three records \u2014 `Announcement` (a type-alias-object at line 13 of `_Plant_Announcement.swift`), `PlaylistEntry` (an interface at line 22 of `PlaylistEntry.swift`), and `Talkset` (a type-alias-object at line 90 of `PlaylistEntry.swift`) \u2014 live in the same `Playlist` package and share 4 fields structurally, but the naming pattern strongly suggests intentional domain distinctions: `Announcement`, `PlaylistEntry`, and `Talkset` represent semantically distinct concepts in a radio-playlist domain (a spoken announcement, a generic playlist entry, and a talk-set block). The presence of `_Plant_Announcement.swift` (a codegen-plant file by naming convention) alongside a hand-authored `PlaylistEntry.swift` further suggests `Announcement` may be a generated type alias rather than a true duplicate. With `fields_or_signature` empty on all three records, there is insufficient evidence to confirm the shared fields are identical in semantics rather than just count, so collapsing them risks conflating unrelated domain concepts. No restraint markers are present, but the coincidental-structural-overlap reason class applies.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 2
+}

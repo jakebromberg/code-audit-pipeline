@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/PlayerControllerBehaviorTests.swift:118:PlayerControllerBehaviorTests.multiplePlayCallsAreIdempotent+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/RouteChangeBehaviorTests.swift:196:RouteChangeBehaviorTests.overrideWhilePlayingIsHandled\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true`. `PlayerControllerBehaviorTests.multiplePlayCallsAreIdempotent` in `PlayerControllerBehaviorTests.swift` and `RouteChangeBehaviorTests.overrideWhilePlayingIsHandled` in `RouteChangeBehaviorTests.swift` are test methods that happen to share structural shape (Jaccard 0.71) but exist in separate, semantically distinct test classes covering different behavioral concerns \u2014 idempotent play calls versus route-change override handling. Merging or extracting test fixtures across these two test classes would couple unrelated behavioral test scenarios and obscure test intent. The restraint rule for `is_test` dominates the near-duplicate signal here.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015FGQ28RniRfV1kDDEkFDAu",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3910,
+    "output_tokens": 374,
+    "service_tier": "standard"
+  }
+}

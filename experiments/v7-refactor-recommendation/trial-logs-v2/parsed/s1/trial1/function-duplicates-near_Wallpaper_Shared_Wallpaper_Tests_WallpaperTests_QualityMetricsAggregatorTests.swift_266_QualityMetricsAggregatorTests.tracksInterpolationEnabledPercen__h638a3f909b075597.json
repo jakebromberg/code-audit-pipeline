@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualityMetricsAggregatorTests.swift:266:QualityMetricsAggregatorTests.tracksInterpolationEnabledPercent+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualityMetricsAggregatorTests.swift:374:QualityMetricsAggregatorTests.countsInterpolationActivations",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records carry `is_test: true` and reside in `Shared/Wallpaper/Tests/WallpaperTests/QualityMetricsAggregatorTests.swift`. The two methods \u2014 `tracksInterpolationEnabledPercent` (line 266) and `countsInterpolationActivations` (line 374) \u2014 are test methods in `QualityMetricsAggregatorTests` that exercise distinct observable behaviours of the production type (interpolation-enabled percentage tracking vs. interpolation activation counting). Even though their structural similarity is high (Jaccard 0.8636), near-duplicate test bodies are a canonical test-fixture pattern: each test must remain independently readable and independently runnable, and collapsing them into a shared helper risks obscuring the specific assertion intent of each case. The restraint marker `is_test: true` on every record dominates the action signal.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Wallpaper_Shared_Wallpaper_Tests_WallpaperTests_QualityMetricsAggregatorTests.swift_266_QualityMetricsAggregatorTests.tracksInterpolationEnabledPercen__h638a3f909b075597.json",
+  "row_index": 53,
+  "trial": 1
+}

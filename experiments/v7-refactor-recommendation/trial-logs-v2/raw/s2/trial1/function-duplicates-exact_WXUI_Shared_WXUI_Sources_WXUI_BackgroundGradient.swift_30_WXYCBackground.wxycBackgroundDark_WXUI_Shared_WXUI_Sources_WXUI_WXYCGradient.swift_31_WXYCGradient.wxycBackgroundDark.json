@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"WXYCGradient\",\n      \"consolidate_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundDark` (in `BackgroundGradient.swift`, line 30) and `WXYCGradient.wxycBackgroundDark` (in `WXYCGradient.swift`, line 31) are exact-duplicate computed properties living in the same `WXUI` package. The duplication suggests that `WXYCBackground` is either a type alias or a parallel type that has drifted from `WXYCGradient`, and the property body has been copied rather than shared. The cleanest resolution is to canonicalise the property on `WXYCGradient` (or whichever type is the authoritative gradient type) and remove the duplicate declaration from `BackgroundGradient.swift`, keeping a single source of truth within the package. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false), so consolidation is safe.\",\n    \"evidence_quote\": \"WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` intentionally model distinct visual concepts (e.g., one is a SwiftUI `View` modifier and the other is a raw gradient descriptor) and the property values happen to be identical today but are expected to diverge independently, keeping them separate avoids coupling unrelated types. However, the exact-duplicate signal and shared package make coincidental divergence unlikely.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QXkE5hNJfm6HkJHtLu13pi",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3867,
+    "output_tokens": 658,
+    "service_tier": "standard"
+  }
+}

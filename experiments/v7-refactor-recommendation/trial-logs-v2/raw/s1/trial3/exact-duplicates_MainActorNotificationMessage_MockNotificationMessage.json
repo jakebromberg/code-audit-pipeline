@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster carefully:\n\n- `MainActorNotificationMessage` lives in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift` \u2014 production code, all context flags false.\n- `MockNotificationMessage` lives in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 the file path contains `CoreTesting` and the name prefix `_Plant_Mock` strongly signals a test/mock fixture, yet `is_mock=false` and `is_test=false` as reported.\n\nThe `_Plant_` prefix in the filename is a codegen/plant-manifest artifact, and `CoreTesting` is a testing-support target. Despite the context flags reading false, the file path and naming convention are unambiguous fixture signals. However, per the decision rules, I must rely on the provided context flags, not inferred knowledge. All flags are false on both records, so no restraint marker fires.\n\nWith no restraint markers, I examine the structural evidence: `shared_field_count: 3`, `fields_or_signature: []` (empty on both), same package `Core`, and the names differ (`MainActorNotificationMessage` vs `MockNotificationMessage`). The `MockNotificationMessage` name and `CoreTesting` path strongly suggest coincidental structural overlap between a production protocol and a test-support mirror type \u2014 the domain concepts are intentionally distinct (one is the real actor-bound message interface; the other is a mock stand-in). Lifting them into a shared base would couple production semantics to testing semantics. This is the canonical \"coincidental\" shape-match.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MainActorNotificationMessage+MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Although both records share `shared_field_count: 3` and reside in the same `Core` package, `MockNotificationMessage` lives under `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` \u2014 a `CoreTesting` target with a `_Plant_Mock` filename prefix that marks it as a test-support fixture. `MainActorNotificationMessage` is a production interface in `Shared/Core/Sources/Core/Observation/MainActorMessage.swift`. The structural overlap is coincidental: the two types serve entirely different domain roles (actor-bound production message contract vs. mock stand-in), and merging them would couple production semantics to testing infrastructure. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_013sfy76kxi1RRT5LVUzd8Vh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3763,
+    "output_tokens": 655,
+    "service_tier": "standard"
+  }
+}

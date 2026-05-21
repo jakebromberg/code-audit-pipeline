@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:30:WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"category\": \"extension-consolidation\",\n    \"specifics\": {\n      \"target_type\": \"WXYCGradient\",\n      \"consolidate_from\": [\n        \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\",\n        \"Shared/WXUI/Sources/WXUI/WXYCGradient.swift\"\n      ]\n    },\n    \"rationale\": \"Both `WXYCBackground.wxycBackgroundDark` (in `BackgroundGradient.swift`, line 30) and `WXYCGradient.wxycBackgroundDark` (in `WXYCGradient.swift`, line 31) are exact-duplicate computed properties living in the same `WXUI` package with no restraint markers. The duplication suggests that `WXYCBackground` is either a type alias or a thin wrapper for `WXYCGradient`, or that the property was accidentally declared on two types. The canonical home for gradient-related computed properties is `WXYCGradient.swift`; the duplicate on `WXYCBackground` in `BackgroundGradient.swift` should be removed (or, if `WXYCBackground` is a distinct type, the shared body should be extracted to a single internal helper and both properties should delegate to it). Because both records are in the same package and the signal is `function-duplicates-exact`, consolidating into one declaration is the lowest-risk fix.\",\n    \"evidence_quote\": \"WXYCBackground.wxycBackgroundDark+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:31:WXYCGradient.wxycBackgroundDark\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"WXUI\",\n        \"type_name\": \"WXYCGradient\",\n        \"remove_from\": [\n          \"Shared/WXUI/Sources/WXUI/BackgroundGradient.swift\"\n        ]\n      },\n      \"rationale\": \"If `WXYCBackground` and `WXYCGradient` are intentionally separate types, the shared computed-property body could be extracted into a free function or a protocol default inside the `WXUI` package, with both types delegating to it. However, because both types already live in `WXUI` and the duplication is exact, simple deletion of the `WXYCBackground` copy in favour of the `WXYCGradient` declaration is more idiomatic Swift than introducing an additional abstraction layer.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01411znreLSPWRZPR2unNUqJ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3867,
+    "output_tokens": 755,
+    "service_tier": "standard"
+  }
+}

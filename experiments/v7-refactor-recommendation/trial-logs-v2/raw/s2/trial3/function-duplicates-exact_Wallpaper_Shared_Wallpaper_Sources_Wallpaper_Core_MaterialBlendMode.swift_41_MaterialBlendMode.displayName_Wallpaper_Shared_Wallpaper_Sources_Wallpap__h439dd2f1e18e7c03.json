@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"macro-synthesis\",\n    \"specifics\": {\n      \"macro_name\": \"@BlendModeDisplayName\",\n      \"applies_to\": [\"enum\"],\n      \"synthesizes\": \"A computed `displayName: String` property derived from the enum case name, replacing the identical `displayName` implementations on `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` at line 41 in each respective file\",\n      \"population_size_evidence\": \"3 participating records, all computed-property kind, all at line 41, all in package Wallpaper\",\n      \"use_swift_builtin\": false\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each carries an identically-positioned `displayName` computed property (line 41 in each file). The structural signal is `function-duplicates-exact`, meaning the bodies are identical. Because the pattern repeats across three parallel blend-mode enums and is likely to grow (a fourth blend-mode type would need the same boilerplate), a Swift attached macro `@BlendModeDisplayName` that synthesises the `displayName` property is the most idiomatic Swift 5.9+ answer: it eliminates the duplication at the declaration site rather than requiring a shared protocol extension that all three types must explicitly conform to.\",\n    \"evidence_quote\": \"PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If a Swift macro toolchain is not yet in use in the Wallpaper package, introducing a new `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension is a lower-friction alternative. All three blend-mode types would conform to the protocol and delete their individual `displayName` bodies. The target file would sit alongside the existing blend-mode files in `Shared/Wallpaper/Sources/Wallpaper/Core/`. Note that `BlendModeDisplayable` would be a new protocol name not currently present in the cluster's source files, so this alternative carries slightly lower confidence under the schema constraints.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01W1pZGQFRmmiJrsUHCyfyxh",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4052,
+    "output_tokens": 949,
+    "service_tier": "standard"
+  }
+}

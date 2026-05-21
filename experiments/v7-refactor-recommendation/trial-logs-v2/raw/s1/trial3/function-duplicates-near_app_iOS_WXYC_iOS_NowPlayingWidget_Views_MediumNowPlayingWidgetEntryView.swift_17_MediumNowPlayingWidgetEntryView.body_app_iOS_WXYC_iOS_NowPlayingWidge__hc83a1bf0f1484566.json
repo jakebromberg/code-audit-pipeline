@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Extract the shared layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared SwiftUI sub-view (e.g., `NowPlayingWidgetContentView`) that accepts a size or layout parameter, then have each entry view delegate to it. Both views live in the same package (`app:iOS`) under `WXYC/iOS/NowPlayingWidget/Views/`, so no cross-package movement is needed \u2014 a new file in that same directory is sufficient.\",\n      \"why_no_category_fits\": \"The two duplicated members are SwiftUI `body` computed properties on concrete `View`-conforming structs, not free functions or generic structs. The idiomatic Swift/SwiftUI remedy is to extract a shared child view rather than to apply generic parameterization, protocol inheritance, or a default implementation (SwiftUI's `body` requirement cannot carry a default implementation in a protocol extension in a meaningful way for widget entry views). The `extract-to-common` category does not fit because both records already share the same package (`app:iOS`) and the schema requires naming an upstream package distinct from the consumers. The most idiomatic action is a sub-view extraction within the existing package, which none of the named categories precisely describe.\"\n    },\n    \"rationale\": \"The structural pipeline reports a Jaccard similarity of 0.7142857142857143 between `SmallNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift`) and `MediumNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift`), indicating substantial shared layout structure. Both are `computed-property` members in the same `app:iOS` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so duplication is not intentional by policy. Because both views are widget entry views differing only in size, the shared body logic is a strong candidate for a parameterised child view. The `extract-to-common` schema cannot be applied because both records already reside in the same package and the schema requires an upstream target package distinct from the consumers.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7142857142857143\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Layout\", \"constraint\": \"NowPlayingWidgetLayout\" }\n        ],\n        \"new_name\": \"NowPlayingWidgetEntryView\",\n        \"replaces\": [\"SmallNowPlayingWidgetEntryView\", \"MediumNowPlayingWidgetEntryView\"]\n      },\n      \"rationale\": \"If a `NowPlayingWidgetLayout` protocol (or similar) were introduced to capture size-specific layout constants, a single generic `NowPlayingWidgetEntryView<Layout>` struct could replace both `SmallNowPlayingWidgetEntryView` and `MediumNowPlayingWidgetEntryView`. However, WidgetKit's `TimelineEntry`-based view registration typically requires concrete types, making this approach less idiomatic than a shared child view; it is therefore the alternative rather than the primary recommendation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_014UakghsTWBmP7KAnCymPVM",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 999,
+    "service_tier": "standard"
+  }
+}

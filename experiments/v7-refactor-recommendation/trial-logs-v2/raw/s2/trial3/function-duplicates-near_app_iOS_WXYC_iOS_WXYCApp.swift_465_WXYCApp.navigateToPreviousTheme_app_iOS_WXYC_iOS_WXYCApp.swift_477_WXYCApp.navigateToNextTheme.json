@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"Direction\", \"constraint\": null }\n      ],\n      \"new_name\": \"navigateToTheme\",\n      \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n    },\n    \"rationale\": \"The two methods `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) live in the same file `WXYC/iOS/WXYCApp.swift` within package `app:iOS` and share a Jaccard similarity of 0.75, indicating near-duplicate bodies that differ only in the direction of navigation (previous vs. next). Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The most idiomatic Swift consolidation is to introduce a single method parameterised by direction \u2014 either an enum `ThemeNavigationDirection` with `.previous` and `.next` cases, or a simple `Int` offset \u2014 replacing both duplicates in place within `WXYC/iOS/WXYCApp.swift`. This eliminates the near-duplicate body while keeping the call sites expressive.\",\n    \"evidence_quote\": \"WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Introduce a private helper method `navigateToTheme(offset: Int)` in `WXYC/iOS/WXYCApp.swift` that both `navigateToPreviousTheme` (passing -1) and `navigateToNextTheme` (passing +1) delegate to, preserving the existing public method names as thin wrappers.\",\n        \"why_no_category_fits\": \"If the two public method names are part of a stable internal API or are referenced by name in selectors/actions, full replacement via generic parameterization is disruptive; a private shared helper with thin forwarding wrappers is a lower-risk refactor that still eliminates the duplicated body without renaming the call sites.\"\n      },\n      \"rationale\": \"Keeping `navigateToPreviousTheme` and `navigateToNextTheme` as named entry points preserves readability at call sites while still deduplicating the shared logic identified by the 0.75 Jaccard score. This is preferable if the method names are referenced outside the immediate scope within `WXYC/iOS/WXYCApp.swift`.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PKMAEmYXHWfaC66Sn4q3gY",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3839,
+    "output_tokens": 794,
+    "service_tier": "standard"
+  }
+}

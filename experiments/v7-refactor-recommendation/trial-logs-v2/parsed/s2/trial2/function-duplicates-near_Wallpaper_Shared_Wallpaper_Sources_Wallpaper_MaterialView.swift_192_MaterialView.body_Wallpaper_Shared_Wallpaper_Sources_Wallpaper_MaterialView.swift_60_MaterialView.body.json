@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body",
+    "rationale": "Both participating records are `computed-property` entries named `MaterialView.body` in the single file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` (lines 60 and 192), within the `Wallpaper` package, with no restraint flags set. A Jaccard similarity of 0.83 confirms substantial shared structure. Having two `body` implementations in one file for one type is architecturally suspicious in SwiftUI \u2014 it typically signals either dead code, a `#if`-guarded variant whose shared logic should be extracted, or a copy-paste artefact. None of the named refactor categories cleanly cover intra-file, intra-type near-duplicate computed properties; the right first step is inspection, then either deletion of the redundant body or extraction of shared view-building logic into a private `@ViewBuilder` helper.",
+    "specifics": {
+      "proposed_action": "Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates within the same file and same type. The most likely cause is that `MaterialView` is a SwiftUI `View` with two conditional or overloaded `body` implementations (e.g., inside `#if` compiler directives or inside two distinct nested `View` structs sharing the same name). Determine whether: (a) one implementation is dead code and should be deleted, (b) the shared logic between the two bodies should be extracted into a private helper `@ViewBuilder` function or a private sub-view struct within `MaterialView`, reducing the near-duplicate surface, or (c) the two bodies belong to two distinct types that happen to share the name `MaterialView` and should be renamed or reorganised into separate files.",
+      "why_no_category_fits": "Both records are in the same file, same type name, and same package \u2014 this is not a cross-file extraction candidate (`extract-to-common` requires distinct consumer files), not a protocol or subclass situation, and not a generic-parameterization opportunity. The duplication is intra-file and intra-type, which none of the named categories address precisely. The correct fix depends on whether the duplication is dead code, a missing private helper, or a naming collision \u2014 all of which require human inspection of the two `body` bodies before a mechanical refactor can be prescribed."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_192_MaterialView.body_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_60_MaterialView.body.json",
+  "row_index": 61,
+  "trial": 2
+}

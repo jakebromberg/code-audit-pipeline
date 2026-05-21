@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:55:MockDiscogsEntityResolver.resolveMaster+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:51:MockDiscogsEntityResolver.resolveMaster",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "MockDiscogsEntityResolver.resolveMaster",
+    "rationale": "Both participating records live under test directories \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` \u2014 and the duplicated method belongs to a type named `MockDiscogsEntityResolver`, a clear mock fixture. Although the pipeline's context flags report `is_test: false` and `is_mock: false` for both records (suggesting a labelling gap in the analysis pipeline), the literal file paths and type name are unambiguous: these are test-only mock implementations of `resolveMaster` scoped to their respective test targets (`Metadata` and `app:iOS`). Consolidating them into shared production code would couple test-fixture semantics into a production or shared package, which is the canonical restraint pattern. The duplication is intentional: each test target needs its own local mock to remain independently compilable and to express test-local behaviour.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_55_MockDiscogsEntityResolver.resolveMaster_app_iOS_WXYC_iOS_Tests_WXYCTes__hfa603d2ae22b4b75.json",
+  "row_index": 24,
+  "trial": 1
+}

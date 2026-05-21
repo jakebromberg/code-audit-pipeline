@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RadioPlayerController",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\", \"line\": 23 ... \"kind\": \"extension\", \"line\": 286 ... \"file\": \"Shared/Playback/Tests/RadioPlayerTests/RadioPlayerControllerTests.swift\", \"kind\": \"extension\", \"line\": 63",
+    "rationale": "All three records in this cluster belong to the same package ('Playback') and the same type name 'RadioPlayerController', but they represent structurally distinct declarations: a type-alias-object at line 23 in 'RadioPlayerController.swift', an extension on that same type at line 286 in the same file, and a separate extension in the test file 'RadioPlayerControllerTests.swift' at line 63. The cluster carries no shared fields ('fields_or_signature' is empty on all records) and no Jaccard or shared-field-count evidence, meaning the signal is purely a name collision across a primary declaration, its own extension, and a test extension \u2014 all of which are expected co-inhabitants of the same type. No structural duplication warrants action.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_RadioPlayerController.json",
+  "row_index": 13,
+  "trial": 2
+}

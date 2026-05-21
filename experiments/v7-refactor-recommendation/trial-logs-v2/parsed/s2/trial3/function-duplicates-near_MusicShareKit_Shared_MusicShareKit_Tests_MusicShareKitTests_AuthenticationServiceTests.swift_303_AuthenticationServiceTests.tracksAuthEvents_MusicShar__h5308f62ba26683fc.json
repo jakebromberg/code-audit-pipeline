@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Tests/MusicShareKitTests/AuthenticationServiceTests.swift:303:AuthenticationServiceTests.tracksAuthEvents+MusicShareKit:Shared/MusicShareKit/Tests/MusicShareKitTests/AuthenticationServiceTests.swift:319:AuthenticationServiceTests.tracksJWTExchangeEvent",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records \u2014 `AuthenticationServiceTests.tracksAuthEvents` (line 303) and `AuthenticationServiceTests.tracksJWTExchangeEvent` (line 319) \u2014 carry `is_test: true` in their context flags. Per the decision rules, any cluster where even one record is test-marked warrants no-action; here both records are test methods in `AuthenticationServiceTests.swift` within the `MusicShareKit` package. Although the Jaccard similarity of 0.7 suggests structural overlap, the two methods test distinct authentication events (`tracksAuthEvents` vs. `tracksJWTExchangeEvent`), and merging or extracting test helpers risks obscuring the intent of each individual test case. The duplication is intentional fixture-level parallelism, not production code redundancy.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Tests_MusicShareKitTests_AuthenticationServiceTests.swift_303_AuthenticationServiceTests.tracksAuthEvents_MusicShar__h5308f62ba26683fc.json",
+  "row_index": 155,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:PauseWXYC+WhatsPlayingOnWXYC\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"The two records, `PauseWXYC` in `Shared/Intents/Sources/Intents/PauseWXYC.swift` (package `Intents`) and `WhatsPlayingOnWXYC` in `WXYC/iOS/Intents.swift` (package `app:iOS`), carry different names and almost certainly represent distinct Siri/App Intents actions \u2014 one for pausing playback and one for querying what is currently playing. Despite the `shared_field_count: 2` signal and both being `type-alias-object` kinds, the divergent names strongly suggest these are separate intent definitions that happen to share the same structural shape (both are zero-member type-alias objects wrapping an intent class), not a true duplication. The `Intents` package already exists as the canonical home for intent types, and `PauseWXYC` already lives there; `WhatsPlayingOnWXYC` in `app:iOS` may simply be a locally declared alias that should eventually migrate, but the name difference means a mechanical deduplication would conflate two semantically distinct intents. No restraint markers are present, but the structural coincidence is domain-coincidental rather than a true duplicate.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"PauseWXYC\\\" ... \\\"name\\\": \\\"WhatsPlayingOnWXYC\\\"\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Intents\",\n        \"type_name\": \"WhatsPlayingOnWXYC\",\n        \"remove_from\": [\n          \"WXYC/iOS/Intents.swift\"\n        ]\n      },\n      \"rationale\": \"If `WhatsPlayingOnWXYC` in `WXYC/iOS/Intents.swift` is confirmed to be a stray duplicate of an intent that belongs in the `Intents` package alongside `PauseWXYC`, it should be moved to `Shared/Intents/Sources/Intents/` and the `app:iOS` declaration removed. The `Intents` package is already upstream of `app:iOS` and is the established home for intent type-alias objects, making it the correct consolidation target.\"\n    },\n    \"confidence\": 0.45\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01LwSkw7wJVWcfECLVHbwFjE",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3784,
+    "output_tokens": 635,
+    "service_tier": "standard"
+  }
+}

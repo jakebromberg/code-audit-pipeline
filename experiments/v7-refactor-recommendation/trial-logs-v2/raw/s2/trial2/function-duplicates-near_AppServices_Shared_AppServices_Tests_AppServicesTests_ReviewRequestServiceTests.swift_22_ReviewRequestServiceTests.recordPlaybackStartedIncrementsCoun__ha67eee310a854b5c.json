@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordPlaybackStartedIncrementsCount` (line 22) and `recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 are test cases that verify distinct user-action events (`recordPlaybackStarted` vs. `recordSongAddedToLibrary`), so their structural similarity (Jaccard 0.75) reflects parallel test scaffolding for semantically different code paths, not accidental duplication. Merging or extracting them would obscure which event each test exercises and couple unrelated test assertions. The restraint rule for test fixtures dominates any action signal here.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UYGLBKCRfQuJ9DMf6T2SCD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3867,
+    "output_tokens": 361,
+    "service_tier": "standard"
+  }
+}

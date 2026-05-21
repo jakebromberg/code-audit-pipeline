@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Playback:Shared/Playback/Sources/PlaybackCore/_Plant_ShowContainer.swift:19:ShowContainerProtocol+Playback:Shared/Playback/Sources/PlaybackCore/_Plant_TrackContainer.swift:19:TrackContainerProtocol\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"ContainerProtocol\",\n      \"associated_type\": \"Item\",\n      \"constraints\": [],\n      \"replaces\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"]\n    },\n    \"rationale\": \"Both `ShowContainerProtocol` and `TrackContainerProtocol` in the `Playback` package share three identical fields \u2014 `isStale:Bool`, `lastRefreshedAt:Date?`, and `pageToken:String?` \u2014 and differ only in the concrete type of the `item` field (`Show` vs `Track`). The structural evidence confirms `shared_field_count: 4` with a single differing slot (`item:Show` vs `item:Track`), making this a textbook PAT candidate. Introducing a generic `ContainerProtocol` with `associatedtype Item` collapses the two protocols into one, eliminates the duplication, and allows any future container types (e.g., for `Episode`, `Playlist`) to conform without adding yet another parallel protocol. Neither record carries any restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint rule applies.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 4\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"ShowContainerProtocol\",\n        \"children\": [\"ShowContainerProtocol\", \"TrackContainerProtocol\"],\n        \"moved_members\": [\"isStale:Bool\", \"lastRefreshedAt:Date?\", \"pageToken:String?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"As an alternative, the three shared members (`isStale`, `lastRefreshedAt`, `pageToken`) could be lifted into a new base protocol that both `ShowContainerProtocol` and `TrackContainerProtocol` inherit. However, this approach still leaves two concrete protocols in place and does not unify the `item` slot, making it less expressive than the PAT approach. The PAT introduction is preferred because it fully eliminates the structural duplication via the `associatedtype Item` mechanism, which is the idiomatic Swift solution for this exact pattern.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U8pTaUVafqJEYdVAzhrDwU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3944,
+    "output_tokens": 667,
+    "service_tier": "standard"
+  }
+}

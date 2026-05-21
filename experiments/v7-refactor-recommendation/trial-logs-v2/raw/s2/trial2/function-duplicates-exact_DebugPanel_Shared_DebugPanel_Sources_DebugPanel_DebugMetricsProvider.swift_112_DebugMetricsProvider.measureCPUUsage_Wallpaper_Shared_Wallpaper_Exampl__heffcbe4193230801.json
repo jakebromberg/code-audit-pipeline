@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` triggers a restraint marker.\n\nThe decision rules state: any record that \"sits under Examples/ or SampleApp/\" \u2192 reason_class: \"sample-app-mirror\", regardless of what the context flags say. The file path `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` clearly sits under both `Examples/` and `WallpaperSampleApp/` in the directory hierarchy. The context flags show `is_sample_app: false`, but the path-based rule is an independent trigger (\"sits under Examples/ or SampleApp/\").\n\nThis is the canonical restraint pattern: one production record (`DebugPanel`) and one sample-app-mirror record (`WallpaperSampleApp`). Lifting the production implementation into shared code based on this cluster would couple production semantics to a demonstration fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under both `Examples/` and `WallpaperSampleApp/` in the directory hierarchy \u2014 a path-based sample-app-mirror signal that dominates the action signal regardless of the `is_sample_app: false` context flag. The canonical restraint pattern applies: one production method (`DebugMetricsProvider.measureCPUUsage` in package `DebugPanel`) and one sample-app copy (package `Wallpaper`, `DebugHUD.swift`). Consolidating these would couple the production `DebugPanel` package to demonstration semantics living inside the Wallpaper sample app, which is the wrong dependency direction. The correct resolution, if the duplication is unwanted, is to delete the copy in `DebugHUD.swift` and have the sample app import `DebugPanel` directly \u2014 not to extract to a shared location.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U6sNPj5bvzsW461iX1h6Y8",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3889,
+    "output_tokens": 691,
+    "service_tier": "standard"
+  }
+}

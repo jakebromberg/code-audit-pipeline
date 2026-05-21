@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift:239:ColorPaletteServiceTests.createSolidColorImage+ColorPalette:Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift:278:DominantColorExtractorTests.createSolidColorImage",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift",
+    "rationale": "Although both records carry `is_test: false` in their context_flags, the file paths `Shared/ColorPalette/Tests/ColorPaletteTests/DominantColorExtractorTests.swift` and `Shared/ColorPalette/Tests/ColorPaletteTests/ColorPaletteServiceTests.swift`, together with the owning type names `DominantColorExtractorTests` and `ColorPaletteServiceTests`, place both records unambiguously inside a test target. The duplicated method `createSolidColorImage` is a test-image factory helper whose duplication across two test classes is a classic test-fixture pattern. Lifting it into shared production code would couple production targets to test-only image-construction semantics; the correct resolution, if any, is an internal test helper file within the same test target, which is a test-internal concern outside the scope of a production refactor recommendation.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Tests_ColorPaletteTests_ColorPaletteServiceTests.swift_239_ColorPaletteServiceTests.createSolidColorImage_ColorPalet__h81fb8174d05756ef.json",
+  "row_index": 20,
+  "trial": 2
+}

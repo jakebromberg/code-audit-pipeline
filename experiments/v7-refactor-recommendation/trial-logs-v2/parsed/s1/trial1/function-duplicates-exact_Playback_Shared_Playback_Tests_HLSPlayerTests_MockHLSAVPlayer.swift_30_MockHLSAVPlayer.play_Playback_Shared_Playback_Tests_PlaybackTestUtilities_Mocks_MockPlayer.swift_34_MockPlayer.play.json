@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift:30:MockHLSAVPlayer.play+Playback:Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift:34:MockPlayer.play",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift",
+    "rationale": "Both records reside under `Tests/` subdirectories (`Shared/Playback/Tests/HLSPlayerTests/MockHLSAVPlayer.swift` and `Shared/Playback/Tests/PlaybackTestUtilities/Mocks/MockPlayer.swift`) and carry `Mock`-prefixed type names, strongly indicating these are test-fixture mock implementations despite the context flags reading `is_mock: false` and `is_test: false`. The `fields_or_signature` list is empty for both records, so there is no confirmed shared method body or signature beyond the bare name `play` \u2014 a method name so generic that its coincidence across two distinct mock types (`MockHLSAVPlayer` and `MockPlayer`) is expected rather than actionable. Merging or extracting a shared `play` implementation across two structurally distinct mocks in separate test targets (`HLSPlayerTests` vs `PlaybackTestUtilities`) would couple unrelated test fixtures without demonstrated benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Playback_Shared_Playback_Tests_HLSPlayerTests_MockHLSAVPlayer.swift_30_MockHLSAVPlayer.play_Playback_Shared_Playback_Tests_PlaybackTestUtilities_Mocks_MockPlayer.swift_34_MockPlayer.play.json",
+  "row_index": 29,
+  "trial": 1
+}

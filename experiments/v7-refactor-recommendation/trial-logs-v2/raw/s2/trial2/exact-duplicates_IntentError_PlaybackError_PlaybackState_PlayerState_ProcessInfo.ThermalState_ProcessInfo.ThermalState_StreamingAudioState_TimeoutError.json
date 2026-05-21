@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster carefully:\n\n**Key observations:**\n1. One member lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 this is under `Examples/WallpaperSampleApp/`, which is a sample app path. The decision rules state that **any** participating record under `Examples/` triggers `reason_class: \"sample-app-mirror\"` and mandates `no-action`.\n2. Additionally, one member lives at `Shared/Playback/Tests/MP3StreamerTests/MP3StreamDecoderTests.swift` \u2014 a test file. The `is_test` flag reads `false` in the cluster data, but the file path is unambiguously a test file (`Tests/\u2026Tests.swift`). However, per the rules I must rely on the cluster row's context flags, not infer from path alone \u2014 but the `Examples/` path rule is explicit in the decision rules text (\"sits under `Examples/` or `SampleApp/`\") regardless of the `is_sample_app` flag value.\n3. The `ProcessInfo.ThermalState` extension in `Wallpaper` sits under `Examples/WallpaperSampleApp/`, which is a sample-app mirror by path, dominating any action signal.\n\n```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:IntentError+PlaybackError+PlaybackState+PlayerState+ProcessInfo.ThermalState+ProcessInfo.ThermalState+StreamingAudioState+TimeoutError\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One participating record \u2014 the `ProcessInfo.ThermalState` extension at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` in the `Wallpaper` package \u2014 sits under the `Examples/WallpaperSampleApp/` directory, which is an explicit sample-app path. Per the decision rules, any record under `Examples/` or `SampleApp/` triggers a `sample-app-mirror` no-action regardless of other signals. Lifting the production `ProcessInfo.ThermalState` extension from `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` into shared code alongside a sample-app fixture would couple production semantics to demonstration code. The remaining members (`IntentError`, `PlaybackError`, `PlaybackState`, `PlayerState`, `StreamingAudioState`, `TimeoutError`) span three distinct packages (`Playback`, `DebugPanel`, `Intents`) with empty `fields_or_signature` lists, providing insufficient structural evidence to justify extraction independently of the restraint-marked record.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015pbrDfZr5qDihWcMVaJEBk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4593,
+    "output_tokens": 723,
+    "service_tier": "standard"
+  }
+}

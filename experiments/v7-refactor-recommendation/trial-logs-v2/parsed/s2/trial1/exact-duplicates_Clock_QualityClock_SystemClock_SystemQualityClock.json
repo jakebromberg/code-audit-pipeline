@@ -1,0 +1,25 @@
+{
+  "cluster_id": "exact-duplicates:Clock+QualityClock+SystemClock+SystemQualityClock",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"name\": \"QualityClock\", \"package\": \"Wallpaper\" ... \"name\": \"Clock\", \"package\": \"Caching\" ... \"shared_field_count\": 1",
+    "rationale": "The cluster surfaces two structurally identical interface/type-alias-object pairs: `Clock` + `SystemClock` in package `Caching` (`Shared/Caching/Sources/Caching/Clock.swift`) and `QualityClock` + `SystemQualityClock` in package `Wallpaper` (`Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift`). The `shared_field_count: 1` and `exact-duplicates` query confirm the shapes are identical. Since `Caching` already owns the canonical `Clock` protocol and its `SystemClock` typealias, and `Wallpaper` is a consumer-side package that can depend on `Caching`, the `Wallpaper`-local `QualityClock` and `SystemQualityClock` declarations should be removed and replaced with imports of `Clock` and `SystemClock` from `Caching`. No new package needs to be created; `Caching` is the natural upstream home. No restraint markers are present on any participating record.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Throttling/AdaptiveQualityController.swift"
+      ],
+      "target_package": "Caching",
+      "type_name": "Clock"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Clock_QualityClock_SystemClock_SystemQualityClock.json",
+  "row_index": 10,
+  "trial": 1
+}

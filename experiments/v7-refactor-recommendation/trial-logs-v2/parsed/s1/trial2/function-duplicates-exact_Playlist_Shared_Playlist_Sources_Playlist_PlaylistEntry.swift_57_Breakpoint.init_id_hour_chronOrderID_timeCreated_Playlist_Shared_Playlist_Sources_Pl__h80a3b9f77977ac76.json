@@ -1,0 +1,30 @@
+{
+  "cluster_id": "function-duplicates-exact:Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:57:Breakpoint.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:96:Talkset.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift:19:Announcement.init(id:hour:chronOrderID:timeCreated:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "Breakpoint.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/PlaylistEntry.swift:96:Talkset.init(id:hour:chronOrderID:timeCreated:)+Playlist:Shared/Playlist/Sources/Playlist/_Plant_Announcement.swift:19:Announcement.init(id:hour:chronOrderID:timeCreated:)",
+    "rationale": "All three initializers \u2014 `Announcement.init(id:hour:chronOrderID:timeCreated:)`, `Breakpoint.init(id:hour:chronOrderID:timeCreated:)`, and `Talkset.init(id:hour:chronOrderID:timeCreated:)` \u2014 share an identical parameter label signature `(id:hour:chronOrderID:timeCreated:)` across three distinct types in the same `Playlist` package. This is a textbook case of parallel construction over a shared domain concept (a playlist entry with an identity, an hour slot, a chronological order ID, and a creation timestamp). Introducing a protocol `PlaylistEntry` with these four requirements and providing a default memberwise initialiser via a protocol extension would eliminate the triplication. None of the participating records carry any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint rule applies.",
+    "specifics": {
+      "associated_type": "ID",
+      "constraints": [
+        "Hashable"
+      ],
+      "new_protocol": "PlaylistEntry",
+      "replaces": [
+        "Announcement.init(id:hour:chronOrderID:timeCreated:)",
+        "Breakpoint.init(id:hour:chronOrderID:timeCreated:)",
+        "Talkset.init(id:hour:chronOrderID:timeCreated:)"
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Playlist_Shared_Playlist_Sources_Playlist_PlaylistEntry.swift_57_Breakpoint.init_id_hour_chronOrderID_timeCreated_Playlist_Shared_Playlist_Sources_Pl__h80a3b9f77977ac76.json",
+  "row_index": 4,
+  "trial": 2
+}

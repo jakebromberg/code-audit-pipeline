@@ -1,0 +1,22 @@
+{
+  "cluster_id": "exact-duplicates:HLSRateDidChangeMessage+PlayerRateDidChangeMessage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"package\": \"Playback\" ... \"shared_field_count\": 2",
+    "rationale": "Both 'PlayerRateDidChangeMessage' (line 19, 'Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift') and 'HLSRateDidChangeMessage' (line 19, 'Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift') are 'type-alias-object' records in the same 'Playback' package with identical structural evidence ('shared_field_count': 2, no differing slots). Because they are type aliases rather than concrete types, the duplication cannot be resolved by extracting a shared base class or protocol; the fix is to canonicalise to one alias name within the 'Playback' package. No restraint markers are present on either record, so the duplication is unintentional.",
+    "specifics": {
+      "proposed_action": "Determine whether 'HLSRateDidChangeMessage' in 'Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift' and 'PlayerRateDidChangeMessage' in 'Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift' are both type aliases pointing to the same underlying type. If so, consolidate to a single canonical type alias (e.g., 'PlayerRateDidChangeMessage') declared once in a shared messages file within the 'Playback' package, and replace the HLSPlayer-specific alias with either a re-export or a direct reference to the canonical name. If the two aliases intentionally target different underlying types despite sharing structural shape, document that distinction explicitly and leave them separate.",
+      "why_no_category_fits": "Both records are 'type-alias-object' kinds with empty 'fields_or_signature' lists, meaning there are no methods or fields to extract into a protocol, default implementation, or generic parameterization. The duplication is at the type-alias declaration level, not at the struct/class/function body level. 'extract-to-common' does not cleanly apply because both records already reside in the same package ('Playback') \u2014 there is no upstream package to extract into. The right action is to unify the two aliases within the existing package, which is a renaming/consolidation operation that none of the named categories precisely describe."
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_HLSRateDidChangeMessage_PlayerRateDidChangeMessage.json",
+  "row_index": 45,
+  "trial": 2
+}

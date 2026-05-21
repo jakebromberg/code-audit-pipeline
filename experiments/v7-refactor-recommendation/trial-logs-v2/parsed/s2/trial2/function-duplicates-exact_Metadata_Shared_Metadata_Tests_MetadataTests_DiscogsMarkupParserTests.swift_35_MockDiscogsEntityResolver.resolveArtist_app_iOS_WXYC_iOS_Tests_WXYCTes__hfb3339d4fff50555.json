@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Metadata:Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift:35:MockDiscogsEntityResolver.resolveArtist+app:iOS:WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift:31:MockDiscogsEntityResolver.resolveArtist",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift",
+    "rationale": "Both participating records live in test files \u2014 `Shared/Metadata/Tests/MetadataTests/DiscogsMarkupParserTests.swift` (package `Metadata`) and `WXYC/iOS/Tests/WXYCTests/DiscogsFormatterTests.swift` (package `app:iOS`). The method name `MockDiscogsEntityResolver.resolveArtist` is a mock/stub helper defined inline in each test suite to satisfy the local test's dependency on a `DiscogsEntityResolver` abstraction. Although both `context_flags` blocks show `is_mock: false` and `is_test: false`, the file paths unambiguously place both records inside `Tests/` directories, and the `Mock` prefix on the enclosing type is the canonical Swift test-fixture naming convention. Lifting this mock into a shared location would couple two independent test targets through a shared test-support dependency, which is undesirable and provides no production benefit.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Metadata_Shared_Metadata_Tests_MetadataTests_DiscogsMarkupParserTests.swift_35_MockDiscogsEntityResolver.resolveArtist_app_iOS_WXYC_iOS_Tests_WXYCTes__hfb3339d4fff50555.json",
+  "row_index": 26,
+  "trial": 2
+}

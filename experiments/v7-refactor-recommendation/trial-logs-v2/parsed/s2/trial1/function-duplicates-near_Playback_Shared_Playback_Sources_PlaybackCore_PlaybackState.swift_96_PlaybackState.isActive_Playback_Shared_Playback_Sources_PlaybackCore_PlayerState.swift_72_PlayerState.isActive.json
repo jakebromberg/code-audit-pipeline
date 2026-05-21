@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143, \"shared_field_count\": 0, \"shared_ancestor\": null",
+    "rationale": "Both `PlayerState.isActive` (line 72 of `PlayerState.swift`) and `PlaybackState.isActive` (line 96 of `PlaybackState.swift`) are computed properties in the same `Playback` package with no fields or signature entries surfaced by the pipeline. While the Jaccard similarity of 0.714 suggests near-duplicate bodies, `PlayerState` and `PlaybackState` are distinct domain types whose `isActive` properties almost certainly encode different state-machine logic (e.g., one may reflect the low-level AVPlayer state while the other reflects higher-level playback session state). Merging or defaulting these would conflate two separate abstractions. No restraint markers are present, but the structural evidence \u2014 zero shared fields and no shared ancestor \u2014 indicates the resemblance is coincidental rather than a true redundancy worth collapsing.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-near_Playback_Shared_Playback_Sources_PlaybackCore_PlaybackState.swift_96_PlaybackState.isActive_Playback_Shared_Playback_Sources_PlaybackCore_PlayerState.swift_72_PlayerState.isActive.json",
+  "row_index": 139,
+  "trial": 1
+}

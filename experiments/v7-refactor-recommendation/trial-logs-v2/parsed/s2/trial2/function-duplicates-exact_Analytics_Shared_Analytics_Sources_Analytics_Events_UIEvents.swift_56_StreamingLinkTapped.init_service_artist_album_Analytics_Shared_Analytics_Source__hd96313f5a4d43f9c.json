@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)",
+    "rationale": "Both `StreamingLinkTapped.init(service:artist:album:)` at line 56 and `ExternalLinkTapped.init(service:artist:album:)` at line 70 are flagged as exact function duplicates residing in the same file `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` within the `Analytics` package, with identical parameter labels `(service:artist:album:)`. No restraint markers are set (all context flags are false). Because the two types are distinct named analytics events that must remain separate for downstream event discrimination, the duplication is in the initializer body only, not in the type identity \u2014 making a shared private helper or protocol-with-default-init the appropriate remedy rather than any of the standard extraction or generalization categories.",
+    "specifics": {
+      "proposed_action": "Introduce a shared private or internal helper initializer (or a common base struct/protocol with a default initializer body) within `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package that accepts `(service:artist:album:)` parameters, and delegate both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) to it. Because both types are distinct event types that must remain separate named structs/classes for analytics discrimination, extraction to a common type is inappropriate; instead, a shared private factory function or a protocol with a default implementation carrying the shared init logic would eliminate the body duplication while preserving the distinct type identities.",
+      "why_no_category_fits": "The two initializers belong to distinct, intentionally separate event types (`StreamingLinkTapped` and `ExternalLinkTapped`) that must remain distinct for analytics event discrimination \u2014 collapsing them into a single generic type or extracting to a common supertype would lose that semantic distinction. `extract-to-common` does not fit because both records already live in the same file and package (`Analytics`/`UIEvents.swift`) with no cross-package movement needed. `generic-parameterization` does not fit cleanly because the types themselves (not just the init logic) are the meaningful unit. `default-implementation` does not fit because no protocol is named in the cluster. The most idiomatic Swift remedy is a shared private helper or a protocol with a default init body, which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Analytics_Shared_Analytics_Sources_Analytics_Events_UIEvents.swift_56_StreamingLinkTapped.init_service_artist_album_Analytics_Shared_Analytics_Source__hd96313f5a4d43f9c.json",
+  "row_index": 37,
+  "trial": 2
+}

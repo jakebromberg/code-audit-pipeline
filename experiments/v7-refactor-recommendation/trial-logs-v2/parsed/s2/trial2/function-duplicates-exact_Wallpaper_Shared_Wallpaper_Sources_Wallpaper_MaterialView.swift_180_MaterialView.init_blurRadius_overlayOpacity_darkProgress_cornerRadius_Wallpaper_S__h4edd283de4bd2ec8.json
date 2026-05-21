@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "The cluster surfaces two records with the identical name `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` at lines 48 and 180 of the same file `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift` in package `Wallpaper`. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so intentional duplication is not indicated. Having two initializers with the same external parameter labels in the same type declaration is either a Swift compiler error (if the bodies differ in a way that makes them ambiguous) or dead code; the duplicate at line 180 should be removed or its logic folded into the declaration at line 48.",
+    "specifics": {
+      "proposed_action": "Remove the duplicate initializer declaration at line 180 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, retaining only the one at line 48. Both records carry the identical signature `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in the same file and package (`Wallpaper`), so this is a straightforward intra-file deduplication: inspect the two bodies, confirm one is redundant (or consolidate any differing logic into the surviving declaration), and delete the duplicate.",
+      "why_no_category_fits": "Both records live in the same file (`Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`) and the same package (`Wallpaper`), so there is nothing to extract to a common package, no protocol hierarchy to introduce, no generic parameterization needed, and no default-implementation target. The fix is purely an intra-file deletion of a duplicate initializer overload, which does not map cleanly to any of the named refactor categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 2
+}

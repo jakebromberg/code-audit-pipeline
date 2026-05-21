@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory per the decision rules \u2014 even though `is_sample_app` is marked `false` on the record, the path itself is a strong structural signal. However, the decision rules anchor the restraint check on the `is_sample_app` context flag value, not the path heuristic alone. That said, the path `Examples/WallpaperSampleApp/` is explicitly called out in the rules as a sample-app-mirror indicator.\n\nThe rules state: \"ANY participating record has is_sample_app=true, or sits under Examples/ or SampleApp/\" \u2014 the \"or sits under Examples/\" clause applies here regardless of the flag value. This record sits under `Examples/WallpaperSampleApp/`, so the restraint marker applies.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:49:DebugMetricsProvider.setUpDisplayLink+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:88:DebugMetricsProvider.setUpDisplayLink\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory \u2014 a sample-app path explicitly identified as a restraint marker in the decision rules. Even though `is_sample_app` is flagged `false` on that record, the path-based criterion applies independently. Lifting `DebugMetricsProvider.setUpDisplayLink` from the production `DebugPanel` package into shared code to eliminate this duplicate would couple production semantics to a sample-app demonstration context. The correct posture is to leave the production copy in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` untouched and treat the copy in `DebugHUD.swift` as an intentional, self-contained sample-app fixture.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012vUMSdFRTA1sducH5BnrU9",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3881,
+    "output_tokens": 667,
+    "service_tier": "standard"
+  }
+}

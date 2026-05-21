@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Artwork:Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift:75:encodeCGImageAsHEIF+Core:Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift:107:Image.heifData\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Core\",\n      \"type_name\": \"Image.heifData\",\n      \"remove_from\": [\n        \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces two near-duplicate functions \u2014 `encodeCGImageAsHEIF` in package `Artwork` (CachingArtworkFetcher.swift:75) and `Image.heifData` in package `Core` (ImageCompatability.swift:107) \u2014 with a Jaccard similarity of 0.706, indicating substantial shared logic for HEIF-encoding a CGImage. Since `Core` is already a shared foundation package and `Artwork` is a consumer of it (the package names and paths imply this layering), the canonical implementation should live in `Core` as `Image.heifData`. The `encodeCGImageAsHEIF` free function in `Artwork` can then be deleted and its call sites redirected to the `Core` extension method, eliminating the duplication without coupling production code to any test or sample-app fixture (all context flags are false on both records).\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7058823529411765\",\n    \"alternative\": {\n      \"category\": \"extension-consolidation\",\n      \"specifics\": {\n        \"target_type\": \"Image\",\n        \"consolidate_from\": [\n          \"Shared/Artwork/Sources/Artwork/CachingArtworkFetcher.swift\",\n          \"Shared/Core/Sources/Core/Models and Services/ImageCompatability.swift\"\n        ]\n      },\n      \"rationale\": \"If the `Artwork` package cannot take a direct dependency on `Core`'s `Image` extension (e.g., due to type-system or layering constraints), an alternative is to consolidate both HEIF-encoding implementations into a single extension on `Image` within `Core` and expose it publicly, then have `Artwork` call through that extension rather than maintaining its own free function.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UsT7y7K5rLcrbCaBXHwjAa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 614,
+    "service_tier": "standard"
+  }
+}

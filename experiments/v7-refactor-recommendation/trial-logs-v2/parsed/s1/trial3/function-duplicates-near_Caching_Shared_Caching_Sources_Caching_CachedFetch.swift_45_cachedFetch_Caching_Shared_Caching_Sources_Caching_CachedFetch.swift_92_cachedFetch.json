@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "\"jaccard\": 0.7",
+    "rationale": "Both participating records are the function `cachedFetch` in `Shared/Caching/Sources/Caching/CachedFetch.swift` within the `Caching` package \u2014 one at line 45 and one at line 92 \u2014 with no restraint markers (all context flags false). A Jaccard similarity of 0.7 indicates substantial but not identical bodies, pointing to near-duplicate logic that has likely drifted. Because both definitions are in the same file and package, no cross-package extraction is warranted; the fix is an in-file consolidation. The absence of `fields_or_signature` data prevents a more precise structural recommendation, so a manual review to unify or explicitly delegate between the two overloads is the safest course.",
+    "specifics": {
+      "proposed_action": "Investigate the two `cachedFetch` function definitions at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` in the `Caching` package. They share a Jaccard similarity of 0.7 and reside in the same file. Determine whether they differ only by parameter label or type (suggesting one should be removed or the two should be unified into a single generic or defaulted-parameter overload), or whether the divergence is intentional (e.g., one handles an async path and the other a synchronous fallback). If the divergence is incidental, collapse them into a single canonical implementation; if one overload is a thin wrapper around the other, make that delegation explicit.",
+      "why_no_category_fits": "Both records live in the same file and same package (`Caching`), so `extract-to-common` does not apply \u2014 there is nothing to move upstream. The cluster signal is `function-duplicates-near` with a 0.7 Jaccard score and no `fields_or_signature` data provided, so there is insufficient evidence to confirm a shared protocol conformance (`default-implementation`), a type-parameter opportunity (`generic-parameterization`), or a PAT introduction. The most precise recommendation is an in-file consolidation or explicit delegation between the two overloads, which does not map cleanly to any named category."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 3
+}

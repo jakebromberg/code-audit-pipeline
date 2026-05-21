@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:134:AudioEnginePlayerTests.testPlayIdempotent+Playback:Shared/Playback/Tests/MP3StreamerTests/AudioEnginePlayerTests.swift:365:AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both participating records \u2014 `AudioEnginePlayerTests.testPlayIdempotent` (line 134) and `AudioEnginePlayerTests.testPlaySucceedsAfterEngineTearDown` (line 365) \u2014 carry `is_test: true` in their context flags. Although the Jaccard similarity of 0.769 indicates meaningful structural overlap, the two test methods exercise distinct behavioural scenarios (idempotent play vs. play after engine tear-down), and their shared shape is a natural consequence of the common test-setup boilerplate in `AudioEnginePlayerTests.swift`. Merging or extracting them would obscure the intent of each scenario and couple unrelated failure modes. Per the restraint rules, any cluster where any participating record has `is_test: true` defaults to no-action.\",\n    \"evidence_quote\": \"is_test: true\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_011y3FU4YKRNkRqumUyPUDXk",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3884,
+    "output_tokens": 371,
+    "service_tier": "standard"
+  }
+}

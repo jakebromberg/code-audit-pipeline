@@ -1,0 +1,26 @@
+{
+  "cluster_id": "function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"jaccard\": 0.8",
+    "rationale": "Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) live in the same `Wallpaper` package and exhibit a Jaccard similarity of 0.8, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The shared logic should be extracted into a single location within the `Wallpaper` package \u2014 for example, a protocol extension or a free function in a new `ShaderDirective+HumanReadable.swift` file \u2014 so both types can delegate to it, eliminating the duplication without crossing package boundaries.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift",
+        "Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift"
+      ],
+      "target_package": "Wallpaper",
+      "type_name": "humanReadableName"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_ShaderDirectiveStore.swift_71_ShaderDirectiveStore.humanReadableName_Wallpaper_Shared_Wallpaper_Sour__h058e743b63532811.json",
+  "row_index": 76,
+  "trial": 3
+}

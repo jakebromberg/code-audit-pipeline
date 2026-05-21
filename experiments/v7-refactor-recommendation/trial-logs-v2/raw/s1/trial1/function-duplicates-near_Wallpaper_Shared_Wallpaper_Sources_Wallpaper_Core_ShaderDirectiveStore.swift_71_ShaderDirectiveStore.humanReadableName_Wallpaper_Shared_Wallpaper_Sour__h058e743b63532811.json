@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift:71:ShaderDirectiveStore.humanReadableName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift:102:ShaderDirectiveControlsDisclosure.humanReadableName\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"Wallpaper\",\n      \"type_name\": \"humanReadableName\",\n      \"remove_from\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/ShaderDirectiveStore.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/DebugUI/ThemeDebugOverlay/ShaderDirectiveControls.swift\"\n      ]\n    },\n    \"rationale\": \"Both `ShaderDirectiveStore.humanReadableName` (line 71) and `ShaderDirectiveControlsDisclosure.humanReadableName` (line 102) are near-duplicate methods (Jaccard 0.8) living in the same `Wallpaper` package with no restraint markers (is_test, is_mock, is_sample_app, is_codegen all false). Because both types operate on shader directive concepts within the same package, the shared logic is best extracted into a protocol extension or free function within `Wallpaper` itself \u2014 for example, a `ShaderDirective+HumanReadable.swift` extension file \u2014 so both call sites can delegate to a single implementation. This eliminates the near-duplicate body without introducing any new package dependency.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.8\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"HumanReadableShaderDirective\",\n        \"associated_type\": \"DirectiveType\",\n        \"constraints\": [],\n        \"replaces\": [\"ShaderDirectiveStore.humanReadableName\", \"ShaderDirectiveControlsDisclosure.humanReadableName\"]\n      },\n      \"rationale\": \"If `ShaderDirectiveStore` and `ShaderDirectiveControlsDisclosure` each wrap a distinct directive type, a PAT `HumanReadableShaderDirective` with a default `humanReadableName` implementation could unify both conformers. However, since `fields_or_signature` is empty for both records the structural evidence for a full PAT is thin, making a simpler shared free-function or protocol extension the more idiomatic first step.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01WFb8uJC9YyvzNYB371arNt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3899,
+    "output_tokens": 672,
+    "service_tier": "standard"
+  }
+}

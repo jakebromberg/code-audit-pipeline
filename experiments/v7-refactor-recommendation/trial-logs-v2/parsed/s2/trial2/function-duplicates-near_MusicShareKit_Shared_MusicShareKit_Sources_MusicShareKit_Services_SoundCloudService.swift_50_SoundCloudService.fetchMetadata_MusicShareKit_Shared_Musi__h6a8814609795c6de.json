@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata",
+    "rationale": "Both `SoundCloudService.fetchMetadata` (line 50 in `SoundCloudService.swift`) and `YouTubeMusicService.fetchMetadata` (line 64 in `YouTubeMusicService.swift`) live in the same `MusicShareKit` package and exhibit a high structural similarity (Jaccard 0.808), indicating near-duplicate implementations of the same conceptual operation across two service types. Introducing a `MusicMetadataFetchable` protocol with a `fetchMetadata` requirement would unify the interface, allow callers to depend on the protocol rather than concrete types, and make it straightforward to add future music-source services without duplicating the same method shape. Both records carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so there is no barrier to the refactor.",
+    "specifics": {
+      "associated_type": "Metadata",
+      "constraints": [],
+      "new_protocol": "MusicMetadataFetchable",
+      "replaces": [
+        "SoundCloudService",
+        "YouTubeMusicService"
+      ]
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-near_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Services_SoundCloudService.swift_50_SoundCloudService.fetchMetadata_MusicShareKit_Shared_Musi__h6a8814609795c6de.json",
+  "row_index": 71,
+  "trial": 2
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendModeConvertible\",\n      \"method\": \"var blendMode: BlendMode { get }\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeConvertible+Defaults.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"Three distinct enum/type declarations \u2014 `PlaybackBlendMode.blendMode`, `MaterialBlendMode.blendMode`, and `OverlayBlendMode.blendMode` \u2014 all live in the same `Wallpaper` package and are flagged as exact duplicates at the same line offset (line 62), indicating identical computed-property bodies. Because all three are production code (all context flags false) within a single package, the idiomatic Swift fix is to introduce a shared protocol (e.g., `BlendModeConvertible`) with a default implementation in a protocol extension, eliminating the three redundant bodies. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` suggests it may be a codegen candidate or transitional artifact, but no `is_codegen` flag is set, so it is treated as production code requiring the same consolidation.\",\n    \"evidence_quote\": \"PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"BlendModeConvertible\",\n        \"associated_type\": \"BlendMode\",\n        \"constraints\": [],\n        \"replaces\": [\"PlaybackBlendMode\", \"MaterialBlendMode\", \"OverlayBlendMode\"]\n      },\n      \"rationale\": \"If the three blend-mode types differ in their underlying `BlendMode` associated type (e.g., each maps to a different concrete blend-mode enum), a PAT with `associatedtype BlendMode` would be more flexible than a plain protocol with a default implementation. However, because the cluster signals exact duplication at the same line with no differing slots, a simple default implementation is the more conservative and idiomatic first step.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019H34i9T3afArN1AHnpUhx6",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4058,
+    "output_tokens": 906,
+    "service_tier": "standard"
+  }
+}

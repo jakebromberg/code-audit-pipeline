@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "SwiftUI.Image.background\n      \"file\": \"WXYC/WatchXYC/PlayerPage.swift\"\n      \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "The computed property `SwiftUI.Image.background` is declared identically in two separate app targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:210` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:47` \u2014 with no restraint markers (all context flags false) on either record. Because this is an extension on `SwiftUI.Image`, the canonical home is a shared extensions file; the iOS target's `Extensions.swift` already serves that role by name and is the more general target. The WatchXYC copy should be removed and the watchOS target made to import or depend on the shared extension. If a true shared module exists upstream of both targets it would be preferable, but based solely on the cluster evidence the iOS `Extensions.swift` is the best available consolidation point.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 3
+}

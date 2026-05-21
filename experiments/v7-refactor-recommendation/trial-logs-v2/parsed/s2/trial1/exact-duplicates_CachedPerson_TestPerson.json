@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\" ... \"file\": \"Shared/Caching/Tests/CachingTests/CachedFetchTests.swift\" ... \"fields_or_signature\": []",
+    "rationale": "Both `TestPerson` (CacheCoordinatorTests.swift:71) and `CachedPerson` (CachedFetchTests.swift:257) are type-alias-objects in the `Caching` package's test directory with empty `fields_or_signature` lists. Although neither record carries a restraint flag, the two names encode distinct test-fixture roles \u2014 one anchors coordinator tests, the other anchors fetch tests \u2014 and their structural overlap (shared_field_count: 2 on empty field lists) is coincidental shape identity rather than meaningful duplication. Merging or extracting them would couple two independent test suites without reducing real complexity.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 1
+}

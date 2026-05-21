@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "macro-synthesis",
+    "confidence": 0.72,
+    "evidence_quote": "PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName",
+    "rationale": "All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each carries an exactly-duplicated `displayName` computed property at line 41 of their respective files. The structural signal is `function-duplicates-exact`, confirming byte-level identity. Because the three types are parallel enum-like blend-mode types sharing only the shape of a display-name property, a `@DisplayName` attached macro synthesising `var displayName: String` is the most idiomatic Swift 5.9+ answer: it eliminates the boilerplate at the declaration site without requiring a shared protocol or base class, and scales automatically to any future blend-mode type added to the package.",
+    "specifics": {
+      "applies_to": [
+        "enum"
+      ],
+      "macro_name": "@DisplayName",
+      "population_size_evidence": "3 participating records: PlaybackBlendMode.displayName, MaterialBlendMode.displayName, OverlayBlendMode.displayName \u2014 all at line 41 in the Wallpaper package",
+      "synthesizes": "A `var displayName: String` computed property that derives a human-readable display name from each case label, replacing the identical `displayName` implementations on `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode`.",
+      "use_swift_builtin": false
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_Core_MaterialBlendMode.swift_41_MaterialBlendMode.displayName_Wallpaper_Shared_Wallpaper_Sources_Wallpap__h439dd2f1e18e7c03.json",
+  "row_index": 1,
+  "trial": 2
+}

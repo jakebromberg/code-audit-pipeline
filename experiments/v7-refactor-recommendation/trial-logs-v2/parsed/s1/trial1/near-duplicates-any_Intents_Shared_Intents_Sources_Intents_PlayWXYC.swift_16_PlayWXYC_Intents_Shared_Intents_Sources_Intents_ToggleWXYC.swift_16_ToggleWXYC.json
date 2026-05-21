@@ -1,0 +1,22 @@
+{
+  "cluster_id": "near-duplicates-any:Intents:Shared/Intents/Sources/Intents/PlayWXYC.swift:16:PlayWXYC+Intents:Shared/Intents/Sources/Intents/ToggleWXYC.swift:16:ToggleWXYC",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.52,
+    "evidence_quote": "jaccard\": 0.75",
+    "rationale": "The cluster reports a Jaccard similarity of 0.75 between `PlayWXYC` (at `Shared/Intents/Sources/Intents/PlayWXYC.swift:16`) and `ToggleWXYC` (at `Shared/Intents/Sources/Intents/ToggleWXYC.swift:16`), both residing in the same `Shared/Intents` package. A three-quarters structural overlap between two intent types whose names differ only in their action verb (`Play` vs. `Toggle`) is a strong signal of copy-paste duplication rather than coincidental shape. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are present on either record, so no intentional-duplication rule applies. The empty `members` list prevents naming specific methods or fields, making it impossible to satisfy the hard-constraint schemas of `default-implementation`, `generic-parameterization`, or `protocol-inheritance` without hallucination, so `other` is the appropriate category.",
+    "specifics": {
+      "proposed_action": "Introduce a shared base AppIntent struct or a common protocol with a default implementation in `Shared/Intents/Sources/Intents/` that captures the ~75% overlapping shape between `PlayWXYC` and `ToggleWXYC`. Both types should conform to (or extend) this shared abstraction, retaining only their differing ~25% of behaviour (the specific action semantics \u2014 play vs. toggle). Concretely: (1) audit the two files for identical stored properties, `perform()` scaffolding, and metadata declarations; (2) extract those into a new file such as `Shared/Intents/Sources/Intents/WXYCIntent+Shared.swift`; (3) have `PlayWXYC` and `ToggleWXYC` reuse that shared code via protocol conformance with a default implementation or via a shared base value type.",
+      "why_no_category_fits": "The cluster's `members` array is empty, so no `fields_or_signature` entries are available to satisfy the hard constraints of `default-implementation` (which requires naming a `method` that appears in every conformer's field list), `generic-parameterization` (which requires naming `replaces` entries matched to existing `name` fields), or `protocol-inheritance` (which requires naming `moved_members` present in every child's field list). The structural signal \u2014 Jaccard 0.75, same package, same line offset, near-duplicate type names `PlayWXYC` and `ToggleWXYC` \u2014 is strong enough to warrant a refactor recommendation, but the absence of member-level evidence prevents grounding any of the named specifics schemas without hallucinating field names."
+    }
+  },
+  "query": "near-duplicates-any",
+  "raw_response_path": "raw/s1/trial1/near-duplicates-any_Intents_Shared_Intents_Sources_Intents_PlayWXYC.swift_16_PlayWXYC_Intents_Shared_Intents_Sources_Intents_ToggleWXYC.swift_16_ToggleWXYC.json",
+  "row_index": 18,
+  "trial": 1
+}

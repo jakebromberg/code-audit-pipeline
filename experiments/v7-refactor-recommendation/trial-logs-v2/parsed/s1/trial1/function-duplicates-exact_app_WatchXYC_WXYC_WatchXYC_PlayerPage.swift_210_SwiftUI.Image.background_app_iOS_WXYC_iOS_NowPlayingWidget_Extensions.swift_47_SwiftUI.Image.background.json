@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:210:SwiftUI.Image.background+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:47:SwiftUI.Image.background",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "SwiftUI.Image.background\n      \"file\": \"WXYC/WatchXYC/PlayerPage.swift\"\n      \"file\": \"WXYC/iOS/NowPlayingWidget/Extensions.swift\"",
+    "rationale": "The computed property `SwiftUI.Image.background` is declared identically in two separate app targets \u2014 `app:WatchXYC` at `WXYC/WatchXYC/PlayerPage.swift:210` and `app:iOS` at `WXYC/iOS/NowPlayingWidget/Extensions.swift:47`. Neither record carries any restraint marker (all context flags are false), confirming this is unintentional duplication. Because the iOS target's `Extensions.swift` is already a dedicated extensions file and SwiftUI extensions on `Image` are platform-agnostic in shape, the canonical home for this extension should be a shared location that both targets can consume. However, since no upstream shared package is explicitly named in the cluster, the least-disruptive consolidation is to retain the definition in `WXYC/iOS/NowPlayingWidget/Extensions.swift` and remove the copy from `WXYC/WatchXYC/PlayerPage.swift`, provided the WatchXYC target gains a dependency on the iOS extensions module or the extension is moved to a genuinely shared file both targets already import.",
+    "specifics": {
+      "remove_from": [
+        "WXYC/WatchXYC/PlayerPage.swift"
+      ],
+      "target_package": "app:iOS",
+      "type_name": "SwiftUI.Image.background"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_app_WatchXYC_WXYC_WatchXYC_PlayerPage.swift_210_SwiftUI.Image.background_app_iOS_WXYC_iOS_NowPlayingWidget_Extensions.swift_47_SwiftUI.Image.background.json",
+  "row_index": 10,
+  "trial": 1
+}

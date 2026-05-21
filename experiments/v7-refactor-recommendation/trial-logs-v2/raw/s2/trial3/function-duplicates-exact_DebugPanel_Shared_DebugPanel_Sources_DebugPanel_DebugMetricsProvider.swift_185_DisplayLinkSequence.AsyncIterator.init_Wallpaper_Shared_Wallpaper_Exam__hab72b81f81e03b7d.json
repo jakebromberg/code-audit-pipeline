@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags carefully.\n\nBoth records have `is_sample_app: false`, `is_test: false`, `is_mock: false`, and `is_codegen: false`. However, the second record's file path is `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a canonical sample-app directory marker per the decision rules (\"sits under Examples/ or SampleApp/\"). This triggers the `sample-app-mirror` restraint regardless of the `is_sample_app` flag value, because the path itself is the evidence.\n\nThe duplicate `DisplayLinkSequence.AsyncIterator.init` in the sample app is almost certainly a copy-paste of the production implementation in `DebugPanel` for demonstration purposes. Lifting it into shared code would couple production infrastructure to sample-app semantics.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app path. Per the decision rules, any record under Examples/ or SampleApp/ triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The duplicate 'DisplayLinkSequence.AsyncIterator.init' in the sample app is a local copy for demonstration purposes; extracting it into shared production code would couple the DebugPanel production package to sample-app semantics. No refactor is warranted.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_012chX5X8UoyNNKdw57uriqU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3879,
+    "output_tokens": 593,
+    "service_tier": "standard"
+  }
+}

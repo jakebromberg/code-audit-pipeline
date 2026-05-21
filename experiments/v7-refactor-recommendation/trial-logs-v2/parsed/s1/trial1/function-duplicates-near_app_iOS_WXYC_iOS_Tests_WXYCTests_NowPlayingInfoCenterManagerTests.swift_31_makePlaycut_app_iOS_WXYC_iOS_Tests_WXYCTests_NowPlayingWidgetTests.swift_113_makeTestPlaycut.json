@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingInfoCenterManagerTests.swift:31:makePlaycut+app:iOS:WXYC/iOS/Tests/WXYCTests/NowPlayingWidgetTests.swift:113:makeTestPlaycut",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.15,
+    "evidence_quote": "\"is_test\": true",
+    "rationale": "Both participating records carry `is_test: true` \u2014 `makePlaycut` in `NowPlayingInfoCenterManagerTests.swift` (line 31) and `makeTestPlaycut` in `NowPlayingWidgetTests.swift` (line 113). Per the restraint rules, any cluster where even one record is a test fixture warrants no-action; here both are test helpers within the `app:iOS` test target. Consolidating them into a shared test helper is a low-priority cosmetic change that risks coupling two independent test suites, and the differing names (`makePlaycut` vs `makeTestPlaycut`) suggest they may already be intentionally scoped to their respective test classes.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingInfoCenterManagerTests.swift_31_makePlaycut_app_iOS_WXYC_iOS_Tests_WXYCTests_NowPlayingWidgetTests.swift_113_makeTestPlaycut.json",
+  "row_index": 70,
+  "trial": 1
+}

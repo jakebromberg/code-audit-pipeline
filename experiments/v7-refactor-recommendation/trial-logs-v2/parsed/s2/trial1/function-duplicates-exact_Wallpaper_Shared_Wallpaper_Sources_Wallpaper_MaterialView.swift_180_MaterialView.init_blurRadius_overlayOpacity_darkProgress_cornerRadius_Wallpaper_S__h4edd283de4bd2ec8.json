@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:180:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.91,
+    "evidence_quote": "MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:48:MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)",
+    "rationale": "The cluster surfaces two records with identical name `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)`, identical `kind: \"initializer\"`, identical `file: \"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\"`, and identical `package: \"Wallpaper\"`, differing only in line number (48 vs 180). No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Having two initializers with the same external parameter labels in the same type declaration is a Swift compile error unless they differ in body or internal labels, making this almost certainly an accidental duplication (e.g., a copy-paste during a refactor). The fix is to consolidate to a single declaration in place, which does not map cleanly to any of the named refactor categories.",
+    "specifics": {
+      "proposed_action": "Remove the duplicate initializer declaration at line 180 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, retaining only the one at line 48. Both declarations carry the identical signature `MaterialView.init(blurRadius:overlayOpacity:darkProgress:cornerRadius:)` in the same file and same package (`Wallpaper`). Verify that the body at line 48 is the canonical implementation (or merge any unique logic from line 180 into it), then delete the redundant declaration at line 180.",
+      "why_no_category_fits": "This is not a cross-file or cross-package duplication, so `extract-to-common` does not apply. There is no protocol, subclass hierarchy, or generic abstraction involved, so `protocol-inheritance`, `default-implementation`, `pat-introduction`, `generic-parameterization`, `subclass-lift`, and `macro-synthesis` do not apply. The two records are identical initializers within a single file \u2014 the correct fix is simply to delete one of them, which is a straightforward intra-file deduplication that none of the named action categories describe precisely."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial1/function-duplicates-exact_Wallpaper_Shared_Wallpaper_Sources_Wallpaper_MaterialView.swift_180_MaterialView.init_blurRadius_overlayOpacity_darkProgress_cornerRadius_Wallpaper_S__h4edd283de4bd2ec8.json",
+  "row_index": 32,
+  "trial": 1
+}

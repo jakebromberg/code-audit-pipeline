@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Metadata:Shared/Metadata/Sources/Metadata/_Plant_ArtistRepository.swift:19:ArtistRepository+Metadata:Shared/Metadata/Sources/Metadata/_Plant_ReleaseRepository.swift:19:ReleaseRepository\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"Repository\",\n      \"associated_type\": \"Entity\",\n      \"constraints\": [],\n      \"replaces\": [\"ArtistRepository\", \"ReleaseRepository\"]\n    },\n    \"rationale\": \"Both `ArtistRepository` and `ReleaseRepository` in the `Metadata` package share three identical members \u2014 `cacheKey:(for id: Int) -> String`, `entityKind:String`, and `lastSync:Date?` \u2014 and differ only in the return type of their `resolve:(id: Int) async throws -> <Entity>` method (`Artist` vs `Release`). This is the canonical PAT pattern: a family of protocols that are structurally identical except for one varying concrete type. Introducing a `Repository` protocol with `associatedtype Entity` and moving the four members onto it (with `resolve` typed as `(id: Int) async throws -> Entity`) eliminates the duplication while preserving full type safety for each conformer. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no restraint rule applies.\",\n    \"evidence_quote\": \"\\\"cacheKey:(for id: Int) -> String\\\",\\n        \\\"entityKind:String\\\",\\n        \\\"lastSync:Date?\\\",\\n        \\\"resolve:(id: Int) async throws -> Release\\\"\",\n    \"alternative\": {\n      \"category\": \"protocol-inheritance\",\n      \"specifics\": {\n        \"parent\": \"Repository\",\n        \"children\": [\"ArtistRepository\", \"ReleaseRepository\"],\n        \"moved_members\": [\"cacheKey:(for id: Int) -> String\", \"entityKind:String\", \"lastSync:Date?\"],\n        \"reuse_existing_swift_protocol\": false\n      },\n      \"rationale\": \"If introducing an associated type is considered too disruptive to existing call sites that hold `any ArtistRepository` / `any ReleaseRepository` existentials, a non-generic parent protocol `Repository` (new, but without an associated type) could absorb the three shared concrete members (`cacheKey`, `entityKind`, `lastSync`), leaving only the typed `resolve` method in each child. This avoids existential-erasure complications at the cost of not unifying the `resolve` signature. However, the PAT approach is more idiomatic Swift and fully captures the structural intent.\"\n    },\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_0171nWStXEz3w7n33bqbo3Ra",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3914,
+    "output_tokens": 675,
+    "service_tier": "standard"
+  }
+}

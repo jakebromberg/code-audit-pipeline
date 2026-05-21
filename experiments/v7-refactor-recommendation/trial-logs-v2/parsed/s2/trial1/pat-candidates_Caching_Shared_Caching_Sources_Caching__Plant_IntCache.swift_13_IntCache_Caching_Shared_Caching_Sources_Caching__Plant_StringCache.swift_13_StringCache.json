@@ -1,0 +1,32 @@
+{
+  "cluster_id": "pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "generic-parameterization",
+    "confidence": 0.88,
+    "evidence_quote": "\"differing_slots\": [{\"a\": [\"storage:[String: CacheEntry]\"], \"b\": [\"storage:[Int: CacheEntry]\"]}]",
+    "rationale": "Both `StringCache` and `IntCache` in package `Caching` share four identical fields (`capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`) and differ only in the key type of `storage` \u2014 `[String: CacheEntry]` vs `[Int: CacheEntry]`. This is the canonical motivation for generic parameterization: a single `Cache<Key: Hashable>` struct with `storage: [Key: CacheEntry]` replaces both type-alias objects without any loss of expressiveness. Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. The `_Plant_` filename prefix suggests these are pipeline-generated placeholders, making consolidation into a single generic type the correct production outcome.",
+    "specifics": {
+      "generic_kind": "struct",
+      "new_name": "Cache",
+      "replaces": [
+        "StringCache",
+        "IntCache"
+      ],
+      "type_params": [
+        {
+          "constraint": "Hashable",
+          "name": "Key"
+        }
+      ]
+    }
+  },
+  "query": "pat-candidates",
+  "raw_response_path": "raw/s2/trial1/pat-candidates_Caching_Shared_Caching_Sources_Caching__Plant_IntCache.swift_13_IntCache_Caching_Shared_Caching_Sources_Caching__Plant_StringCache.swift_13_StringCache.json",
+  "row_index": 4,
+  "trial": 1
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CompositeWallpaperView+StitchableWallpaperView+SwiftUIWallpaperView+ThemeDebugControlsGenerator",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "All four records are `type-alias-object` kinds with empty `fields_or_signature` lists in the same `Wallpaper` package. The structural signal is that they share the same syntactic shape (a type alias declaration at roughly the same line offset), but `StitchableWallpaperView`, `SwiftUIWallpaperView`, `CompositeWallpaperView`, and `ThemeDebugControlsGenerator` are clearly distinct domain concepts \u2014 three are renderer view aliases and one is a debug-UI generator alias \u2014 whose coincidence is purely structural (both occupy a single `typealias` line with no members). Because `fields_or_signature` is empty for every record, there is no shared member body to consolidate, and the `shared_field_count: 2` in `structural_evidence` most likely reflects the two structural slots of a type-alias declaration itself rather than any meaningful shared API surface. Merging or extracting these aliases would conflate unrelated abstractions without reducing any real duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_CompositeWallpaperView_StitchableWallpaperView_SwiftUIWallpaperView_ThemeDebugControlsGenerator.json",
+  "row_index": 6,
+  "trial": 2
+}

@@ -1,0 +1,21 @@
+{
+  "cluster_id": "generic-function-candidates:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded",
+    "rationale": "Although `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) share a high Jaccard similarity of 0.714, they encode semantically opposite and complementary capacity-management operations on the same private storage type. Growth and shrink paths in a deque's backing storage are intentionally distinct: they differ in their threshold comparisons, reallocation directions, and copy semantics. Collapsing them into a single generic function parameterized on a direction or threshold would obscure the asymmetric logic and likely harm readability and debuggability without meaningful code-size benefit. Both records carry no restraint flags and live in the same file (`Shared/Core/Sources/Core/Deque.swift`, package `Core`), confirming this is a production internal-storage concern, not a test or codegen artifact.",
+    "specifics": {
+      "reason_class": "intentional-specialization"
+    }
+  },
+  "query": "generic-function-candidates",
+  "raw_response_path": "raw/s2/trial2/generic-function-candidates_Core_Shared_Core_Sources_Core_Deque.swift_334__DequeStorage._growIfNeeded_Core_Shared_Core_Sources_Core_Deque.swift_354__DequeStorage._shrinkIfNeeded.json",
+  "row_index": 23,
+  "trial": 2
+}

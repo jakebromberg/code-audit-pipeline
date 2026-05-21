@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:app:WatchXYC:WXYC/WatchXYC/PlayerPage.swift:191:SwiftUI.Image.logo+app:iOS:WXYC/iOS/NowPlayingWidget/Extensions.swift:28:SwiftUI.Image.logo\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"SwiftUI.Image.logo\",\n      \"remove_from\": [\n        \"WXYC/WatchXYC/PlayerPage.swift\"\n      ]\n    },\n    \"rationale\": \"Both `app:WatchXYC` (`WXYC/WatchXYC/PlayerPage.swift:191`) and `app:iOS` (`WXYC/iOS/NowPlayingWidget/Extensions.swift:28`) declare an identical computed property `SwiftUI.Image.logo` with a Jaccard similarity of 0.88, indicating near-identical implementations. Neither record carries any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). The canonical definition should live in a shared location accessible to both targets; however, since no dedicated shared/common package is surfaced in the cluster, the iOS extension file (`WXYC/iOS/NowPlayingWidget/Extensions.swift`) is the better host if the WatchXYC target can import it, or the property should be moved to a shared SwiftUI extensions file within a package both targets already depend on. The WatchXYC duplicate in `PlayerPage.swift` should then be removed.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"SwiftUI.Image.logo\\\", \\\"kind\\\": \\\"computed-property\\\"\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If `app:WatchXYC` and `app:iOS` do not share a common upstream package dependency and cannot be restructured to do so, the duplication may be unavoidable given the separate target boundaries, making no-action the pragmatic fallback until a shared utilities module is introduced.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01JBDMucBb8mYFZqJiJR81Hy",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 562,
+    "service_tier": "standard"
+  }
+}

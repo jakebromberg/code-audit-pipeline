@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.55,
+    "evidence_quote": "Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift",
+    "rationale": "All four duplicate `data` methods reside in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and are nested inside per-test-class `SequentialMockSession` helper types (`iTunesArtworkServiceTests.SequentialMockSession`, `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession`). Although the context flags do not set `is_test: true`, the file path (`Tests/ArtworkTests/ArtworkFetcherTests.swift`) and the enclosing type names (all suffixed `Tests`) make clear these are test-internal mock session helpers. The structural duplication is incidental to each test class owning its own self-contained mock; consolidating them would couple otherwise independent test fixtures. No action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_Artwork_Shared_Artwork_Tests_ArtworkTests_ArtworkFetcherTests.swift_215_LastFMArtworkServiceTests.SequentialMockSession.data_Artwork_Shared_Artwork_T__h4a7b3c4c947c71dc.json",
+  "row_index": 0,
+  "trial": 1
+}

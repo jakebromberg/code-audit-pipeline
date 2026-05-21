@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:192:MaterialView.body+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift:60:MaterialView.body\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `MaterialView.body` computed-property implementations at lines 60 and 192 of `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`. With a Jaccard similarity of 0.83, they are near-duplicates within the same file. The most likely cause is that `MaterialView` is a generic or conditional type whose `body` is defined twice \u2014 once for each branch of a `#if` compiler condition, a `where` clause, or an accidental copy-paste. Determine which definition is authoritative, extract any shared view-building logic into a private helper method or `@ViewBuilder` function within the same file, and remove or consolidate the redundant definition.\",\n      \"why_no_category_fits\": \"Both records are the same computed property (`MaterialView.body`) in the same file and package, so `extract-to-common` (cross-package extraction) does not apply. There is no protocol, subclass hierarchy, or generic parameterization involved \u2014 `body` is a SwiftUI `View` protocol requirement and cannot be lifted to a default implementation without knowing the concrete view tree. The duplication is intra-file structural near-duplication of a single property, best resolved by an inline refactor (private helper extraction) rather than any of the cross-type or cross-package categories.\"\n    },\n    \"rationale\": \"Both participating records are `MaterialView.body` computed properties in `Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift`, at lines 60 and 192, within the same `Wallpaper` package \u2014 no cross-file or cross-package boundary exists. The Jaccard similarity of 0.8333 indicates the two bodies are nearly identical but not exact, suggesting a conditional compilation branch or an accidental duplication. No restraint markers are set (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional production code. The correct fix is an intra-file refactor: extract the shared view-building logic into a private `@ViewBuilder` helper and unify or remove the redundant `body` definition.\",\n    \"evidence_quote\": \"\\\"name\\\": \\\"MaterialView.body\\\", \\\"file\\\": \\\"Shared/Wallpaper/Sources/Wallpaper/MaterialView.swift\\\", \\\"line\\\": 60 ... \\\"line\\\": 192 ... \\\"jaccard\\\": 0.8333333333333334\",\n    \"alternative\": {\n      \"category\": \"no-action\",\n      \"specifics\": {\n        \"reason_class\": \"coincidental\"\n      },\n      \"rationale\": \"If the two `body` definitions are guarded by mutually exclusive `#if` compiler conditions (e.g., `#if os(iOS)` vs `#if os(macOS)`), the structural near-duplication is intentional platform specialization and no consolidation is warranted. Without access to the full source text this cannot be ruled out, making no-action a defensible fallback.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_017DHymv5HUmpmbhtDK9Q7xG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3836,
+    "output_tokens": 832,
+    "service_tier": "standard"
+  }
+}

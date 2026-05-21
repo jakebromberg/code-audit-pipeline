@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"intentional-specialization\"\n    },\n    \"rationale\": \"Both `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) live in the same file `Shared/Core/Sources/Core/Deque.swift` and are structurally similar (Jaccard 0.71), but they encode intentionally opposite capacity-management operations on a deque's backing storage: one expands allocation when the buffer is too small, the other contracts it when the buffer is too large. Despite their near-duplicate shape, merging or abstracting them would obscure the directional semantics that are essential to correct amortized-resize behaviour. The `fields_or_signature` lists are both empty, so there is no shared method surface to extract into a common helper without inspecting the bodies, and the cluster provides no body evidence to ground a safe refactor. Preferring no-action is the conservative choice here.\",\n    \"evidence_quote\": \"_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract a private helper method on `_DequeStorage` \u2014 e.g., `_resizeIfNeeded(direction:)` or `_adjustCapacity(threshold:growthFactor:)` \u2014 that encapsulates the shared capacity-check-and-reallocate skeleton, then have `_growIfNeeded` and `_shrinkIfNeeded` call it with opposing threshold/factor arguments.\",\n        \"why_no_category_fits\": \"The shared logic is internal to a single class in a single file, so 'extract-to-common' (cross-package) and 'generic-parameterization' (type-level) are both over-engineered. The pattern is a private helper extraction within one type, which none of the named categories precisely describe. This is only worth pursuing if body inspection confirms the two methods truly share a reusable skeleton beyond the structural similarity the Jaccard score suggests.\"\n      },\n      \"rationale\": \"A Jaccard similarity of 0.71 between `_growIfNeeded` and `_shrinkIfNeeded` suggests a meaningful shared skeleton (capacity check + reallocation + copy), which could be factored into a single private helper parameterised by direction or threshold. This would reduce the maintenance surface for the deque's resize logic without changing the public API.\"\n    },\n    \"confidence\": 0.35\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XHHrpdKagJ9GCVieDVrvZw",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3820,
+    "output_tokens": 713,
+    "service_tier": "standard"
+  }
+}

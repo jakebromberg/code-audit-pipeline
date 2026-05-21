@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift:50:SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"MusicService\",\n      \"method\": \"fetchMetadata()\",\n      \"target_location\": \"Shared/MusicShareKit/Sources/MusicShareKit/Services/MusicService+Defaults.swift\",\n      \"conformers_simplified\": [\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift\",\n        \"Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift\"\n      ]\n    },\n    \"rationale\": \"The cluster surfaces `SoundCloudService.fetchMetadata` (line 50) and `YouTubeMusicService.fetchMetadata` (line 64), both production methods in the same `MusicShareKit` package with a Jaccard similarity of 0.808, indicating near-identical implementations. Neither record carries any restraint marker (is_test, is_mock, is_sample_app, is_codegen are all false). Because both services are concrete implementations of what is almost certainly a shared service abstraction, the idiomatic Swift resolution is to introduce (or locate) a shared `MusicService` protocol within `MusicShareKit`, provide the common `fetchMetadata()` body as a protocol extension default implementation, and let each conformer override only where behaviour genuinely diverges. This eliminates the near-duplicate body while preserving per-service specialisation points.\",\n    \"evidence_quote\": \"SoundCloudService.fetchMetadata+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift:64:YouTubeMusicService.fetchMetadata\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"MusicShareKit\",\n        \"type_name\": \"MusicMetadataFetcher\",\n        \"remove_from\": [\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Services/YouTubeMusicService.swift\",\n          \"Shared/MusicShareKit/Sources/MusicShareKit/Services/SoundCloudService.swift\"\n        ]\n      },\n      \"rationale\": \"If no shared protocol abstraction exists or is desirable, the shared logic could instead be extracted into a standalone helper type `MusicMetadataFetcher` within the same `MusicShareKit` package, called by both `SoundCloudService` and `YouTubeMusicService`. This is less idiomatic than a protocol default implementation for service-layer types but avoids introducing a new protocol.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Mp3kkSjxT3sehSLhC2e1sa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3872,
+    "output_tokens": 748,
+    "service_tier": "standard"
+  }
+}

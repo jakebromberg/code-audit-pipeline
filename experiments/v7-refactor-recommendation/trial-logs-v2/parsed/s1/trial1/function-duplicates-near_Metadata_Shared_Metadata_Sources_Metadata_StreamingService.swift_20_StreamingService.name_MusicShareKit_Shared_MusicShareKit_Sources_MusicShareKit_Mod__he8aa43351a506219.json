@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Metadata:Shared/Metadata/Sources/Metadata/StreamingService.swift:20:StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "StreamingService.name+MusicShareKit:Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76:MusicServiceIdentifier.displayName",
+    "rationale": "The two computed properties `StreamingService.name` (package `Metadata`, `Shared/Metadata/Sources/Metadata/StreamingService.swift:20`) and `MusicServiceIdentifier.displayName` (package `MusicShareKit`, `Shared/MusicShareKit/Sources/MusicShareKit/Models/MusicTrack.swift:76`) live on structurally unrelated types in separate packages. Despite a high Jaccard similarity of 0.875, `name` on a `StreamingService` and `displayName` on a `MusicServiceIdentifier` represent distinct domain concepts \u2014 one describes a streaming service entity, the other a music-service identifier on a track model. Both records carry all context flags false, so no restraint marker applies, but the coincidence is purely structural: a short string-returning computed property is one of the most common shapes in any Swift codebase, and there is no evidence of a shared upstream package that is already a dependency of both `Metadata` and `MusicShareKit` that would make extraction safe and meaningful. Merging them would couple unrelated domain models without a clear semantic contract.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Metadata_Shared_Metadata_Sources_Metadata_StreamingService.swift_20_StreamingService.name_MusicShareKit_Shared_MusicShareKit_Sources_MusicShareKit_Mod__he8aa43351a506219.json",
+  "row_index": 52,
+  "trial": 1
+}

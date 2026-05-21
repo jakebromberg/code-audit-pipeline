@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Core:Shared/Core/Sources/Core/Deque.swift:334:_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"intentional-specialization\"\n    },\n    \"rationale\": \"The two methods `_DequeStorage._growIfNeeded` (line 334) and `_DequeStorage._shrinkIfNeeded` (line 354) in `Shared/Core/Sources/Core/Deque.swift` are structurally similar (Jaccard 0.71) but encode intentionally opposite and complementary capacity-management operations on a deque's backing storage. Growth and shrink logic necessarily mirror each other in shape \u2014 threshold checks, reallocation, copy \u2014 yet diverge in their branching conditions and resize factors. Collapsing them into a single generic helper would obscure the directional semantics and likely require a direction parameter or closure, reducing clarity without eliminating meaningful duplication. Both records carry no restraint markers, but the coincidence of shape is a direct consequence of the symmetric nature of the two operations, not an accidental copy.\",\n    \"evidence_quote\": \"_DequeStorage._growIfNeeded+Core:Shared/Core/Sources/Core/Deque.swift:354:_DequeStorage._shrinkIfNeeded\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Extract a private helper method on `_DequeStorage` (e.g., `_resize(to:)`) that performs the raw reallocation and element copy, called by both `_growIfNeeded` and `_shrinkIfNeeded` with their respective computed new capacities. The two public-facing methods would retain their threshold-check logic and delegate only the mechanical resize step.\",\n        \"why_no_category_fits\": \"This is not a full generic-parameterization or extract-to-common scenario \u2014 both methods live in the same file and type. The refactor is a targeted private-helper extraction within a single class, which none of the named categories capture precisely.\"\n      },\n      \"rationale\": \"A Jaccard similarity of 0.71 between `_growIfNeeded` and `_shrinkIfNeeded` in `Shared/Core/Sources/Core/Deque.swift` suggests a shared mechanical core (buffer reallocation, element migration) that could be extracted into a private `_resize(to:)` helper, leaving only the capacity-decision logic in each method. This would reduce the duplicated body without conflating the two operations' semantics.\"\n    },\n    \"confidence\": 0.55\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01AFUSFNPyV61g8pzgqSGPhi",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3820,
+    "output_tokens": 672,
+    "service_tier": "standard"
+  }
+}

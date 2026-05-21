@@ -1,0 +1,28 @@
+{
+  "cluster_id": "function-duplicates-exact:app:WXYC TV:WXYC/WXYC TV/WXYCTVApp.swift:33:WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.62,
+    "evidence_quote": "WXYCTVApp.setUpAnalytics+app:iOS:WXYC/iOS/WXYCApp.swift:318:WXYCApp.setUpAnalytics",
+    "rationale": "Both `WXYCTVApp.setUpAnalytics` (in `app:WXYC TV`, `WXYC/WXYC TV/WXYCTVApp.swift:33`) and `WXYCApp.setUpAnalytics` (in `app:iOS`, `WXYC/iOS/WXYCApp.swift:318`) are flagged as exact function duplicates with no context-flag restraints (all `is_test`, `is_mock`, `is_sample_app`, `is_codegen` are false). Because the two app targets are siblings rather than one being upstream of the other, the cleanest Swift-idiomatic approach is to extract the shared implementation into a free function or a shared type in a common module that both targets already depend on. However, since no shared upstream package name is surfaced in the cluster row beyond the two app packages themselves, the best available named package is `app:iOS`; ideally this would land in a shared analytics or foundation module if one exists. The duplication is exact, making extraction low-risk and immediately reducing maintenance surface.",
+    "specifics": {
+      "extract-to-common": {
+        "remove_from": [
+          "WXYC/WXYC TV/WXYCTVApp.swift",
+          "WXYC/iOS/WXYCApp.swift"
+        ],
+        "target_package": "app:iOS",
+        "type_name": "setUpAnalytics"
+      }
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_app_WXYC_TV_WXYC_WXYC_TV_WXYCTVApp.swift_33_WXYCTVApp.setUpAnalytics_app_iOS_WXYC_iOS_WXYCApp.swift_318_WXYCApp.setUpAnalytics.json",
+  "row_index": 23,
+  "trial": 1
+}

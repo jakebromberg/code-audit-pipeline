@@ -1,0 +1,27 @@
+{
+  "cluster_id": "function-duplicates-exact:Playback:Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift:38:HLSRateDidChangeMessage.makeNotification+Playback:Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift:42:PlayerRateDidChangeMessage.makeNotification",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "default-implementation",
+    "confidence": 0.62,
+    "evidence_quote": "function-duplicates-exact:Playback:Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift:38:HLSRateDidChangeMessage.makeNotification+Playback:Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift:42:PlayerRateDidChangeMessage.makeNotification",
+    "rationale": "Both `HLSRateDidChangeMessage.makeNotification` (line 38 in `HLSPlayerMessages.swift`) and `PlayerRateDidChangeMessage.makeNotification` (line 42 in `RadioPlayerMessages.swift`) are flagged as exact function duplicates within the same `Playback` package. Because the bodies are identical and both types are message types in the same package, the shared implementation should be lifted into a protocol extension (e.g., on a `PlayerMessage` or `NotificationEmitting` protocol that both message types already conform to, or should be made to conform to) so that neither conformer needs to redeclare the body. All context flags are false, so no restraint markers apply.",
+    "specifics": {
+      "conformers_simplified": [
+        "Shared/Playback/Sources/RadioPlayer/Messages/RadioPlayerMessages.swift",
+        "Shared/Playback/Sources/HLSPlayer/Messages/HLSPlayerMessages.swift"
+      ],
+      "method": "makeNotification()",
+      "protocol": "makeNotification",
+      "target_location": "Shared/Playback/Sources/Playback/Messages/PlayerMessage+Defaults.swift"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-exact_Playback_Shared_Playback_Sources_HLSPlayer_Messages_HLSPlayerMessages.swift_38_HLSRateDidChangeMessage.makeNotification_Playback_Shared_Playback_Sour__h2a6e4aae6b29dedb.json",
+  "row_index": 27,
+  "trial": 2
+}

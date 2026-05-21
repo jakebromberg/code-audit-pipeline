@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_IntCache.swift:13:IntCache+Caching:Shared/Caching/Sources/Caching/_Plant_StringCache.swift:13:StringCache\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"struct\",\n      \"type_params\": [\n        { \"name\": \"Key\", \"constraint\": \"Hashable\" }\n      ],\n      \"new_name\": \"Cache\",\n      \"replaces\": [\"StringCache\", \"IntCache\"]\n    },\n    \"rationale\": \"Both `StringCache` and `IntCache` in the `Caching` package share four identical fields \u2014 `capacity:Int`, `hitCount:UInt64`, `lastAccess:Date?`, and `storage:[_: CacheEntry]` \u2014 and differ only in the key type of `storage` (`[String: CacheEntry]` vs `[Int: CacheEntry]`). This is the canonical signal for generic parameterization: a single `Cache<Key: Hashable>` struct with `storage: [Key: CacheEntry]` replaces both type-alias-objects with zero loss of expressiveness. Both records are production code with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so the refactor is safe. The `_Plant_` prefix on both files suggests these were generated as plant-manifest scaffolding and are intended to be collapsed into a real generic type.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"storage:[String: CacheEntry]\\\"], \\\"b\\\": [\\\"storage:[Int: CacheEntry]\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"CacheProtocol\",\n        \"associated_type\": \"Key\",\n        \"constraints\": [\"Hashable\"],\n        \"replaces\": [\"StringCache\", \"IntCache\"]\n      },\n      \"rationale\": \"If `StringCache` and `IntCache` need to diverge in behaviour (e.g., custom eviction strategies per key type), a PAT `CacheProtocol` with `associatedtype Key: Hashable` and shared property requirements (`capacity`, `hitCount`, `lastAccess`, `storage`) would unify the interface while allowing separate concrete implementations. However, given that the two types currently share all four fields with no behavioural divergence evident in the cluster, a concrete generic struct is the more idiomatic and simpler Swift answer.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01KQDTeQFoEQpQCQSKmKu9EL",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3948,
+    "output_tokens": 655,
+    "service_tier": "standard"
+  }
+}

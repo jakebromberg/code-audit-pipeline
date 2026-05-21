@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags and file paths carefully.\n\nBoth records have all context flags set to `false` \u2014 no `is_test`, `is_mock`, `is_sample_app`, or `is_codegen`. However, one of the files lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which contains the path segment `Examples/WallpaperSampleApp/`. The decision rules explicitly call out files \"under Examples/ or SampleApp/\" as triggering `reason_class: \"sample-app-mirror\"` regardless of the flag value. The flag is `false`, but the path is unambiguous \u2014 this is a sample app file. The restraint-marker rule says \"any participating record \u2026 sits under Examples/ or SampleApp/\" dominates, so no-action is warranted.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugHUD.swift:57:MetricRow.body+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:52:MetricRow.body\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"Although both records carry is_sample_app=false in their context_flags, the second participating record lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits directly under the 'Examples/WallpaperSampleApp/' path segment. The decision rules treat any record under Examples/ or SampleApp/ as a sample-app restraint marker regardless of the flag value, and that marker dominates action signals. Lifting MetricRow.body from the sample app's DebugHUD into the production DebugPanel package would couple production code to demonstration semantics; the correct posture is to leave the duplication in place.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01D9Fngptf9uiz8ruEnfTgFA",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3853,
+    "output_tokens": 559,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.72,
+    "evidence_quote": "WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme",
+    "rationale": "The cluster identifies `WXYCApp.navigateToPreviousTheme` at line 465 and `WXYCApp.navigateToNextTheme` at line 477, both in `WXYC/iOS/WXYCApp.swift` within the `app:iOS` package, with a Jaccard similarity of 0.75. This high similarity strongly suggests the two methods share the same navigation logic and differ only in direction (previous vs. next). Collapsing them into a single `navigateTheme(direction:)` method eliminates the duplication, reduces the maintenance surface, and makes the symmetry of the operation explicit. No restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are set on either record, so no no-action override applies.",
+    "specifics": {
+      "proposed_action": "Merge `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` into a single parameterized method, e.g., `navigateTheme(direction: ThemeNavigationDirection)` where `ThemeNavigationDirection` is an enum with `.previous` and `.next` cases, or alternatively `navigateTheme(offset: Int)` where `-1` means previous and `+1` means next. Both call sites should be updated to pass the appropriate direction argument.",
+      "why_no_category_fits": "Both methods live in the same file and same type (`WXYCApp`) \u2014 this is not a cross-file extraction (`extract-to-common`), not a protocol or subclass concern, and not a macro or generic-struct scenario. The near-duplicate signal (Jaccard 0.75) indicates the two methods share the same body shape but differ only in the direction of navigation. The idiomatic Swift fix is to unify them into one method with a direction parameter, which is a straightforward inline refactor rather than any of the named structural categories."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_app_iOS_WXYC_iOS_WXYCApp.swift_465_WXYCApp.navigateToPreviousTheme_app_iOS_WXYC_iOS_WXYCApp.swift_477_WXYCApp.navigateToNextTheme.json",
+  "row_index": 110,
+  "trial": 1
+}

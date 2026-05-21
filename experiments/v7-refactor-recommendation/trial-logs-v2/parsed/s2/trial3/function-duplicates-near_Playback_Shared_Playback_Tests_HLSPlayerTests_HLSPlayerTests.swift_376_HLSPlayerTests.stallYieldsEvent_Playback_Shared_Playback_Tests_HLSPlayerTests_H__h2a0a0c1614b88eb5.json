@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:376:HLSPlayerTests.stallYieldsEvent+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:402:HLSPlayerTests.recoveryYieldsEvent",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records \u2014 `HLSPlayerTests.stallYieldsEvent` (line 376) and `HLSPlayerTests.recoveryYieldsEvent` (line 402) \u2014 carry `is_test: true` in their context flags. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left alone. Here both records are test methods in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift`; their structural similarity (Jaccard 0.78) almost certainly reflects the conventional arrange-act-assert skeleton shared by sibling event-assertion tests, not accidental duplication. Merging or extracting them would couple distinct behavioural scenarios (`stall` vs. `recovery`) into a shared helper, obscuring test intent and making future divergence harder.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-near_Playback_Shared_Playback_Tests_HLSPlayerTests_HLSPlayerTests.swift_376_HLSPlayerTests.stallYieldsEvent_Playback_Shared_Playback_Tests_HLSPlayerTests_H__h2a0a0c1614b88eb5.json",
+  "row_index": 88,
+  "trial": 3
+}

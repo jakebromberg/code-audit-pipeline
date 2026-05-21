@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DefaultAuthNetworkClient+PlaylistDataSourceV2",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"fields_or_signature\": []",
+    "rationale": "Both `PlaylistDataSourceV2` (package `Playlist`, `Shared/Playlist/Sources/Playlist/V2/PlaylistDataSourceV2.swift`) and `DefaultAuthNetworkClient` (package `MusicShareKit`, `Shared/MusicShareKit/Sources/MusicShareKit/Auth/AuthNetworkClient.swift`) are `type-alias-object` declarations with empty `fields_or_signature` lists. The structural signal is that they share exactly one field (shared_field_count: 1) and have identical kind, but they encode entirely unrelated domain concepts \u2014 playlist data sourcing versus authenticated network communication. The coincidence is purely structural (both happen to be type aliases with no declared members at the recorded line), not semantic. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, but merging or extracting these two types would conflate unrelated domains without any real reuse benefit.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_DefaultAuthNetworkClient_PlaylistDataSourceV2.json",
+  "row_index": 49,
+  "trial": 1
+}

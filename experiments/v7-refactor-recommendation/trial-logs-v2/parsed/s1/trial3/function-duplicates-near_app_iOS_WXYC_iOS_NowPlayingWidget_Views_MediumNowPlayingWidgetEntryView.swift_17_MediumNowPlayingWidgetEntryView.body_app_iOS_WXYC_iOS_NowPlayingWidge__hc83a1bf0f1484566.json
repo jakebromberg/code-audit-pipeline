@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:app:iOS:WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift:17:MediumNowPlayingWidgetEntryView.body+app:iOS:WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift:17:SmallNowPlayingWidgetEntryView.body",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "\"jaccard\": 0.7142857142857143",
+    "rationale": "The structural pipeline reports a Jaccard similarity of 0.7142857142857143 between `SmallNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/SmallNowPlayingWidgetEntryView.swift`) and `MediumNowPlayingWidgetEntryView.body` (line 17, `WXYC/iOS/NowPlayingWidget/Views/MediumNowPlayingWidgetEntryView.swift`), indicating substantial shared layout structure. Both are `computed-property` members in the same `app:iOS` package with no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), so duplication is not intentional by policy. Because both views are widget entry views differing only in size, the shared body logic is a strong candidate for a parameterised child view. The `extract-to-common` schema cannot be applied because both records already reside in the same package and the schema requires an upstream target package distinct from the consumers.",
+    "specifics": {
+      "proposed_action": "Extract the shared layout logic from `SmallNowPlayingWidgetEntryView.body` and `MediumNowPlayingWidgetEntryView.body` into a shared SwiftUI sub-view (e.g., `NowPlayingWidgetContentView`) that accepts a size or layout parameter, then have each entry view delegate to it. Both views live in the same package (`app:iOS`) under `WXYC/iOS/NowPlayingWidget/Views/`, so no cross-package movement is needed \u2014 a new file in that same directory is sufficient.",
+      "why_no_category_fits": "The two duplicated members are SwiftUI `body` computed properties on concrete `View`-conforming structs, not free functions or generic structs. The idiomatic Swift/SwiftUI remedy is to extract a shared child view rather than to apply generic parameterization, protocol inheritance, or a default implementation (SwiftUI's `body` requirement cannot carry a default implementation in a protocol extension in a meaningful way for widget entry views). The `extract-to-common` category does not fit because both records already share the same package (`app:iOS`) and the schema requires naming an upstream package distinct from the consumers. The most idiomatic action is a sub-view extraction within the existing package, which none of the named categories precisely describe."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_app_iOS_WXYC_iOS_NowPlayingWidget_Views_MediumNowPlayingWidgetEntryView.swift_17_MediumNowPlayingWidgetEntryView.body_app_iOS_WXYC_iOS_NowPlayingWidge__hc83a1bf0f1484566.json",
+  "row_index": 142,
+  "trial": 3
+}

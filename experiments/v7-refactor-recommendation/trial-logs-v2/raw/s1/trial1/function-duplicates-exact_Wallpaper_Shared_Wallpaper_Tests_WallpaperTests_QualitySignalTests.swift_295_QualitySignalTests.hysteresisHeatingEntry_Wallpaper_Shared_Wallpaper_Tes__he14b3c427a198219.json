@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether action is warranted.\n\n**Key observations:**\n1. Both methods (`hysteresisHeatingEntry` and `hysteresisHeatingExit`) live in `QualitySignalTests.swift` \u2014 a file whose path contains `Tests/WallpaperTests/`, making it clearly a test file.\n2. Despite `is_test: false` on both records (likely a tagging gap in the pipeline), the file path `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` and the containing type `QualitySignalTests` are unambiguous test fixtures.\n3. The two methods represent **entry** and **exit** sides of a hysteresis heating test scenario \u2014 semantically distinct test cases that happen to share structural shape. This is the canonical pattern of intentional duplication in test suites: parallel setup helpers for symmetric but opposite conditions.\n4. Merging them would obscure the intent of each test case and couple the entry/exit scenarios in a way that reduces test clarity.\n\nThe `is_test` flag mismatch is a pipeline tagging artifact; the file path and type name are dispositive. The decision rule for test fixtures applies.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:295:QualitySignalTests.hysteresisHeatingEntry+Wallpaper:Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift:312:QualitySignalTests.hysteresisHeatingExit\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Both methods reside in `Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift` and belong to the type `QualitySignalTests`, which is unambiguously a test class despite the pipeline reporting `is_test: false` on both records \u2014 the file path and type name are dispositive. The two methods, `hysteresisHeatingEntry` and `hysteresisHeatingExit`, represent the symmetric entry and exit sides of a hysteresis heating scenario; their structural similarity is intentional and their semantic distinction (opposing state transitions) is load-bearing for test clarity. Merging or extracting them would obscure which condition each test case exercises and couple two deliberately independent test scenarios.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Tests/WallpaperTests/QualitySignalTests.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_016QSVoQH6C9UtJYaqxA4xzW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3885,
+    "output_tokens": 659,
+    "service_tier": "standard"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to analyze what's available.\n\nThe cluster is a `subset-pairs` signal between:\n1. `MockStructuredAnalytics.StoppedEventProxy__Playback` in `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68` (package: `Analytics`, path contains `AnalyticsTesting`)\n2. `PlaybackStoppedEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48` (package: `Playback`)\n\nKey observations:\n- The first record is in `AnalyticsTesting` \u2014 the package name itself signals a test/mock fixture context. The type name `MockStructuredAnalytics.StoppedEventProxy__Playback` contains the word \"Mock\", which is a strong mock-fixture signal.\n- The `members` array is empty and all `structural_evidence` fields are null, meaning there is no field-level evidence to ground any action recommendation.\n- Decision rule 1 applies: the first record is in a testing package (`AnalyticsTesting`) with a type name prefixed `Mock`, which qualifies as `is_mock=true` semantics. A mock proxy type intentionally mirrors a production type's shape \u2014 that is the canonical restraint pattern.\n- Even setting aside the mock marker, with no `fields_or_signature` data available, I cannot ground any specifics for an action category without hallucinating evidence.\n\n```json\n[\n  {\n    \"cluster_id\": \"subset-pairs:Analytics:Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift:68:MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"mock-fixture\"\n    },\n    \"rationale\": \"One of the two participating records is `MockStructuredAnalytics.StoppedEventProxy__Playback`, declared inside `Shared/Analytics/Sources/AnalyticsTesting/MockStructuredAnalytics.swift`. Both the enclosing package name (`AnalyticsTesting`) and the type name prefix (`Mock`) unambiguously identify this as a mock/test fixture. Per decision rule 1, any cluster where a participating record is a mock fixture must be treated as intentional duplication: the proxy type exists precisely to mirror the shape of the production type `PlaybackStoppedEvent` in `Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift` for test-double purposes. Lifting shared structure would couple production `PlaybackCore` semantics to test infrastructure. Additionally, all `structural_evidence` fields (`jaccard`, `shared_field_count`, `differing_slots`, `shared_ancestor`) are null and `members` is empty, so no field-level evidence exists to ground any action recommendation without hallucination.\",\n    \"evidence_quote\": \"MockStructuredAnalytics.StoppedEventProxy__Playback:Shared/Playback/Sources/PlaybackCore/Analytics/PlaybackAnalytics.swift:48:PlaybackStoppedEvent\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019vXLj5Ai1FXwsmy6QdtWhG",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3568,
+    "output_tokens": 802,
+    "service_tier": "standard"
+  }
+}

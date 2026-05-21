@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:Announcement+PlaylistEntry+Talkset",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"kind\": \"interface\" ... \"shared_field_count\": 4 ... \"fields_or_signature\": []",
+    "rationale": "All three records \u2014 `Announcement` (type-alias-object, line 13), `PlaylistEntry` (interface, line 22), and `Talkset` (type-alias-object, line 90) \u2014 live in the same `Playlist` package and carry no restraint markers, but the structural evidence is thin: `shared_field_count: 4` with `jaccard: null` and `differing_slots: null`, and `fields_or_signature` is empty for every member. `Announcement` and `Talkset` are type aliases (likely aliasing `PlaylistEntry` or a related type), while `PlaylistEntry` is the canonical interface; the coincidence of field count across these three distinct domain concepts (an announcement, a generic playlist entry, and a talkset) is almost certainly intentional domain modelling rather than accidental duplication. Without field-level evidence to ground a concrete extraction or consolidation, any refactor action would be speculative.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial1/exact-duplicates_Announcement_PlaylistEntry_Talkset.json",
+  "row_index": 15,
+  "trial": 1
+}

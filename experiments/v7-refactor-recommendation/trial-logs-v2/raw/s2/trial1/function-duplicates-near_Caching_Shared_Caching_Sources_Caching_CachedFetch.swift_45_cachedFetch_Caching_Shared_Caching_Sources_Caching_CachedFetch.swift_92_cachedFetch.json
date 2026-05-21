@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Investigate the two `cachedFetch` function definitions at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` in the `Caching` package. They share a Jaccard similarity of 0.70, indicating near-duplicate bodies within the same file. Determine whether they differ only by parameter type or label (in which case generic-parameterization over a constrained type parameter is appropriate), or whether one is a legacy overload that can be deleted outright, leaving a single canonical implementation. If the divergence is purely in one or two argument types, introduce a single generic `cachedFetch<T>` (or similar) and remove the redundant overload.\",\n      \"why_no_category_fits\": \"Both records live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), so `extract-to-common` (which requires moving code to an upstream package) does not apply. `generic-parameterization` is the closest fit, but the cluster provides no `fields_or_signature` data for either function, making it impossible to name concrete type parameters or confirm the overload shape with the required specificity. Without that grounding, a `generic-parameterization` recommendation would require hallucinating parameter names, violating the no-hallucination rule. The recommendation is therefore `other`, flagging the intra-file near-duplicate for manual inspection before a typed refactor is committed.\"\n    },\n    \"rationale\": \"Both participating records are the function `cachedFetch` in `Shared/Caching/Sources/Caching/CachedFetch.swift` (package `Caching`), at lines 45 and 92 respectively, with a Jaccard similarity of 0.70 \u2014 high enough to indicate substantial shared logic but not an exact copy. All context flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen`) are false on both records, so no restraint marker applies. However, `fields_or_signature` is empty for both entries, which means the specific parameter and return-type differences that would justify a concrete generic-parameterization or overload-deletion recommendation cannot be grounded in the cluster data alone. The safest action is to flag the pair for manual review with a clear description of the likely remediation paths.\",\n    \"evidence_quote\": \"\\\"jaccard\\\": 0.7\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": null }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch\", \"cachedFetch\"]\n      },\n      \"rationale\": \"If manual inspection confirms the two `cachedFetch` overloads at lines 45 and 92 differ only in one concrete type argument, collapsing them into a single generic `cachedFetch<T>` within `Shared/Caching/Sources/Caching/CachedFetch.swift` would eliminate the near-duplication. This is the idiomatic Swift resolution for same-file near-duplicate free functions. The constraint on `T` should be determined from the actual parameter types once the signatures are inspected.\"\n    },\n    \"confidence\": 0.45\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01UTnJ77vMPRtgBwMRbHcrZx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3827,
+    "output_tokens": 918,
+    "service_tier": "standard"
+  }
+}

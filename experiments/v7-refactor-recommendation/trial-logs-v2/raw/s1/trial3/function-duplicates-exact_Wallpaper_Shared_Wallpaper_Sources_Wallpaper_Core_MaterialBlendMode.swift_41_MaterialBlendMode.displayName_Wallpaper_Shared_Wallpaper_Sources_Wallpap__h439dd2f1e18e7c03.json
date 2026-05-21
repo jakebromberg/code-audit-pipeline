@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:41:MaterialBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"category\": \"macro-synthesis\",\n    \"specifics\": {\n      \"macro_name\": \"@DisplayName\",\n      \"applies_to\": [\"enum\"],\n      \"synthesizes\": \"A `var displayName: String` computed property that derives a human-readable display name from each case label, replacing the identical `displayName` implementations on `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode`.\",\n      \"population_size_evidence\": \"3 participating records: PlaybackBlendMode.displayName, MaterialBlendMode.displayName, OverlayBlendMode.displayName \u2014 all at line 41 in the Wallpaper package\",\n      \"use_swift_builtin\": false\n    },\n    \"rationale\": \"All three types \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 live in the same `Wallpaper` package and each carries an exact-duplicate `displayName` computed property at line 41 of their respective files. Because the property is structurally identical across three parallel enum-like blend-mode types, a `@DisplayName` attached macro applied at the type declaration site would synthesize the property uniformly and eliminate all three hand-written copies. None of the participating records carry any restraint flags (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. A macro is preferred over a protocol default-implementation here because the body is synthesized from the type's own case names rather than delegated behaviour, which is the canonical Swift macro use-case.\",\n    \"evidence_quote\": \"PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:41:PlaybackBlendMode.displayName+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:41:OverlayBlendMode.displayName\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"BlendModeDisplayable\",\n        \"method\": \"var displayName: String { get }\",\n        \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendModeDisplayable+Defaults.swift\",\n        \"conformers_simplified\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If introducing a macro is considered too heavy, a new `BlendModeDisplayable` protocol with a default `displayName` implementation in a protocol extension within the `Wallpaper` package would also eliminate the three duplicate computed properties. All three blend-mode types would conform to the protocol and inherit the default body, requiring no per-type implementation. This is lighter-weight than a macro but requires the default body to be expressible without access to synthesized case metadata, which may limit fidelity compared to the macro approach.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01FH5vRJ929n4M4eL2ro1kCD",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4052,
+    "output_tokens": 961,
+    "service_tier": "standard"
+  }
+}

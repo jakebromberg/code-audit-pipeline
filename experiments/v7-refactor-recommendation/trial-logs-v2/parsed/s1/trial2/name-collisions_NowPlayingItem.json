@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:NowPlayingItem",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"jaccard\": null, \"shared_field_count\": null, \"differing_slots\": null, \"shared_ancestor\": null",
+    "rationale": "The cluster surfaces two records associated with 'NowPlayingItem' \u2014 a type-alias-object in 'Shared/AppServices/Sources/AppServices/NowPlayingService.swift' (package: AppServices) and an extension in 'WXYC/iOS/NowPlayingWidget/NowPlayingItem+Placeholder.swift' (package: app:iOS) \u2014 but both records carry empty 'fields_or_signature' lists and empty 'name' fields, providing no structural evidence of shared shape or duplicated logic. All Jaccard, shared_field_count, differing_slots, and shared_ancestor values are null, confirming the pipeline found no measurable overlap. The name collision alone, across a shared-services package and an app-layer widget extension, is consistent with the app-layer extension intentionally extending the type defined (or aliased) in AppServices, which is the normal layered-architecture pattern rather than an accidental duplication.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial2/name-collisions_NowPlayingItem.json",
+  "row_index": 34,
+  "trial": 2
+}

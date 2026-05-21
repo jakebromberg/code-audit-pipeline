@@ -1,0 +1,24 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.72,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "Three distinct types \u2014 `HSBColor` (package `ColorPalette`), `AccentColor` (package `Wallpaper`, line 62), and `HSBOffset` (package `Wallpaper`, line 198) \u2014 all expose an exact-duplicate initializer `init(hue:saturation:brightness:)`. Because the types are value types in separate packages with different semantic roles (a base color, an accent color, and a color offset), the most idiomatic Swift solution is to introduce a protocol `HSBInitializable` declaring `init(hue:saturation:brightness:)` and provide a default implementation via a protocol extension, rather than collapsing the types themselves. `ColorPalette` is a dependency of `Wallpaper` (evidenced by `HSBColor` living in `ColorPalette` while `AccentColor` and `HSBOffset` live in `Wallpaper`), so the protocol can be declared in `ColorPalette` and all three types conform to it, eliminating the duplicated initializer bodies. No participating record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so action is warranted.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [],
+      "new_protocol": "HSBInitializable",
+      "replaces": []
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial2/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wa__heb8d7291d47884ad.json",
+  "row_index": 5,
+  "trial": 2
+}

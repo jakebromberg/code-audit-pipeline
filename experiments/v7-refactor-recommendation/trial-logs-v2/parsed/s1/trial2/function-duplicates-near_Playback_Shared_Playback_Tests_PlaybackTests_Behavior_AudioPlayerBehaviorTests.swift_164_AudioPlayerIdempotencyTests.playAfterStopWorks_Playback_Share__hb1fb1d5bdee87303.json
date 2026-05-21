@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:164:AudioPlayerIdempotencyTests.playAfterStopWorks+Playback:Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift:71:AudioPlayerCoreStateTests.stopTransitionsToIdle",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records \u2014 `AudioPlayerCoreStateTests.stopTransitionsToIdle` (line 71) and `AudioPlayerIdempotencyTests.playAfterStopWorks` (line 164) \u2014 carry `is_test: true` and reside in `Shared/Playback/Tests/PlaybackTests/Behavior/AudioPlayerBehaviorTests.swift`. Per the decision rules, any cluster where even one record is test-marked must be treated as a test-fixture and left untouched. Here both records are test methods that exercise distinct behavioral contracts (stop-to-idle state transition vs. idempotent play-after-stop), so the structural similarity (Jaccard 0.7) reflects shared test scaffolding rather than unintentional duplication. Merging or extracting these methods would obscure the separate behavioral intent each test encodes.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial2/function-duplicates-near_Playback_Shared_Playback_Tests_PlaybackTests_Behavior_AudioPlayerBehaviorTests.swift_164_AudioPlayerIdempotencyTests.playAfterStopWorks_Playback_Share__hb1fb1d5bdee87303.json",
+  "row_index": 150,
+  "trial": 2
+}

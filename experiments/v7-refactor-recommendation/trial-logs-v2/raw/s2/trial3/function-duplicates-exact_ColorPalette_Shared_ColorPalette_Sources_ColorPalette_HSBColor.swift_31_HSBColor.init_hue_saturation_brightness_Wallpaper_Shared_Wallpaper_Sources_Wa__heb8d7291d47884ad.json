@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"HSBInitializable\",\n      \"associated_type\": null,\n      \"constraints\": [],\n      \"replaces\": []\n    },\n    \"rationale\": \"Three distinct types \u2014 `HSBColor` (package `ColorPalette`), `AccentColor` (package `Wallpaper`, line 62), and `HSBOffset` (package `Wallpaper`, line 198) \u2014 all declare an exact-duplicate initializer `init(hue:saturation:brightness:)`. Because the types are value types in separate packages with different semantic roles (a base color, an accent color, and a color offset), the most idiomatic Swift approach is to introduce a protocol `HSBInitializable` with a required `init(hue:saturation:brightness:)` and provide a default implementation via a protocol extension, rather than collapsing the types themselves. This avoids coupling `Wallpaper` to `ColorPalette`'s concrete type while still eliminating the repeated initializer body. All three context-flag sets are clean (no test, mock, sample-app, or codegen markers), so no restraint applies.\",\n    \"evidence_quote\": \"HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)\",\n    \"alternative\": {\n      \"category\": \"default-implementation\",\n      \"specifics\": {\n        \"protocol\": \"HSBInitializable\",\n        \"method\": \"init(hue:saturation:brightness:)\",\n        \"target_location\": \"Shared/ColorPalette/Sources/ColorPalette/HSBInitializable+Defaults.swift\",\n        \"conformers_simplified\": [\n          \"Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift\"\n        ]\n      },\n      \"rationale\": \"If a new `HSBInitializable` protocol is introduced in the `ColorPalette` package (which is already upstream of or peer to `Wallpaper`), a default implementation of `init(hue:saturation:brightness:)` can be placed in a `ColorPalette` extension file, and the three conforming types in `HSBColor.swift` and `ThemeColors.swift` can simply declare conformance and delete their individual initializer bodies. This is slightly less flexible than the PAT approach but simpler if the initializer body is truly identical across all three types.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_015hsLEbznhZvKE3U1zAi4z2",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4061,
+    "output_tokens": 857,
+    "service_tier": "standard"
+  }
+}

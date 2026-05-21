@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:PlaylistService",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"kind\": \"type-alias-object\" ... \"file\": \"Shared/Playlist/Sources/Playlist/PlaylistService.swift\" ... \"kind\": \"extension\" ... \"file\": \"Shared/AppServices/Sources/AppServices/PreviewFixtures.swift\"",
+    "rationale": "The cluster surfaces two records that share the name 'PlaylistService' but carry no structural evidence to support a merge: both `fields_or_signature` lists are empty, `jaccard` is null, and `shared_field_count` is null. The first record is a `type-alias-object` in `Shared/Playlist/Sources/Playlist/PlaylistService.swift` (package: Playlist) and the second is an `extension` in `Shared/AppServices/Sources/AppServices/PreviewFixtures.swift` (package: AppServices). A type-alias and an extension are fundamentally different constructs, and the file name `PreviewFixtures.swift` strongly suggests the extension is a preview/fixture helper rather than a duplicate implementation. With no shared members to extract and no structural overlap confirmed, the name collision is coincidental.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial1/name-collisions_PlaylistService.json",
+  "row_index": 36,
+  "trial": 1
+}

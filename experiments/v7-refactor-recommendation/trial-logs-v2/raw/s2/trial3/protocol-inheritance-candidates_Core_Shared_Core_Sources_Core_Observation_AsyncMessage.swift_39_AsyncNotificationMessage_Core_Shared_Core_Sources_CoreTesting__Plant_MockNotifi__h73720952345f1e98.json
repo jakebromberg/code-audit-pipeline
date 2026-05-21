@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"protocol-inheritance-candidates:Core:Shared/Core/Sources/Core/Observation/AsyncMessage.swift:39:AsyncNotificationMessage+Core:Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift:19:MockNotificationMessage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"The participating record `MockNotificationMessage` in `Shared/Core/Sources/CoreTesting/_Plant_MockNotificationMessage.swift` carries `is_test: true`, which is a restraint marker that dominates any action signal. Lifting `MockNotificationMessage` into a protocol-inheritance relationship with the production `AsyncNotificationMessage` would couple production semantics to test-fixture semantics. Additionally, the two protocols are not identical in shape \u2014 `MockNotificationMessage` declares `makeMessage:(_ notification: sending Notification) -> Self?` (with the `sending` ownership modifier) while `AsyncNotificationMessage` declares `makeMessage:(_ notification: Notification) -> Self?` without it, indicating intentional divergence for test-context concurrency handling rather than accidental duplication.\",\n    \"evidence_quote\": \"\\\"is_test\\\": true\",\n    \"alternative\": null,\n    \"confidence\": 0.95\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01CAigo8T5iKx4bFJNxgEoFW",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3903,
+    "output_tokens": 330,
+    "service_tier": "standard"
+  }
+}

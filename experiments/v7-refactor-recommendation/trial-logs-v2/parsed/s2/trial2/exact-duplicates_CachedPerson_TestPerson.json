@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:CachedPerson+TestPerson",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"file\": \"Shared/Caching/Tests/CachingTests/CacheCoordinatorTests.swift\"",
+    "rationale": "Both participating records live under `Shared/Caching/Tests/CachingTests/` \u2014 `TestPerson` in `CacheCoordinatorTests.swift` and `CachedPerson` in `CachedFetchTests.swift` \u2014 which are test files within the `Caching` package. Although neither record carries `is_test: true` in its context flags, the file paths unambiguously place both type-alias objects inside the test target. Merging or extracting these aliases would couple two independent test fixtures to a shared definition, risking unintended coupling between `CacheCoordinatorTests` and `CachedFetchTests`. The structural evidence shows only 2 shared fields and no differing slots, suggesting the overlap is coincidental fixture scaffolding rather than a meaningful abstraction worth extracting.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s2/trial2/exact-duplicates_CachedPerson_TestPerson.json",
+  "row_index": 23,
+  "trial": 2
+}

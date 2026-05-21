@@ -1,0 +1,25 @@
+{
+  "cluster_id": "function-duplicates-exact:WXUI:Shared/WXUI/Sources/WXUI/BackgroundGradient.swift:20:WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extension-consolidation",
+    "confidence": 0.72,
+    "evidence_quote": "WXYCBackground.wxycBackgroundLight+WXUI:Shared/WXUI/Sources/WXUI/WXYCGradient.swift:21:WXYCGradient.wxycBackgroundLight",
+    "rationale": "Both `WXYCBackground.wxycBackgroundLight` (in `BackgroundGradient.swift`, line 20) and `WXYCGradient.wxycBackgroundLight` (in `WXYCGradient.swift`, line 21) are exact-duplicate computed properties living in the same `WXUI` package with no restraint markers. The duplication suggests that `WXYCBackground` is either a redundant type or a thin wrapper whose `wxycBackgroundLight` property should be consolidated onto `WXYCGradient` (or a shared extension thereof) and the duplicate removed from `BackgroundGradient.swift`. Keeping two identically-named, identically-implemented computed properties on two different types in the same package creates maintenance risk: a future change to the gradient value must be applied in two places.",
+    "specifics": {
+      "consolidate_from": [
+        "Shared/WXUI/Sources/WXUI/BackgroundGradient.swift",
+        "Shared/WXUI/Sources/WXUI/WXYCGradient.swift"
+      ],
+      "target_type": "WXYCGradient"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s2/trial3/function-duplicates-exact_WXUI_Shared_WXUI_Sources_WXUI_BackgroundGradient.swift_20_WXYCBackground.wxycBackgroundLight_WXUI_Shared_WXUI_Sources_WXUI_WXYCGradient.swift_21_WXYCGradient.wxycBackgroundLight.json",
+  "row_index": 17,
+  "trial": 3
+}

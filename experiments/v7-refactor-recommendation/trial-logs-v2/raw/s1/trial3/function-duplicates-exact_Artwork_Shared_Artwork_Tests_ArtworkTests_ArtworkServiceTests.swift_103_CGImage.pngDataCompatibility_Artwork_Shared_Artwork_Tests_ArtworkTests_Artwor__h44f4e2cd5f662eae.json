@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Remove the duplicate definition of `CGImage.pngDataCompatibility` at line 103 in `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`, retaining only the definition at line 73 in the same file. Both declarations are computed properties on `CGImage` with identical names living in the same file; one is redundant and the duplicate should be deleted.\",\n      \"why_no_category_fits\": \"Both records reside in the same single file (`Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`) at different line numbers (73 and 103). This is an intra-file duplicate \u2014 not a cross-file or cross-package duplication \u2014 so 'extract-to-common' (which requires moving code to a different package) does not apply. No protocol, subclass, generic, macro, or PAT pattern is involved. The correct fix is simply deleting one of the two identical computed-property declarations within the same file, which none of the named action categories precisely describe.\"\n    },\n    \"rationale\": \"Both participating records are the computed property `CGImage.pngDataCompatibility` declared in the exact same file `Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift`, at lines 73 and 103 respectively, within the `Artwork` package. Having two definitions of the same computed property in one file will cause a compile-time redeclaration error (or silently shadow one another in an extension context), so one must be removed. No restraint markers (is_test, is_mock, is_sample_app, is_codegen) are set on either record, confirming this is not an intentional fixture pattern. None of the structured refactor categories fit an intra-file duplicate removal, making 'other' the appropriate category.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:103:CGImage.pngDataCompatibility+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkServiceTests.swift:73:CGImage.pngDataCompatibility\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U7k1k816SS2qeS6g4gdGWa",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3839,
+    "output_tokens": 630,
+    "service_tier": "standard"
+  }
+}

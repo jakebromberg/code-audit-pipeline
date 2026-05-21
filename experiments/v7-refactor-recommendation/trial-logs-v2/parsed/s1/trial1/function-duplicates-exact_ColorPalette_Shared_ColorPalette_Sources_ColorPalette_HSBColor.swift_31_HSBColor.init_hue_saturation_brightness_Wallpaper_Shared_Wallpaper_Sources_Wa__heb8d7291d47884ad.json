@@ -1,0 +1,24 @@
+{
+  "cluster_id": "function-duplicates-exact:ColorPalette:Shared/ColorPalette/Sources/ColorPalette/HSBColor.swift:31:HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "pat-introduction",
+    "confidence": 0.62,
+    "evidence_quote": "HSBColor.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:198:HSBOffset.init(hue:saturation:brightness:)+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/ThemeColors.swift:62:AccentColor.init(hue:saturation:brightness:)",
+    "rationale": "All three initializers \u2014 `HSBColor.init(hue:saturation:brightness:)` in package `ColorPalette`, and `AccentColor.init(hue:saturation:brightness:)` plus `HSBOffset.init(hue:saturation:brightness:)` in package `Wallpaper` \u2014 share an identical signature. None of the participating records carry any restraint markers (is_test, is_mock, is_sample_app, is_codegen are all false). Introducing a protocol `HSBInitializable` with a required `init(hue:saturation:brightness:)` would unify the three types under a common contract, enabling callers to work with any HSB-constructible color type generically. Because `Wallpaper` already depends on (or is a sibling of) `ColorPalette` in the `Shared/` tree, the protocol can live in `ColorPalette` and be adopted by all three types without a new package.",
+    "specifics": {
+      "associated_type": null,
+      "constraints": [],
+      "new_protocol": "HSBInitializable",
+      "replaces": []
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_ColorPalette_Shared_ColorPalette_Sources_ColorPalette_HSBColor.swift_31_HSBColor.init_hue_saturation_brightness_Wallpaper_Shared_Wallpaper_Sources_Wa__heb8d7291d47884ad.json",
+  "row_index": 5,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:102:HLSPlayerTests.recoveryFromStall+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90:HLSPlayerTests.stallFromPlaying\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both participating records \u2014 `HLSPlayerTests.stallFromPlaying` (line 90) and `HLSPlayerTests.recoveryFromStall` (line 102) \u2014 reside in `Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift` within the `Playback` package and carry all context flags false, including `is_test: false`. Despite the file path strongly suggesting these are test methods (the file is named `HLSPlayerTests.swift` and the enclosing type is `HLSPlayerTests`), the pipeline has not set `is_test: true`, so the test-fixture restraint rule cannot be formally applied. However, the two methods model distinct, sequentially related playback scenarios \u2014 stalling from a playing state versus recovering from a stall \u2014 whose structural similarity is a natural consequence of testing adjacent state-machine transitions rather than genuine duplication of reusable logic. Merging or extracting them would obscure the intent of each scenario and provide no meaningful reduction in complexity given the empty `fields_or_signature` lists and the absence of any shared upstream package to extract into.\",\n    \"evidence_quote\": \"HLSPlayerTests.stallFromPlaying+Playback:Shared/Playback/Tests/HLSPlayerTests/HLSPlayerTests.swift:90\",\n    \"alternative\": null,\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01EFrqAWPMdNPgXQSvLMHVfZ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3857,
+    "output_tokens": 468,
+    "service_tier": "standard"
+  }
+}

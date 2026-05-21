@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:FittingText+PlaylistSectionHeader+TextRowView\",\n    \"category\": \"extract-to-common\",\n    \"specifics\": {\n      \"target_package\": \"app:iOS\",\n      \"type_name\": \"FittingText\",\n      \"remove_from\": [\n        \"WXYC/iOS/Views/Playlist/PlaylistView.swift\",\n        \"WXYC/iOS/Views/Playlist/Playcut Detail/TextRowView.swift\",\n        \"WXYC/iOS/Views/Info Detail/InfoDetailView.swift\"\n      ]\n    },\n    \"rationale\": \"All three records \u2014 `PlaylistSectionHeader` in `PlaylistView.swift`, `TextRowView` in `TextRowView.swift`, and `FittingText` in `InfoDetailView.swift` \u2014 are `type-alias-object` declarations in the same `app:iOS` package with `shared_field_count: 2` and no differing slots, indicating they are structurally identical type aliases. Because all three live in the same package and carry no restraint markers (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` all false), the duplication is unambiguously accidental. A single canonical definition (retaining the most semantically descriptive name `FittingText`) should be extracted to a shared view-utilities file within `app:iOS`, and the two redundant aliases in `PlaylistView.swift` and `TextRowView.swift` should be removed and replaced with references to the canonical definition.\",\n    \"evidence_quote\": \"\\\"kind\\\": \\\"type-alias-object\\\", \\\"shared_field_count\\\": 2\",\n    \"alternative\": null,\n    \"confidence\": 0.82\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01T1akfiBKX66y5mCtAMNM4p",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3908,
+    "output_tokens": 439,
+    "service_tier": "standard"
+  }
+}

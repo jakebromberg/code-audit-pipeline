@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.25,
+    "evidence_quote": "PlayerState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive",
+    "rationale": "Both `PlayerState.isActive` (line 72) and `PlaybackState.isActive` (line 96) are computed properties in the same `Playback` package with no restraint markers, but the cluster provides no `fields_or_signature` content for either member and no `shared_ancestor`, making it impossible to ground a concrete refactor. The Jaccard similarity of 0.714 and `shared_field_count: 0` suggest the structural overlap is in the property's computed body rather than in any shared interface or protocol conformance. `PlayerState` and `PlaybackState` are likely distinct domain concepts (one representing the player's operational state, the other the playback session's state) whose `isActive` predicates coincidentally share similar logic; collapsing them risks coupling unrelated state machines. Without visible signatures or a shared protocol to anchor a default-implementation or protocol-inheritance recommendation, no safe action is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_Playback_Shared_Playback_Sources_PlaybackCore_PlaybackState.swift_96_PlaybackState.isActive_Playback_Shared_Playback_Sources_PlaybackCore_PlayerState.swift_72_PlayerState.isActive.json",
+  "row_index": 139,
+  "trial": 3
+}

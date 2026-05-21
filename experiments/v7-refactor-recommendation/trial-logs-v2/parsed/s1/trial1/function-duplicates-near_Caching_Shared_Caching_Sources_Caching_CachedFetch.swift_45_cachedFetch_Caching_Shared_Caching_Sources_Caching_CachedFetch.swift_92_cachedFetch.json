@@ -1,0 +1,22 @@
+{
+  "cluster_id": "function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "other",
+    "confidence": 0.62,
+    "evidence_quote": "Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch",
+    "rationale": "The structural evidence shows two functions both named `cachedFetch` in the identical file `Shared/Caching/Sources/Caching/CachedFetch.swift` (lines 45 and 92) within the `Caching` package, with a Jaccard similarity of 0.7 \u2014 high enough to indicate substantial body overlap but not an exact copy. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. Because both definitions reside in the same file, the fix is a within-file consolidation (merge bodies, introduce a shared helper, or make one delegate to the other) rather than any cross-file or cross-package extraction.",
+    "specifics": {
+      "proposed_action": "Consolidate the two `cachedFetch` function definitions at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` into a single canonical implementation within that same file. Inspect whether the two overloads differ only in a parameter (e.g., a cache policy, expiry, or key type) and, if so, unify them via a single function with a defaulted or optional parameter. If they differ in effect specifiers or return type, consider whether one can delegate to the other to eliminate the near-duplicate body.",
+      "why_no_category_fits": "Both records live in the same file (`Shared/Caching/Sources/Caching/CachedFetch.swift`) and the same package (`Caching`), so `extract-to-common` (which requires moving code across packages or files) is not applicable. The cluster reports a Jaccard similarity of 0.7 between two same-named functions in the same file, which is a within-file consolidation problem \u2014 not a cross-file or cross-package duplication. None of the other action categories (protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) fit a within-file function-level near-duplicate scenario. The appropriate fix is an in-place merge or delegation refactor inside the existing file, which falls outside the named category set."
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-near_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_45_cachedFetch_Caching_Shared_Caching_Sources_Caching_CachedFetch.swift_92_cachedFetch.json",
+  "row_index": 152,
+  "trial": 1
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"exact-duplicates:MaterialBlendMode+OverlayBlendMode+PlaybackBlendMode\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Consolidate the three identical type-alias-union declarations \u2014 `PlaybackBlendMode` (PlaybackBlendMode.swift, line 21), `MaterialBlendMode` (MaterialBlendMode.swift, line 21), and `OverlayBlendMode` (_Plant_OverlayBlendMode.swift, line 21) \u2014 into a single canonical type declared once in the `Wallpaper` package (e.g., `Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode.swift`). The three existing names can then become `typealias` aliases pointing at the single canonical type, preserving any public API surface that already uses them, while eliminating the 16-field duplication across all three files.\",\n      \"why_no_category_fits\": \"All three records are `type-alias-union` kinds, not structs, classes, protocols, or free functions. None of the action categories (extract-to-common, protocol-inheritance, default-implementation, pat-introduction, generic-parameterization, subclass-lift, macro-synthesis, composition, extension-consolidation) precisely describes collapsing three structurally identical type-alias-union declarations within the same package into one canonical declaration with forwarding aliases. The closest fit would be `extract-to-common`, but all three records already live in the same package (`Wallpaper`), so there is no cross-package extraction to perform; the action is intra-package deduplication via a canonical declaration plus aliasing.\"\n    },\n    \"rationale\": \"All three records \u2014 `PlaybackBlendMode`, `MaterialBlendMode`, and `OverlayBlendMode` \u2014 are `type-alias-union` kinds residing in the same `Wallpaper` package under `Shared/Wallpaper/Sources/Wallpaper/Core/`, with `shared_field_count: 16` and `differing_slots: null`, indicating they are structurally identical. No restraint markers are set on any record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Because all three live in the same package, `extract-to-common` does not apply; the correct action is to introduce one canonical union type and reduce the other two to forwarding `typealias` declarations, eliminating the 16-field triplication.\",\n    \"evidence_quote\": \"\\\"shared_field_count\\\": 16\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Wallpaper\",\n        \"type_name\": \"BlendMode\",\n        \"remove_from\": [\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n          \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n        ]\n      },\n      \"rationale\": \"If the three names (`PlaybackBlendMode`, `MaterialBlendMode`, `OverlayBlendMode`) are not part of a stable public API that must be preserved, the three files could simply be deleted and replaced by a single `BlendMode` declaration in the `Wallpaper` package, with call-sites updated. This is a harder cut than the forwarding-alias approach but results in a cleaner API surface.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_019WGAs5KqvsBDyMy7uA9QYU",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3938,
+    "output_tokens": 893,
+    "service_tier": "standard"
+  }
+}

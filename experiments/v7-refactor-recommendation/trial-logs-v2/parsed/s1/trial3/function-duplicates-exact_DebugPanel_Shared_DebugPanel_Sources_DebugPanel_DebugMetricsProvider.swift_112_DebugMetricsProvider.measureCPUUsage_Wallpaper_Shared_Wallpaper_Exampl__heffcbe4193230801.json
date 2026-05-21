@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "The second participating record resides at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` directory \u2014 a canonical sample-app path that triggers the sample-app-mirror restraint regardless of the `is_sample_app: false` flag on the record. The first record is a production method `DebugMetricsProvider.measureCPUUsage` in the `DebugPanel` package. Consolidating these two would couple the production `DebugPanel` package to a sample-app demonstration context, which is the exact anti-pattern the restraint rule is designed to prevent. The duplication is intentional: the sample app re-implements CPU measurement locally to remain self-contained.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_112_DebugMetricsProvider.measureCPUUsage_Wallpaper_Shared_Wallpaper_Exampl__heffcbe4193230801.json",
+  "row_index": 9,
+  "trial": 3
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift:62:MaterialBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"category\": \"default-implementation\",\n    \"specifics\": {\n      \"protocol\": \"BlendMode\",\n      \"method\": \"var blendMode: ...\",\n      \"target_location\": \"Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+Defaults.swift\",\n      \"conformers_simplified\": [\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/MaterialBlendMode.swift\",\n        \"Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift\"\n      ]\n    },\n    \"rationale\": \"Three computed properties \u2014 `PlaybackBlendMode.blendMode`, `MaterialBlendMode.blendMode`, and `OverlayBlendMode.blendMode` \u2014 are flagged as exact function duplicates, all residing at line 62 of their respective files within the same `Wallpaper` package. Because the bodies are identical and all three types are in the same package with no restraint markers (all context flags false), the idiomatic Swift approach is to introduce a shared protocol (e.g., `BlendMode`) that each enum/type already implicitly satisfies, and provide the duplicated `blendMode` computed property as a default implementation in a protocol extension. This eliminates the three redundant bodies while keeping each type's declaration intact. The `_Plant_` prefix on `_Plant_OverlayBlendMode.swift` may indicate a codegen candidate, but `is_codegen` is explicitly `false`, so it is treated as hand-written production code.\",\n    \"evidence_quote\": \"PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/PlaybackBlendMode.swift:62:PlaybackBlendMode.blendMode+Wallpaper:Shared/Wallpaper/Sources/Wallpaper/Core/_Plant_OverlayBlendMode.swift:62:OverlayBlendMode.blendMode\",\n    \"alternative\": {\n      \"category\": \"macro-synthesis\",\n      \"specifics\": {\n        \"macro_name\": \"@BlendModeConformance\",\n        \"applies_to\": [\"enum\", \"struct\"],\n        \"synthesizes\": \"Synthesizes the `blendMode` computed property body that is identical across PlaybackBlendMode, MaterialBlendMode, and OverlayBlendMode, eliminating the need for each type to redeclare it.\",\n        \"population_size_evidence\": \"3 exact-duplicate computed properties at line 62 across 3 files in the Wallpaper package\",\n        \"use_swift_builtin\": false\n      },\n      \"rationale\": \"If the three blend-mode types cannot share a common protocol (e.g., because they are unrelated enums with incompatible raw types), a Swift attached macro `@BlendModeConformance` could synthesize the identical `blendMode` body for each type, avoiding the protocol-extension approach while still removing the duplication. However, the default-implementation route is more idiomatic and requires no macro infrastructure.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01K4Jiy5236s6kvyHLQon9CV",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 4058,
+    "output_tokens": 938,
+    "service_tier": "standard"
+  }
+}

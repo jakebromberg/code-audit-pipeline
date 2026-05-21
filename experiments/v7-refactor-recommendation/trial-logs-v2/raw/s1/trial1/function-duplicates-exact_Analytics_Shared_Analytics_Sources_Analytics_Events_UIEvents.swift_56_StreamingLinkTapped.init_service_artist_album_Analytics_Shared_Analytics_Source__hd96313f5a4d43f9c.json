@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:56:StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Introduce a shared private or internal helper (e.g., a static factory or a common memberwise initializer on a shared value type such as a `LinkTappedPayload(service:artist:album:)` struct) inside `Shared/Analytics/Sources/Analytics/Events/UIEvents.swift` in the `Analytics` package, and have both `StreamingLinkTapped.init(service:artist:album:)` (line 56) and `ExternalLinkTapped.init(service:artist:album:)` (line 70) delegate to it. This removes the duplicated initializer body without requiring a new package or a protocol hierarchy.\",\n      \"why_no_category_fits\": \"The two initializers belong to two distinct concrete types (`StreamingLinkTapped` and `ExternalLinkTapped`) in the same file and package, so `extract-to-common` (which targets cross-package duplication) is not the right fit. There is no protocol in the cluster to attach a `default-implementation` to, and no evidence of a PAT or generic opportunity given that the types are event-specific value types whose only shared shape is the `(service:artist:album:)` parameter list. `subclass-lift` is inappropriate for what are almost certainly structs/enums in an analytics event file. The most idiomatic Swift remedy is a shared payload value type or a private delegating helper \u2014 neither of which maps cleanly to any named category.\"\n    },\n    \"rationale\": \"Both `StreamingLinkTapped.init(service:artist:album:)` at line 56 and `ExternalLinkTapped.init(service:artist:album:)` at line 70 live in the same file (`Shared/Analytics/Sources/Analytics/Events/UIEvents.swift`) within the `Analytics` package and carry identical signatures, indicating their bodies are exact duplicates. No restraint markers are set on either record (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so the duplication is unintentional. Because both types reside in the same package and file, cross-package extraction is unnecessary; the idiomatic fix is a shared payload struct or private helper within the same file that both initializers delegate to.\",\n    \"evidence_quote\": \"StreamingLinkTapped.init(service:artist:album:)+Analytics:Shared/Analytics/Sources/Analytics/Events/UIEvents.swift:70:ExternalLinkTapped.init(service:artist:album:)\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"struct\",\n        \"type_params\": [\n          { \"name\": \"Kind\", \"constraint\": \"LinkTappedKind\" }\n        ],\n        \"new_name\": \"LinkTapped\",\n        \"replaces\": [\"StreamingLinkTapped\", \"ExternalLinkTapped\"]\n      },\n      \"rationale\": \"If `StreamingLinkTapped` and `ExternalLinkTapped` differ only in a kind discriminator (streaming vs. external), they could be collapsed into a single generic or phantom-typed `LinkTapped<Kind>` struct with a shared `init(service:artist:album:)`, eliminating both the type duplication and the initializer duplication. However, this is a heavier refactor that may break downstream analytics consumers that pattern-match on the concrete type names, so it is listed as an alternative rather than the primary recommendation.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01DVnY1bvk5ABt8osnaYArWt",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3841,
+    "output_tokens": 942,
+    "service_tier": "standard"
+  }
+}

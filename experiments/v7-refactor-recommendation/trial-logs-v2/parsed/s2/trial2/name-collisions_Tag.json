@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:Tag",
+  "condition": "s2",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "\"name\": \"\", \"fields_or_signature\": [], \"structural_evidence\": { \"differing_slots\": null, \"jaccard\": null, \"shared_ancestor\": null, \"shared_field_count\": null }",
+    "rationale": "All four participating records are anonymous extensions (name is empty string, fields_or_signature is empty) spread across test files in the Playback and MusicShareKit packages. The cluster carries no structural evidence \u2014 jaccard, shared_field_count, shared_ancestor, and differing_slots are all null \u2014 meaning the pipeline surfaced a name-collision signal on an empty name token rather than on any meaningful shared shape or content. There is nothing actionable to extract, consolidate, or generalize from unnamed, field-less extension stubs. Although the context flags do not formally mark these records as is_test=true, the file paths (MP3StreamerTests.swift, AudioEnginePlayerTests.swift, AuthNetworkClientE2ETests.swift) place every record unambiguously inside test targets, reinforcing that no production refactor is warranted.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s2/trial2/name-collisions_Tag.json",
+  "row_index": 7,
+  "trial": 2
+}

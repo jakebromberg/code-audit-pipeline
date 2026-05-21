@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to check the context flags carefully.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift` \u2014 the path contains `Examples/WallpaperSampleApp/`, which is a sample-app directory. Even though `is_sample_app` is marked `false` on the record, the file path itself is a canonical restraint marker (the decision rules explicitly call out \"sits under Examples/ or SampleApp/\" as a sample-app-mirror signal). This mixed cluster \u2014 one production record in `DebugPanel`, one sample-app record in `WallpaperSampleApp` \u2014 is the canonical restraint pattern: lifting the shared initializer into common code would couple production `DebugPanel` semantics to a demonstration/example fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:185:DisplayLinkSequence.AsyncIterator.init+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:209:DisplayLinkSequence.AsyncIterator.init\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"One of the two participating records lives at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', which sits under the Examples/WallpaperSampleApp/ directory \u2014 a canonical sample-app path that triggers the sample-app-mirror restraint regardless of the is_sample_app flag value. The other record is a production initializer in 'Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift' (package: DebugPanel). Extracting the shared DisplayLinkSequence.AsyncIterator.init into a common location would couple the production DebugPanel package to a demonstration fixture, which is the exact anti-pattern the restraint rule is designed to prevent. The duplication here is intentional: the sample app independently re-implements the same async iterator shape for local demonstration purposes.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.92\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Kh4yU2D5MeZDCCgYCvmaNT",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3879,
+    "output_tokens": 607,
+    "service_tier": "standard"
+  }
+}

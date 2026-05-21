@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster, I need to assess whether the restraint-marker rule applies.\n\nThe second record lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`. The path contains `Examples/WallpaperSampleApp/`, which the decision rules explicitly call out as a sample-app location triggering `reason_class: \"sample-app-mirror\"` \u2014 even though `is_sample_app` is flagged `false` on the record. The path evidence is unambiguous: `Examples/WallpaperSampleApp/` is a canonical sample-app directory. The context flag may be a pipeline mis-classification, but the path itself is the stronger signal, and the rules say records \"under Examples/ or SampleApp/\" trigger the restraint. I will not override this default because there is no evidence in the cluster row that the sample-app copy is a leftover prototype that should be deleted rather than a deliberate demonstration fixture.\n\n```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:112:DebugMetricsProvider.measureCPUUsage+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:141:DebugMetricsProvider.measureCPUUsage\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"sample-app-mirror\"\n    },\n    \"rationale\": \"The second participating record resides at 'Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift', a path that falls under the 'Examples/WallpaperSampleApp/' directory \u2014 a canonical sample-app location per the decision rules. Even though the pipeline emitted is_sample_app=false on that record, the file path is the authoritative signal. The duplicate of 'DebugMetricsProvider.measureCPUUsage' in the sample app is almost certainly a self-contained debug HUD for demonstration purposes, and lifting it into the production 'DebugPanel' package (or vice versa) would couple production code to sample-app semantics. No evidence in the cluster row suggests the sample-app copy is a removable prototype rather than a deliberate fixture.\",\n    \"evidence_quote\": \"Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift\",\n    \"alternative\": null,\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01XdkJLA1i5LpmEhPvNU2jR5",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3889,
+    "output_tokens": 631,
+    "service_tier": "standard"
+  }
+}

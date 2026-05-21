@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"pat-candidates:Caching:Shared/Caching/Sources/Caching/_Plant_CacheLoader.swift:14:CacheLoader+Metadata:Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift:14:MetadataLoader\",\n    \"category\": \"pat-introduction\",\n    \"specifics\": {\n      \"new_protocol\": \"CacheLoadable\",\n      \"associated_type\": \"Payload\",\n      \"constraints\": [],\n      \"replaces\": [\"CacheLoader\", \"MetadataLoader\"]\n    },\n    \"rationale\": \"Both `CacheLoader` (package `Caching`) and `MetadataLoader` (package `Metadata`) share three identical members \u2014 `cacheKey:String`, `invalidate:() async`, and `lastLoadedAt:Date?` \u2014 and differ only in the return type of `load()`: `Data` vs `PlaycutMetadata`. This is the canonical PAT pattern: a single varying slot (`Payload`) that can be expressed as an `associatedtype`, collapsing two parallel protocols into one generic abstraction. Neither record carries any restraint flag (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false), so no intentional-duplication rule applies. Introducing `CacheLoadable` with `associatedtype Payload` and a requirement `load() async throws -> Payload` unifies the two protocols while preserving full type safety at each call site.\",\n    \"evidence_quote\": \"\\\"differing_slots\\\": [{\\\"a\\\": [\\\"load:() async throws -> Data\\\"], \\\"b\\\": [\\\"load:() async throws -> PlaycutMetadata\\\"]}]\",\n    \"alternative\": {\n      \"category\": \"extract-to-common\",\n      \"specifics\": {\n        \"target_package\": \"Caching\",\n        \"type_name\": \"AnyLoader\",\n        \"remove_from\": [\n          \"Shared/Metadata/Sources/Metadata/_Plant_MetadataLoader.swift\"\n        ]\n      },\n      \"rationale\": \"If a PAT is considered too abstract for the current call-site usage, the shared members (`cacheKey`, `invalidate`, `lastLoadedAt`) could be extracted into a non-generic base protocol in the `Caching` package, with `MetadataLoader` inheriting from it and adding its typed `load()` override. However, this approach loses the unified `load()` contract and is less idiomatic Swift than a PAT when the only variation is a return type.\"\n    },\n    \"confidence\": 0.88\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Rj2Gb979c1ZnXtAGhKeVb4",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3954,
+    "output_tokens": 633,
+    "service_tier": "standard"
+  }
+}

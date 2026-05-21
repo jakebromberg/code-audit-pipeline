@@ -1,0 +1,21 @@
+{
+  "cluster_id": "name-collisions:RootTabView",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.82,
+    "evidence_quote": "\"fields_or_signature\": [], \"kind\": \"type-alias-object\" ... \"package\": \"app:WatchXYC\" ... \"package\": \"app:iOS\"",
+    "rationale": "Both records are `type-alias-object` kinds with empty `fields_or_signature` lists, meaning there is no shared implementation body to consolidate. The two files live in distinct app targets \u2014 `app:WatchXYC` (`WXYC/WatchXYC/RootTabView.swift`) and `app:iOS` (`WXYC/iOS/Views/Root/RootTabView.swift`) \u2014 which are platform-specific entry points (watchOS vs. iOS) that intentionally carry parallel but divergent view hierarchies. The structural evidence fields (`jaccard`, `shared_field_count`, `shared_ancestor`) are all null, providing no positive signal of shared logic. Merging or extracting these would couple platform-specific root navigation to a shared target without any demonstrated shared content.",
+    "specifics": {
+      "reason_class": "coincidental"
+    }
+  },
+  "query": "name-collisions",
+  "raw_response_path": "raw/s1/trial1/name-collisions_RootTabView.json",
+  "row_index": 40,
+  "trial": 1
+}

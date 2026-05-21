@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-near:AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:22:ReviewRequestServiceTests.recordPlaybackStartedIncrementsCount+AppServices:Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift:54:ReviewRequestServiceTests.recordSongAddedToLibraryIncrementsCount",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.97,
+    "evidence_quote": "is_test: true",
+    "rationale": "Both participating records carry `is_test: true` and reside in `Shared/AppServices/Tests/AppServicesTests/ReviewRequestServiceTests.swift`. The two methods \u2014 `recordPlaybackStartedIncrementsCount` (line 22) and `recordSongAddedToLibraryIncrementsCount` (line 54) \u2014 are test cases that verify distinct user-action events (`recordPlaybackStarted` vs. `recordSongAddedToLibrary`), so their structural similarity (Jaccard 0.75) reflects parallel test scaffolding for semantically different code paths, not accidental duplication. Merging or abstracting them would obscure which event each test exercises and couple unrelated test concerns. The restraint rule for test fixtures dominates any action signal here.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial3/function-duplicates-near_AppServices_Shared_AppServices_Tests_AppServicesTests_ReviewRequestServiceTests.swift_22_ReviewRequestServiceTests.recordPlaybackStartedIncrementsCoun__ha67eee310a854b5c.json",
+  "row_index": 101,
+  "trial": 3
+}

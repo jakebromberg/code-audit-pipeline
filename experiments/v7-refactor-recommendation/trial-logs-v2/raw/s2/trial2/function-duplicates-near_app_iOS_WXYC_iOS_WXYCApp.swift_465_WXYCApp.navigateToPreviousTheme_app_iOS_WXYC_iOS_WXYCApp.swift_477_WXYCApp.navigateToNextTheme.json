@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:app:iOS:WXYC/iOS/WXYCApp.swift:465:WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"category\": \"generic-parameterization\",\n    \"specifics\": {\n      \"generic_kind\": \"function\",\n      \"type_params\": [\n        { \"name\": \"Direction\", \"constraint\": null }\n      ],\n      \"new_name\": \"navigateTheme\",\n      \"replaces\": [\"WXYCApp.navigateToPreviousTheme\", \"WXYCApp.navigateToNextTheme\"]\n    },\n    \"rationale\": \"The two methods `WXYCApp.navigateToPreviousTheme` (line 465) and `WXYCApp.navigateToNextTheme` (line 477) in `WXYC/iOS/WXYCApp.swift` share a Jaccard similarity of 0.75, indicating near-identical bodies that differ only in the direction of navigation (previous vs. next). Both are production methods in the same file and package (`app:iOS`) with no restraint markers. The most idiomatic Swift consolidation is a single method parameterised by direction \u2014 e.g., an enum or Bool \u2014 eliminating the duplication while preserving both call sites. Because both methods live in the same file, no cross-package movement is required.\",\n    \"evidence_quote\": \"WXYCApp.navigateToPreviousTheme+app:iOS:WXYC/iOS/WXYCApp.swift:477:WXYCApp.navigateToNextTheme\",\n    \"alternative\": {\n      \"category\": \"other\",\n      \"specifics\": {\n        \"proposed_action\": \"Introduce a private helper method `navigateTheme(offset:)` or `navigateTheme(forward:)` in `WXYC/iOS/WXYCApp.swift` that both `navigateToPreviousTheme` and `navigateToNextTheme` delegate to, keeping the two public entry-point names intact for call-site clarity.\",\n        \"why_no_category_fits\": \"If the two public method names are part of a stable internal API or are referenced by name in SwiftUI action bindings, full generic parameterization may be disruptive; a private shared helper preserves the named entry points while eliminating the duplicated body. This is a delegation/extraction pattern that does not map cleanly to any of the named categories.\"\n      },\n      \"rationale\": \"Retaining the two named methods as thin wrappers around a shared private helper avoids renaming call sites while still removing the near-duplicate body identified by the 0.75 Jaccard score. Both methods reside in `WXYC/iOS/WXYCApp.swift`, so the helper can be a private method on `WXYCApp` with no visibility changes.\"\n    },\n    \"confidence\": 0.62\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01PFX6cygqG2zPWrvvHxkc41",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3839,
+    "output_tokens": 748,
+    "service_tier": "standard"
+  }
+}

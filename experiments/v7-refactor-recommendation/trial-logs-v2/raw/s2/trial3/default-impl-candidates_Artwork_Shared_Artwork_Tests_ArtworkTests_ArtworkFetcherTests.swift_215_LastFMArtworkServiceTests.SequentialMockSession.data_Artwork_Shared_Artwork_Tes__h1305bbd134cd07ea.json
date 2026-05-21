@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "Looking at this cluster row, I need to assess whether a default-implementation refactor is warranted.\n\nKey observations:\n- All four participating records are in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` \u2014 a test file.\n- The types are `LastFMArtworkServiceTests.SequentialMockSession`, `DiscogsArtworkServiceTests.SequentialMockSession` (appearing twice, at lines 321 and 367), and `iTunesArtworkServiceTests.SequentialMockSession` \u2014 all nested mock session types inside test classes.\n- The `members` array is empty and `shared_field_count` is 0, meaning there is no grounded field/method evidence to support extracting a default implementation.\n- The restraint rule is clear: any participating record with `is_test=true` triggers `no-action` with reason_class `\"test-fixture\"`. All records here are unambiguously test fixtures (nested inside `*Tests` classes, in a `Tests/` directory).\n\n```json\n[\n  {\n    \"cluster_id\": \"default-impl-candidates:Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:321:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:367:DiscogsArtworkServiceTests.SequentialMockSession.data+Artwork:Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:88:iTunesArtworkServiceTests.SequentialMockSession.data\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"test-fixture\"\n    },\n    \"rationale\": \"Every participating record lives in `Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift` and is a nested `SequentialMockSession` type inside test classes (`LastFMArtworkServiceTests`, `DiscogsArtworkServiceTests`, `iTunesArtworkServiceTests`). Per the restraint rules, any cluster containing a test-fixture record must be marked no-action. Additionally, the `members` array is empty and `shared_field_count` is 0, so there is no grounded field or method evidence to support synthesising a default implementation even if the restraint were lifted. Consolidating mock session helpers across test classes would couple unrelated test suites and obscure per-service test intent.\",\n    \"evidence_quote\": \"Shared/Artwork/Tests/ArtworkTests/ArtworkFetcherTests.swift:215:LastFMArtworkServiceTests.SequentialMockSession.data\",\n    \"alternative\": null,\n    \"confidence\": 0.97\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01U4LeePKQbMbwmaYMr6jknQ",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3680,
+    "output_tokens": 731,
+    "service_tier": "standard"
+  }
+}

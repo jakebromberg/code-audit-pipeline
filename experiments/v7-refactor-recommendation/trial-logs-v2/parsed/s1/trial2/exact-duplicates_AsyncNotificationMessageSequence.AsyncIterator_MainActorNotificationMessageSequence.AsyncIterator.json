@@ -1,0 +1,26 @@
+{
+  "cluster_id": "exact-duplicates:AsyncNotificationMessageSequence.AsyncIterator+MainActorNotificationMessageSequence.AsyncIterator",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "extract-to-common",
+    "confidence": 0.72,
+    "evidence_quote": "\"kind\": \"type-alias-object\", \"shared_field_count\": 1, \"differing_slots\": null",
+    "rationale": "Both `MainActorNotificationMessageSequence.AsyncIterator` (line 149 of `MainActorMessage.swift`) and `AsyncNotificationMessageSequence.AsyncIterator` (line 123 of `AsyncMessage.swift`) are `type-alias-object` declarations in the same `Core` package with identical structural shape (`shared_field_count: 1`, `differing_slots: null`). Neither record carries any restraint marker (`is_test`, `is_mock`, `is_sample_app`, `is_codegen` are all false). Because both live in the same package under `Shared/Core/Sources/Core/Observation/`, the duplicated type alias can be consolidated into a single canonical declaration within that package, eliminating the redundancy without any cross-package movement.",
+    "specifics": {
+      "remove_from": [
+        "Shared/Core/Sources/Core/Observation/MainActorMessage.swift",
+        "Shared/Core/Sources/Core/Observation/AsyncMessage.swift"
+      ],
+      "target_package": "Core",
+      "type_name": "NotificationMessageSequence.AsyncIterator"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial2/exact-duplicates_AsyncNotificationMessageSequence.AsyncIterator_MainActorNotificationMessageSequence.AsyncIterator.json",
+  "row_index": 41,
+  "trial": 2
+}

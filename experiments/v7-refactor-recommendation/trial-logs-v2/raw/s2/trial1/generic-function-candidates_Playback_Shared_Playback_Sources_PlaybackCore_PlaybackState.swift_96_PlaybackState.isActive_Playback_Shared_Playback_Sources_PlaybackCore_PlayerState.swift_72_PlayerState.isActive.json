@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"generic-function-candidates:Playback:Shared/Playback/Sources/PlaybackCore/PlaybackState.swift:96:PlaybackState.isActive+Playback:Shared/Playback/Sources/PlaybackCore/PlayerState.swift:72:PlayerState.isActive\",\n    \"category\": \"no-action\",\n    \"specifics\": {\n      \"reason_class\": \"coincidental\"\n    },\n    \"rationale\": \"Both `PlayerState.isActive` and `PlaybackState.isActive` are computed properties (not free functions) living on two distinct domain types within the same `Playback` package. The cluster's `fields_or_signature` lists are empty for both members, meaning there is no shared method body or signature to extract into a generic function. The structural similarity (Jaccard 0.71) likely reflects that both types independently expose a boolean `isActive` property \u2014 a common Swift idiom whose coincidence here is purely nominal. Introducing a generic function or shared protocol solely to unify a property name with no shared implementation would add indirection without reducing duplication.\",\n    \"evidence_quote\": \"\\\"fields_or_signature\\\": [], \\\"kind\\\": \\\"computed-property\\\"\",\n    \"alternative\": {\n      \"category\": \"pat-introduction\",\n      \"specifics\": {\n        \"new_protocol\": \"ActiveStateRepresentable\",\n        \"associated_type\": \"none\",\n        \"constraints\": [],\n        \"replaces\": [\"PlayerState.isActive\", \"PlaybackState.isActive\"]\n      },\n      \"rationale\": \"If both types are used polymorphically at call sites that only care about `isActive`, a lightweight protocol `ActiveStateRepresentable` with a `var isActive: Bool { get }` requirement could unify them. However, with empty `fields_or_signature` on both records there is no evidence of such polymorphic usage, making this speculative.\"\n    },\n    \"confidence\": 0.72\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01QJRkKYiR4YraVNHLWQgkxx",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3830,
+    "output_tokens": 473,
+    "service_tier": "standard"
+  }
+}

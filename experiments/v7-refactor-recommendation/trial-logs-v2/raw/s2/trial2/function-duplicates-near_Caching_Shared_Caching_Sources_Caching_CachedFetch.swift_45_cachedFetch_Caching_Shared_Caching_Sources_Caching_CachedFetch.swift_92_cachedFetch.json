@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "text": "```json\n[\n  {\n    \"cluster_id\": \"function-duplicates-near:Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"category\": \"other\",\n    \"specifics\": {\n      \"proposed_action\": \"Inspect the two `cachedFetch` function bodies at lines 45 and 92 of `Shared/Caching/Sources/Caching/CachedFetch.swift` in the `Caching` package. They share a Jaccard similarity of 0.70 and reside in the same file, strongly suggesting one is a near-duplicate of the other with minor parameter or behaviour variation. Determine whether the divergence is intentional (e.g., one overload handles an optional key, the other a non-optional key) or accidental drift. If accidental, collapse the two into a single implementation with a shared private helper that encodes the common logic, leaving at most one public overload that delegates to it. If intentional, add a brief inline comment on each function explaining why the two overloads must remain distinct, so future readers do not re-flag them.\",\n      \"why_no_category_fits\": \"Both records are in the same file and the same package (`Caching`), so `extract-to-common` (which requires moving code to an upstream package) does not apply. There is no protocol, conformer, or associated-type structure involved, ruling out `protocol-inheritance`, `default-implementation`, and `pat-introduction`. The records are free functions, not structs or classes, so `subclass-lift`, `composition`, and `extension-consolidation` do not fit. `macro-synthesis` is inapplicable because the duplication is in function bodies, not member synthesis. `generic-parameterization` could theoretically unify two overloads, but `fields_or_signature` is empty for both records, so there is no evidence of differing type parameters to generalize over \u2014 the cluster row does not supply enough information to safely prescribe a generic signature. The most honest recommendation is to flag the in-file near-duplicate for manual review and inline consolidation.\"\n    },\n    \"rationale\": \"Both participating records are the function `cachedFetch` in the same file `Shared/Caching/Sources/Caching/CachedFetch.swift` (package `Caching`), at lines 45 and 92 respectively, with a Jaccard similarity of 0.70. No context flags (is_test, is_mock, is_sample_app, is_codegen) are set on either record, so intentional-duplication restraint rules do not apply. The near-duplicate signal within a single file is a strong indicator of accidental drift between two overloads or a copy-paste that was never reconciled. Because `fields_or_signature` is empty for both records, the precise divergence cannot be determined from the cluster row alone, making a concrete generic-parameterization or extract-to-common prescription unsafe without manual inspection.\",\n    \"evidence_quote\": \"Shared/Caching/Sources/Caching/CachedFetch.swift:45:cachedFetch+Caching:Shared/Caching/Sources/Caching/CachedFetch.swift:92:cachedFetch\",\n    \"alternative\": {\n      \"category\": \"generic-parameterization\",\n      \"specifics\": {\n        \"generic_kind\": \"function\",\n        \"type_params\": [\n          { \"name\": \"T\", \"constraint\": null }\n        ],\n        \"new_name\": \"cachedFetch\",\n        \"replaces\": [\"cachedFetch\", \"cachedFetch\"]\n      },\n      \"rationale\": \"If manual inspection reveals the two `cachedFetch` overloads differ only in the concrete type they operate on (e.g., one fetches `Data`, the other fetches a `Decodable` model), a single generic `cachedFetch<T>` with an appropriate constraint could replace both. This is the idiomatic Swift approach for collapsing near-identical free-function overloads. However, because `fields_or_signature` is empty in the cluster row, this cannot be confirmed without reading the source, so it is listed as an alternative rather than the primary recommendation.\"\n    },\n    \"confidence\": 0.52\n  }\n]\n```",
+      "type": "text"
+    }
+  ],
+  "id": "msg_01Mkydh6ZJWxXUyz72m9vwzz",
+  "model": "claude-sonnet-4-6",
+  "role": "assistant",
+  "stop_details": null,
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "type": "message",
+  "usage": {
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "inference_geo": "global",
+    "input_tokens": 3827,
+    "output_tokens": 1049,
+    "service_tier": "standard"
+  }
+}

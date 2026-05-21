@@ -1,0 +1,21 @@
+{
+  "cluster_id": "function-duplicates-exact:DebugPanel:Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift:79:DebugMetricsProvider.handleDisplayLinkTick+Wallpaper:Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift:113:DebugMetricsProvider.handleDisplayLinkTick",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.92,
+    "evidence_quote": "Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift",
+    "rationale": "Although the `is_sample_app` context flag is false on both records, the second participating file lives at `Shared/Wallpaper/Examples/WallpaperSampleApp/Sources/DebugHUD.swift`, which sits under the `Examples/WallpaperSampleApp/` path \u2014 an explicit restraint marker under the decision rules. The first record is production code in `Shared/DebugPanel/Sources/DebugPanel/DebugMetricsProvider.swift` (package `DebugPanel`); the second is a local copy of `DebugMetricsProvider.handleDisplayLinkTick` embedded in a sample app's `DebugHUD`. This is the canonical sample-app-mirror pattern: the sample app duplicates a debug utility locally for self-contained demonstration, and merging the two would couple production `DebugPanel` semantics to sample-app infrastructure. No refactor is warranted unless the sample-app copy is confirmed to be a stale prototype that should simply be deleted.",
+    "specifics": {
+      "reason_class": "sample-app-mirror"
+    }
+  },
+  "query": "function-duplicates",
+  "raw_response_path": "raw/s1/trial1/function-duplicates-exact_DebugPanel_Shared_DebugPanel_Sources_DebugPanel_DebugMetricsProvider.swift_79_DebugMetricsProvider.handleDisplayLinkTick_Wallpaper_Shared_Wallpaper_E__ha41f188a794cd5b9.json",
+  "row_index": 12,
+  "trial": 1
+}

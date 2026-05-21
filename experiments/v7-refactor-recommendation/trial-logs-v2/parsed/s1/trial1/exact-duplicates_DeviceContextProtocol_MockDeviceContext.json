@@ -1,0 +1,21 @@
+{
+  "cluster_id": "exact-duplicates:DeviceContextProtocol+MockDeviceContext",
+  "condition": "s1",
+  "extraction_notes": {
+    "parser_version": "1.0"
+  },
+  "parse_error": null,
+  "parsed": {
+    "category": "no-action",
+    "confidence": 0.88,
+    "evidence_quote": "Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift",
+    "rationale": "The file `Shared/Wallpaper/Tests/WallpaperTests/Mocks/MockDeviceContext.swift` resides under the `Tests/` directory tree of the `Wallpaper` package, making `MockDeviceContext` a test-support fixture for `DeviceContextProtocol`. Although the context flags do not carry `is_test=true` or `is_mock=true`, the file path unambiguously places it inside the test target (`WallpaperTests/Mocks/`). Per the restraint rules, a mock/test fixture that mirrors a production interface is intentional duplication: `MockDeviceContext` exists precisely to stand in for `DeviceContextProtocol` in tests, and collapsing or lifting it would couple production code to test semantics. No refactor action is warranted.",
+    "specifics": {
+      "reason_class": "test-fixture"
+    }
+  },
+  "query": "exact-duplicates",
+  "raw_response_path": "raw/s1/trial1/exact-duplicates_DeviceContextProtocol_MockDeviceContext.json",
+  "row_index": 38,
+  "trial": 1
+}
