@@ -504,5 +504,17 @@ execution:
       s1_panel_route_rate: 0.120
       s2_canonical_recall: 0.105
       s2_panel_route_rate: 0.258
-    sub_experiment_outcome: null      # PR 4: "H1 supported" | "H0a supported" | "halted" — preliminary read from PR 3 data: panel-route drop is 17.8% (S1) / 6.5% (S2), well below the §3.4 50% threshold for H1; H0a supported per the decision tree, pending PR 4's per-category breakdown
+    # Sub-experiment outcome per plan §3.4 decision tree. Drift-check pass
+    # (PR 2) × acceptance fail (PR 3 + PR 4) → H0a supported. Measured
+    # overall panel-route rate delta: −2.11pp absolute / −9.24% relative
+    # (v1-clean 22.80% = 119/522, v2 20.69% = 108/522). Per-condition:
+    # S1 −17.86% relative, S2 −6.59% relative. Far below the pre-registered
+    # 50% relative-drop threshold. Per-category heterogeneity (default-
+    # implementation −17.4% rel, protocol-inheritance −19.0% rel, generic-
+    # parameterization −13.0% rel, extract-to-common 0.0%, pat-introduction
+    # +28.6% rel) is recorded in analyses-v2/prompt-sensitivity.json.
+    # Follow-up sub-experiment (H0b rubric over-strictness) recommended by
+    # results.md §10 and rubric-modifications.md round-3 entry; out of scope
+    # for this sub-experiment.
+    sub_experiment_outcome: "H0a supported"
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md

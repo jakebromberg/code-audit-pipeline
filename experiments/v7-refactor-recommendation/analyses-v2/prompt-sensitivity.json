@@ -1,0 +1,352 @@
+{
+  "schema_version": "v7-prompt-sensitivity-2026-05-20",
+  "generated_at": "2026-05-21T02:38:33+00:00",
+  "plan_ref": "plans/v7-round2-prompt-sensitivity-plan.md",
+  "plan_sha256": "0853d4465961696adc647ee3ca86b470b44a04b599b849cf004e0e46a9fd8715",
+  "v1_clean_ref": "experiments/v7-refactor-recommendation/analyses-v1-clean/score-summary.json",
+  "v2_ref": "experiments/v7-refactor-recommendation/analyses-v2/score-summary.json",
+  "drift_check_ref": "experiments/v7-refactor-recommendation/analyses-v2/drift-check.json",
+  "rubric_modifications_ref": "experiments/v7-refactor-recommendation/rubric-modifications.md",
+  "rubric_modifications_entry": "Round 3 \u2014 prompt-sensitivity sub-experiment (2026-05-20)",
+  "acceptance_threshold_pct": 50.0,
+  "acceptance_metric": "overall_panel_route_rate_relative_drop_pct",
+  "decision_tree": {
+    "drift_check_pass": true,
+    "acceptance_pass": false,
+    "outcome": "H0a supported",
+    "rationale": "Overall panel-route rate dropped 9.24% (relative, v1-clean -> v2): below the pre-registered 50% threshold per plan \u00a73.4. Drift-check passed (all three tolerances). Per decision tree, drift-check pass + acceptance fail -> H0a supported (model capability ceiling)."
+  },
+  "panel_route_rate": {
+    "definition": "Numerator: entries in score_all.py's `panel_routed` array per condition (from `unblind.condition`). Denominator: per-trial `scored` entries per condition. Matches score-summary.json::panel_route_rate.",
+    "overall": {
+      "v1_clean": {
+        "n_panel": 119,
+        "n_planted": 522,
+        "fraction": 0.22796934865900384,
+        "pct": 22.796934865900383
+      },
+      "v2": {
+        "n_panel": 108,
+        "n_planted": 522,
+        "fraction": 0.20689655172413793,
+        "pct": 20.689655172413794
+      },
+      "abs_delta_pp": -2.107279693486591,
+      "rel_delta_pct": -9.243697478991601
+    },
+    "by_condition": {
+      "s1": {
+        "v1_clean": {
+          "n_panel": 28,
+          "n_planted": 192,
+          "fraction": 0.14583333333333334,
+          "pct": 14.583333333333334
+        },
+        "v2": {
+          "n_panel": 23,
+          "n_planted": 192,
+          "fraction": 0.11979166666666667,
+          "pct": 11.979166666666668
+        },
+        "abs_delta_pp": -2.604166666666667,
+        "rel_delta_pct": -17.85714285714286
+      },
+      "s2": {
+        "v1_clean": {
+          "n_panel": 91,
+          "n_planted": 330,
+          "fraction": 0.27575757575757576,
+          "pct": 27.575757575757574
+        },
+        "v2": {
+          "n_panel": 85,
+          "n_planted": 330,
+          "fraction": 0.25757575757575757,
+          "pct": 25.757575757575758
+        },
+        "abs_delta_pp": -1.8181818181818188,
+        "rel_delta_pct": -6.593406593406595
+      }
+    },
+    "by_category_overall": {
+      "default-implementation": {
+        "v1_clean": {
+          "n_panel": 46,
+          "n_planted": 153,
+          "fraction": 0.3006535947712418,
+          "pct": 30.065359477124183
+        },
+        "v2": {
+          "n_panel": 38,
+          "n_planted": 153,
+          "fraction": 0.24836601307189543,
+          "pct": 24.836601307189543
+        },
+        "abs_delta_pp": -5.228758169934639,
+        "rel_delta_pct": -17.391304347826082
+      },
+      "extract-to-common": {
+        "v1_clean": {
+          "n_panel": 15,
+          "n_planted": 81,
+          "fraction": 0.18518518518518517,
+          "pct": 18.51851851851852
+        },
+        "v2": {
+          "n_panel": 15,
+          "n_planted": 81,
+          "fraction": 0.18518518518518517,
+          "pct": 18.51851851851852
+        },
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0
+      },
+      "generic-parameterization": {
+        "v1_clean": {
+          "n_panel": 23,
+          "n_planted": 60,
+          "fraction": 0.38333333333333336,
+          "pct": 38.333333333333336
+        },
+        "v2": {
+          "n_panel": 20,
+          "n_planted": 60,
+          "fraction": 0.3333333333333333,
+          "pct": 33.33333333333333
+        },
+        "abs_delta_pp": -5.000000000000004,
+        "rel_delta_pct": -13.043478260869575
+      },
+      "pat-introduction": {
+        "v1_clean": {
+          "n_panel": 14,
+          "n_planted": 117,
+          "fraction": 0.11965811965811966,
+          "pct": 11.965811965811966
+        },
+        "v2": {
+          "n_panel": 18,
+          "n_planted": 117,
+          "fraction": 0.15384615384615385,
+          "pct": 15.384615384615385
+        },
+        "abs_delta_pp": 3.418803418803419,
+        "rel_delta_pct": 28.571428571428577
+      },
+      "protocol-inheritance": {
+        "v1_clean": {
+          "n_panel": 21,
+          "n_planted": 111,
+          "fraction": 0.1891891891891892,
+          "pct": 18.91891891891892
+        },
+        "v2": {
+          "n_panel": 17,
+          "n_planted": 111,
+          "fraction": 0.15315315315315314,
+          "pct": 15.315315315315313
+        },
+        "abs_delta_pp": -3.603603603603606,
+        "rel_delta_pct": -19.047619047619058
+      }
+    },
+    "by_condition_by_category": {
+      "s1": {
+        "default-implementation": {
+          "v1_clean": {
+            "n_panel": 15,
+            "n_planted": 66,
+            "fraction": 0.22727272727272727,
+            "pct": 22.727272727272727
+          },
+          "v2": {
+            "n_panel": 12,
+            "n_planted": 66,
+            "fraction": 0.18181818181818182,
+            "pct": 18.181818181818183
+          },
+          "abs_delta_pp": -4.545454545454544,
+          "rel_delta_pct": -19.999999999999996
+        },
+        "extract-to-common": {
+          "v1_clean": {
+            "n_panel": 6,
+            "n_planted": 39,
+            "fraction": 0.15384615384615385,
+            "pct": 15.384615384615385
+          },
+          "v2": {
+            "n_panel": 6,
+            "n_planted": 39,
+            "fraction": 0.15384615384615385,
+            "pct": 15.384615384615385
+          },
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0
+        },
+        "generic-parameterization": {
+          "v1_clean": {
+            "n_panel": 7,
+            "n_planted": 18,
+            "fraction": 0.3888888888888889,
+            "pct": 38.88888888888889
+          },
+          "v2": {
+            "n_panel": 4,
+            "n_planted": 18,
+            "fraction": 0.2222222222222222,
+            "pct": 22.22222222222222
+          },
+          "abs_delta_pp": -16.666666666666668,
+          "rel_delta_pct": -42.85714285714286
+        },
+        "pat-introduction": {
+          "v1_clean": {
+            "n_panel": 0,
+            "n_planted": 48,
+            "fraction": 0.0,
+            "pct": 0.0
+          },
+          "v2": {
+            "n_panel": 0,
+            "n_planted": 48,
+            "fraction": 0.0,
+            "pct": 0.0
+          },
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": null
+        },
+        "protocol-inheritance": {
+          "v1_clean": {
+            "n_panel": 0,
+            "n_planted": 21,
+            "fraction": 0.0,
+            "pct": 0.0
+          },
+          "v2": {
+            "n_panel": 1,
+            "n_planted": 21,
+            "fraction": 0.047619047619047616,
+            "pct": 4.761904761904762
+          },
+          "abs_delta_pp": 4.761904761904762,
+          "rel_delta_pct": null
+        }
+      },
+      "s2": {
+        "default-implementation": {
+          "v1_clean": {
+            "n_panel": 31,
+            "n_planted": 87,
+            "fraction": 0.3563218390804598,
+            "pct": 35.63218390804598
+          },
+          "v2": {
+            "n_panel": 26,
+            "n_planted": 87,
+            "fraction": 0.2988505747126437,
+            "pct": 29.88505747126437
+          },
+          "abs_delta_pp": -5.747126436781608,
+          "rel_delta_pct": -16.129032258064512
+        },
+        "extract-to-common": {
+          "v1_clean": {
+            "n_panel": 9,
+            "n_planted": 42,
+            "fraction": 0.21428571428571427,
+            "pct": 21.428571428571427
+          },
+          "v2": {
+            "n_panel": 9,
+            "n_planted": 42,
+            "fraction": 0.21428571428571427,
+            "pct": 21.428571428571427
+          },
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0
+        },
+        "generic-parameterization": {
+          "v1_clean": {
+            "n_panel": 16,
+            "n_planted": 42,
+            "fraction": 0.38095238095238093,
+            "pct": 38.095238095238095
+          },
+          "v2": {
+            "n_panel": 16,
+            "n_planted": 42,
+            "fraction": 0.38095238095238093,
+            "pct": 38.095238095238095
+          },
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0
+        },
+        "pat-introduction": {
+          "v1_clean": {
+            "n_panel": 14,
+            "n_planted": 69,
+            "fraction": 0.2028985507246377,
+            "pct": 20.28985507246377
+          },
+          "v2": {
+            "n_panel": 18,
+            "n_planted": 69,
+            "fraction": 0.2608695652173913,
+            "pct": 26.08695652173913
+          },
+          "abs_delta_pp": 5.7971014492753605,
+          "rel_delta_pct": 28.57142857142856
+        },
+        "protocol-inheritance": {
+          "v1_clean": {
+            "n_panel": 21,
+            "n_planted": 90,
+            "fraction": 0.23333333333333334,
+            "pct": 23.333333333333332
+          },
+          "v2": {
+            "n_panel": 16,
+            "n_planted": 90,
+            "fraction": 0.17777777777777778,
+            "pct": 17.77777777777778
+          },
+          "abs_delta_pp": -5.555555555555555,
+          "rel_delta_pct": -23.809523809523807
+        }
+      }
+    }
+  },
+  "canonical_recall": {
+    "panel_pending_caveat": "Auto-scored only; #94 panel finalization not yet complete. Headline numbers update once panel scores are promoted via score_all.py::promote_panel_scores. Sub-experiment outcome (H0a) is decided on panel-route rate (invariant under panel completion per plan \u00a73.4), not on canonical_recall.",
+    "by_condition": {
+      "s1": {
+        "v1_clean": 0.06999999999999999,
+        "v2": 0.05500000000000001,
+        "abs_delta": -0.014999999999999986
+      },
+      "s2": {
+        "v1_clean": 0.10999999999999999,
+        "v2": 0.10500000000000001,
+        "abs_delta": -0.004999999999999977
+      }
+    }
+  },
+  "context": {
+    "v1_clean_corpus": {
+      "trial_logs_dir": "experiments/v7-refactor-recommendation/trial-logs-v1-clean",
+      "actual_spend_usd": 41.7654,
+      "trial_date_range_start": "2026-05-20T15:25:30",
+      "trial_date_range_end": "2026-05-20T16:43:06",
+      "rationale": "PR 3 also ran v1 against the regenerated substrate (re-control per plan \u00a73.2 halt-recovery option (a)) because the regenerated substrate diverged from pre_registration.plant_tree_sha by 1 swift file in 485 (0.2%). Using round-2's original trial-logs/ as the v1 control would conflate prompt sensitivity with substrate noise."
+    },
+    "v2_corpus": {
+      "trial_logs_dir": "experiments/v7-refactor-recommendation/trial-logs-v2",
+      "actual_spend_usd": 51.5927,
+      "trial_date_range_start": "2026-05-20T16:29:33",
+      "trial_date_range_end": "2026-05-20T18:12:20"
+    },
+    "model_alias": "claude-sonnet-4-6",
+    "manifest_hash": null
+  }
+}

@@ -182,11 +182,57 @@ All inputs to this writeup are pinned in [`reproducibility.yaml`](reproducibilit
 
 Re-running [`score_all.py`](score_all.py) against the same parsed cache + the committed `analyses/panel-scores.jsonl` reproduces [`analyses/auto-scores.json`](analyses/auto-scores.json) and [`analyses/score-summary.json`](analyses/score-summary.json) byte-for-byte (verified with `md5sum` across two consecutive runs). Reproducing the headline without panel scores: rename `analyses/panel-scores.jsonl` aside and rerun — `inter_rater` falls back to the "panel scores file not present" sentinel, and `promote_panel_scores` is a no-op so the headline reverts to the auto-scored-only `S1=0.070 / S2=0.110` (the corrected post-value-aware numbers; the round-1 pre-correction numbers were `S1=0.270 / S2=0.615`, recoverable from the `rubric-modifications.md` round-2 value-aware-specifics entry).
 
+## 10. Prompt-sensitivity sub-experiment (round 3) — H0a supported
+
+Round-3 sub-experiment per [`plans/v7-round2-prompt-sensitivity-plan.md`](../../plans/v7-round2-prompt-sensitivity-plan.md), pre-registered in [`rubric-modifications.md`](rubric-modifications.md)'s round-3 entry, tests prompt-vagueness (H1) vs model-capability-ceiling (H0a) explanations for round-2's panel-route load. The experimental arm holds the rubric, manifest, model alias, and harness telemetry fixed and varies only the prompt: v2 tightens the §2 specifics schemas for all five action categories with structural-constraint language ("the `protocol` field must name a type that already exists in the cluster's source files," etc.) and adds one synthetic non-corpus worked example per category at §2.1. Full design rationale, decision tree, and budget envelope live in the plan; the pre-registered acceptance threshold per plan §3.4 is **overall panel-route rate drops by ≥ 50% (relative)** for H1; otherwise H0a per the decision tree.
+
+**Drift-check** (PR 2, [`analyses-v2/drift-check.json`](analyses-v2/drift-check.json)). 30 recs stratified across 5 plant categories × balanced S1/S2 conditions, sampled at `seed=20260520`, scored against the round-2 corpus at the v1 prompt. All three tolerances pass: category disagreement 1/30 = 3.3% (threshold ≤ 20%), specifics-key drift 3.3% average (threshold ≤ 30%), panel-route rate delta +3.33pp (threshold ±10pp). Captured response model `claude-sonnet-4-6` for all 30 calls. Decision: proceed.
+
+**Substrate divergence remediation.** The regenerated substrate used at drift-check time differed from `pre_registration.plant_tree_sha` by 1 swift file in 485 (0.2%). Cluster rows are looked up by `cluster_id` (not row_index), so the drift-check sample resolved cleanly under the regenerated catalogs; the headline metrics were unaffected. To preclude conflating prompt sensitivity with substrate noise in PR 3, the v1 control was *re-controlled* against the same regenerated substrate (plan §3.2 halt-recovery option (a)), producing [`analyses-v1-clean/`](analyses-v1-clean/). The round-2 [`analyses/`](analyses/) and [`trial-logs/`](trial-logs/) artifacts are preserved untouched as the historical v1-against-original-substrate snapshot. The v1-clean re-control cost $41.77 (2901 v1 recs at the regenerated substrate, 2026-05-20T15:25–16:43); the v2 main run cost $51.59 (2901 v2 recs, 2026-05-20T16:29–18:12). Both arms are 522 scored pairs.
+
+**Headline panel-route delta** (`v2 − v1-clean`, from [`analyses-v2/prompt-sensitivity.json`](analyses-v2/prompt-sensitivity.json)):
+
+| Condition | v1-clean panel-route rate | v2 panel-route rate | Absolute Δ | Relative Δ |
+|---|---|---|---|---|
+| S1 | 14.58% (28/192) | 11.98% (23/192) | −2.60pp | −17.86% |
+| S2 | 27.58% (91/330) | 25.76% (85/330) | −1.82pp | −6.59% |
+| **Overall** | **22.80%** (119/522) | **20.69%** (108/522) | **−2.11pp** | **−9.24%** |
+
+The 9.24% overall relative drop is far below the pre-registered 50% threshold. Per the plan §3.4 decision tree, drift-check pass × acceptance fail → **H0a supported (model capability ceiling)**: the v2 prompt's structural-constraint language and non-corpus worked examples do not measurably bound the agent into hitting the manifest's `primary_answer.specifics` values. The headline panel-route load is not primarily driven by prompt vagueness.
+
+**Per-category panel-route delta** (S1+S2 combined; denominators are *scored pairs* per category × condition × trial):
+
+| Category | v1-clean | v2 | Absolute Δ | Relative Δ |
+|---|---|---|---|---|
+| default-implementation | 30.07% (46/153) | 24.84% (38/153) | −5.23pp | **−17.39%** |
+| protocol-inheritance | 18.92% (21/111) | 15.32% (17/111) | −3.60pp | **−19.05%** |
+| generic-parameterization | 38.33% (23/60) | 33.33% (20/60) | −5.00pp | **−13.04%** |
+| extract-to-common | 18.52% (15/81) | 18.52% (15/81) | 0.00pp | 0.00% |
+| pat-introduction | 11.97% (14/117) | 15.38% (18/117) | +3.42pp | **+28.57%** |
+
+The category-level response is **heterogeneous**, not uniform. Three categories (default-implementation, protocol-inheritance, generic-parameterization) show modest reductions in the 13–19% relative range — consistent with the v2 worked examples and structural-constraint language *partially* steering the agent toward grounded answers, but not nearly enough to clear the 50% bar. Extract-to-common is exactly flat: the v2 structural constraints ("the `target_package` MUST name a package that exists in the source tree and is upstream of all consumer packages") did not change the agent's behavior — agent recommendations on Plant 1.1 still pick `app:iOS` instead of the manifest-expected `Shared/Branding` (the "upstream of all consumers" constraint is descriptive, but the agent does not reason about upstream-of relationships from the v2 prompt alone). Pat-introduction *increased* its panel-route rate by 28.6% relative — the v2 worked example for PATs (the synthetic `RetryPolicy` template applied across three unrelated consumers) appears to encourage the agent to *attempt* PAT recommendations on more clusters, but those attempts still miss the manifest's `pat_name` / `applies_to` specifics. The heterogeneity rejects a simple H1 ("sharpening uniformly helps") but it is also informative: H1 contributes a non-zero but small effect on three categories. The dominant explanation remains H0a, with a measurable H1 floor at ≈ −15% relative on the three categories where structural constraints engaged.
+
+**Headline canonical-recall delta** (auto-scored only; panel-pending — see caveat below):
+
+| Condition | v1-clean canonical_recall | v2 canonical_recall | Absolute Δ |
+|---|---|---|---|
+| S1 | 0.070 | 0.055 | −0.015 |
+| S2 | 0.110 | 0.105 | −0.005 |
+
+Both deltas are within the noise floor for a 4-trial × 5-category corpus; the v2 numbers should not be interpreted as a real recall regression. The H0a decision rests on panel-route rate, not on canonical_recall, per plan §3.4's baseline-invariance argument: panel-route rate is determined purely by the auto-scorer's match-label classification and is invariant under panel-scoring completion ([`#85`](https://github.com/jakebromberg/code-audit-pipeline/issues/85), [`#94`](https://github.com/jakebromberg/code-audit-pipeline/issues/94)). Once #94 finalizes, the canonical_recall numbers in this table update via `promote_panel_scores`; the headline outcome (H0a) does not change.
+
+**What this means for follow-up work.** Plan §1 pre-registered H0b (rubric over-strictness) as the next sub-experiment to run "if H1 fails and the headline finding still needs interpretation." It does: the round-2 panel-route load is real, the v2 prompt did not move it, and the per-category breakdown (default-implementation Plant 3.2 "BlendMode" vs "BlendModeConvertible," Plant 3.3 "AudioProcessor" vs "NormalizationModeConfigurable") suggests several mismatches that route to panel are *structurally equivalent but lexically different* — exactly the H0b symptom. A recommended next sub-experiment would test whether a *rubric loosening* (e.g., naming-equivalence relaxation, semantic-substring match for known-equivalent identifiers) drops the panel-route rate without changing the agent's behavior. That is a separate pre-registration. This sub-experiment closes the H1 vs H0a question with H0a supported and the H1 floor at ≈ 15% relative on a subset of categories.
+
+**Reproducibility.** The v2 prompt is pinned at SHA-256 `22f53bfa1f5c8b27671c1b26c052c5e138a923905ae7349f07677757a29ea19d`; the plan at `0853d4465961696adc647ee3ca86b470b44a04b599b849cf004e0e46a9fd8715`; the overlap-check script at `305aba5e0eab4a5b291d48edeac4ccf0fd84fce7add76ba565af7577088b880f`. Drift-check parameters and acceptance threshold were frozen by PR 1 merge (per [`rubric-modifications.md`](rubric-modifications.md) round-3 entry) before any rerun executed. Re-running `score_all.py` against either trial-logs directory regenerates the corresponding `analyses-*/` outputs byte-for-byte. The full per-condition × per-category delta matrix lives in [`analyses-v2/prompt-sensitivity.json`](analyses-v2/prompt-sensitivity.json); the round-3 `rubric-modifications.md` entry carries the matched outcome record. The sub-experiment outcome lands in [`reproducibility.yaml`](reproducibility.yaml) at `execution.prompt_sensitivity_sub_experiment.sub_experiment_outcome = "H0a supported"`.
+
 ## See also
 
 - [`analyses/substrate-helped.json`](analyses/substrate-helped.json), [`analyses/plant-recall-extended.json`](analyses/plant-recall-extended.json) — PR-E2 outputs that this writeup quotes
 - [`analyses/auto-scores.json`](analyses/auto-scores.json), [`analyses/score-summary.json`](analyses/score-summary.json), [`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) — PR-E3 outputs
+- [`analyses-v1-clean/`](analyses-v1-clean/) — round-3 v1 re-control arm against the regenerated substrate (PR 3)
+- [`analyses-v2/`](analyses-v2/) — round-3 v2 experimental arm; `prompt-sensitivity.json` carries the formal v1-vs-v2 delta matrix; `drift-check.json` carries the pre-rerun alias-stability sample (PR 2 + PR 3)
 - [`analyses/panel-instructions.md`](analyses/panel-instructions.md) — review-panel instructions
 - [`reproducibility.yaml`](reproducibility.yaml) — pinned inputs + execution stamps
 - [`docs/refactor-recommendation-experiment-methodology.md`](../../docs/refactor-recommendation-experiment-methodology.md) — methodology
 - [`plans/v7-phase-e-scoring-and-writeup-plan.md`](../../plans/v7-phase-e-scoring-and-writeup-plan.md) — Phase E plan
+- [`plans/v7-round2-prompt-sensitivity-plan.md`](../../plans/v7-round2-prompt-sensitivity-plan.md) — round-3 prompt-sensitivity sub-experiment plan
