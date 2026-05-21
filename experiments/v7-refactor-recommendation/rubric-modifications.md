@@ -2,6 +2,8 @@
 
 A running log of post-hoc edits to the manifest, rubric, or scoring rules per methodology §10. Each entry: **Change**, **Why**, **Expected impact**, **Prior results affected**. Future rounds append entries in chronological order; do not modify earlier entries.
 
+Terminology reference: see [`glossary.md`](glossary.md) for definitions of jargon used throughout this log (S1/S2, substrate, canonical/restraint plants, binding rules, match labels, `specifics_tolerance`, Fleiss κ, rounds 1–3, etc.).
+
 ## Round 2 — symbol-level binding (2026-05-18)
 
 **Change.** Added `expected_cluster_symbols` field per plant in `plant-manifest.yaml`. Non-empty list of literal substrings the cluster_id must contain for a binding to be valid. The validator (`validate-manifest.py` rule 9j) requires non-empty lists of non-empty strings. The binding rule (`score_all.py::bind_recs_to_plants`) adds a hard symbol gate between substring-match and signal-prefer.

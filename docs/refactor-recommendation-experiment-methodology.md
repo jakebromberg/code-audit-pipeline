@@ -1088,6 +1088,7 @@ Companion docs (V7 experiment, mirroring the eventual `experiments/v7-refactor-r
 - [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) — per-plant manifest YAML schema with one canonical entry per category plus a restraint twin.
 - [`refactor-recommendation-experiment-agent-prompt.md`](refactor-recommendation-experiment-agent-prompt.md) — full agent prompt, per-category specifics schemas, normalized cluster-row input shape.
 - [`refactor-recommendation-experiment-macro-candidates.md`](refactor-recommendation-experiment-macro-candidates.md) — `macro-candidates.jq` algorithmic sketch and extractor-side `template_sig` precomputation.
+- [`../experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 match labels, binding rules, rounds/phases, code refs, PR/issue index) for round-1/2/3 writeups and panel/reviewer materials.
 
 Precedents and substrate-side references:
 
