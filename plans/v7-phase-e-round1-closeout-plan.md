@@ -292,3 +292,7 @@ Simplified after dropping the targeted re-run (§4.4) and reframing FPR resoluti
 - Plant 1R cell `n_fp == 0` for both S1 and S2 in all three trials after A3's targeted re-run (compared to round 1's `n_fp == 1`).
 - `inter_rater.fleiss_kappa` still null (panel sitting hasn't been re-run with 3 reviewers yet).
 - Headline `canonical_recall` unchanged (no plant gained bindings; removed bindings didn't carry the best score in any cell).
+
+## See also
+
+- [`experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

@@ -284,3 +284,7 @@ The other multi-lens cluster is **3.2 BlendMode** which the rubric scores at the
 ### Reproducibility
 
 All jq invocations above are reproduced verbatim and run against `/tmp/wxyc-ios-audit-planted/{type-catalog.json,function-catalog.json}` captured 2026-05-11. Re-running them on a fresher catalog may surface drift; if so, re-validate before locking the manifest per [plan §2.2 acceptance criteria](../../plans/v7-refactor-recommendation-implementation-plan.md).
+
+## See also
+
+- [`experiments/v7-refactor-recommendation/glossary.md`](glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

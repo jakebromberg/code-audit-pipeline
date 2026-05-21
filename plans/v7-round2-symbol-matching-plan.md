@@ -322,3 +322,7 @@ Plan-review notes worth carrying into implementation:
   - `jq '[.tokens | to_entries[] | select(.value.cluster_id | contains("HSBColor.uiColor"))] | length' analyses/panel-unblind.json` — count Plant 5.1 panel routings (expect 6).
   - `jq '[.scored[] | select(.plant_id=="1R")] | length' analyses/auto-scores.json` — count Plant 1R bindings (expect ~2 × 6 cells = 12 if both canonical clusters present in every cell, or smaller if not).
   - `jq '.per_category_per_cell.s1.["1"].["extract-to-common"].restraint_fpr' analyses/score-summary.json` — Plant 1R FPR for one cell (expect 0.0; previously 1.0).
+
+## See also
+
+- [`experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

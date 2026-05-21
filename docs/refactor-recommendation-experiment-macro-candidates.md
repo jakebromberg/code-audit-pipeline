@@ -117,3 +117,4 @@ For property/method populations (Plant 7.1's `displayName` shape), a parallel `m
 - [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) — Plant 7.1 (the displayName macro plant) is the canonical recall target for this query.
 - [`../pipeline/queries/`](../pipeline/queries) — V6 queries the macro-candidates query lives alongside once Phase B lands.
 - [`pipeline-contract.md`](pipeline-contract.md) — substrate schema; `template_sig` and `method_template_sig` are V7 additions documented there when the precomputation lands.
+- [`experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).

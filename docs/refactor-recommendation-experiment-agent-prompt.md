@@ -210,3 +210,4 @@ A normalization pass over the 15 raw query outputs produces this shape; the pass
 - [`refactor-recommendation-experiment-methodology.md`](refactor-recommendation-experiment-methodology.md) — methodology spec this prompt serves.
 - [`refactor-recommendation-experiment-plant-manifest.md`](refactor-recommendation-experiment-plant-manifest.md) — per-plant manifest YAML, the ground truth the agent's recommendations are scored against.
 - Methodology [§8 scoring rubric](refactor-recommendation-experiment-methodology.md#scoring-rubric) — how the recommendation JSON gets auto-scored or routed to panel.
+- [`experiments/v7-refactor-recommendation/glossary.md`](../experiments/v7-refactor-recommendation/glossary.md) — shared V7 vocabulary (S1/S2, substrate, plants, metrics, all 13 auto-scorer match labels, binding rules, rounds/phases, code refs, PR/issue index).
