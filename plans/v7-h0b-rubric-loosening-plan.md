@@ -4,7 +4,7 @@
 
 ## 1. Context and motivation
 
-Round-3's prompt-sensitivity sub-experiment (PRs #99–#103, closed 2026-05-20/21) tested whether the round-2 panel-route load (108 of 522 = 20.7% under v1-clean) was driven by prompt vagueness (H1) or model capability ceiling (H0a). The headline overall relative drop from v1-clean to v2 was 9.24%, well below the pre-registered 50% threshold for H1. The decision tree resolved to H0a supported.
+Round-3's prompt-sensitivity sub-experiment (PRs #99–#103, closed 2026-05-20/21) tested whether the round-2 panel-route load (22.80% = 119 of 522 under v1-clean per [`results.md §10.4`](../experiments/v7-refactor-recommendation/results.md#104-headline-panel-route-delta)) was driven by prompt vagueness (H1) or model capability ceiling (H0a). The v2 prompt brought the rate down to 20.69% (108/522) — an overall relative drop of 9.24%, well below the pre-registered 50% threshold for H1. The decision tree resolved to H0a supported.
 
 But the per-category breakdown in [`results.md §10.5`](../experiments/v7-refactor-recommendation/results.md#105-per-category-panel-route-delta) was heterogeneous, not uniform: default-implementation −17.4% rel, protocol-inheritance −19.0%, generic-parameterization −13.0%, extract-to-common 0.0%, pat-introduction +28.6%. Three categories showed partial H1 sensitivity in the 13–19% range; one was flat; one moved *against* H1. This rejected a uniform-H1 reading but is consistent with H1 contributing a small floor under a dominant H0a.
 
