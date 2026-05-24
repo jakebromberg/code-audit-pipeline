@@ -29,7 +29,7 @@ Single sub-experiment: auto-scorer rerun with a pre-registered rubric loosening,
 - New per-plant manifest field [`primary_answer.specifics_alternatives`](../experiments/v7-refactor-recommendation/plant-manifest.yaml) at [`experiments/v7-refactor-recommendation/plant-manifest.yaml`](../experiments/v7-refactor-recommendation/plant-manifest.yaml), declaring up to 3 pre-blessed alternative values per required specifics key per plant.
 - Curation pass: identify alternatives for the 17 panel-routed plants in the round-2/3 corpus per the curation rule in §3.2.
 - Auto-scorer change in [`experiments/v7-refactor-recommendation/auto-scorer.py`](../experiments/v7-refactor-recommendation/auto-scorer.py): after exact-value-match fails, check `value ∈ primary_value ∪ specifics_alternatives[key]`. On match, attach a new match label `primary_match_specifics_blessed_alternative` (scores 1.0, does NOT route to panel).
-- Validator update in [`experiments/v7-refactor-recommendation/validate_manifest.py`](../experiments/v7-refactor-recommendation/validate_manifest.py): per-key alternatives must be lists of strings, capped at 3 per (plant, key), no duplicates within a list, no duplication with the canonical value.
+- Validator update in [`experiments/v7-refactor-recommendation/validate-manifest.py`](../experiments/v7-refactor-recommendation/validate-manifest.py): per-key alternatives must be lists of strings, capped at 3 per (plant, key), no duplicates within a list, no duplication with the canonical value.
 - Auto-scorer rerun against the existing [`trial-logs-v1-clean/`](../experiments/v7-refactor-recommendation/trial-logs-v1-clean) parsed cache, producing new [`analyses-v1-clean-rubric-loose/`](../experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose) directory.
 - Comparison: panel-route rate before-and-after, per condition + per category + per plant + per blessed alternative (how many of the 3-per-key slots were exercised, and which?).
 - New [`analyses-v2/h0b-rubric-loosening.json`](../experiments/v7-refactor-recommendation/analyses-v2/h0b-rubric-loosening.json) documents the formal delta matrix and decision-tree outcome.
@@ -68,13 +68,20 @@ plants:
         method:
           - "blendMode: BlendMode { get }"
         # target_location: omitted — no blessed alternatives for this key
+      specifics_alternatives_rationale:
+        protocol:
+          - "Same shared protocol over the 16 blend-mode cases with the same displayName + blendMode requirements; -Convertible suffix is a stylistic naming variant."
+        method:
+          - "Same accessor surface (gettable property returning the case's BlendMode); spelled as the type-erased getter rather than the displayName-as-key form."
+        # target_location: omitted (no alternatives for this key)
 ```
 
 Semantics:
-- Each key is optional; if absent, the auto-scorer falls through to the existing verbatim-match behavior on that key.
+- Each `specifics_alternatives` key is optional; if absent, the auto-scorer falls through to the existing verbatim-match behavior on that key.
 - Each key's value is a list of up to 3 strings.
 - Strings must NOT duplicate the canonical `primary_answer.specifics[key]` value.
 - Strings must NOT duplicate each other within a list.
+- `specifics_alternatives_rationale` is a sibling field with the same key set as `specifics_alternatives`. For each key, `len(rationale[key]) == len(alternatives[key])`: one rationale string per alternative, in the same order. The rationale is preserved in the manifest for auditability; it is NOT consumed by the auto-scorer (see §3.2.1).
 
 ### 3.2 Curation rule (pre-registered)
 
@@ -104,7 +111,7 @@ PR 2's reviewer applies the three criteria as a structured checklist, one row pe
 | Criterion | Question the reviewer answers |
 |---|---|
 | (a) Structural equivalence | Does the alternative point at the same proposed refactor at the same scope as the canonical? For protocol/type-name keys: do both names refer to the same proposed shared abstraction with the same field requirements / member set? For path/package keys: do both point at the same SPM target or equivalent SPM targets? |
-| (b) Type-shape equivalence | Does the alternative match the schema's expected kind? (Protocol → protocol-style name; function → function-style name; path → path string with the right shape; package → SPM target identifier.) |
+| (b) Type-shape equivalence | Does the alternative match the schema's expected kind per §3.2(b)? (`protocol` → protocol-style type name; `target_function` / `new_helper_name` → function name; `target_package` → SPM target identifier; `target_location` → path string with the right shape; `type_name` → type name preserving the canonical's kind: class/struct/enum/actor.) |
 | (c) Curation-time blindness | Is the rationale derived from manifest + source tree, NOT from agent outputs? Could a reader of the rationale tell the difference between "the curator inferred this from manifest reasoning" and "the curator backed into this from looking at agent values"? If the latter, reject. |
 
 Sample rejection templates the reviewer can paste into PR comments:
@@ -121,15 +128,15 @@ The curation pass touches exactly the 17 panel-routed plants enumerated in §3.3
 
 ### 3.3 Curation scope: 17 plants × ~3 keys × ≤3 alternatives = ≤150 alternative slots
 
-The 17 plants that surfaced panel-routed rows in the round-2/round-3 corpus are the focus. Per [`analyses-v1-clean/score-summary.json`](../experiments/v7-refactor-recommendation/analyses-v1-clean/score-summary.json), these are:
+The 17 plants that surfaced panel-routed rows in the round-2/round-3 corpus are the focus. Per the distinct `plant_id` set in [`analyses-v1-clean/panel-routing.jsonl`](../experiments/v7-refactor-recommendation/analyses-v1-clean/panel-routing.jsonl), these are:
 
-- **default-implementation** (4 plants in this category): Plant 3.1, 3.2, 3.3, 3.4
+- **default-implementation** (4 plants): Plant 3.1, 3.2, 3.3, 3.4
 - **protocol-inheritance** (4): Plant 2.1, 2.2, 2.3, 2.4
-- **generic-parameterization** (3): Plant 5.1, 5.2, 5.3
-- **extract-to-common** (3): Plant 1.1, 1.2, 1.3
-- **pat-introduction** (3): Plant 4.1, 4.2, 4.3
+- **pat-introduction** (4): Plant 4.1, 4.2, 4.3, 4.4
+- **generic-parameterization** (4): Plant 5.1, 5.2, 5.3, 5.4
+- **extract-to-common** (1): Plant 1.1
 
-The remaining 3 canonical plants (1.4, 5.4, plus any plant with zero bindings) have no panel-routed rows and need no curation.
+The remaining 3 canonical plants (1.2, 1.3, 1.4) have no panel-routed rows in this corpus and need no curation. The `*R` restraint plants are out of scope by construction (they have no `primary_answer.specifics`).
 
 Per-plant work: identify the required specifics keys that ever routed to panel; for each, declare up to 3 alternatives. Estimated curation time: **2–3 hours per curator for the enumeration + writeup**, plus 1–2 hours for the structural-equivalence reasoning per plant. Total budget: 3–6 hours of focused solo judgment work for a single curator; longer if a panel is used. PR 2's description records the actual elapsed time so future sub-experiments can calibrate; if the actual time substantially exceeds 6 hours, that's a signal the cap should be lowered or the curation scope split across multiple sub-experiments.
 
@@ -152,9 +159,7 @@ else:
                  f"rec='{rec_value}' (alternatives: {alternatives or 'none'})")
 ```
 
-If ALL required keys match (verbatim or via blessed alternative), the match label is `primary_match_full` if at least one alternative was used (else `primary_match_specifics_blessed_alternative` for clarity). Both score 1.0; the label difference is for telemetry, not scoring.
-
-Actually a cleaner design: introduce one new match label, `primary_match_specifics_blessed_alternative` (scores 1.0), that fires whenever at least one required key matched via an alternative path. Pre-existing `primary_match_full` continues to mean "all keys matched verbatim." This preserves auditability — readers can tell which scored rows benefited from H0b without re-reading the manifest.
+Match-label assignment: introduce one new match label, `primary_match_specifics_blessed_alternative` (scores 1.0), that fires whenever ALL required keys matched but at least one was matched via a blessed alternative rather than verbatim. Pre-existing `primary_match_full` continues to mean "all required keys matched verbatim." Both labels score 1.0; the label difference is for telemetry, not scoring. This preserves auditability — readers can tell which scored rows benefited from H0b without re-reading the manifest.
 
 **Two-path test coverage requirement.** Regression tests for the auto-scorer change MUST cover both paths explicitly: (1) the existing `primary_match_full` path (all required keys matched verbatim, no alternatives exercised; score=1.0; not panel-routed) and (2) the new `primary_match_specifics_blessed_alternative` path (≥1 required key matched via an alternative; score=1.0; not panel-routed). A regression where one path is silently broken would degrade either H0b's headline (path 2 broken → result understates) or the prior-art canonical case (path 1 broken → result overstates). Both paths must be exercised in the test suite; PR 3's review-loop should flag any test set that covers only one.
 
@@ -211,7 +216,7 @@ Pre-registration document: this plan + [`rubric-modifications.md`](../experiment
 
 ## 5. Acceptance criteria
 
-- [ ] `specifics_alternatives` and `specifics_alternatives_rationale` schemas added to [`plant-manifest.yaml`](../experiments/v7-refactor-recommendation/plant-manifest.yaml), [`validate_manifest.py`](../experiments/v7-refactor-recommendation/validate_manifest.py), and the manifest's per-plant YAML linter; validator rejects ≥ 4 entries per list, duplicates within a list, duplicates of the canonical value, and any rationale-list length mismatch (`len(rationale[key]) == len(alternatives[key])` enforced per key).
+- [ ] `specifics_alternatives` and `specifics_alternatives_rationale` schemas added to [`plant-manifest.yaml`](../experiments/v7-refactor-recommendation/plant-manifest.yaml), [`validate-manifest.py`](../experiments/v7-refactor-recommendation/validate-manifest.py), and the manifest's per-plant YAML linter; validator rejects ≥ 4 entries per list, duplicates within a list, duplicates of the canonical value, and any rationale-list length mismatch (`len(rationale[key]) == len(alternatives[key])` enforced per key).
 - [ ] [`experiments/v7-refactor-recommendation/h0b-curation-rubric.md`](../experiments/v7-refactor-recommendation/h0b-curation-rubric.md) drafted in PR 1 with the three-criteria checklist + sample rejection templates from §3.2.1; referenced from PR 2's description.
 - [ ] Pre-flight scripts drafted in PR 1: [`scripts/h0b_panel_keys_per_plant.py`](../scripts/h0b_panel_keys_per_plant.py) (enumerates which `specifics` keys per plant ever routed to panel; reads only `match`/`notes` fields per §3.3 criterion (c)); [`scripts/check_h0b_curation_scope.py`](../scripts/check_h0b_curation_scope.py) (verifies PR 2's diff touches only the 17 panel-routed plants and adds only `specifics_alternatives` / `specifics_alternatives_rationale` fields, no canonical edits).
 - [ ] Curation pass: alternatives declared for the 17 panel-routed plants, ≤ 3 per (plant, key); per-alternative rationale strings (one sentence, manifest-grounded, no agent-output references); diff is manifest-only (no `trial-logs-v1-clean/` reads in PR 2).
@@ -275,7 +280,7 @@ Total: ~1.5 weeks wallclock, **$0 API spend** (no new agent calls). Well under [
 
 3. **Blind vs by-plant curation order.** Should the curator work plant-by-plant (in plant_id order) or in shuffled order to reduce ordering bias? Default: by plant_id for traceability; shuffling adds operational overhead without clear methodological gain at N=17.
 
-4. **Treatment of `pat-introduction` plants.** Round-3's per-category breakdown showed pat-introduction went *up* (+28.6% rel) under v2. Is H0b expected to help here, or are the PAT mismatches structurally different from default-implementation's "BlendModeConvertible"-style ones? Default: include the 3 pat-introduction plants in the curation scope (per §3.3); the per-category breakdown in §3.6 step 3 will surface whether H0b moves PAT panel-route or not.
+4. **Treatment of `pat-introduction` plants.** Round-3's per-category breakdown showed pat-introduction went *up* (+28.6% rel) under v2. Is H0b expected to help here, or are the PAT mismatches structurally different from default-implementation's "BlendModeConvertible"-style ones? Default: include all 4 pat-introduction plants (4.1, 4.2, 4.3, 4.4) in the curation scope (per §3.3); the per-category breakdown in §3.6 step 3 will surface whether H0b moves PAT panel-route or not.
 
 5. **Round-2 corpus comparison.** Should this also score the round-2 original-substrate corpus (in [`analyses/`](../experiments/v7-refactor-recommendation/analyses)) as a parallel control? Default: no — the matched-substrate v1-clean is the established round-3 control; round-2 stays as historical snapshot. If the result is ambiguous, a follow-up could rerun against round-2.
 
