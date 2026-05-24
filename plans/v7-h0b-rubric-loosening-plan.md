@@ -146,20 +146,31 @@ A pre-curation enumeration helper at [`scripts/h0b_panel_keys_per_plant.py`](../
 
 ### 3.4 Auto-scorer change
 
-In `auto-scorer.py::score_recommendation`, after the existing `_specifics_values_match` check fails on a given key:
+The change lives inside `auto-scorer.py::_specifics_values_match`'s inner per-key loop (currently calling `_values_structurally_equal` for the verbatim check). After the verbatim check fails on a given key, fall through to the `specifics_alternatives` list and re-check structurally against each blessed alternative:
 
 ```python
-canonical_value = plant['primary_answer']['specifics'][key]
-alternatives = (plant['primary_answer']
-                     .get('specifics_alternatives', {})
-                     .get(key, []))
-if _value_match(rec_value, canonical_value) or rec_value in alternatives:
-    matched_value = True
+# inside _specifics_values_match's per-key loop, replacing the bare
+# `if not _values_structurally_equal(manifest_val, rec_val): problems.append(...)`
+manifest_val = primary_specifics[key]
+rec_val = rec_specifics[key]
+alternatives = (
+    plant.get("primary_answer", {})
+         .get("specifics_alternatives", {})
+         .get(key, [])
+)
+if _values_structurally_equal(manifest_val, rec_val):
+    matched_via = "verbatim"
+elif any(_values_structurally_equal(alt, rec_val) for alt in alternatives):
+    matched_via = "blessed_alternative"
 else:
-    matched_value = False
-    notes.append(f"key='{key}' manifest='{canonical_value}' "
-                 f"rec='{rec_value}' (alternatives: {alternatives or 'none'})")
+    matched_via = None
+    problems.append(
+        f"key={key} manifest={manifest_val!r} rec={rec_val!r} "
+        f"(alternatives: {alternatives or 'none'})"
+    )
 ```
+
+The plant reference must be threaded into `_specifics_values_match` (currently signature `(rec_specifics, primary_specifics, required_keys)`); either add `plant` as a fourth parameter or pass `specifics_alternatives` directly. The per-key `matched_via` values aggregate at the function's return: if every key matched verbatim, the caller emits `primary_match_full`; if at least one matched via `blessed_alternative` and the rest matched verbatim or via alternative, the caller emits `primary_match_specifics_blessed_alternative`. Using `_values_structurally_equal` (not `==`/`in`) keeps the alternative check consistent with the verbatim check for list- and dict-valued specifics (e.g., Plant 3.1's `conformers_simplified`, Plant 2.x's `moved_members`); for the typical string-valued case (`protocol`, `target_location`) it reduces to `==`.
 
 Match-label assignment: introduce one new match label, `primary_match_specifics_blessed_alternative` (scores 1.0), that fires whenever ALL required keys matched but at least one was matched via a blessed alternative rather than verbatim. Pre-existing `primary_match_full` continues to mean "all required keys matched verbatim." Both labels score 1.0; the label difference is for telemetry, not scoring. This preserves auditability — readers can tell which scored rows benefited from H0b without re-reading the manifest.
 
@@ -213,6 +224,7 @@ Frozen before the auto-scorer rerun:
 - The decision tree (§3.7)
 - The specific 17-plant curation scope (§3.3)
 - PR 2's "diff is manifest-only, no `trial-logs-v1-clean/` reads" constraint (§3.2 criterion c)
+- The two-denominator reporting commitment per §3.7: the §11 writeup MUST report the relative drop against both the full 119 v1-clean panel-route count (the §3.7 threshold denominator) AND the 112 `primary_match_specifics_outside_tolerance` addressable subset, so the headline reading cannot be selected post-hoc.
 
 Pre-registration document: this plan + [`rubric-modifications.md`](../experiments/v7-refactor-recommendation/rubric-modifications.md) round-4 entry referencing this plan + [`reproducibility.yaml`](../experiments/v7-refactor-recommendation/reproducibility.yaml) round-4 block.
 
