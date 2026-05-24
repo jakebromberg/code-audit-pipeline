@@ -126,7 +126,7 @@ Each blessed alternative in the PR 2 manifest diff carries a one-sentence ration
 
 The curation pass touches exactly the 17 panel-routed plants enumerated in §3.3. PR 2's reviewer runs a pre-flight script that diffs the manifest against the round-3 tip and confirms (a) no plant_id outside the 17 has a `specifics_alternatives` block, (b) no canonical `specifics`/`primary_answer` values were edited, (c) the diff contains only the new field + rationale entries. Pre-flight script lives at [`scripts/check_h0b_curation_scope.py`](../scripts/check_h0b_curation_scope.py), drafted in PR 1.
 
-### 3.3 Curation scope: 17 plants × ~3 keys × ≤3 alternatives = ≤150 alternative slots
+### 3.3 Curation scope: 17 plants, 40 panel-routed (plant, key) pairs, cap ≤ 3 alternatives = ≤ 120 alternative slots
 
 The 17 plants that surfaced panel-routed rows in the round-2/round-3 corpus are the focus. Per the distinct `plant_id` set in [`analyses-v1-clean/panel-routing.jsonl`](../experiments/v7-refactor-recommendation/analyses-v1-clean/panel-routing.jsonl), these are:
 
@@ -137,6 +137,8 @@ The 17 plants that surfaced panel-routed rows in the round-2/round-3 corpus are 
 - **extract-to-common** (1): Plant 1.1
 
 The remaining 3 canonical plants (1.2, 1.3, 1.4) have no panel-routed rows in this corpus and need no curation. The `*R` restraint plants are out of scope by construction (they have no `primary_answer.specifics`).
+
+**`other_routes_to_panel` floor.** Of the 119 panel-routed rows in v1-clean, **7 are `other_routes_to_panel` (all on Plant 5.1's HSBColor cluster — agent declined the taxonomy and proposed a novel action)**. These rows have no `rec_specifics` to match against alternatives, so they CANNOT be moved by H0b's loosening regardless of curation. The remaining **112 rows are `primary_match_specifics_outside_tolerance`** and are H0b's addressable subset. Curation of Plant 5.1 alternatives is therefore methodologically inert (the 7 rows will continue to panel-route post-rerun); Plant 5.1 stays in scope because the curator's blindness to `trial-logs-v1-clean/` per §3.2 criterion (c) means the curator cannot pre-filter on match label, and the rubric-modifications.md round-4 entry should record all 17 plants for symmetry. §3.7 acknowledges the floor when interpreting the threshold bands.
 
 Per-plant work: identify the required specifics keys that ever routed to panel; for each, declare up to 3 alternatives. Estimated curation time: **2–3 hours per curator for the enumeration + writeup**, plus 1–2 hours for the structural-equivalence reasoning per plant. Total budget: 3–6 hours of focused solo judgment work for a single curator; longer if a panel is used. PR 2's description records the actual elapsed time so future sub-experiments can calibrate; if the actual time substantially exceeds 6 hours, that's a signal the cap should be lowered or the curation scope split across multiple sub-experiments.
 
@@ -190,6 +192,8 @@ After the auto-scorer rerun completes:
 
 The threshold structure mirrors round-3's: 50% headline, decision tree explicit about partial-support and null-result cases.
 
+**Addressable-row floor in threshold interpretation.** The relative-drop denominator is the full v1-clean panel-route rate (119/522 = 22.80%). Per §3.3, 7 of those 119 rows are `other_routes_to_panel` and cannot be moved by `specifics_alternatives` — H0b's mechanism only fires on `primary_match_specifics_outside_tolerance` rows. So the maximum possible relative drop is (119 − 7) / 119 = **94.1%**, not 100%. At the threshold cliff: a 50% drop of *addressable* rows (56 of 112) corresponds to a **47.1% drop of total** (56 of 119), landing 2.9pp below the H0b-supported band. The §11 writeup MUST report (a) the headline relative drop against the full 119 denominator (what the §3.7 bands gate on), AND (b) the addressable relative drop against the 112 denominator (the subset H0b could mechanically move). Both numbers travel together; the headline decision uses (a), and (b) characterizes how close H0b came to its ceiling on the rows it could actually affect.
+
 **Per-category anomaly handling.** If H0b is supported overall (≥ 50% drop in aggregate) but one or more categories show *flat* or *increased* panel-route rate while others drop ≥ 50%, the §11 writeup MUST surface this as a per-category caveat. The leading candidate for such an anomaly is `pat-introduction`, which moved against H1 in round-3 (+28.6% relative under v2 vs v1-clean per [`results.md §10.5`](../experiments/v7-refactor-recommendation/results.md#105-per-category-panel-route-delta)); if it also fails to respond to H0b's loosening, that suggests PAT mismatches are structurally different from the identifier-equivalence pattern (e.g., they're about template applicability or applies-to scope, not naming). The §11 writeup should call out any such anomaly explicitly and recommend a follow-up sub-experiment scoped to the anomalous categories if the structural difference is methodologically important.
 
 ### 3.8 Baseline invariance to panel completion
@@ -234,7 +238,7 @@ Pre-registration document: this plan + [`rubric-modifications.md`](../experiment
   - `test_validator_rejects_rationale_length_mismatch` — validator fails when `len(specifics_alternatives_rationale[key]) != len(specifics_alternatives[key])`.
 - [ ] Auto-scorer rerun against [`trial-logs-v1-clean/parsed/`](../experiments/v7-refactor-recommendation/trial-logs-v1-clean) produces [`analyses-v1-clean-rubric-loose/`](../experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose) (4 files: `auto-scores.json`, `score-summary.json`, `panel-routing.jsonl`, `panel-unblind.json`).
 - [ ] [`analyses-v2/h0b-rubric-loosening.json`](../experiments/v7-refactor-recommendation/analyses-v2/h0b-rubric-loosening.json) documents v1-clean vs v1-clean-rubric-loose panel-route rates per condition + per category + per plant + per-key alternative usage (per §3.6 step 5 schema: `per_key_alternative_usage: {plant_id: {key: [counts...]}}` plus aggregate `alternatives_offered` / `alternatives_exercised_at_least_once`).
-- [ ] `results.md §11` reports H0b outcome; per-category panel-route delta table; per-plant delta table; canonical-recall delta with panel-pending caveat; aggregate alternative-usage summary.
+- [ ] `results.md §11` reports H0b outcome; per-category panel-route delta table; per-plant delta table; canonical-recall delta with panel-pending caveat; aggregate alternative-usage summary; **both denominators** per §3.7 — headline relative drop against the full 119 v1-clean panel-route count AND addressable relative drop against the 112 `primary_match_specifics_outside_tolerance` subset.
 - [ ] [`rubric-modifications.md`](../experiments/v7-refactor-recommendation/rubric-modifications.md) round-4 entry filed (methodology §10 compliance), with measured outcome appended after PR 4.
 - [ ] [`reproducibility.yaml::execution.h0b_sub_experiment.sub_experiment_outcome`](../experiments/v7-refactor-recommendation/reproducibility.yaml) populated: "H0b supported" | "H0b partial" | "H0b not supported".
 - [ ] PR 1 commit message includes a permalink to this plan at the merged SHA per §4 traceability requirement.
@@ -284,7 +288,7 @@ Total: ~1.5 weeks wallclock, **$0 API spend** (no new agent calls). Well under [
 
 5. **Round-2 corpus comparison.** Should this also score the round-2 original-substrate corpus (in [`analyses/`](../experiments/v7-refactor-recommendation/analyses)) as a parallel control? Default: no — the matched-substrate v1-clean is the established round-3 control; round-2 stays as historical snapshot. If the result is ambiguous, a follow-up could rerun against round-2.
 
-6. **What if curation pass yields fewer than expected alternatives?** If the curator finds only ~30 alternatives total (instead of the ~50–80 the 17 × 3-cap allows), is the cap structurally meaningful or just symbolic? Default: report the actual alternative count in PR 2's review; if substantially below cap, document in §11 writeup as "curation was conservative, not cap-limited."
+6. **What if curation pass yields fewer than expected alternatives?** If the curator finds only ~30 alternatives total (instead of the ~120 upper bound the 3-cap allows across the 40 panel-routed (plant, key) pairs counted in §3.3), is the cap structurally meaningful or just symbolic? Default: report the actual alternative count in PR 2's review; if substantially below cap, document in §11 writeup as "curation was conservative, not cap-limited."
 
 7. **Promotion path on H0b-supported.** If H0b is supported, does the `specifics_alternatives` extension become default auto-scorer behavior for round 5+, OR does it stay as a scenario-flag? Default: promote to default if H0b ≥ 50% drop; leave as scenario-flag if H0b partial. Recorded as a §11 writeup recommendation, not pre-bound.
 
