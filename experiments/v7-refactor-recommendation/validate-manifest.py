@@ -47,6 +47,25 @@ Checks performed:
      c. Sharing-group uniqueness: all members of a sharing-group must declare DISTINCT `cluster_lens`
         values. The scorer routes recommendations to the plant whose lens matches the rec's category;
         duplicate lenses break the routing.
+ 12. Round-4 H0b rubric loosening — `primary_answer.specifics_alternatives` and
+     `primary_answer.specifics_alternatives_rationale` (per the H0b rubric-loosening plan §3.1):
+     a. Both fields are OPTIONAL. Absent fields trigger no validation; only declared fields are checked.
+     b. Both, when declared, must be `dict[str, list[str]]` shapes: keys are strings, values are lists
+        of strings.
+     c. Every key in `specifics_alternatives` must also be a key in `primary_answer.specifics`. An
+        alternative for a key the canonical doesn't declare is orphaned — the auto-scorer never reaches
+        the loosening path for non-canonical keys.
+     d. Each value list is capped at 3 entries per `(plant, key)` (plan §3.2 cap). Lists with > 3
+        entries are validator-rejected to keep curation cost bounded.
+     e. No duplicates within a single key's alternative list.
+     f. No alternative may equal the canonical `primary_answer.specifics[key]` value verbatim. The
+        existing primary-match path already scores verbatim matches; duplicating them as alternatives
+        inflates the alternative-usage count without changing match outcomes.
+     g. `specifics_alternatives_rationale` parallels `specifics_alternatives`: the same key set, each
+        value a list of strings of the same length as the corresponding alternatives list. A
+        rationale-length mismatch is hard-fail (every alternative must be motivated; an unrationalized
+        alternative cannot satisfy the curation rubric's criterion (a)+(b)+(c) checklist).
+     h. Each rationale string must be non-empty.
 
 Usage
 -----
@@ -363,6 +382,141 @@ def validate_rubric(
                     )
 
 
+# Cap per (plant, key) from the H0b rubric-loosening plan §3.2. Lists longer than this
+# are validator-rejected — curation cost is bounded by this constant, and the
+# alternative-usage analysis in the §11 writeup is reported as fixed-width per key.
+H0B_ALTERNATIVES_CAP = 3
+
+
+def _validate_specifics_alternatives(plant: dict, prefix: str, errors: list[str]) -> None:
+    """Rule 12 — round-4 H0b: `primary_answer.specifics_alternatives` + rationale schema.
+
+    Both fields are optional. When declared, they must be `dict[str, list[str]]`
+    shapes mirroring `primary_answer.specifics`'s keys, with strict cardinality
+    (cap 3 per key), no canonical duplicates, no in-list duplicates, and rationale
+    list-lengths matching the alternative list-lengths.
+
+    See plan §3.1 / §3.2 and `h0b-curation-rubric.md` for the curation rule these
+    schema checks enforce. The auto-scorer (PR 3) reads these fields after the
+    exact-value-match path fails; an alternative that passes (a)+(b)+(c) of the
+    curation rubric and is verbatim-equal to the agent's emitted value triggers
+    the new `primary_match_specifics_blessed_alternative` match label (score 1.0,
+    NOT panel-routed).
+    """
+    primary = plant.get("primary_answer")
+    if not isinstance(primary, dict):
+        return  # earlier rubric check already flagged this
+
+    alts = primary.get("specifics_alternatives")
+    rationale = primary.get("specifics_alternatives_rationale")
+
+    if alts is None and rationale is None:
+        return  # H0b is opt-in per plant.
+
+    if alts is None:
+        errors.append(
+            f"{prefix}: primary_answer.specifics_alternatives_rationale declared without "
+            "specifics_alternatives — rationale must accompany alternatives"
+        )
+        return
+
+    if not isinstance(alts, dict):
+        errors.append(
+            f"{prefix}: primary_answer.specifics_alternatives must be a dict[str, list[str]]"
+        )
+        return
+
+    specifics = primary.get("specifics") if isinstance(primary.get("specifics"), dict) else {}
+    canonical_keys = set(specifics)
+
+    for key, value in alts.items():
+        sub_prefix = f"{prefix}: primary_answer.specifics_alternatives[{key!r}]"
+        if not isinstance(key, str):
+            errors.append(f"{prefix}: specifics_alternatives has non-string key {key!r}")
+            continue
+        if key not in canonical_keys:
+            errors.append(
+                f"{sub_prefix}: key not present in primary_answer.specifics — orphan alternative "
+                "(the auto-scorer's loosening path only fires for canonical keys)"
+            )
+        if not isinstance(value, list):
+            errors.append(f"{sub_prefix}: value must be a list of strings")
+            continue
+        if len(value) > H0B_ALTERNATIVES_CAP:
+            errors.append(
+                f"{sub_prefix}: {len(value)} alternatives exceeds cap of {H0B_ALTERNATIVES_CAP} "
+                "(plan §3.2)"
+            )
+        # Per-entry type + canonical-duplicate + in-list-duplicate checks.
+        seen: set[str] = set()
+        canonical_value = specifics.get(key) if key in canonical_keys else None
+        for idx, entry in enumerate(value):
+            if not isinstance(entry, str):
+                errors.append(f"{sub_prefix}[{idx}]: entry must be a string")
+                continue
+            if entry == canonical_value:
+                errors.append(
+                    f"{sub_prefix}[{idx}]: alternative {entry!r} duplicates the canonical "
+                    f"primary_answer.specifics[{key!r}] value — the primary-match path already "
+                    "scores verbatim matches"
+                )
+            if entry in seen:
+                errors.append(
+                    f"{sub_prefix}[{idx}]: alternative {entry!r} duplicated within the list"
+                )
+            seen.add(entry)
+
+    # Rationale shape — only validated if alternatives itself is well-typed.
+    if rationale is None:
+        # If the curator declared alternatives but no rationale, fail loud. The plan
+        # mandates per-alternative rationale grounding.
+        if isinstance(alts, dict) and any(alts.values()):
+            errors.append(
+                f"{prefix}: primary_answer.specifics_alternatives_rationale required when "
+                "any specifics_alternatives entry is declared (plan §3.1)"
+            )
+        return
+
+    if not isinstance(rationale, dict):
+        errors.append(
+            f"{prefix}: primary_answer.specifics_alternatives_rationale must be a dict[str, list[str]]"
+        )
+        return
+
+    rationale_keys = set(rationale)
+    alt_keys = set(alts)
+    extra_rationales = rationale_keys - alt_keys
+    if extra_rationales:
+        errors.append(
+            f"{prefix}: specifics_alternatives_rationale has keys with no matching alternatives: "
+            f"{sorted(extra_rationales)}"
+        )
+    missing_rationales = alt_keys - rationale_keys
+    if missing_rationales:
+        errors.append(
+            f"{prefix}: specifics_alternatives_rationale missing entries for keys "
+            f"{sorted(missing_rationales)} — every alternatives key needs a parallel rationale list"
+        )
+
+    for key in alt_keys & rationale_keys:
+        sub_prefix = f"{prefix}: primary_answer.specifics_alternatives_rationale[{key!r}]"
+        alt_list = alts.get(key)
+        rat_list = rationale.get(key)
+        if not isinstance(rat_list, list):
+            errors.append(f"{sub_prefix}: value must be a list of strings")
+            continue
+        if isinstance(alt_list, list) and len(rat_list) != len(alt_list):
+            errors.append(
+                f"{sub_prefix}: rationale list has {len(rat_list)} entries but alternatives "
+                f"list has {len(alt_list)} — rationale length must equal alternatives length"
+            )
+        for idx, entry in enumerate(rat_list):
+            if not isinstance(entry, str):
+                errors.append(f"{sub_prefix}[{idx}]: rationale entry must be a string")
+            elif entry.strip() == "":
+                errors.append(f"{sub_prefix}[{idx}]: rationale entry must be non-empty")
+
+
 def _sharing_groups(plants: list[dict]) -> list[set[str]]:
     """Group plants by **cross-lens** cluster-sharing (methodology §9).
 
@@ -606,6 +760,8 @@ def validate(manifest_path: Path, catalog_root: Path, rubric_path: Path) -> int:
         validate_rubric(plant, prefix, is_restraint, plants_by_id, errors)
         # Phase A.4 specifics-keys allowlist (sub-issue #27)
         validate_specifics_keys(plant, prefix, rubric, errors)
+        # Round-4 H0b: specifics_alternatives + rationale schema (rule 12)
+        _validate_specifics_alternatives(plant, prefix, errors)
 
     # Round-2 cross-lens routing (#33): cluster_lens schema check.
     # Runs once over the full plant list (needs cross-plant sharing-group

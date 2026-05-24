@@ -517,4 +517,125 @@ execution:
     # results.md §10 and rubric-modifications.md round-3 entry; out of scope
     # for this sub-experiment.
     sub_experiment_outcome: "H0a supported"
+  # Round-4 sub-experiment: H0b (rubric over-strictness) follow-up. Tests whether
+  # round-2's panel-route load is dominated by lexically-different-but-structurally-
+  # equivalent identifier mismatches, by loosening the auto-scorer's verbatim-match
+  # rule to admit per-plant pre-blessed alternative values. Holds the prompt,
+  # manifest canonical values, model alias, and model parameters all fixed; only
+  # the rubric changes. Reuses the existing trial-logs-v1-clean corpus from PR #102;
+  # zero new agent calls. Parameters in this block are frozen by PR 1 merge — they
+  # cannot be edited after observing the rerun outcomes.
+  h0b_sub_experiment:
+    description: |
+      Pre-registered round-4 sub-experiment per plans/v7-h0b-rubric-loosening-
+      plan.md. Recommended by results.md §10.7 after round-3's prompt-sensitivity
+      sub-experiment closed with H0a supported. Tests whether the panel-route
+      load drops substantially under a pre-blessed loosening of the auto-scorer's
+      verbatim-match rule (new match label primary_match_specifics_blessed_alternative,
+      scores 1.0, does NOT route to panel). Acceptance threshold ≥50% relative
+      drop. The 16 plants with primary_match_specifics_* panel routes in
+      analyses-v1-clean/panel-routing.jsonl carry curation alternatives; Plant 5.1
+      is in the 17-plant scope but routes only via other_routes_to_panel and
+      won't have blessable keys.
+    plan: plans/v7-h0b-rubric-loosening-plan.md
+    plan_sha256: c7b12f05e03b81b0e7570ef8f11112564ae746d306f5d30537b4c1eb3aff6826
+    # Plan permalink at the SHA the plan PR (#109) merged at, per plan §4
+    # traceability requirement.
+    plan_permalink: https://github.com/jakebromberg/code-audit-pipeline/blob/03277b184f1dc8e297064d2399f10e066ce034c6/plans/v7-h0b-rubric-loosening-plan.md
+    curation_rubric: experiments/v7-refactor-recommendation/h0b-curation-rubric.md
+    preflight_scripts:
+      panel_keys_enumeration: scripts/h0b_panel_keys_per_plant.py
+      curation_scope_check: scripts/check_h0b_curation_scope.py  # PR 2 merge-blocker
+    # Schema cap per plan §3.1 / §3.2. Validator rule 12d rejects lists with > 3 entries.
+    schema:
+      alternatives_cap_per_plant_key: 3
+      canonical_duplicate_allowed: false
+      in_list_duplicate_allowed: false
+      rationale_required: true  # one rationale string per alternative, same-index list
+    # Acceptance threshold per plan §3.7 decision tree. Panel-route rate drop under
+    # the loosened rubric vs the v1-clean control. Threshold gates interpretation
+    # (H0b supported / H0b partial / H0b not supported), not reporting — the actual
+    # delta is reported in results.md §11 regardless of which side it falls on.
+    acceptance_threshold_pct: 50  # ≥ 50% relative drop → H0b supported
+    acceptance_partial_floor_pct: 20  # 20-50% → H0b partial (both H0a and H0b contribute)
+    # Addressable-row floor per plan §3.3 + §3.7. Of the 119 v1-clean panel-routed
+    # rows, 7 are other_routes_to_panel (all on Plant 5.1's HSBColor cluster) and
+    # cannot be moved by H0b's loosening regardless of curation — H0b's mechanism
+    # fires only on primary_match_specifics_* rows. So the maximum possible
+    # relative drop against the 119 total denominator is (119-7)/119 = 94.1%.
+    # At the threshold cliff: a 50% drop of the 112 addressable rows (56/112)
+    # equals 47.1% of the 119 total (56/119) — 2.9pp below the H0b-supported band.
+    # The §11 writeup must report BOTH denominators (plan §4 pre-reg commitment).
+    addressable_panel_route_floor:
+      v1_clean_total_panel_routed: 119
+      addressable_subset: 112        # primary_match_specifics_outside_tolerance rows
+      other_routes_to_panel_count: 7  # all on Plant 5.1; not addressable by H0b
+      max_possible_relative_drop_pct: 94.1
+    # Two-denominator reporting commitment frozen by PR 1 merge per plan §4. PR 4's
+    # results.md §11 writeup must report:
+    #   (a) headline relative drop against the full 119 v1-clean total (the §3.7
+    #       threshold denominator; bands gate on this number); AND
+    #   (b) addressable relative drop against the 112 addressable subset (the rows
+    #       H0b's mechanism could mechanically move).
+    # Both numbers travel together so the headline reading cannot be selected
+    # post-hoc.
+    two_denominator_reporting_required: true
+    # Per-category anomaly handling per plan §3.7. If H0b supported overall but one or
+    # more categories show flat / increased rate while others drop ≥ 50%, surface as
+    # caveat in results.md §11 and recommend a follow-up sub-experiment scoped to the
+    # anomaly. Leading candidate: pat-introduction (moved against H1 in round 3,
+    # +28.6% relative).
+    per_category_anomaly_handling: true
+    # Curation scope: 17 panel-routed plants in analyses-v1-clean/panel-routing.jsonl.
+    panel_routed_plants:
+      - "1.1"
+      - "2.1"
+      - "2.2"
+      - "2.3"
+      - "2.4"
+      - "3.1"
+      - "3.2"
+      - "3.3"
+      - "3.4"
+      - "4.1"
+      - "4.2"
+      - "4.3"
+      - "4.4"
+      - "5.1"  # other_routes_to_panel only; in scope for completeness, no blessable keys expected
+      - "5.2"
+      - "5.3"
+      - "5.4"
+    # Budget envelope per plan §6. Zero new agent calls — the auto-scorer rerun is
+    # deterministic given (parsed cache, manifest, scorer revision).
+    budget_envelope_usd:
+      curation_pass: 0
+      auto_scorer_rerun: 0
+      analysis_and_writeup: 0
+      total: 0
+    # Cross-references.
+    issue_link: https://github.com/jakebromberg/code-audit-pipeline/issues/108
+    plan_pr_link: https://github.com/jakebromberg/code-audit-pipeline/pull/109
+    # Execution-time fields populated as PRs 2-4 land. Leave null until then.
+    curation_pass:                    # PR 2 (curation diff against manifest)
+      curator: null                   # PR 2 author identity
+      reviewer: null                  # rubric reviewer (NOT the plant author)
+      elapsed_hours: null
+      scope_check_passed: null        # exit code 0 of scripts/check_h0b_curation_scope.py
+      pr_number: null
+    rubric_loose_rerun:               # PR 3 (auto-scorer rerun against v1-clean parsed cache)
+      run_date: null
+      analyses_dir: experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose
+      auto_scorer_rev: null           # git SHA of auto-scorer.py at rerun time
+      manifest_sha256: null           # SHA-256 of plant-manifest.yaml after PR 2 merge
+      api_spend_usd: 0                # deterministic rerun — no API calls
+      score_summary: null             # populated when rerun completes
+    analysis_outcome:                 # PR 4 (analyses-v2/h0b-rubric-loosening.json + results.md §11)
+      analysis_json: experiments/v7-refactor-recommendation/analyses-v2/h0b-rubric-loosening.json
+      headline_panel_route_delta_pct: null
+      per_category_delta: null
+      per_key_alternative_usage_summary: null
+      headline_canonical_recall_delta: null  # auto-scored only; panel-pending caveat applies
+    # Sub-experiment outcome per plan §3.7 decision tree. Populated by PR 4.
+    # Values: "H0b supported" | "H0b partial" | "H0b not supported" | null (not yet run)
+    sub_experiment_outcome: null
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md

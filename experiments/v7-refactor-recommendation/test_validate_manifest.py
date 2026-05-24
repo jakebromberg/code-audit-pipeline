@@ -393,5 +393,179 @@ class ValidateClusterLensTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
 
+def _plant_with_alternatives(
+    plant_id: str,
+    *,
+    specifics: dict | None = None,
+    alternatives: dict | None = None,
+    rationale: dict | None = None,
+) -> dict:
+    """Minimal plant dict for `_validate_specifics_alternatives` unit tests.
+
+    Only the fields the rule-12 helper reads are populated: `plant_id`, the nested
+    `primary_answer.specifics` (the canonical the alternatives compare against),
+    `primary_answer.specifics_alternatives`, and `primary_answer.specifics_alternatives_rationale`.
+    """
+    primary: dict = {"specifics": specifics if specifics is not None else {"key1": "canonical-v1"}}
+    if alternatives is not None:
+        primary["specifics_alternatives"] = alternatives
+    if rationale is not None:
+        primary["specifics_alternatives_rationale"] = rationale
+    return {
+        "plant_id": plant_id,
+        "primary_answer": primary,
+    }
+
+
+class SpecificsAlternativesValidatorTests(unittest.TestCase):
+    """Unit tests for `_validate_specifics_alternatives` (round-4 / rule 12)."""
+
+    def test_absent_fields_pass(self):
+        """Both fields are optional; an opted-out plant produces no errors."""
+        plant = _plant_with_alternatives("A")
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant A", errors)
+        self.assertEqual(errors, [])
+
+    def test_validator_rejects_oversized_alternative_list(self):
+        """Plan §3.2 cap: alternatives list per (plant, key) > 3 is hard-fail."""
+        plant = _plant_with_alternatives(
+            "A",
+            specifics={"key1": "canonical-v1"},
+            alternatives={"key1": ["alt-1", "alt-2", "alt-3", "alt-4"]},
+            rationale={"key1": ["r1", "r2", "r3", "r4"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant A", errors)
+        self.assertTrue(
+            any("exceeds cap of 3" in e for e in errors),
+            f"expected cap-exceeded error, got {errors!r}",
+        )
+
+    def test_validator_rejects_canonical_duplicate_in_alternatives(self):
+        """An alternative that equals the canonical value is hard-fail — the
+        primary-match path already scores verbatim matches; duplicating inflates
+        alternative-usage telemetry without changing scoring."""
+        plant = _plant_with_alternatives(
+            "B",
+            specifics={"protocol": "BlendMode"},
+            alternatives={"protocol": ["BlendMode"]},
+            rationale={"protocol": ["this duplicates the canonical and should fail"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant B", errors)
+        self.assertTrue(
+            any("duplicates the canonical" in e for e in errors),
+            f"expected canonical-duplicate error, got {errors!r}",
+        )
+
+    def test_validator_rejects_rationale_length_mismatch(self):
+        """Per-alternative rationale grounding: rationale list length must equal
+        the corresponding alternatives list length."""
+        plant = _plant_with_alternatives(
+            "C",
+            specifics={"key1": "canonical"},
+            alternatives={"key1": ["alt-1", "alt-2"]},
+            rationale={"key1": ["only-one-rationale"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant C", errors)
+        self.assertTrue(
+            any("rationale list has 1 entries but alternatives list has 2" in e for e in errors),
+            f"expected rationale-length mismatch error, got {errors!r}",
+        )
+
+    def test_validator_rejects_in_list_duplicate(self):
+        """Duplicate entries within one key's alternatives list are rejected."""
+        plant = _plant_with_alternatives(
+            "D",
+            specifics={"key1": "canonical"},
+            alternatives={"key1": ["alt-a", "alt-a"]},
+            rationale={"key1": ["r1", "r2"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant D", errors)
+        self.assertTrue(
+            any("duplicated within the list" in e for e in errors),
+            f"expected in-list duplicate error, got {errors!r}",
+        )
+
+    def test_validator_rejects_orphan_alternative_key(self):
+        """Alternatives for a key not present in primary_answer.specifics are
+        orphans — the auto-scorer never reaches the loosening path."""
+        plant = _plant_with_alternatives(
+            "E",
+            specifics={"key1": "canonical"},
+            alternatives={"missing_key": ["alt-1"]},
+            rationale={"missing_key": ["r1"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant E", errors)
+        self.assertTrue(
+            any("orphan alternative" in e for e in errors),
+            f"expected orphan-key error, got {errors!r}",
+        )
+
+    def test_validator_rejects_non_list_value(self):
+        """Each per-key value must be a list (not a scalar, not a dict)."""
+        plant = _plant_with_alternatives(
+            "F",
+            specifics={"key1": "canonical"},
+            alternatives={"key1": "not-a-list"},
+            rationale={"key1": ["r1"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant F", errors)
+        self.assertTrue(
+            any("must be a list of strings" in e for e in errors),
+            f"expected non-list-value error, got {errors!r}",
+        )
+
+    def test_validator_rejects_rationale_without_alternatives(self):
+        """Rationale declared standalone (no alternatives) is hard-fail — rationale must accompany alternatives."""
+        plant = _plant_with_alternatives(
+            "G",
+            specifics={"key1": "canonical"},
+            rationale={"key1": ["r1"]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant G", errors)
+        self.assertTrue(
+            any("rationale declared without specifics_alternatives" in e for e in errors),
+            f"expected rationale-without-alts error, got {errors!r}",
+        )
+
+    def test_validator_accepts_well_formed_alternatives(self):
+        """A correct shape produces no errors. Single alternative under cap, with
+        a same-length rationale list and no canonical duplicate."""
+        plant = _plant_with_alternatives(
+            "H",
+            specifics={"protocol": "BlendMode"},
+            alternatives={"protocol": ["BlendModeProtocol", "Blendable"]},
+            rationale={"protocol": [
+                "adds the conventional Protocol suffix; same refactor under criterion (a)",
+                "renames to verb-form Blendable; conformer set unchanged",
+            ]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant H", errors)
+        self.assertEqual(errors, [])
+
+    def test_validator_rejects_empty_rationale_string(self):
+        """Empty / whitespace-only rationale strings fail — each alternative needs grounded text."""
+        plant = _plant_with_alternatives(
+            "I",
+            specifics={"key1": "canonical"},
+            alternatives={"key1": ["alt-1"]},
+            rationale={"key1": [""]},
+        )
+        errors: list[str] = []
+        vm._validate_specifics_alternatives(plant, "plant I", errors)
+        self.assertTrue(
+            any("rationale entry must be non-empty" in e for e in errors),
+            f"expected empty-rationale error, got {errors!r}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
