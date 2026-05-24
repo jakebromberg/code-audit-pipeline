@@ -49,6 +49,18 @@
 #                                 `refactor-recommendation-experiment-agent-prompt.md` §2
 #     rationale_must_cite       — non-empty list of substrings the rationale must include (symbol names,
 #                                 package names, semantic keywords)
+#     specifics_alternatives    — round-4 H0b (optional): dict[str, list[str]] mapping a key in
+#                                 `specifics` to up to 3 pre-blessed alternative values that should also
+#                                 auto-score 1.0 under `primary_match_specifics_blessed_alternative`.
+#                                 Per `plans/v7-h0b-rubric-loosening-plan.md` §3.1–§3.2: cap 3 per
+#                                 (plant, key); no entry may equal the canonical value; no in-list
+#                                 duplicates; curation per the three-criteria rubric in
+#                                 `h0b-curation-rubric.md`. Validator rule 12 enforces shape.
+#     specifics_alternatives_rationale — round-4 H0b (optional, required when alternatives are declared):
+#                                 dict[str, list[str]] parallel to `specifics_alternatives`. Each list
+#                                 has the same length as the corresponding alternatives list; each entry
+#                                 is a one-sentence manifest-grounded justification (no agent-output
+#                                 references per criterion (c) blindness).
 #   specifics_tolerance         — dict of boolean tolerance flags for auto-scoring (may be empty)
 #   alternative_answers         — list (possibly empty) of {category, weight∈[0,1], note}
 #   wrong_answers               — non-empty list of {category, note}; always include `no-action` for canonicals
