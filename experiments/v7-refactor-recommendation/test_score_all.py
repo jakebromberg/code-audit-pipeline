@@ -963,15 +963,11 @@ class ValueAwareSpecificsTests(unittest.TestCase):
 class BlessedAlternativesSpecificsTests(unittest.TestCase):
     """H0b sub-experiment rubric loosening (plan §3.4).
 
-    After verbatim mismatch on a required key, the scorer falls through to the
-    plant's `primary_answer.specifics_alternatives[key]` and re-checks
-    structurally. A recommendation whose specifics match the canonical value OR
-    any blessed alternative for every required key still scores 1.0; the match
-    label distinguishes the two paths so per-plant telemetry can attribute the
-    delta in panel-route rate to alternative usage.
-
-    Both paths score 1.0; the label difference (`primary_match_full` vs
-    `primary_match_specifics_blessed_alternative`) is telemetry-only.
+    After verbatim mismatch on a required key, the scorer falls through to
+    the plant's `primary_answer.specifics_alternatives[key]` and re-checks
+    structurally. Both paths score 1.0; the label difference
+    (`primary_match_full` vs `primary_match_specifics_blessed_alternative`)
+    distinguishes them for per-plant telemetry.
     """
 
     def setUp(self):
