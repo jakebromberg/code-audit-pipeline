@@ -1007,9 +1007,8 @@ class BlessedAlternativesSpecificsTests(unittest.TestCase):
     def test_primary_match_full_all_keys_verbatim(self):
         """Regression: with `specifics_alternatives` declared, a verbatim
         match across every required key still produces the canonical
-        `primary_match_full` label and score 1.0. The alternatives must not
-        be consulted (and therefore not credited in per-key usage counts)
-        when verbatim succeeds."""
+        `primary_match_full` label and score 1.0 — never the new
+        blessed-alternative label, since no alternative was consulted."""
         plant = self._default_impl_plant(
             primary_specifics={
                 "protocol": "BlendMode",
