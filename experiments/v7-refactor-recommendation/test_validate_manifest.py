@@ -396,17 +396,12 @@ class ValidateClusterLensTests(unittest.TestCase):
 def _plant_with_alternatives(
     plant_id: str,
     *,
-    specifics: dict | None = None,
+    specifics: dict,
     alternatives: dict | None = None,
     rationale: dict | None = None,
 ) -> dict:
-    """Minimal plant dict for `_validate_specifics_alternatives` unit tests.
-
-    Only the fields the rule-12 helper reads are populated: `plant_id`, the nested
-    `primary_answer.specifics` (the canonical the alternatives compare against),
-    `primary_answer.specifics_alternatives`, and `primary_answer.specifics_alternatives_rationale`.
-    """
-    primary: dict = {"specifics": specifics if specifics is not None else {"key1": "canonical-v1"}}
+    """Minimal plant dict for `_validate_specifics_alternatives` unit tests."""
+    primary: dict = {"specifics": specifics}
     if alternatives is not None:
         primary["specifics_alternatives"] = alternatives
     if rationale is not None:
@@ -418,11 +413,11 @@ def _plant_with_alternatives(
 
 
 class SpecificsAlternativesValidatorTests(unittest.TestCase):
-    """Unit tests for `_validate_specifics_alternatives` (round-4 / rule 12)."""
+    """Unit tests for `_validate_specifics_alternatives`."""
 
     def test_absent_fields_pass(self):
         """Both fields are optional; an opted-out plant produces no errors."""
-        plant = _plant_with_alternatives("A")
+        plant = _plant_with_alternatives("A", specifics={"key1": "canonical-v1"})
         errors: list[str] = []
         vm._validate_specifics_alternatives(plant, "plant A", errors)
         self.assertEqual(errors, [])

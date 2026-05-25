@@ -389,29 +389,21 @@ H0B_ALTERNATIVES_CAP = 3
 
 
 def _validate_specifics_alternatives(plant: dict, prefix: str, errors: list[str]) -> None:
-    """Rule 12 — round-4 H0b: `primary_answer.specifics_alternatives` + rationale schema.
+    """Rule 12: `primary_answer.specifics_alternatives` + rationale schema.
 
-    Both fields are optional. When declared, they must be `dict[str, list[str]]`
-    shapes mirroring `primary_answer.specifics`'s keys, with strict cardinality
-    (cap 3 per key), no canonical duplicates, no in-list duplicates, and rationale
-    list-lengths matching the alternative list-lengths.
-
-    See plan §3.1 / §3.2 and `h0b-curation-rubric.md` for the curation rule these
-    schema checks enforce. The auto-scorer (PR 3) reads these fields after the
-    exact-value-match path fails; an alternative that passes (a)+(b)+(c) of the
-    curation rubric and is verbatim-equal to the agent's emitted value triggers
-    the new `primary_match_specifics_blessed_alternative` match label (score 1.0,
-    NOT panel-routed).
+    Both fields are optional. When declared: `dict[str, list[str]]`, keys ⊆
+    `primary_answer.specifics`, ≤ H0B_ALTERNATIVES_CAP per key, no canonical
+    duplicates, no in-list duplicates, rationale list-lengths match.
     """
     primary = plant.get("primary_answer")
     if not isinstance(primary, dict):
-        return  # earlier rubric check already flagged this
+        return
 
     alts = primary.get("specifics_alternatives")
     rationale = primary.get("specifics_alternatives_rationale")
 
     if alts is None and rationale is None:
-        return  # H0b is opt-in per plant.
+        return
 
     if alts is None:
         errors.append(
@@ -426,14 +418,15 @@ def _validate_specifics_alternatives(plant: dict, prefix: str, errors: list[str]
         )
         return
 
-    specifics = primary.get("specifics") if isinstance(primary.get("specifics"), dict) else {}
+    raw_specifics = primary.get("specifics")
+    specifics = raw_specifics if isinstance(raw_specifics, dict) else {}
     canonical_keys = set(specifics)
 
     for key, value in alts.items():
-        sub_prefix = f"{prefix}: primary_answer.specifics_alternatives[{key!r}]"
         if not isinstance(key, str):
             errors.append(f"{prefix}: specifics_alternatives has non-string key {key!r}")
             continue
+        sub_prefix = f"{prefix}: primary_answer.specifics_alternatives[{key!r}]"
         if key not in canonical_keys:
             errors.append(
                 f"{sub_prefix}: key not present in primary_answer.specifics — orphan alternative "
@@ -447,9 +440,8 @@ def _validate_specifics_alternatives(plant: dict, prefix: str, errors: list[str]
                 f"{sub_prefix}: {len(value)} alternatives exceeds cap of {H0B_ALTERNATIVES_CAP} "
                 "(plan §3.2)"
             )
-        # Per-entry type + canonical-duplicate + in-list-duplicate checks.
         seen: set[str] = set()
-        canonical_value = specifics.get(key) if key in canonical_keys else None
+        canonical_value = specifics.get(key)
         for idx, entry in enumerate(value):
             if not isinstance(entry, str):
                 errors.append(f"{sub_prefix}[{idx}]: entry must be a string")
@@ -466,11 +458,8 @@ def _validate_specifics_alternatives(plant: dict, prefix: str, errors: list[str]
                 )
             seen.add(entry)
 
-    # Rationale shape — only validated if alternatives itself is well-typed.
     if rationale is None:
-        # If the curator declared alternatives but no rationale, fail loud. The plan
-        # mandates per-alternative rationale grounding.
-        if isinstance(alts, dict) and any(alts.values()):
+        if any(alts.values()):
             errors.append(
                 f"{prefix}: primary_answer.specifics_alternatives_rationale required when "
                 "any specifics_alternatives entry is declared (plan §3.1)"
