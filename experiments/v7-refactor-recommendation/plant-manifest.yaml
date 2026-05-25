@@ -97,6 +97,20 @@ plants:
         - "logo"
         - "background"
         - "same shape"
+      specifics_alternatives:
+        target_package:
+          - "Shared/Branding (new package, must be upstream of both app:WatchXYC and app:iOS)"
+          - "Shared/UI (must be upstream of both app:WatchXYC and app:iOS)"
+        type_name:
+          - "Image+Brand (extension on SwiftUI.Image)"
+          - "Image+WXYCBranding (extension on SwiftUI.Image)"
+      specifics_alternatives_rationale:
+        target_package:
+          - "The canonical's disjunction admits a new Shared/Branding package as one acceptable target; this alternative names that branch explicitly while preserving the upstream-of-both-app-targets constraint."
+          - "The canonical's disjunction admits the existing Shared/UI package as the other acceptable target; this alternative names that branch explicitly while preserving the upstream-of-both-app-targets constraint."
+        type_name:
+          - "Same extension on SwiftUI.Image bundling logo and background accessors; shortens the suffix from `Branding` to `Brand` per common Swift naming convention."
+          - "Same extension on SwiftUI.Image bundling logo and background accessors; adds the WXYC brand prefix that several other shared types in the substrate carry."
     specifics_tolerance:
       target_package_must_be_upstream_of_all_consumers: true
       target_must_be_upstream_of_both_layers: true  # cross-layer plant
@@ -308,6 +322,14 @@ plants:
         - "AsyncNotificationMessage"
         - "name"
         - "makeNotification"
+      specifics_alternatives:
+        parent:
+          - "NotificationMessageProtocol (new shared parent protocol)"
+          - "BaseNotificationMessage (new shared parent protocol)"
+      specifics_alternatives_rationale:
+        parent:
+          - "Same new shared parent protocol over MainActorNotificationMessage + AsyncNotificationMessage capturing the 2-member core; adds the conventional `Protocol` suffix."
+          - "Same new shared parent protocol over the two children with the same shared 2-member core; uses the `Base` prefix instead of a bare name."
     specifics_tolerance:
       parent_must_include_both_shared_members: true
       sending_keyword_difference_is_acceptable_at_child_level: true
@@ -354,6 +376,14 @@ plants:
         - "HLSAVPlayerProtocol"
         - "pause"
         - "play"
+      specifics_alternatives:
+        parent:
+          - "PlaybackProtocol (new shared parent capturing pause/play/rate)"
+          - "AudioTransport (new shared parent capturing pause/play/rate)"
+      specifics_alternatives_rationale:
+        parent:
+          - "Same new shared parent over PlayerProtocol + HLSAVPlayerProtocol with the pause/play/rate surface; names the protocol after the abstract behavior (Playback) rather than the canonical's Transport metaphor."
+          - "Same new shared parent over PlayerProtocol + HLSAVPlayerProtocol with the pause/play/rate surface; uses `AudioTransport` to emphasize the audio domain over the canonical's bare `PlaybackTransport`."
     specifics_tolerance:
       parent_must_include_pause_play_rate: true
     alternative_answers:
@@ -400,6 +430,14 @@ plants:
         - "AudioPlayerProtocol"
         - "installRenderTap"
         - "removeRenderTap"
+      specifics_alternatives:
+        parent:
+          - "RenderTapPlayer (new parent capturing render-tap + lifecycle surface)"
+          - "AudioPlayerCore (new parent capturing render-tap + lifecycle surface)"
+      specifics_alternatives_rationale:
+        parent:
+          - "Same new shared parent over AudioEnginePlayerProtocol + AudioPlayerProtocol capturing the 6-member render-tap and lifecycle surface; names the protocol after the render-tap feature emphasized in the canonical's rationale."
+          - "Same new shared parent over the 6-member shared surface; uses `Core` suffix instead of the canonical's `Rendering` prefix while preserving the protocol's role."
     specifics_tolerance:
       parent_must_include_all_six_shared_members: true
     alternative_answers:
@@ -446,6 +484,14 @@ plants:
         - "PlaybackController"
         - "installRenderTap"
         - "state"
+      specifics_alternatives:
+        parent:
+          - "PlaybackTransport (new parent for the shared 7-member core)"
+          - "AudioPlayerCore (new parent for the shared 7-member core)"
+      specifics_alternatives_rationale:
+        parent:
+          - "Same new shared parent over AudioPlayerProtocol + PlaybackController with the 7-member core; names the protocol after the transport role, matching the naming convention sibling plant 2.2's canonical uses."
+          - "Same new shared parent over the 7-member shared surface; uses `Core` suffix to emphasize the protocol's foundational role over the canonical's `Rendering` prefix."
     specifics_tolerance:
       parent_must_include_all_seven_shared_members: true
     alternative_answers:
@@ -523,6 +569,20 @@ plants:
         - "AccentColor"
         - "HSBOffset"
         - "identical"
+      specifics_alternatives:
+        protocol:
+          - "HSBValues (new protocol with hue/saturation/brightness stored-property contract)"
+          - "HSBProtocol (new protocol with hue/saturation/brightness stored-property contract)"
+        target_location:
+          - "Shared/ColorPalette/Sources/ColorPalette/HSBStorageProtocol.swift (extension on HSBStorage)"
+          - "Shared/ColorPalette/Sources/ColorPalette/HSBValues.swift (extension on HSBStorage)"
+      specifics_alternatives_rationale:
+        protocol:
+          - "Same new protocol over HSBColor + AccentColor + HSBOffset with the hue/saturation/brightness stored-property contract; uses `Values` suffix to emphasize the data role."
+          - "Same new protocol over the three HSB conformers; adds the conventional `Protocol` suffix."
+        target_location:
+          - "Same package and same extension target as canonical; renames the file to `HSBStorageProtocol.swift` matching common Swift `<Type>Protocol.swift` convention."
+          - "Same package and same extension target as canonical; uses `HSBValues.swift` matching alternative protocol naming."
     specifics_tolerance:
       default_impl_must_be_in_protocols_own_package: true
       acknowledging_init_cannot_default_impl_directly_acceptable: true
@@ -571,6 +631,26 @@ plants:
         - "_Plant_OverlayBlendMode"
         - "displayName"
         - "identical"
+      specifics_alternatives:
+        protocol:
+          - "BlendModeProtocol (new shared protocol over the 16-case union, with displayName + blendMode requirements; preserving the existing BlendMode enum type as the protocol's canonical concrete type)"
+          - "BlendModeConvertible (new shared protocol over the 16-case union, with displayName + blendMode requirements)"
+          - "DisplayableBlendMode (new shared protocol over the 16-case union, with displayName + blendMode requirements)"
+        method:
+          - "var displayName: String { get }"
+        target_location:
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+DisplayName.swift (extension on BlendMode)"
+          - "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+DefaultImpl.swift (extension on BlendMode)"
+      specifics_alternatives_rationale:
+        protocol:
+          - "Adds the conventional `Protocol` suffix while keeping the underlying enum type preserved as the canonical concrete type; equivalent under criterion (a) because the refactor (shared protocol over the 16-case union with the same two requirements) is identical."
+          - "Same shared protocol over PlaybackBlendMode + MaterialBlendMode + _Plant_OverlayBlendMode with displayName + blendMode requirements; uses `Convertible` suffix per Swift stdlib naming convention (e.g., CustomStringConvertible)."
+          - "Same shared protocol over the three blend mode enums; emphasizes the displayName role with a `Displayable` prefix while preserving the two requirements."
+        method:
+          - "Same property declaration; adds the `var` keyword that is conventionally elided in protocol declarations but accepted equivalently by the Swift compiler."
+        target_location:
+          - "Same package and same extension target as canonical; uses the `+DisplayName.swift` suffix per Swift's extension-per-feature file naming convention."
+          - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation role."
     specifics_tolerance:
       default_impl_must_be_in_protocols_own_package: true
     alternative_answers:
@@ -618,6 +698,26 @@ plants:
         - "_Plant_AverageProcessor"
         - "AudioProcessor"
         - "identical"
+      specifics_alternatives:
+        protocol:
+          - "AudioProcessor (existing PlayerHeaderView protocol)"
+          - "AudioProcessor (existing protocol in Shared/PlayerHeaderView)"
+        method:
+          - "reset() and setNormalizationMode(_:)"
+          - "setNormalizationMode and reset"
+        target_location:
+          - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor+Defaults.swift (extension on AudioProcessor)"
+          - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor+DefaultImpl.swift (extension on AudioProcessor)"
+      specifics_alternatives_rationale:
+        protocol:
+          - "Same existing AudioProcessor protocol in PlayerHeaderView; varies only the parenthetical phrasing of `already exists`."
+          - "Same existing AudioProcessor protocol; spells out the SPM target path in the parenthetical."
+        method:
+          - "Same two methods (setNormalizationMode and reset); reorders the conjunction per multiset equivalence."
+          - "Same two methods; drops the trailing parentheses convention used in the canonical."
+        target_location:
+          - "Same package and same extension target as canonical; uses the `+Defaults.swift` suffix to name the file after the default-impl role."
+          - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation pattern."
     specifics_tolerance:
       default_impl_must_be_in_protocols_own_package: true
       protocol_must_be_existing_AudioProcessor: true
@@ -664,6 +764,26 @@ plants:
         - "_Plant_Announcement"
         - "PlaylistEntry"
         - "identical"
+      specifics_alternatives:
+        protocol:
+          - "PlaylistEntry (existing Playlist protocol)"
+          - "PlaylistEntry (existing protocol in Shared/Playlist)"
+        method:
+          - "init(from: any Decoder) throws"
+          - "init(from decoder: Decoder) throws"
+        target_location:
+          - "Shared/Playlist/Sources/Playlist/PlaylistEntry+Decodable.swift (extension PlaylistEntry where Self: Decodable)"
+          - "Shared/Playlist/Sources/Playlist/PlaylistEntry+DefaultImpl.swift (extension PlaylistEntry where Self: Decodable)"
+      specifics_alternatives_rationale:
+        protocol:
+          - "Same existing PlaylistEntry protocol; varies the parenthetical phrasing of `already exists`."
+          - "Same existing PlaylistEntry protocol; spells out the SPM target path in the parenthetical."
+        method:
+          - "Same Decodable initializer signature; uses the unlabeled `from:` argument form (shorthand internal name) accepted equivalently by the Swift compiler."
+          - "Same Decodable initializer signature; drops the `any` keyword (pre-Swift 5.7 form, still accepted by the compiler with a warning)."
+        target_location:
+          - "Same package and same extension target as canonical; uses the `+Decodable.swift` suffix matching Swift's extension-per-conformance file naming convention."
+          - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation role."
     specifics_tolerance:
       default_impl_must_be_in_protocols_own_package: true
       protocol_must_be_existing_PlaylistEntry: true
@@ -747,6 +867,22 @@ plants:
         - "Image"
         - "UIImage"
         - "differ at"
+      specifics_alternatives:
+        new_protocol:
+          - "PlaycutArtworkContainer"
+          - "ArtworkBearingPlaycut"
+        associated_type:
+          - "ArtworkImage"
+          - "AlbumArt"
+          - "Image"
+      specifics_alternatives_rationale:
+        new_protocol:
+          - "Same new PAT over NowPlayingItem + PlaycutSelection with one type slot at the artwork field; names the protocol as a Container variant making the artwork-holding role explicit."
+          - "Same new PAT over the two structs differing at the artwork type slot; uses an `-ing` participle form naming the role."
+        associated_type:
+          - "Same artwork-shaped type slot; uses `ArtworkImage` to be explicit about both the role and the image kind."
+          - "Same artwork-shaped type slot; uses the domain term `AlbumArt` instead of the more abstract `Artwork`."
+          - "Same artwork-shaped type slot; uses the bare `Image` since both concrete types (SwiftUI.Image, UIImage) are image kinds."
     specifics_tolerance:
       associated_type_must_cover_the_artwork_slot: true
       type_slot_at_artwork_must_be_identified: true
@@ -793,6 +929,16 @@ plants:
         - "item"
         - "reload"
         - "differ at Item"
+      specifics_alternatives:
+        new_protocol:
+          - "AnyContainer"
+          - "GenericContainer"
+          - "ItemContainer"
+      specifics_alternatives_rationale:
+        new_protocol:
+          - "Same new PAT over _Plant_TrackContainer + _Plant_ShowContainer with one type slot at the item field; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
+          - "Same new PAT; uses the explicit `Generic` prefix instead of the canonical's bare `Container`."
+          - "Same new PAT; uses `ItemContainer` to name the protocol after the associated-type role."
     specifics_tolerance:
       associated_type_named_Item_or_synonym: true
       type_slot_at_item_must_be_identified: true
@@ -838,6 +984,16 @@ plants:
         - "_Plant_ReleaseRepository"
         - "resolve"
         - "differ at Entity"
+      specifics_alternatives:
+        new_protocol:
+          - "Repository"
+          - "Resolver"
+          - "AnyEntityResolver"
+      specifics_alternatives_rationale:
+        new_protocol:
+          - "Same new PAT over _Plant_ArtistRepository + _Plant_ReleaseRepository with one type slot at the entity field; names the protocol after the substrate's `Repository` naming pattern that the original types already use."
+          - "Same new PAT; shortens the canonical's `EntityResolver` to bare `Resolver` while preserving the resolve operation."
+          - "Same new PAT; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
     specifics_tolerance:
       associated_type_named_Entity_or_synonym: true
       type_slot_at_resolve_return_must_be_identified: true
@@ -882,6 +1038,22 @@ plants:
         - "_Plant_MetadataLoader"
         - "async throws"
         - "differ at"
+      specifics_alternatives:
+        new_protocol:
+          - "AsyncLoader"
+          - "AnyLoader"
+          - "DataLoader"
+        associated_type:
+          - "Value"
+          - "Result"
+      specifics_alternatives_rationale:
+        new_protocol:
+          - "Same new PAT over _Plant_CacheLoader + _Plant_MetadataLoader with one type slot at the output and matching async-throws effect specifiers; adds the `Async` prefix to name the protocol after the effect."
+          - "Same new PAT; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
+          - "Same new PAT; uses `DataLoader` to name the protocol after the data-loading role."
+        associated_type:
+          - "Same output-shaped type slot; uses the more general term `Value` instead of the canonical's `Output`."
+          - "Same output-shaped type slot; uses `Result` to emphasize the loaded-value role."
     specifics_tolerance:
       effect_specifiers_async_throws_must_be_preserved_in_PAT_signature: true
       associated_type_named_Output_or_synonym: true
@@ -1054,6 +1226,16 @@ plants:
         - "AsyncNotificationMessageSequence"
         - "differ at"
         - "M:"
+      specifics_alternatives:
+        new_name:
+          - "MessageSequence"
+          - "NotificationStream"
+          - "NotificationSequence"
+      specifics_alternatives_rationale:
+        new_name:
+          - "Same new generic struct over MainActorNotificationMessageSequence + AsyncNotificationMessageSequence parameterized over the protocol bound; drops `Notification` since the constraint already names it."
+          - "Same new generic struct; uses `Stream` instead of `Sequence` to emphasize the asynchronous-iteration role."
+          - "Same new generic struct; drops `Message` since the constraint type already implies it."
     specifics_tolerance:
       type_param_must_be_constrained_to_a_NotificationMessage_protocol: true
       unconstrained_M_acceptable_with_note: false
