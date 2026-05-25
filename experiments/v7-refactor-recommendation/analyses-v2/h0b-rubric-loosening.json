@@ -1,0 +1,824 @@
+{
+  "acceptance_metric": "overall_panel_route_rate_relative_drop_pct",
+  "acceptance_partial_floor_pct": 20.0,
+  "acceptance_threshold_pct": 50.0,
+  "addressable_panel_route_floor": {
+    "addressable_subset": 112,
+    "max_possible_relative_drop_pct_of_total": 94.1,
+    "other_routes_to_panel_count": 7,
+    "rationale": "Of the 119 v1-clean panel-routed rows, 7 are other_routes_to_panel (all on Plant 5.1's HSBColor cluster) and cannot be moved by H0b's loosening regardless of curation. The 112 primary_match_specifics_outside_tolerance rows are H0b's addressable subset. Maximum possible relative drop against the 119 total denominator is (119-7)/119 = 94.1%.",
+    "v1_clean_total_panel_routed": 119
+  },
+  "aggregate_alternative_usage": {
+    "alternatives_exercised_at_least_once": 4,
+    "alternatives_offered": 47,
+    "alternatives_unused": 43,
+    "interpretation": "47 alternatives offered across 14 plants and 24 (plant, key) pairs. 4 alternatives (8.5%) were exercised on at least one panel-routed row. 19 of the 112 addressable rows (17.0%) had at least one blessed-alternative hit on at least one required key, but 0 rows had ALL required keys matched (verbatim or via alternative) so 0 rows promoted to primary_match_specifics_blessed_alternative. The H0b mechanism partially fired at the key level but never fully fired at the row level: the curator-blessed alternatives for `protocol` keys (Plant 3.3 'AudioProcessor', Plant 3.4 'PlaylistEntry') matched recs that simultaneously emitted unblessed values on `method` and `target_location` keys.",
+    "panel_routed_rows_with_at_least_one_alt_hit": 19,
+    "panel_routed_rows_with_at_least_one_alt_hit_by_plant": {
+      "3.2": 3,
+      "3.3": 7,
+      "3.4": 6,
+      "4.1": 3
+    },
+    "plant_key_pairs_with_alternatives": 24,
+    "plants_with_alternatives": 14,
+    "rows_promoted_to_blessed_alternative_label": 0
+  },
+  "auto_scorer_ref": "experiments/v7-refactor-recommendation/auto-scorer.py",
+  "auto_scorer_sha256": "15a94b901cf524313505f127c4c03e8f239fafb085edc4dc31a1b2fd9319c850",
+  "canonical_recall": {
+    "by_condition": {
+      "s1": {
+        "abs_delta": 0.0,
+        "rubric_loose": 0.06999999999999999,
+        "v1_clean": 0.06999999999999999
+      },
+      "s2": {
+        "abs_delta": 0.0,
+        "rubric_loose": 0.10999999999999999,
+        "v1_clean": 0.10999999999999999
+      }
+    },
+    "panel_pending_caveat": "Auto-scored only; #94 panel finalization not yet complete. Headline numbers update once panel scores are promoted via score_all.py::promote_panel_scores. Sub-experiment outcome (H0b) is decided on panel-route rate (invariant under panel completion per plan \u00a73.8), not on canonical_recall."
+  },
+  "context": {
+    "model_alias": "claude-sonnet-4-6",
+    "panel_completion_caveat": "#85 / #94 panel finalization is parallel work; H0b's decision uses panel-route rate (auto-scorer match-label classification), which is invariant under panel completion per plan \u00a73.8.",
+    "rubric_loose_rerun": {
+      "analyses_dir": "experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose",
+      "api_spend_usd": 0,
+      "rationale": "Deterministic auto-scorer rerun against the v1-clean parsed cache after PR 3 landed the specifics_alternatives fall-through path. The score-summary.json SHA-256 is byte-identical to v1-clean's (both 8564e28fd6e2fb1f11f3a851c1efd0c4bdab00716b20b106a0f79bb3ebe7bc68) because no rows promoted; the auto-scores.json and panel-routing.jsonl SHA-256s differ only in dry-run fixture / per-row notes content (no routing-decision changes).",
+      "run_date": "2026-05-25"
+    },
+    "v1_clean_corpus": {
+      "rationale": "Re-control of v1 prompt against the regenerated substrate from round-3 (see analyses-v2/prompt-sensitivity.json::context). H0b reuses this v1-clean parsed cache; no new agent calls.",
+      "trial_logs_dir": "experiments/v7-refactor-recommendation/trial-logs-v1-clean"
+    }
+  },
+  "decision_tree": {
+    "addressable_relative_drop_pct": 0.0,
+    "headline_relative_drop_pct": 0.0,
+    "outcome": "H0b not supported",
+    "rationale": "Overall panel-route rate did not change between v1-clean (119/522 = 22.80%) and v1-clean-rubric-loose (119/522 = 22.80%): 0.0% relative drop. Per plan \u00a73.7 decision tree, drop < 20% \u2192 H0b not supported. Panel-route load is not primarily about lexically-different-but-structurally-equivalent identifiers within the pre-blessed alternatives the curator declared; the round-3 H0a reading stands as the dominant explanation. Per-key telemetry shows 4 of 47 alternatives (8.5%) were exercised on at least one row but no row had ALL required keys matched (verbatim or via alternative) so 0 rows promoted; the limiting factor was always at least one un-blessed key on each row that came close.",
+    "threshold_band": "drop < 20% relative"
+  },
+  "generated_at": "2026-05-25T15:45:04+00:00",
+  "manifest_ref": "experiments/v7-refactor-recommendation/plant-manifest.yaml",
+  "manifest_sha256": "2718f146d5c1153935051615b20c85f4a8d4ecd80c20e8a7281ef7884f203a54",
+  "panel_route_rate": {
+    "addressable_only": {
+      "addressable_abs_delta_pp": 0.0,
+      "addressable_promoted_to_blessed_alternative": 0,
+      "addressable_rel_delta_pct": 0.0,
+      "definition": "Restricted to v1-clean panel-routed rows with match_reason == primary_match_specifics_outside_tolerance (the subset H0b's mechanism can mechanically move). 0 of 112 promoted to primary_match_specifics_blessed_alternative.",
+      "rubric_loose_addressable_remaining": 112,
+      "v1_clean_addressable": 112
+    },
+    "by_category_overall": {
+      "default-implementation": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.3006535947712418,
+          "n_panel": 46,
+          "n_planted": 153,
+          "pct": 30.065359477124183
+        },
+        "v1_clean": {
+          "fraction": 0.3006535947712418,
+          "n_panel": 46,
+          "n_planted": 153,
+          "pct": 30.065359477124183
+        }
+      },
+      "extract-to-common": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.18518518518518517,
+          "n_panel": 15,
+          "n_planted": 81,
+          "pct": 18.51851851851852
+        },
+        "v1_clean": {
+          "fraction": 0.18518518518518517,
+          "n_panel": 15,
+          "n_planted": 81,
+          "pct": 18.51851851851852
+        }
+      },
+      "generic-parameterization": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.38333333333333336,
+          "n_panel": 23,
+          "n_planted": 60,
+          "pct": 38.333333333333336
+        },
+        "v1_clean": {
+          "fraction": 0.38333333333333336,
+          "n_panel": 23,
+          "n_planted": 60,
+          "pct": 38.333333333333336
+        }
+      },
+      "pat-introduction": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.11965811965811966,
+          "n_panel": 14,
+          "n_planted": 117,
+          "pct": 11.965811965811966
+        },
+        "v1_clean": {
+          "fraction": 0.11965811965811966,
+          "n_panel": 14,
+          "n_planted": 117,
+          "pct": 11.965811965811966
+        }
+      },
+      "protocol-inheritance": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.1891891891891892,
+          "n_panel": 21,
+          "n_planted": 111,
+          "pct": 18.91891891891892
+        },
+        "v1_clean": {
+          "fraction": 0.1891891891891892,
+          "n_panel": 21,
+          "n_planted": 111,
+          "pct": 18.91891891891892
+        }
+      }
+    },
+    "by_condition": {
+      "s1": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.14583333333333334,
+          "n_panel": 28,
+          "n_planted": 192,
+          "pct": 14.583333333333334
+        },
+        "v1_clean": {
+          "fraction": 0.14583333333333334,
+          "n_panel": 28,
+          "n_planted": 192,
+          "pct": 14.583333333333334
+        }
+      },
+      "s2": {
+        "abs_delta_pp": 0.0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.27575757575757576,
+          "n_panel": 91,
+          "n_planted": 330,
+          "pct": 27.575757575757574
+        },
+        "v1_clean": {
+          "fraction": 0.27575757575757576,
+          "n_panel": 91,
+          "n_planted": 330,
+          "pct": 27.575757575757574
+        }
+      }
+    },
+    "by_condition_by_category": {
+      "s1": {
+        "default-implementation": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.22727272727272727,
+            "n_panel": 15,
+            "n_planted": 66,
+            "pct": 22.727272727272727
+          },
+          "v1_clean": {
+            "fraction": 0.22727272727272727,
+            "n_panel": 15,
+            "n_planted": 66,
+            "pct": 22.727272727272727
+          }
+        },
+        "extract-to-common": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.15384615384615385,
+            "n_panel": 6,
+            "n_planted": 39,
+            "pct": 15.384615384615385
+          },
+          "v1_clean": {
+            "fraction": 0.15384615384615385,
+            "n_panel": 6,
+            "n_planted": 39,
+            "pct": 15.384615384615385
+          }
+        },
+        "generic-parameterization": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.3888888888888889,
+            "n_panel": 7,
+            "n_planted": 18,
+            "pct": 38.88888888888889
+          },
+          "v1_clean": {
+            "fraction": 0.3888888888888889,
+            "n_panel": 7,
+            "n_planted": 18,
+            "pct": 38.88888888888889
+          }
+        },
+        "pat-introduction": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0,
+          "rubric_loose": {
+            "fraction": 0.0,
+            "n_panel": 0,
+            "n_planted": 48,
+            "pct": 0.0
+          },
+          "v1_clean": {
+            "fraction": 0.0,
+            "n_panel": 0,
+            "n_planted": 48,
+            "pct": 0.0
+          }
+        },
+        "protocol-inheritance": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0,
+          "rubric_loose": {
+            "fraction": 0.0,
+            "n_panel": 0,
+            "n_planted": 21,
+            "pct": 0.0
+          },
+          "v1_clean": {
+            "fraction": 0.0,
+            "n_panel": 0,
+            "n_planted": 21,
+            "pct": 0.0
+          }
+        }
+      },
+      "s2": {
+        "default-implementation": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.3563218390804598,
+            "n_panel": 31,
+            "n_planted": 87,
+            "pct": 35.63218390804598
+          },
+          "v1_clean": {
+            "fraction": 0.3563218390804598,
+            "n_panel": 31,
+            "n_planted": 87,
+            "pct": 35.63218390804598
+          }
+        },
+        "extract-to-common": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.21428571428571427,
+            "n_panel": 9,
+            "n_planted": 42,
+            "pct": 21.428571428571427
+          },
+          "v1_clean": {
+            "fraction": 0.21428571428571427,
+            "n_panel": 9,
+            "n_planted": 42,
+            "pct": 21.428571428571427
+          }
+        },
+        "generic-parameterization": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.38095238095238093,
+            "n_panel": 16,
+            "n_planted": 42,
+            "pct": 38.095238095238095
+          },
+          "v1_clean": {
+            "fraction": 0.38095238095238093,
+            "n_panel": 16,
+            "n_planted": 42,
+            "pct": 38.095238095238095
+          }
+        },
+        "pat-introduction": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.2028985507246377,
+            "n_panel": 14,
+            "n_planted": 69,
+            "pct": 20.28985507246377
+          },
+          "v1_clean": {
+            "fraction": 0.2028985507246377,
+            "n_panel": 14,
+            "n_planted": 69,
+            "pct": 20.28985507246377
+          }
+        },
+        "protocol-inheritance": {
+          "abs_delta_pp": 0.0,
+          "rel_delta_pct": 0.0,
+          "rubric_loose": {
+            "fraction": 0.23333333333333334,
+            "n_panel": 21,
+            "n_planted": 90,
+            "pct": 23.333333333333332
+          },
+          "v1_clean": {
+            "fraction": 0.23333333333333334,
+            "n_panel": 21,
+            "n_planted": 90,
+            "pct": 23.333333333333332
+          }
+        }
+      }
+    },
+    "by_plant": {
+      "1.1": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 1.0,
+          "n_panel": 15,
+          "n_planted": 15,
+          "pct": 100.0
+        },
+        "v1_clean": {
+          "fraction": 1.0,
+          "n_panel": 15,
+          "n_planted": 15,
+          "pct": 100.0
+        }
+      },
+      "2.1": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.20833333333333334,
+          "n_panel": 5,
+          "n_planted": 24,
+          "pct": 20.833333333333336
+        },
+        "v1_clean": {
+          "fraction": 0.20833333333333334,
+          "n_panel": 5,
+          "n_planted": 24,
+          "pct": 20.833333333333336
+        }
+      },
+      "2.2": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.25,
+          "n_panel": 3,
+          "n_planted": 12,
+          "pct": 25.0
+        },
+        "v1_clean": {
+          "fraction": 0.25,
+          "n_panel": 3,
+          "n_planted": 12,
+          "pct": 25.0
+        }
+      },
+      "2.3": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.1794871794871795,
+          "n_panel": 7,
+          "n_planted": 39,
+          "pct": 17.94871794871795
+        },
+        "v1_clean": {
+          "fraction": 0.1794871794871795,
+          "n_panel": 7,
+          "n_planted": 39,
+          "pct": 17.94871794871795
+        }
+      },
+      "2.4": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.2,
+          "n_panel": 6,
+          "n_planted": 30,
+          "pct": 20.0
+        },
+        "v1_clean": {
+          "fraction": 0.2,
+          "n_panel": 6,
+          "n_planted": 30,
+          "pct": 20.0
+        }
+      },
+      "3.1": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.1111111111111111,
+          "n_panel": 1,
+          "n_planted": 9,
+          "pct": 11.11111111111111
+        },
+        "v1_clean": {
+          "fraction": 0.1111111111111111,
+          "n_panel": 1,
+          "n_planted": 9,
+          "pct": 11.11111111111111
+        }
+      },
+      "3.2": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 3,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.6666666666666666,
+          "n_panel": 12,
+          "n_planted": 18,
+          "pct": 66.66666666666666
+        },
+        "v1_clean": {
+          "fraction": 0.6666666666666666,
+          "n_panel": 12,
+          "n_planted": 18,
+          "pct": 66.66666666666666
+        }
+      },
+      "3.3": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 7,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 1.0,
+          "n_panel": 18,
+          "n_planted": 18,
+          "pct": 100.0
+        },
+        "v1_clean": {
+          "fraction": 1.0,
+          "n_panel": 18,
+          "n_planted": 18,
+          "pct": 100.0
+        }
+      },
+      "3.4": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 6,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.16666666666666666,
+          "n_panel": 15,
+          "n_planted": 90,
+          "pct": 16.666666666666664
+        },
+        "v1_clean": {
+          "fraction": 0.16666666666666666,
+          "n_panel": 15,
+          "n_planted": 90,
+          "pct": 16.666666666666664
+        }
+      },
+      "4.1": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 3,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.07142857142857142,
+          "n_panel": 3,
+          "n_planted": 42,
+          "pct": 7.142857142857142
+        },
+        "v1_clean": {
+          "fraction": 0.07142857142857142,
+          "n_panel": 3,
+          "n_planted": 42,
+          "pct": 7.142857142857142
+        }
+      },
+      "4.2": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.2777777777777778,
+          "n_panel": 5,
+          "n_planted": 18,
+          "pct": 27.77777777777778
+        },
+        "v1_clean": {
+          "fraction": 0.2777777777777778,
+          "n_panel": 5,
+          "n_planted": 18,
+          "pct": 27.77777777777778
+        }
+      },
+      "4.3": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.5,
+          "n_panel": 3,
+          "n_planted": 6,
+          "pct": 50.0
+        },
+        "v1_clean": {
+          "fraction": 0.5,
+          "n_panel": 3,
+          "n_planted": 6,
+          "pct": 50.0
+        }
+      },
+      "4.4": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.3333333333333333,
+          "n_panel": 3,
+          "n_planted": 9,
+          "pct": 33.33333333333333
+        },
+        "v1_clean": {
+          "fraction": 0.3333333333333333,
+          "n_panel": 3,
+          "n_planted": 9,
+          "pct": 33.33333333333333
+        }
+      },
+      "5.1": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": false,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.7777777777777778,
+          "n_panel": 7,
+          "n_planted": 9,
+          "pct": 77.77777777777779
+        },
+        "v1_clean": {
+          "fraction": 0.7777777777777778,
+          "n_panel": 7,
+          "n_planted": 9,
+          "pct": 77.77777777777779
+        }
+      },
+      "5.2": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": false,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 1.0,
+          "n_panel": 9,
+          "n_planted": 9,
+          "pct": 100.0
+        },
+        "v1_clean": {
+          "fraction": 1.0,
+          "n_panel": 9,
+          "n_planted": 9,
+          "pct": 100.0
+        }
+      },
+      "5.3": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": true,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.4444444444444444,
+          "n_panel": 4,
+          "n_planted": 9,
+          "pct": 44.44444444444444
+        },
+        "v1_clean": {
+          "fraction": 0.4444444444444444,
+          "n_panel": 4,
+          "n_planted": 9,
+          "pct": 44.44444444444444
+        }
+      },
+      "5.4": {
+        "abs_delta_pp": 0.0,
+        "has_alternatives": false,
+        "has_at_least_one_alt_hit_panel_routed": 0,
+        "rel_delta_pct": 0.0,
+        "rubric_loose": {
+          "fraction": 0.5,
+          "n_panel": 3,
+          "n_planted": 6,
+          "pct": 50.0
+        },
+        "v1_clean": {
+          "fraction": 0.5,
+          "n_panel": 3,
+          "n_planted": 6,
+          "pct": 50.0
+        }
+      }
+    },
+    "definition": "Numerator: entries in score_all.py's `panel_routed` array per condition (from `unblind.condition`). Denominator: per-trial `scored` entries per condition. Matches score-summary.json::panel_route_rate.",
+    "overall": {
+      "abs_delta_pp": 0.0,
+      "rel_delta_pct": 0.0,
+      "rubric_loose": {
+        "fraction": 0.22796934865900384,
+        "n_panel": 119,
+        "n_planted": 522,
+        "pct": 22.796934865900383
+      },
+      "v1_clean": {
+        "fraction": 0.22796934865900384,
+        "n_panel": 119,
+        "n_planted": 522,
+        "pct": 22.796934865900383
+      }
+    }
+  },
+  "per_category_anomaly_handling": {
+    "applicable": false,
+    "rationale": "Plan \u00a73.7 per-category anomaly handling triggers when overall drop \u2265 50% but \u2265 1 category shows flat or increased rate. With overall drop = 0.0%, all categories are flat by construction; no anomaly to surface."
+  },
+  "per_key_alternative_usage": {
+    "1.1": {
+      "target_package": [
+        0,
+        0
+      ],
+      "type_name": [
+        0,
+        0
+      ]
+    },
+    "2.1": {
+      "parent": [
+        0,
+        0
+      ]
+    },
+    "2.2": {
+      "parent": [
+        0,
+        0
+      ]
+    },
+    "2.3": {
+      "parent": [
+        0,
+        0
+      ]
+    },
+    "2.4": {
+      "parent": [
+        0,
+        0
+      ]
+    },
+    "3.1": {
+      "protocol": [
+        0,
+        0
+      ],
+      "target_location": [
+        0,
+        0
+      ]
+    },
+    "3.2": {
+      "method": [
+        3,
+        0
+      ],
+      "protocol": [
+        0,
+        0,
+        0
+      ],
+      "target_location": [
+        0,
+        0
+      ]
+    },
+    "3.3": {
+      "method": [
+        0,
+        0
+      ],
+      "protocol": [
+        7
+      ],
+      "target_location": [
+        0,
+        0
+      ]
+    },
+    "3.4": {
+      "method": [
+        0,
+        0
+      ],
+      "protocol": [
+        6
+      ],
+      "target_location": [
+        0,
+        0
+      ]
+    },
+    "4.1": {
+      "associated_type": [
+        3,
+        0
+      ],
+      "new_protocol": [
+        0,
+        0
+      ]
+    },
+    "4.2": {
+      "new_protocol": [
+        0,
+        0
+      ]
+    },
+    "4.3": {
+      "new_protocol": [
+        0,
+        0
+      ]
+    },
+    "4.4": {
+      "associated_type": [
+        0
+      ],
+      "new_protocol": [
+        0,
+        0
+      ]
+    },
+    "5.3": {
+      "new_name": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "per_key_alternative_usage_definition": "Per plan \u00a73.6 step 5: per plant, per key, a list of integers of length len(specifics_alternatives[plant_id][key]) recording how many panel-routed recs emitted each blessed alternative value (zero-padded). Alternatives are indexed in the order they appear in plant-manifest.yaml. Counts are computed over the rubric-loose panel-routing.jsonl rows; auto-scored primary_match_full rows by definition matched all keys verbatim and do not exercise alternatives.",
+  "plan_permalink": "https://github.com/jakebromberg/code-audit-pipeline/blob/03277b184f1dc8e297064d2399f10e066ce034c6/plans/v7-h0b-rubric-loosening-plan.md",
+  "plan_ref": "plans/v7-h0b-rubric-loosening-plan.md",
+  "plan_sha256": "c7b12f05e03b81b0e7570ef8f11112564ae746d306f5d30537b4c1eb3aff6826",
+  "rubric_loose_ref": "experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose/score-summary.json",
+  "rubric_modifications_entry": "Round 4 \u2014 H0b rubric loosening (2026-05-21)",
+  "rubric_modifications_ref": "experiments/v7-refactor-recommendation/rubric-modifications.md",
+  "schema_version": "v7-h0b-rubric-loosening-2026-05-25",
+  "v1_clean_ref": "experiments/v7-refactor-recommendation/analyses-v1-clean/score-summary.json"
+}

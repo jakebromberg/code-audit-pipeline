@@ -249,15 +249,129 @@ The v2 prompt is pinned at SHA-256 `22f53bfa1f5c8b27671c1b26c052c5e138a923905ae7
 
 Defined terms: see [`glossary.md`](glossary.md) for the consolidated glossary covering Conditions/Substrate (S1/S2/V6/V7/cluster/rec/trial), Plants (canonical, restraint, Plant 1R, DebugHUD.swift, HSBColor), Metrics (canonical_recall, FPR/1−FPR, panel-route rate, auto-scoring rate, Fleiss κ), Binding rules and `specifics_tolerance` semantics, all 13 auto-scorer match labels, Rounds and phases, code references, and Issue/PR references.
 
+## 11. Rubric-loosening sub-experiment (round 4) — H0b not supported
+
+Round-4 sub-experiment per [`plans/v7-h0b-rubric-loosening-plan.md`](../../plans/v7-h0b-rubric-loosening-plan.md), pre-registered in the [`rubric-modifications.md` round-4 entry](rubric-modifications.md#round-4--h0b-rubric-loosening-2026-05-21), tests [H0b](#101-hypotheses-tested) — rubric over-strictness as a residual explanation for the [§10.4](#104-headline-panel-route-delta) panel-route load that [round-3's H0a outcome](#10-prompt-sensitivity-sub-experiment-round-3--h0a-supported) left in place. The experimental arm holds the prompt, manifest canonical values, model alias, and model parameters all fixed; only the rubric changes. The auto-scorer gains a per-(plant, key) `specifics_alternatives` fall-through: after the verbatim check fails on a key, it re-checks structurally against up to three pre-blessed alternative values declared in the manifest; on match, the row is labeled [`primary_match_specifics_blessed_alternative`](glossary.md#glossary-primary-match-specifics-blessed-alternative) (scores 1.0, NOT panel-routed). The curation pass declared 47 alternatives across 14 plants and 24 (plant, key) pairs under the three pre-registered criteria (structural equivalence, type-shape equivalence, curation-time blindness to agent outputs); the auto-scorer rerun against the existing [`trial-logs-v1-clean/`](trial-logs-v1-clean/) parsed cache (zero new agent calls, $0 API spend) produced the [`analyses-v1-clean-rubric-loose/`](analyses-v1-clean-rubric-loose/) sibling directory. Full design, decision tree, acceptance criteria, and addressable-row floor in the plan; the formal v1-clean vs v1-clean-rubric-loose delta matrix lives in [`analyses-v2/h0b-rubric-loosening.json`](analyses-v2/h0b-rubric-loosening.json).
+
+### 11.1 Hypothesis tested
+
+Re-stating [H0b](#101-hypotheses-tested) from [§10.1](#101-hypotheses-tested) for §11 to read cold:
+
+- **H0b — rubric over-strictness**: round-2's panel-route load is dominated by lexically-different-but-structurally-equivalent identifier mismatches. Admitting pre-blessed alternatives in the auto-scorer should drop the panel-route rate by ≥ 50% relative, without changing the agent's behavior.
+
+H1 (prompt vagueness) was tested in round 3 and not supported; H0a (model capability ceiling) was supported in round 3. H0b is observationally compatible with both: if supported, it would refine the round-3 H0a finding by bounding the true capability-ceiling contribution; if not supported, it leaves the H0a reading intact.
+
+### 11.2 Headline panel-route delta — two denominators
+
+`v1-clean-rubric-loose − v1-clean`, from [`analyses-v2/h0b-rubric-loosening.json`](analyses-v2/h0b-rubric-loosening.json):
+
+| Denominator | v1-clean panel-route | v1-clean-rubric-loose panel-route | Absolute Δ | Relative Δ |
+|---|---|---|---|---|
+| **Full** (119 total v1-clean panel-routed; §3.7 threshold denominator) | 22.80% (119/522) | 22.80% (119/522) | 0.00pp | **0.00%** |
+| **Addressable** (112 `primary_match_specifics_outside_tolerance` rows H0b's mechanism can mechanically move) | 21.46% (112/522) | 21.46% (112/522) | 0.00pp | **0.00%** |
+
+Per-condition (full denominator):
+
+| Condition | v1-clean | v1-clean-rubric-loose | Absolute Δ | Relative Δ |
+|---|---|---|---|---|
+| S1 | 14.58% (28/192) | 14.58% (28/192) | 0.00pp | 0.00% |
+| S2 | 27.58% (91/330) | 27.58% (91/330) | 0.00pp | 0.00% |
+
+Both denominator readings travel together per the [plan §4](../../plans/v7-h0b-rubric-loosening-plan.md#4-pre-registration) pre-registration commitment, so the headline cannot be selected post-hoc. The addressable denominator is reported even when its value is identical to the full denominator's, to document the report shape required by plan §3.7. Per [plan §3.7](../../plans/v7-h0b-rubric-loosening-plan.md#37-decision-tree) decision tree, drop < 20% → **H0b not supported**. The auto-scorer's rubric-loosening did not move the panel-route load: zero rows promoted to `primary_match_specifics_blessed_alternative` across the 522 scored pairs and 47 curated alternatives.
+
+### 11.3 Per-category panel-route delta
+
+S1+S2 combined; denominators are *scored pairs* per category (same as [§10.5](#105-per-category-panel-route-delta)):
+
+| Category | v1-clean | v1-clean-rubric-loose | Absolute Δ | Relative Δ |
+|---|---|---|---|---|
+| default-implementation | 30.07% (46/153) | 30.07% (46/153) | 0.00pp | 0.00% |
+| protocol-inheritance | 18.92% (21/111) | 18.92% (21/111) | 0.00pp | 0.00% |
+| generic-parameterization | 38.33% (23/60) | 38.33% (23/60) | 0.00pp | 0.00% |
+| extract-to-common | 18.52% (15/81) | 18.52% (15/81) | 0.00pp | 0.00% |
+| pat-introduction | 11.97% (14/117) | 11.97% (14/117) | 0.00pp | 0.00% |
+
+All five categories flat. [Plan §3.7](../../plans/v7-h0b-rubric-loosening-plan.md#37-decision-tree) per-category anomaly handling (overall drop ≥ 50% with one category flat or increasing) does NOT trigger — the trigger condition requires an overall drop ≥ 50%, and the actual overall drop is 0.0%.
+
+### 11.4 Per-plant panel-route delta
+
+All 17 panel-routed plants, panel-route count per plant:
+
+| Plant | Category | v1-clean | v1-clean-rubric-loose | Has alternatives? | Rows with ≥1 alt hit |
+|---|---|---|---|---|---|
+| 1.1 | extract-to-common | 15 | 15 | yes (2 keys) | 0 |
+| 2.1 | protocol-inheritance | 5 | 5 | yes (1 key) | 0 |
+| 2.2 | protocol-inheritance | 3 | 3 | yes (1 key) | 0 |
+| 2.3 | protocol-inheritance | 7 | 7 | yes (1 key) | 0 |
+| 2.4 | protocol-inheritance | 6 | 6 | yes (1 key) | 0 |
+| 3.1 | default-implementation | 1 | 1 | yes (2 keys) | 0 |
+| 3.2 | default-implementation | 12 | 12 | yes (3 keys) | 3 |
+| 3.3 | default-implementation | 18 | 18 | yes (3 keys) | 7 |
+| 3.4 | default-implementation | 15 | 15 | yes (3 keys) | 6 |
+| 4.1 | pat-introduction | 3 | 3 | yes (2 keys) | 3 |
+| 4.2 | pat-introduction | 5 | 5 | yes (1 key) | 0 |
+| 4.3 | pat-introduction | 3 | 3 | yes (1 key) | 0 |
+| 4.4 | pat-introduction | 3 | 3 | yes (2 keys) | 0 |
+| 5.1 | generic-parameterization | 7 | 7 | no (other_routes_to_panel only) | n/a |
+| 5.2 | generic-parameterization | 9 | 9 | no | 0 |
+| 5.3 | generic-parameterization | 4 | 4 | yes (1 key) | 0 |
+| 5.4 | generic-parameterization | 3 | 3 | no | 0 |
+
+No plant moved. The 19 panel-routed rows with at least one blessed-alternative hit on at least one key cluster on four plants — 3.2 (3), 3.3 (7), 3.4 (6), 4.1 (3) — but none of those rows promoted because at least one other required key on each row diverged from both the canonical and the blessed alternatives. See [§11.5](#115-per-key-alternative-usage) for the per-key telemetry.
+
+### 11.5 Per-key alternative usage
+
+Per [plan §3.6 step 5](../../plans/v7-h0b-rubric-loosening-plan.md#36-pre-registered-analysis) the auto-scorer rerun emits per-key usage telemetry computed over the 119 panel-routed rows in [`analyses-v1-clean-rubric-loose/panel-routing.jsonl`](analyses-v1-clean-rubric-loose/panel-routing.jsonl). Full per-key table in [`analyses-v2/h0b-rubric-loosening.json::per_key_alternative_usage`](analyses-v2/h0b-rubric-loosening.json); aggregate summary:
+
+| Aggregate | Value |
+|---|---|
+| Plants with `specifics_alternatives` | 14 |
+| (Plant, key) pairs with alternatives | 24 |
+| Alternatives offered (total list length, ≤ 3 per (plant, key)) | 47 |
+| Alternatives exercised at least once on a panel-routed row | 4 (8.5%) |
+| Panel-routed rows with ≥ 1 alternative hit on ≥ 1 key | 19 of 112 addressable (17.0%) |
+| Rows promoted to `primary_match_specifics_blessed_alternative` | 0 |
+
+The four exercised alternatives were: Plant 3.2 `method` alt `var displayName: String { get }` (3 hits), Plant 3.3 `protocol` alt `AudioProcessor` (7 hits), Plant 3.4 `protocol` alt `PlaylistEntry` (6 hits), Plant 4.1 `associated_type` alt `ArtworkImage` (3 hits). The 43 unused alternatives covered keys where no agent rec on the corresponding plant emitted the blessed string verbatim. Empirically the cap of 3 alternatives per (plant, key) was not the binding constraint — most plants used 1–2 of their 3 slots, and no slot reached saturation. A follow-up sub-experiment with a higher cap would not have moved the headline; the limiting factor was not slot scarcity but mismatch on *other* required keys, as [§11.7](#117-interpretation) discusses.
+
+### 11.6 Headline canonical-recall delta
+
+Auto-scored only; panel-pending — see caveat below:
+
+| Condition | v1-clean canonical_recall | v1-clean-rubric-loose canonical_recall | Absolute Δ |
+|---|---|---|---|
+| S1 | 0.070 | 0.070 | 0.000 |
+| S2 | 0.110 | 0.110 | 0.000 |
+
+Both deltas are exactly zero — no row promoted from panel-routed to auto-scored under the loosened rubric, so no panel-pending row converted to an auto-1.0. The H0b decision rests on panel-route rate per [plan §3.8](../../plans/v7-h0b-rubric-loosening-plan.md#38-baseline-invariance-to-panel-completion)'s baseline-invariance argument: panel-route rate is determined purely by the auto-scorer's match-label classification and is invariant under panel-scoring completion ([#85](https://github.com/jakebromberg/code-audit-pipeline/issues/85), [#94](https://github.com/jakebromberg/code-audit-pipeline/issues/94)). Once #94 finalizes, the canonical_recall numbers in this table update via [`promote_panel_scores`](glossary.md#glossary-code-references); the H0b outcome does not change.
+
+### 11.7 Interpretation
+
+Two readings are worth separating. The first is the headline: the H0b mechanism did not bound the panel-route load under the curator's pre-blessed alternatives. The 0.0% relative drop is well below the 20% partial-support floor; round-3's H0a reading stands as the dominant explanation for the round-2 panel-route load. The auto-scorer change is correct (verified by [§11.8](#118-reproducibility)'s regression tests and the byte-identical `score-summary.json` SHA-256 across the two arms); the curation pass is correct (47 alternatives, all rationale-validated against the three pre-registered criteria); the null result is empirical, not methodological.
+
+The second is the per-key telemetry. 4 of 47 alternatives (8.5%) WERE exercised on at least one panel-routed row, and 19 of 112 addressable rows (17.0%) had at least one blessed-alternative hit on at least one required key. But no row had ALL required keys matched (verbatim or via alternative), so 0 rows promoted to [`primary_match_specifics_blessed_alternative`](glossary.md#glossary-primary-match-specifics-blessed-alternative). The pattern is that the curator-blessed protocol alternatives (Plant 3.3 `AudioProcessor`, Plant 3.4 `PlaylistEntry`) matched recs that simultaneously emitted unblessed values on `method` and `target_location` keys — for example, Plant 3.3 panel-routed rows where the agent named the protocol correctly (`AudioProcessor`) but listed `method='reset()'` (canonical: `setNormalizationMode(_:) and reset()`; blessed alternatives: `reset() and setNormalizationMode(_:)` and `setNormalizationMode and reset`). The blessed-alternative path is per-key but the auto-scorer's match-label decision is per-row; partial per-key hits cannot promote the row.
+
+This rejects the H0b reading at scale but is informative for follow-up design. The curator's per-key bessing was well-targeted on `protocol` keys (where the agent's lexical variants were predictable), but not on `method` and `target_location` keys (where the agent emits a wider spread of phrasings that the curator could not anticipate under criterion (c) curation-time blindness). A follow-up sub-experiment narrowing the auto-scorer to a per-key fuzzy-match (Jaccard similarity or token-edit-distance ≤ k) on `method` and `target_location` would test whether the residual panel-route load is dominated by within-key phrasing variance rather than between-key identifier mismatches. That would be a separate pre-registration; the current H0b sub-experiment closes with H0b not supported under pre-blessed alternative matching specifically.
+
+The round-3 H0a finding is not refined by this result: the model-capability ceiling reading remains the dominant explanation for the v1-clean panel-route load. The headline panel-route load is real, the v2 prompt did not move it, and the curator-blessed alternatives did not move it either; the per-category heterogeneity from [§10.5](#105-per-category-panel-route-delta) (default-implementation, protocol-inheritance, generic-parameterization showing partial sensitivity to v2; extract-to-common flat; pat-introduction increasing under v2) does not extend to a different signal under H0b — all five categories remain flat in §11.3.
+
+### 11.8 Reproducibility
+
+The plan is pinned at SHA-256 `c7b12f05e03b81b0e7570ef8f11112564ae746d306f5d30537b4c1eb3aff6826` and at the [merged-SHA permalink](https://github.com/jakebromberg/code-audit-pipeline/blob/03277b184f1dc8e297064d2399f10e066ce034c6/plans/v7-h0b-rubric-loosening-plan.md); the auto-scorer at SHA-256 `15a94b901cf524313505f127c4c03e8f239fafb085edc4dc31a1b2fd9319c850`; the manifest (post-curation) at SHA-256 `2718f146d5c1153935051615b20c85f4a8d4ecd80c20e8a7281ef7884f203a54`. Pre-registered parameters (acceptance threshold, decision tree, addressable-row floor, two-denominator reporting commitment, 17-plant curation scope, 3-alternative cap, three-criteria curation rule) were frozen by [PR 1](https://github.com/jakebromberg/code-audit-pipeline/pull/110) merge before any auto-scorer change landed, per the [`rubric-modifications.md` round-4 entry](rubric-modifications.md#round-4--h0b-rubric-loosening-2026-05-21). Two-path regression tests in [`test_score_all.py::BlessedAlternativesSpecificsTests`](test_score_all.py) cover both the existing `primary_match_full` path and the new `primary_match_specifics_blessed_alternative` path per [plan §3.4](../../plans/v7-h0b-rubric-loosening-plan.md#34-auto-scorer-change). Re-running [`score_all.py`](score_all.py) against [`trial-logs-v1-clean/`](trial-logs-v1-clean/) regenerates [`analyses-v1-clean-rubric-loose/`](analyses-v1-clean-rubric-loose/) byte-for-byte (verified: the resulting `score-summary.json` is byte-identical between v1-clean and v1-clean-rubric-loose because no rows promoted). The full per-condition × per-category × per-plant × per-key delta matrix lives in [`analyses-v2/h0b-rubric-loosening.json`](analyses-v2/h0b-rubric-loosening.json); the round-4 [`rubric-modifications.md` entry](rubric-modifications.md#round-4--h0b-rubric-loosening-2026-05-21) carries the matched outcome record. The sub-experiment outcome lands in [`reproducibility.yaml`](reproducibility.yaml) at `execution.h0b_sub_experiment.sub_experiment_outcome = "H0b not supported"`.
+
+Total sub-experiment spend: $0 (deterministic auto-scorer rerun against the existing v1-clean parsed cache; zero new agent calls per [plan §3.5](../../plans/v7-h0b-rubric-loosening-plan.md#35-rerun-zero-new-agent-calls)).
+
 ## See also
 
 - [`analyses/substrate-helped.json`](analyses/substrate-helped.json), [`analyses/plant-recall-extended.json`](analyses/plant-recall-extended.json) — PR-E2 outputs that this writeup quotes
 - [`analyses/auto-scores.json`](analyses/auto-scores.json), [`analyses/score-summary.json`](analyses/score-summary.json), [`analyses/panel-routing.jsonl`](analyses/panel-routing.jsonl) — PR-E3 outputs
 - [`analyses-v1-clean/`](analyses-v1-clean/) — round-3 v1 re-control arm against the regenerated substrate ([PR #102](https://github.com/jakebromberg/code-audit-pipeline/pull/102))
-- [`analyses-v2/`](analyses-v2/) — round-3 v2 experimental arm; `prompt-sensitivity.json` carries the formal v1-vs-v2 delta matrix; `drift-check.json` carries the pre-rerun alias-stability sample ([PR #100](https://github.com/jakebromberg/code-audit-pipeline/pull/100) + [PR #102](https://github.com/jakebromberg/code-audit-pipeline/pull/102))
+- [`analyses-v2/`](analyses-v2/) — round-3 v2 experimental arm; `prompt-sensitivity.json` carries the formal v1-vs-v2 delta matrix; `drift-check.json` carries the pre-rerun alias-stability sample ([PR #100](https://github.com/jakebromberg/code-audit-pipeline/pull/100) + [PR #102](https://github.com/jakebromberg/code-audit-pipeline/pull/102)); `h0b-rubric-loosening.json` carries the round-4 H0b delta matrix
+- [`analyses-v1-clean-rubric-loose/`](analyses-v1-clean-rubric-loose/) — round-4 H0b experimental arm (deterministic auto-scorer rerun against the v1-clean parsed cache after PR 3 landed the `specifics_alternatives` fall-through)
 - [`glossary.md`](glossary.md) — shared V7 vocabulary (conditions, substrate, plants, metrics, match labels, rounds/phases, code refs, PR/issue index)
 - [`analyses/panel-instructions.md`](analyses/panel-instructions.md) — review-panel instructions
 - [`reproducibility.yaml`](reproducibility.yaml) — pinned inputs + execution stamps
 - [`docs/refactor-recommendation-experiment-methodology.md`](../../docs/refactor-recommendation-experiment-methodology.md) — methodology
 - [`plans/v7-phase-e-scoring-and-writeup-plan.md`](../../plans/v7-phase-e-scoring-and-writeup-plan.md) — Phase E plan
 - [`plans/v7-round2-prompt-sensitivity-plan.md`](../../plans/v7-round2-prompt-sensitivity-plan.md) — round-3 prompt-sensitivity sub-experiment plan
+- [`plans/v7-h0b-rubric-loosening-plan.md`](../../plans/v7-h0b-rubric-loosening-plan.md) — round-4 H0b sub-experiment plan

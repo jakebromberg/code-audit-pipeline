@@ -639,11 +639,41 @@ execution:
         relative_drop_vs_112_addressable_pct: 0.0
     analysis_outcome:                 # PR 4 (analyses-v2/h0b-rubric-loosening.json + results.md §11)
       analysis_json: experiments/v7-refactor-recommendation/analyses-v2/h0b-rubric-loosening.json
-      headline_panel_route_delta_pct: null
-      per_category_delta: null
-      per_key_alternative_usage_summary: null
-      headline_canonical_recall_delta: null  # auto-scored only; panel-pending caveat applies
+      # Headline relative drop reported against both denominators per plan §4
+      # two-denominator commitment. Bands gate on the full-denominator number.
+      headline_panel_route_delta_pct:
+        full_denominator_rel_drop_pct: 0.0     # 119/522 → 119/522
+        addressable_rel_drop_pct: 0.0          # 112 addressable → 112 (0 promoted)
+        abs_delta_pp: 0.0
+        threshold_band: "drop < 20% relative"  # H0b not supported per §3.7
+      per_category_delta:
+        default-implementation: { v1_clean_pct: 30.07, rubric_loose_pct: 30.07, abs_delta_pp: 0.0, rel_delta_pct: 0.0 }
+        protocol-inheritance:   { v1_clean_pct: 18.92, rubric_loose_pct: 18.92, abs_delta_pp: 0.0, rel_delta_pct: 0.0 }
+        generic-parameterization: { v1_clean_pct: 38.33, rubric_loose_pct: 38.33, abs_delta_pp: 0.0, rel_delta_pct: 0.0 }
+        extract-to-common:      { v1_clean_pct: 18.52, rubric_loose_pct: 18.52, abs_delta_pp: 0.0, rel_delta_pct: 0.0 }
+        pat-introduction:       { v1_clean_pct: 11.97, rubric_loose_pct: 11.97, abs_delta_pp: 0.0, rel_delta_pct: 0.0 }
+      per_key_alternative_usage_summary:
+        plants_with_alternatives: 14
+        plant_key_pairs_with_alternatives: 24
+        alternatives_offered: 47
+        alternatives_exercised_at_least_once: 4   # 8.5%
+        alternatives_unused: 43
+        panel_routed_rows_with_at_least_one_alt_hit: 19    # 19 of 112 addressable = 17.0%
+        rows_promoted_to_blessed_alternative_label: 0
+        exercised_alternatives:
+          - { plant_id: "3.2", key: "method",          alt_index: 0, alt_value: "var displayName: String { get }", hits: 3 }
+          - { plant_id: "3.3", key: "protocol",        alt_index: 0, alt_value: "AudioProcessor",                  hits: 7 }
+          - { plant_id: "3.4", key: "protocol",        alt_index: 0, alt_value: "PlaylistEntry",                   hits: 6 }
+          - { plant_id: "4.1", key: "associated_type", alt_index: 0, alt_value: "ArtworkImage",                    hits: 3 }
+      headline_canonical_recall_delta:  # auto-scored only; panel-pending caveat applies (#94)
+        s1_v1_clean: 0.07
+        s1_rubric_loose: 0.07
+        s1_abs_delta: 0.0
+        s2_v1_clean: 0.11
+        s2_rubric_loose: 0.11
+        s2_abs_delta: 0.0
+      per_category_anomaly_triggered: false  # precondition (overall drop ≥ 50%) not met
     # Sub-experiment outcome per plan §3.7 decision tree. Populated by PR 4.
     # Values: "H0b supported" | "H0b partial" | "H0b not supported" | null (not yet run)
-    sub_experiment_outcome: null
+    sub_experiment_outcome: "H0b not supported"
   rubric_modifications: experiments/v7-refactor-recommendation/rubric-modifications.md
