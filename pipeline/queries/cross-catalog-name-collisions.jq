@@ -63,37 +63,34 @@
 #
 # cluster_id format: cross-catalog-name-collisions:Name
 #
-# Known limitations:
+# Known limitation:
 #
-#   - Name comparison is case-sensitive and exact. OpenAPI codegen produces
-#     identical PascalCase names across TS and Swift, so this works for the
-#     wxyc-shared codegen-mirror case. Manually-defined types whose names
-#     differ by casing (e.g., `Artist` vs `artist`) or punctuation will not
-#     collide here. Add a case-insensitive variant if evidence demands.
-#   - Field-name comparison is case-sensitive and exact. This means
-#     idiomatic snake_case (TS) vs camelCase (Swift) field names — e.g.,
-#     TS `album_id` vs Swift `albumId` — surface as DIVERGE even when they
-#     refer to the same logical field. Inspect the per_catalog_field_names
-#     side-by-side to distinguish "rename" from "case-style only" drift.
-#     A case-style-normalizing variant of this query can be added once
-#     evidence justifies it (see docs/swift-extractor-design-notes.md's
-#     "do not formalize the schema extension yet" position).
-#   - Two distinct DTOs that happen to share a name (e.g., two `Result`
-#     types in different domains) will appear here as a false positive.
-#     Inspect the file paths in the output before treating any cluster as
-#     authoritative.
+#   Field-name comparison is exact-string and case-sensitive, so idiomatic
+#   snake_case (TS) vs camelCase (Swift) — e.g., `album_id` vs `albumId` —
+#   surfaces as DIVERGE even when the names refer to the same logical field.
+#   Inspect the per_catalog_field_names side-by-side to distinguish a real
+#   rename from case-style-only drift. A normalizing variant can land when
+#   evidence demands it (per docs/swift-extractor-design-notes.md's "do not
+#   formalize the schema extension yet" position).
+#
+#   Type-name comparison and same-name-different-DTO false positives are
+#   forecasts, not observed. Add variants if either becomes load-bearing.
 
 include "_canonical";
 
-# Strip "field:type" → "field". null-safe so the verdict branch handles
-# missing fields cleanly.
-def field_names:
-  if . == null then null
-  else map(split(":")[0]) end;
+# Strip "field:type" → "field", with optional-suffix removal so a `T?`
+# optional field collides with the non-optional spelling. Other shape-bearing
+# queries (near-duplicates, subset-pairs, pat-candidates, etc.) all do this:
+# optionality is a presence flag, not a name change, and treating `albumId?`
+# as a distinct name from `albumId` would surface every TS-optional vs Swift-
+# non-optional pair as DIVERGE — the precise false positive this query is
+# meant to flag drift on.
+def field_names: map(split(":")[0] | sub("\\?$"; ""));
 
-# Shape-bearing kinds across the catalog schema (see docs/pipeline-contract.md).
-# Excludes extension, type-alias-other, type-alias-infer-model, zod-object,
-# drizzle-table — those are language- or DSL-specific.
+# Shape-bearing kinds. Excludes extension (additive, not the type itself),
+# type-alias-other (no shape to compare), and DSL-specific kinds (zod-object,
+# drizzle-table, type-alias-infer-model) that don't survive the OpenAPI-style
+# codegen contract this query is built around.
 def is_shape_bearing:
   .kind == "interface" or .kind == "type-alias-object" or .kind == "type-alias-union";
 
@@ -109,7 +106,7 @@ def is_shape_bearing:
 | map(select(([.[].catalog] | unique | length) >= 2))
 | map(
     . as $cluster
-    | ([.[].catalog] | unique | sort) as $cats
+    | ([.[].catalog] | unique) as $cats
     | (.[0].name) as $name
     # Per-catalog union of field names. A catalog with multiple records of the
     # same name (e.g., a generated index re-export plus a model file) contributes
@@ -120,7 +117,7 @@ def is_shape_bearing:
         | group_by(.catalog)
         | map({
             catalog: .[0].catalog,
-            field_names: ([.[].fields[] | split(":")[0]] | unique | sort)
+            field_names: ([.[].fields[]] | field_names | unique)
           })
       ) as $per_catalog_fnames
     | (
