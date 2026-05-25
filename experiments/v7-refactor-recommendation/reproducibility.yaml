@@ -623,12 +623,39 @@ execution:
       scope_check_passed: null        # exit code 0 of scripts/check_h0b_curation_scope.py
       pr_number: null
     rubric_loose_rerun:               # PR 3 (auto-scorer rerun against v1-clean parsed cache)
-      run_date: null
+      run_date: "2026-05-25"
       analyses_dir: experiments/v7-refactor-recommendation/analyses-v1-clean-rubric-loose
-      auto_scorer_rev: null           # git SHA of auto-scorer.py at rerun time
-      manifest_sha256: null           # SHA-256 of plant-manifest.yaml after PR 2 merge
+      # auto-scorer SHA-256 at rerun time. Git SHA captured in PR 3 commit; file
+      # hash is the stable reproducibility anchor.
+      auto_scorer_sha256: 7bdf37ddb84aa4f5c905e4fa7bef0c97b4d6941dfebc201a784f84eedb5dbac3
+      manifest_sha256: 2718f146d5c1153935051615b20c85f4a8d4ecd80c20e8a7281ef7884f203a54
       api_spend_usd: 0                # deterministic rerun — no API calls
-      score_summary: null             # populated when rerun completes
+      # Rerun command (byte-reproducible against trial-logs-v1-clean/parsed/):
+      #   python3 score_all.py \
+      #     --parsed trial-logs-v1-clean/parsed \
+      #     --manifest plant-manifest.yaml \
+      #     --rubric rubric.yaml \
+      #     --auto-scores-out analyses-v1-clean-rubric-loose/auto-scores.json \
+      #     --summary-out analyses-v1-clean-rubric-loose/score-summary.json \
+      #     --panel-routing-out analyses-v1-clean-rubric-loose/panel-routing.jsonl \
+      #     --panel-unblind-out analyses-v1-clean-rubric-loose/panel-unblind.json
+      rerun_command: "python3 score_all.py --parsed trial-logs-v1-clean/parsed --manifest plant-manifest.yaml --rubric rubric.yaml --auto-scores-out analyses-v1-clean-rubric-loose/auto-scores.json --summary-out analyses-v1-clean-rubric-loose/score-summary.json --panel-routing-out analyses-v1-clean-rubric-loose/panel-routing.jsonl --panel-unblind-out analyses-v1-clean-rubric-loose/panel-unblind.json"
+      score_summary:
+        # Match-label distribution unchanged between v1-clean and v1-clean-rubric-loose.
+        # Zero rows promoted to primary_match_specifics_blessed_alternative; zero rows
+        # demoted from primary_match_specifics_outside_tolerance. Empirically, no agent
+        # recommendation in the cached v1-clean corpus emitted specifics values that
+        # matched any of the 47 curated blessed alternatives. The scorer change works
+        # (regression-tested under test_score_all.BlessedAlternativesSpecificsTests),
+        # but the curated alternatives did not anticipate the actual lexical drift
+        # patterns the agents produced (e.g. truncating two-method canonicals to one
+        # method, omitting canonical parentheticals like "(extension on AudioProcessor)").
+        # PR 4 owns the analysis writeup and decision-tree interpretation.
+        v1_clean_panel_routed: 119
+        v1_clean_rubric_loose_panel_routed: 119
+        blessed_alternative_label_count: 0
+        relative_drop_vs_119_pct: 0.0
+        relative_drop_vs_112_addressable_pct: 0.0
     analysis_outcome:                 # PR 4 (analyses-v2/h0b-rubric-loosening.json + results.md §11)
       analysis_json: experiments/v7-refactor-recommendation/analyses-v2/h0b-rubric-loosening.json
       headline_panel_route_delta_pct: null

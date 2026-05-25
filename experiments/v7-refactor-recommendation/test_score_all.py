@@ -42,6 +42,8 @@ def _plant(
     must_cite: list[str] | None = None,
     alternative_categories: list[str] | None = None,
     wrong_categories: list[str] | None = None,
+    specifics_alternatives: dict | None = None,
+    specifics_alternatives_rationale: dict | None = None,
 ) -> dict:
     """Build a synthetic plant entry.
 
@@ -90,6 +92,10 @@ def _plant(
         "alternative_answers": [{"category": c, "weight": 0.7} for c in (alternative_categories or [])],
         "wrong_answers": [{"category": c, "note": ""} for c in (wrong_categories or [])],
     }
+    if specifics_alternatives is not None:
+        plant["primary_answer"]["specifics_alternatives"] = specifics_alternatives
+    if specifics_alternatives_rationale is not None:
+        plant["primary_answer"]["specifics_alternatives_rationale"] = specifics_alternatives_rationale
     if cluster_lens is not None:
         plant["cluster_lens"] = cluster_lens
     return plant
@@ -952,6 +958,259 @@ class ValueAwareSpecificsTests(unittest.TestCase):
         out = score_all.score_recommendations([rec], [plant], self.rubric)
         self.assertEqual(out["scored"][0]["score"], 1.0)
         self.assertEqual(out["scored"][0]["match"], "primary_match_full")
+
+
+class BlessedAlternativesSpecificsTests(unittest.TestCase):
+    """H0b sub-experiment rubric loosening (plan §3.4).
+
+    After verbatim mismatch on a required key, the scorer falls through to the
+    plant's `primary_answer.specifics_alternatives[key]` and re-checks
+    structurally. A recommendation whose specifics match the canonical value OR
+    any blessed alternative for every required key still scores 1.0; the match
+    label distinguishes the two paths so per-plant telemetry can attribute the
+    delta in panel-route rate to alternative usage.
+
+    Both paths score 1.0; the label difference (`primary_match_full` vs
+    `primary_match_specifics_blessed_alternative`) is telemetry-only.
+    """
+
+    def setUp(self):
+        self.rubric = {
+            "weak_rationale_policy": "auto-score-0.5",
+            "specifics_schemas": {
+                "default-implementation": {
+                    "required": ["protocol", "method", "target_location"]
+                },
+                "extract-to-common": {
+                    "required": ["target_package", "type_name", "remove_from"]
+                },
+            },
+            "adjacent_categories": [],
+        }
+
+    def _default_impl_plant(
+        self, *, primary_specifics, specifics_alternatives=None
+    ):
+        rationale = None
+        if specifics_alternatives is not None:
+            rationale = {
+                key: [f"rationale-{i}" for i in range(len(alts))]
+                for key, alts in specifics_alternatives.items()
+            }
+        return _plant(
+            plant_id="3.2",
+            category="default-implementation",
+            source_files=["Pkg/BlendMode.swift"],
+            primary_category="default-implementation",
+            primary_specifics=primary_specifics,
+            specifics_alternatives=specifics_alternatives,
+            specifics_alternatives_rationale=rationale,
+            must_cite=["BlendMode"],
+        )
+
+    def test_primary_match_full_all_keys_verbatim(self):
+        """Regression: with `specifics_alternatives` declared, a verbatim
+        match across every required key still produces the canonical
+        `primary_match_full` label and score 1.0. The alternatives must not
+        be consulted (and therefore not credited in per-key usage counts)
+        when verbatim succeeds."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            specifics_alternatives={
+                "protocol": ["BlendModeProtocol", "AnyBlendMode"],
+                "target_location": ["BlendMode+DefaultImpl.swift"],
+            },
+        )
+        rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(out["scored"][0]["match"], "primary_match_full")
+
+    def test_primary_match_specifics_blessed_alternative_single_key(self):
+        """New path: one required key matches via a blessed alternative,
+        other keys match verbatim → score 1.0 +
+        `primary_match_specifics_blessed_alternative`."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            specifics_alternatives={
+                "protocol": ["BlendModeProtocol", "AnyBlendMode"],
+            },
+        )
+        rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "BlendModeProtocol",  # blessed alternative
+                "method": "blend(_:over:)",       # verbatim
+                "target_location": "BlendMode+Default.swift",  # verbatim
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(
+            out["scored"][0]["match"], "primary_match_specifics_blessed_alternative"
+        )
+
+    def test_primary_match_specifics_blessed_alternative_all_keys_via_alternative(self):
+        """New path: every required key with a non-verbatim rec value matches
+        via a blessed alternative; the canonical-aligned key matches
+        verbatim. Expect score 1.0 +
+        `primary_match_specifics_blessed_alternative`."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            specifics_alternatives={
+                "protocol": ["BlendModeProtocol"],
+                "target_location": ["BlendMode+DefaultImpl.swift"],
+            },
+        )
+        rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "BlendModeProtocol",                # via alternative
+                "method": "blend(_:over:)",                     # verbatim (no alts)
+                "target_location": "BlendMode+DefaultImpl.swift",  # via alternative
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 1.0)
+        self.assertEqual(
+            out["scored"][0]["match"], "primary_match_specifics_blessed_alternative"
+        )
+
+    def test_primary_match_specifics_outside_tolerance_no_blessed_match(self):
+        """Neither verbatim nor any blessed alternative matches the rec value
+        for at least one required key → panel_route with the existing
+        `primary_match_specifics_outside_tolerance` label."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            specifics_alternatives={
+                "protocol": ["BlendModeProtocol"],
+            },
+        )
+        rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "TotallyDifferent",  # neither canonical nor blessed
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], score_all.PANEL_ROUTE)
+        self.assertEqual(
+            out["scored"][0]["match"], "primary_match_specifics_outside_tolerance"
+        )
+
+    def test_empty_specifics_alternatives_falls_through_verbatim(self):
+        """Plants with no `specifics_alternatives` field (the pre-H0b shape)
+        must preserve verbatim-only behavior: verbatim matches still produce
+        `primary_match_full`, and non-verbatim mismatches still panel-route
+        as `primary_match_specifics_outside_tolerance`. The new fall-through
+        path must not change behavior for un-curated plants."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+        )
+        verbatim_rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        verbatim_out = score_all.score_recommendations(
+            [verbatim_rec], [plant], self.rubric
+        )
+        self.assertEqual(verbatim_out["scored"][0]["score"], 1.0)
+        self.assertEqual(verbatim_out["scored"][0]["match"], "primary_match_full")
+
+        mismatch_rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "DifferentName",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            rationale="BlendMode has three conformers.",
+        )
+        mismatch_out = score_all.score_recommendations(
+            [mismatch_rec], [plant], self.rubric
+        )
+        self.assertEqual(
+            mismatch_out["scored"][0]["score"], score_all.PANEL_ROUTE
+        )
+        self.assertEqual(
+            mismatch_out["scored"][0]["match"],
+            "primary_match_specifics_outside_tolerance",
+        )
+
+    def test_weak_rationale_does_not_change_label_on_blessed_match(self):
+        """Plan §3.4: the new label fires only on the grounded path. A
+        blessed-alternative specifics match with missing rationale citations
+        keeps the existing `primary_match_weak_rationale` label and 0.5 score
+        — H0b loosens specifics matching, not rationale grounding."""
+        plant = self._default_impl_plant(
+            primary_specifics={
+                "protocol": "BlendMode",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            specifics_alternatives={
+                "protocol": ["BlendModeProtocol"],
+            },
+        )
+        rec = _rec(
+            cluster_id="default-impl-candidates:Pkg/BlendMode.swift+blend",
+            category="default-implementation",
+            specifics={
+                "protocol": "BlendModeProtocol",
+                "method": "blend(_:over:)",
+                "target_location": "BlendMode+Default.swift",
+            },
+            rationale="...",  # missing required citation "BlendMode"
+        )
+        out = score_all.score_recommendations([rec], [plant], self.rubric)
+        self.assertEqual(out["scored"][0]["score"], 0.5)
+        self.assertEqual(
+            out["scored"][0]["match"], "primary_match_weak_rationale"
+        )
 
 
 # ─── aggregate summary ────────────────────────────────────────────────────
