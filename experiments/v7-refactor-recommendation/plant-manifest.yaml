@@ -638,6 +638,8 @@ plants:
           - "DisplayableBlendMode (new shared protocol over the 16-case union, with displayName + blendMode requirements)"
         method:
           - "var displayName: String { get }"
+          - "displayName"
+          - "displayName: String"
         target_location:
           - "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+DisplayName.swift (extension on BlendMode)"
           - "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+DefaultImpl.swift (extension on BlendMode)"
@@ -648,6 +650,8 @@ plants:
           - "Same shared protocol over the three blend mode enums; emphasizes the displayName role with a `Displayable` prefix while preserving the two requirements."
         method:
           - "Same property declaration; adds the `var` keyword that is conventionally elided in protocol declarations but accepted equivalently by the Swift compiler."
+          - "Same property declaration; bare symbol name form an agent would naturally emit when answering `which method` without the full signature."
+          - "Same property declaration; drops the `{ get }` getter clause that is conventionally explicit in protocol declarations but inferred from var-property syntax."
         target_location:
           - "Same package and same extension target as canonical; uses the `+DisplayName.swift` suffix per Swift's extension-per-feature file naming convention."
           - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation role."
@@ -700,8 +704,7 @@ plants:
         - "identical"
       specifics_alternatives:
         protocol:
-          - "AudioProcessor (existing PlayerHeaderView protocol)"
-          - "AudioProcessor (existing protocol in Shared/PlayerHeaderView)"
+          - "AudioProcessor"
         method:
           - "reset() and setNormalizationMode(_:)"
           - "setNormalizationMode and reset"
@@ -710,8 +713,7 @@ plants:
           - "Shared/PlayerHeaderView/Sources/PlayerHeaderView/AudioProcessor+DefaultImpl.swift (extension on AudioProcessor)"
       specifics_alternatives_rationale:
         protocol:
-          - "Same existing AudioProcessor protocol in PlayerHeaderView; varies only the parenthetical phrasing of `already exists`."
-          - "Same existing AudioProcessor protocol; spells out the SPM target path in the parenthetical."
+          - "Same existing AudioProcessor protocol; drops the canonical's `(already exists in PlayerHeaderView)` parenthetical commentary, which conventionally serves as a note to the reader rather than part of the protocol identifier."
         method:
           - "Same two methods (setNormalizationMode and reset); reorders the conjunction per multiset equivalence."
           - "Same two methods; drops the trailing parentheses convention used in the canonical."
@@ -766,8 +768,7 @@ plants:
         - "identical"
       specifics_alternatives:
         protocol:
-          - "PlaylistEntry (existing Playlist protocol)"
-          - "PlaylistEntry (existing protocol in Shared/Playlist)"
+          - "PlaylistEntry"
         method:
           - "init(from: any Decoder) throws"
           - "init(from decoder: Decoder) throws"
@@ -776,8 +777,7 @@ plants:
           - "Shared/Playlist/Sources/Playlist/PlaylistEntry+DefaultImpl.swift (extension PlaylistEntry where Self: Decodable)"
       specifics_alternatives_rationale:
         protocol:
-          - "Same existing PlaylistEntry protocol; varies the parenthetical phrasing of `already exists`."
-          - "Same existing PlaylistEntry protocol; spells out the SPM target path in the parenthetical."
+          - "Same existing PlaylistEntry protocol; drops the canonical's `(already exists in Shared/Playlist)` parenthetical commentary, which conventionally serves as a note to the reader rather than part of the protocol identifier."
         method:
           - "Same Decodable initializer signature; uses the unlabeled `from:` argument form (shorthand internal name) accepted equivalently by the Swift compiler."
           - "Same Decodable initializer signature; drops the `any` keyword (pre-Swift 5.7 form, still accepted by the compiler with a warning)."
@@ -874,7 +874,6 @@ plants:
         associated_type:
           - "ArtworkImage"
           - "AlbumArt"
-          - "Image"
       specifics_alternatives_rationale:
         new_protocol:
           - "Same new PAT over NowPlayingItem + PlaycutSelection with one type slot at the artwork field; names the protocol as a Container variant making the artwork-holding role explicit."
@@ -882,7 +881,6 @@ plants:
         associated_type:
           - "Same artwork-shaped type slot; uses `ArtworkImage` to be explicit about both the role and the image kind."
           - "Same artwork-shaped type slot; uses the domain term `AlbumArt` instead of the more abstract `Artwork`."
-          - "Same artwork-shaped type slot; uses the bare `Image` since both concrete types (SwiftUI.Image, UIImage) are image kinds."
     specifics_tolerance:
       associated_type_must_cover_the_artwork_slot: true
       type_slot_at_artwork_must_be_identified: true
@@ -931,13 +929,11 @@ plants:
         - "differ at Item"
       specifics_alternatives:
         new_protocol:
-          - "AnyContainer"
           - "GenericContainer"
           - "ItemContainer"
       specifics_alternatives_rationale:
         new_protocol:
-          - "Same new PAT over _Plant_TrackContainer + _Plant_ShowContainer with one type slot at the item field; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
-          - "Same new PAT; uses the explicit `Generic` prefix instead of the canonical's bare `Container`."
+          - "Same new PAT over _Plant_TrackContainer + _Plant_ShowContainer with one type slot at the item field; uses the explicit `Generic` prefix instead of the canonical's bare `Container`."
           - "Same new PAT; uses `ItemContainer` to name the protocol after the associated-type role."
     specifics_tolerance:
       associated_type_named_Item_or_synonym: true
@@ -987,13 +983,11 @@ plants:
       specifics_alternatives:
         new_protocol:
           - "Repository"
-          - "Resolver"
-          - "AnyEntityResolver"
+          - "EntityRepository"
       specifics_alternatives_rationale:
         new_protocol:
-          - "Same new PAT over _Plant_ArtistRepository + _Plant_ReleaseRepository with one type slot at the entity field; names the protocol after the substrate's `Repository` naming pattern that the original types already use."
-          - "Same new PAT; shortens the canonical's `EntityResolver` to bare `Resolver` while preserving the resolve operation."
-          - "Same new PAT; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
+          - "Same new PAT over _Plant_ArtistRepository + _Plant_ReleaseRepository with one type slot at the entity field; names the protocol after the substrate's `Repository` naming pattern that the conformer types (_Plant_ArtistRepository, _Plant_ReleaseRepository) already use."
+          - "Same new PAT; combines the canonical's `Entity` prefix with the substrate's `Repository` suffix that the conformer types use."
     specifics_tolerance:
       associated_type_named_Entity_or_synonym: true
       type_slot_at_resolve_return_must_be_identified: true
@@ -1041,7 +1035,6 @@ plants:
       specifics_alternatives:
         new_protocol:
           - "AsyncLoader"
-          - "AnyLoader"
           - "DataLoader"
         associated_type:
           - "Value"
@@ -1049,8 +1042,7 @@ plants:
       specifics_alternatives_rationale:
         new_protocol:
           - "Same new PAT over _Plant_CacheLoader + _Plant_MetadataLoader with one type slot at the output and matching async-throws effect specifiers; adds the `Async` prefix to name the protocol after the effect."
-          - "Same new PAT; adds the `Any` prefix that the substrate uses elsewhere for type-erased PAT-introduced protocols."
-          - "Same new PAT; uses `DataLoader` to name the protocol after the data-loading role."
+          - "Same new PAT; uses `DataLoader` to name the protocol after the data-loading role that both conformers perform."
         associated_type:
           - "Same output-shaped type slot; uses the more general term `Value` instead of the canonical's `Output`."
           - "Same output-shaped type slot; uses `Result` to emphasize the loaded-value role."
