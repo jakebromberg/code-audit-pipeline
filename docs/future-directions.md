@@ -102,3 +102,7 @@ The directions above are listed roughly in priority order, with the highest-leve
 **(4) The agent layer** becomes valuable once there is enough catalog data and enough cluster output to justify the heavier infrastructure investment. It remains downstream of the temporal layer regardless of commit velocity.
 
 **(5) The polemic and case-study library** is the doc-and-content track that should run in parallel with everything else. Every audit done in anger should land as a case study, because that is what makes the argument concrete to readers who do not already accept it.
+
+## Active decompositions
+
+The V8 strategic expansion lives in GitHub as direction trackers, each with its own decomposition. Direction-tracker map: #115 (language extractors, direction #2) → #135–#140; #116 (depth queries) → #125–#129, #131–#134; #117 (time, direction #1) → #141, #142, #148–#150; #118 (cross-repo) → #152–#159; #119 (interface / usability layer) → #143–#147; #120 (dev-flow integration) → #123, #124, #130. #114 (agent-as-filter, direction #4) is undecomposed. The rolling per-triage tracker supersedes from #98 → #107 → #160; the latest issue carries the current open-count and P0 sequencing. GitHub is authoritative for structural state; this doc remains the strategic narrative.
