@@ -492,6 +492,17 @@ INLINE_PLANTS = {
                 "constraints": [],
                 "replaces": ["TrackContainer", "ShowContainer"],
             },
+            # H0b blessed alternatives for the dry-run fixture exercising
+            # `primary_match_specifics_blessed_alternative`. Real manifest
+            # plants get rule-12 validator coverage; INLINE_PLANTS doesn't
+            # flow through the validator, but the rationale parity is kept
+            # in case future tests parse it.
+            "specifics_alternatives": {
+                "new_protocol": ["ContainerProtocol"],
+            },
+            "specifics_alternatives_rationale": {
+                "new_protocol": ["The `Protocol` suffix is the conventional Swift naming for protocol declarations."],
+            },
             "rationale_must_cite": ["TrackContainer", "ShowContainer", "differs at Item"],
         },
         "alternative_answers": [
@@ -836,6 +847,28 @@ SYNTHETIC_FIXTURES = [
         },
         "expected_score": -0.5,
         "expected_match": "breaking_action",
+    },
+    {
+        # Pins the H0b fall-through to a blessed alternative per plan §3.4. The
+        # canonical `new_protocol` is "Container"; the rec emits "ContainerProtocol",
+        # which `INLINE_PLANTS["4.1-s8-example"].specifics_alternatives.new_protocol`
+        # blesses. All other required keys match verbatim and the rationale cites
+        # all `rationale_must_cite` substrings, so the row scores 1.0 with the new
+        # label rather than falling out via `primary_match_specifics_outside_tolerance`.
+        "label": "[synthetic] primary_match_specifics_blessed_alternative (1.0): Plant 4.1, new_protocol via blessed alt",
+        "plant_id": "4.1-s8-example",
+        "recommendation": {
+            "category": "pat-introduction",
+            "specifics": {
+                "new_protocol": "ContainerProtocol",  # blessed alternative
+                "associated_type": "Item",
+                "constraints": [],
+                "replaces": ["TrackContainer", "ShowContainer"],
+            },
+            "rationale": "The cluster differs at Item; TrackContainer and ShowContainer share the rest.",
+        },
+        "expected_score": 1.0,
+        "expected_match": "primary_match_specifics_blessed_alternative",
     },
 ]
 
