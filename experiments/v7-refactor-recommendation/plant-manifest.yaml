@@ -638,7 +638,6 @@ plants:
           - "DisplayableBlendMode (new shared protocol over the 16-case union, with displayName + blendMode requirements)"
         method:
           - "var displayName: String { get }"
-          - "displayName"
           - "displayName: String"
         target_location:
           - "Shared/Wallpaper/Sources/Wallpaper/Core/BlendMode+DisplayName.swift (extension on BlendMode)"
@@ -650,8 +649,7 @@ plants:
           - "Same shared protocol over the three blend mode enums; emphasizes the displayName role with a `Displayable` prefix while preserving the two requirements."
         method:
           - "Same property declaration; adds the `var` keyword that is conventionally elided in protocol declarations but accepted equivalently by the Swift compiler."
-          - "Same property declaration; bare symbol name form an agent would naturally emit when answering `which method` without the full signature."
-          - "Same property declaration; drops the `{ get }` getter clause that is conventionally explicit in protocol declarations but inferred from var-property syntax."
+          - "Same property declaration; drops the `{ get }` getter clause — accessor structure is implied get-only by a typed property declaration without `{ get set }`, preserving criterion (b)'s getter-vs-setter shape distinction."
         target_location:
           - "Same package and same extension target as canonical; uses the `+DisplayName.swift` suffix per Swift's extension-per-feature file naming convention."
           - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation role."
@@ -780,7 +778,7 @@ plants:
           - "Same existing PlaylistEntry protocol; drops the canonical's `(already exists in Shared/Playlist)` parenthetical commentary, which conventionally serves as a note to the reader rather than part of the protocol identifier."
         method:
           - "Same Decodable initializer signature; uses the unlabeled `from:` argument form (shorthand internal name) accepted equivalently by the Swift compiler."
-          - "Same Decodable initializer signature; drops the `any` keyword (pre-Swift 5.7 form, still accepted by the compiler with a warning)."
+          - "Same Decodable initializer signature; omits the `any` keyword (older existential syntax — accepted by the compiler in non-strict concurrency mode and emitted by agents trained on pre-Swift-5.7 code)."
         target_location:
           - "Same package and same extension target as canonical; uses the `+Decodable.swift` suffix matching Swift's extension-per-conformance file naming convention."
           - "Same package and same extension target as canonical; uses the `+DefaultImpl.swift` suffix to emphasize the default-implementation role."
@@ -1037,15 +1035,13 @@ plants:
           - "AsyncLoader"
           - "DataLoader"
         associated_type:
-          - "Value"
           - "Result"
       specifics_alternatives_rationale:
         new_protocol:
           - "Same new PAT over _Plant_CacheLoader + _Plant_MetadataLoader with one type slot at the output and matching async-throws effect specifiers; adds the `Async` prefix to name the protocol after the effect."
           - "Same new PAT; uses `DataLoader` to name the protocol after the data-loading role that both conformers perform."
         associated_type:
-          - "Same output-shaped type slot; uses the more general term `Value` instead of the canonical's `Output`."
-          - "Same output-shaped type slot; uses `Result` to emphasize the loaded-value role."
+          - "Same output-shaped type slot; uses `Result` to emphasize the loaded-value role — a defensible synonym of `Output` per the `associated_type_named_Output_or_synonym: true` tolerance flag."
     specifics_tolerance:
       effect_specifiers_async_throws_must_be_preserved_in_PAT_signature: true
       associated_type_named_Output_or_synonym: true
