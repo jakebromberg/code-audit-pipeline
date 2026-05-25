@@ -183,9 +183,14 @@ def _values_structurally_equal(a, b) -> bool:
 
 
 def _specifics_values_match(
-    rec_specifics: dict, primary_specifics: dict, required_keys: list[str]
-) -> tuple[bool, list[str]]:
-    """Verbatim value comparison for each required key.
+    rec_specifics: dict,
+    primary_specifics: dict,
+    required_keys: list[str],
+    specifics_alternatives: dict | None = None,
+) -> tuple[bool, list[str], bool]:
+    """Verbatim value comparison for each required key, with fall-through to
+    blessed alternatives per the H0b sub-experiment rubric loosening (plan
+    `v7-h0b-rubric-loosening-plan.md` §3.4).
 
     Scalars: == equality. Lists: multiset equality (order-independent; see
     `_values_structurally_equal`). Dicts: structural equality (recursive).
@@ -201,14 +206,31 @@ def _specifics_values_match(
     exists so synthetic test fixtures with minimal plant shapes still
     exercise the keys-only code path.
 
-    Returns (ok, problem_descriptions). problem_descriptions is a list of
-    `"key={key} manifest={manifest_val!r} rec={rec_val!r}"` strings for each
-    mismatched key.
+    H0b fall-through: when the verbatim check fails on key K, the scorer
+    re-checks `rec_val` against each entry of
+    `specifics_alternatives.get(K, [])` using `_values_structurally_equal`.
+    A blessed-alternative match counts as a match for that key (no problem
+    appended) and flips `any_alternative_used`. Plants without
+    `specifics_alternatives` (or with no alternatives for K) reduce to
+    pre-H0b verbatim-only behavior. Validator rule 12 (PR 1) keeps the
+    `specifics_alternatives` dict structurally clean — string-valued lists
+    per key, ≤ H0B_ALTERNATIVES_CAP entries, no canonical duplicates.
+
+    Returns (ok, problem_descriptions, any_alternative_used).
+    `problem_descriptions` is a list of `"key={key} manifest={manifest_val!r}
+    rec={rec_val!r} (alternatives: ...)"` strings for each key that matched
+    neither the canonical value nor any blessed alternative.
+    `any_alternative_used` is True iff at least one required key was
+    satisfied via a blessed alternative rather than verbatim — the caller
+    uses this to choose between `primary_match_full` and
+    `primary_match_specifics_blessed_alternative` labels.
 
     Precondition: caller has confirmed every key in `required_keys` is
     present in `rec_specifics` (via `_specifics_keys_match`).
     """
     problems: list[str] = []
+    any_alternative_used = False
+    alts_by_key = specifics_alternatives or {}
     for key in required_keys:
         if key not in primary_specifics:
             continue  # manifest doesn't constrain this key; vacuously in-tolerance
@@ -216,11 +238,17 @@ def _specifics_values_match(
         if manifest_val is None:
             continue  # explicit "no value" sentinel in manifest; same as missing
         rec_val = rec_specifics[key]
-        if not _values_structurally_equal(manifest_val, rec_val):
-            problems.append(
-                f"key={key!r} manifest={manifest_val!r} rec={rec_val!r}"
-            )
-    return (not problems, problems)
+        if _values_structurally_equal(manifest_val, rec_val):
+            continue  # verbatim hit
+        alternatives = alts_by_key.get(key, []) or []
+        if any(_values_structurally_equal(alt, rec_val) for alt in alternatives):
+            any_alternative_used = True
+            continue  # H0b blessed-alternative hit
+        problems.append(
+            f"key={key!r} manifest={manifest_val!r} rec={rec_val!r} "
+            f"(alternatives: {alternatives or 'none'})"
+        )
+    return (not problems, problems, any_alternative_used)
 
 
 def _tolerance_flag_notes(plant: dict) -> list[str]:
@@ -343,6 +371,7 @@ def score_recommendation(
     # discussion and the §3.3 pre-implementation projection.
     if rec_cat == primary_cat:
         primary_specifics = primary.get("specifics") or {}
+        specifics_alternatives = primary.get("specifics_alternatives") or {}
         keys_ok, key_problems = _specifics_keys_match(
             rec_specifics, primary_specifics_required
         )
@@ -351,8 +380,11 @@ def score_recommendation(
                 plant_id, PANEL_ROUTE, "primary_match_specifics_missing_keys",
                 notes=key_problems + _tolerance_flag_notes(plant),
             )
-        values_ok, value_problems = _specifics_values_match(
-            rec_specifics, primary_specifics, primary_specifics_required
+        values_ok, value_problems, any_alternative_used = _specifics_values_match(
+            rec_specifics,
+            primary_specifics,
+            primary_specifics_required,
+            specifics_alternatives,
         )
         if not values_ok:
             return ScoreResult(
@@ -361,6 +393,16 @@ def score_recommendation(
             )
         grounded, missing_citations = _rationale_cites_all(rec_rationale, must_cite)
         if grounded:
+            if any_alternative_used:
+                # H0b telemetry: this row scored 1.0 only because at least one
+                # required key matched a blessed alternative rather than the
+                # canonical value. Distinguished label so the v1-clean vs
+                # v1-clean-rubric-loose delta can be attributed per-row without
+                # re-reading the manifest. See plan §3.4.
+                return ScoreResult(
+                    plant_id, 1.0, "primary_match_specifics_blessed_alternative",
+                    notes=["all conditions met (≥1 key via blessed alternative)"],
+                )
             return ScoreResult(
                 plant_id, 1.0, "primary_match_full",
                 notes=["all conditions met"],
