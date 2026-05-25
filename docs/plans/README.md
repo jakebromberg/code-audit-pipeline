@@ -35,52 +35,57 @@ This directory holds the design briefs for the lines of work embedded in #118. E
 
 ## Lines of work
 
-| Slug | Title | Depends on | Status |
-|---|---|---|---|
-| [A — Schema v2](118-A-schema-v2.md) | Wrap catalog in metadata object; add `repo`, `commit_sha`, `extractor`, `origin_package`, `field_names_sig`, top-level `schema_version: 2`. Refit the four existing `.jq` queries to `.entries`. | — | Plan |
-| [B — Imports kind](118-B-imports-kind.md) | New `kind: "import"` rows in the TypeScript extractor (consumer-edges, not declarations). Bare-specifier resolution in v1; ships behind `--include-imports`. | A | Plan |
-| [C — Catalog substrate](118-C-substrate.md) | Cloudflare R2 landing zone with `index.json` + `by-repo/<repo>/{latest.json, SHA-keyed}` layout. `fetch-catalogs.sh`, `publish-catalog.sh`, `refresh-index.mjs` (reconcile-from-listing). | — | Plan |
-| [D — Per-repo CI publication](118-D-ci-publication.md) | Reusable `audit-core` composite action (shared with #120) + `publish-catalog-reusable.yml`. Per-repo opt-in is ~10 lines. OIDC-to-IAM auth. | C | Plan |
-| [E — Operational safety](118-E-operational-safety.md) | `preflight-versions.jq` + `coverage.jq` + `lib/cross-repo-filters.jq` (`is_published`) + `run-cross-repo-query.sh` wrapper. Non-bypassable. | A, C | Plan |
-| [F1 — Q1 `consumers-of.jq`](118-F1-consumers-of.md) | Group import rows by `(origin_package, name)`; list importing `(repo, file, line)`; sort by consumer breadth. | A, B, E | Plan |
-| [F2 — Q2 `cross-repo-duplicates.jq`](118-F2-cross-repo-duplicates.md) | Same-language (`shape_sig`) + cross-language (`field_names_sig`) modes. Classify clusters as shadow-of-canonical vs independent-reinvention. Cross-repo generalization of `cross-package-shadows.jq`. | A, E | Plan |
-| [F3 — Q3 `renamed-consumers.jq`](118-F3-renamed-consumers.md) | Two-stage rename + anti-join. Shape-equality only in v1 (no Jaccard fallback). Fixture-testable before #117 ships. | A, B, E, #117 | Plan |
+| Slug | Brief | Filed as | Priority | Blocked by | Status |
+|---|---|---|---|---|---|
+| A — Schema v2 | [118-A](118-A-schema-v2.md) | — | — | — | **Not filed under #118** — covered externally by **#141** (catalog 1.0→1.1 envelope, `symbol_id`, extractor provenance) + **#137** (Schema v2 ratification, `language_data.<lang>.*`). `field_names_sig` lands as part of that work. |
+| B — Imports kind | [118-B](118-B-imports-kind.md) | **#152** | P1 | #137, #141 | Filed |
+| C — Catalog substrate | [118-C](118-C-substrate.md) | **#153** | P1 | — | Filed |
+| D — Per-repo CI publication | [118-D](118-D-ci-publication.md) | **#154** | P2 | #153 | Filed (coordinates with **#123** for the shared `audit-core` composite) |
+| E — Operational safety | [118-E](118-E-operational-safety.md) | **#155** | P2 | #153, #137, #141 | Filed |
+| F1 — Q1 `consumers-of.jq` | [118-F1](118-F1-consumers-of.md) | **#156** | P3 | #152, #155, #137, #141 | Filed |
+| F2 — Q2 `cross-repo-duplicates.jq` | [118-F2](118-F2-cross-repo-duplicates.md) | **#157** | P3 | #155, #137, #141 | Filed (ships first among the F queries) |
+| F3 — Q3 `renamed-consumers.jq` | [118-F3](118-F3-renamed-consumers.md) | **#158** | P4 | #152, #155, #137, #141, #142, #148 | Filed |
+
+All filed sub-issues are linked as native sub-issues of #118 and use GitHub's native "blocked by" dependencies — see #118's tracker section for the parent-side view.
 
 ## Dependency graph
 
 ```
-                                         ┌─> F2 (cross-repo-duplicates)
-            ┌─ A (schema v2) ────────────┤
-            │                            ├─> E (preflight + coverage)
-            │                            │     └─> F1, F2, F3 use the wrapper
-            │                            │
-#118 ───────┤                            └─> B (imports kind) ─> F1 (consumers-of)
-            │                                                ─> F3 (depends also on #117)
-            │
-            │   ┌─ C (substrate) ────────┐
-            └───┤                         │
-                └─ D (per-repo CI) ───────┘
-                       │
-                       └─ shares `audit-core` composite with #120
+External (under #115 / #117):
+  #137 (Schema v2 ratify) ──┐
+  #141 (Schema 1.0 → 1.1) ──┼──> #152, #155, #156, #157, #158
+  #142 (Snapshot store) ────┤
+  #148 (Catalog diff) ──────┴──> #158 only
+
+Under #118:
+  #153 (R2 substrate) ──┬──> #154 (per-repo CI publish)   [shares audit-core with #123]
+                        └──> #155 (ops safety: preflight + coverage)
+                                  │
+                                  └──> #156 (F1), #157 (F2), #158 (F3) — every cross-repo query runs via the wrapper
+
+  #152 (imports kind) ──┬──> #156 (F1 consumers-of)
+                        └──> #158 (F3 renamed-consumers)
+
+  #157 (F2 cross-repo-duplicates) — first cross-repo finding deliverable; only needs #155 + the external schema work
 ```
 
-**Strict ordering** — A must land first (the schema is the lingua franca). C and D are independent infrastructure and can ship alongside B. E must land after A and C, before any F. F2 is the first cross-repo finding to demo on (A + E) alone. F1 needs B; F3 needs B + #117.
+**Strict ordering** — #137 + #141 must land first (the schema is the lingua franca). #152 and #153 are independent and can ship in parallel. #154 needs #153; #155 needs #153 + the external schema. #157 is the first F-query to ship (only needs #155 + external schema). #156 also needs #152. #158 also needs #142 + #148 from #117's tree.
 
 ## Resolved decisions (apply across briefs)
 
 - **Storage backend:** Cloudflare R2 (S3-compatible API, zero egress, ~$0.015/GB). Implementation works against AWS S3 unchanged if R2 is later swapped out.
 - **Catalog read access:** public-read on the bucket. Removes auth setup as adoption friction; safe because the source repos are public on GitHub anyway.
-- **Stale catalog threshold:** 7 days (env-var overridable). A 7-day-old catalog suggests the repo's CI dropped or the substrate's fetch failed.
-- **`field_names_sig`:** ships in the same PR as the schema v2 wrapper change. Compute it in the TS extractor now (~5 lines); avoids a second schema bump before #115's first non-TS extractor lands.
+- **Stale catalog threshold:** 7 days (env-var overridable via `CROSS_REPO_STALE_DAYS`). A 7-day-old catalog suggests the repo's CI dropped or the substrate's fetch failed.
+- **`field_names_sig`:** ships as part of the external schema work (#137 / #141), not as a standalone change under #118.
 
 ## Conventions used in the briefs
 
 - File paths cited use the project's absolute paths (`/Users/jake/Developer/code-audit-pipeline/…`) so an implementer with the repo open can jump directly.
-- "Schema v2" refers to the wrapper change defined in [118-A-schema-v2.md](118-A-schema-v2.md). Any brief that says "depends on schema v2" depends on that PR landing first.
+- "Schema v2" in the briefs refers to the wrapper-object change; the actual implementation lands under #141 (envelope, `symbol_id`, extractor provenance) + #137 (two-tier ratification). Any brief that says "depends on schema v2" depends on those two tickets landing.
 - KPIs are concrete and measurable. Where a brief estimates a number (e.g., "≥80% noise reduction"), the brief flags it as a hypothesis to validate against the first real fixture.
 
 ## See also
 
-- [#117 — Time: catalog snapshots and structured diffs](https://github.com/jakebromberg/code-audit-pipeline/issues/117) — the temporal layer F3 depends on.
-- [#115 — Breadth: language extractors](https://github.com/jakebromberg/code-audit-pipeline/issues/115) — the cross-language work that `field_names_sig` exists for.
-- [#120 — Dev-flow integration](https://github.com/jakebromberg/code-audit-pipeline/issues/120) — shares the `audit-core` composite action with D.
+- [#117 — Time: catalog snapshots and structured diffs](https://github.com/jakebromberg/code-audit-pipeline/issues/117) — provides #141 (schema envelope), #142 (snapshot store), and #148 (diff algorithm) that several #118 children depend on.
+- [#115 — Breadth: language extractors](https://github.com/jakebromberg/code-audit-pipeline/issues/115) — provides #137 (Schema v2 ratification) that all #118 children depending on schema work block on.
+- [#120 — Dev-flow integration](https://github.com/jakebromberg/code-audit-pipeline/issues/120) — provides #123 (PR-comment Action) that shares the `audit-core` composite with #154.
