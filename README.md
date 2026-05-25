@@ -108,6 +108,7 @@ All operate on the JSON catalog and emit human-readable output. Drop into a chat
 | `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold on field-name sets — re-typed contracts | type |
 | `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
 | `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |
+| `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language). Verdict per cluster: `FIELD_NAMES_MATCH` / `FIELD_NAMES_DIVERGE` / `COMPARISON_UNAVAILABLE` | type, two-catalog |
 
 ## Adding a new extractor
 
@@ -123,7 +124,7 @@ The contract doc has the minimum schema. The TypeScript extractor (~280 lines, u
 - **Python** — `ast` (stdlib): `ClassDef`, `AnnAssign`, Pydantic `BaseModel` subclasses, SQLAlchemy declarative bases, FastAPI route handlers
 - **Rust** — `syn` crate, or treesitter-rust
 - **Go** — `go/ast` + `go/parser` (stdlib): `*ast.StructType`, `*ast.InterfaceType`
-- **Swift** — `SwiftSyntax`
+- **Swift** — `SwiftSyntax`. The walked-from-real-codebase feasibility study is in [`docs/swift-extractor-design-notes.md`](docs/swift-extractor-design-notes.md); it covers what an AST-only extractor faithfully captures vs. where macros, property wrappers, and result builders force fidelity-loss markers.
 
 ## Provenance
 

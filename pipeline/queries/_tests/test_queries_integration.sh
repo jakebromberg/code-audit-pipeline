@@ -149,6 +149,58 @@ assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson th
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
 
 echo ""
+echo "=== Cross-catalog queries ==="
+# cross-catalog queries take two slurped catalogs rather than a single input,
+# so the assert_jsonl_has_prefix helper doesn't fit — inline the assertion.
+# The TYPES_FIXTURE has `package: "main"` and `package: "shared"` records; we
+# split into two synthetic catalogs for the test.
+CROSS_LEFT="$(mktemp)"
+CROSS_RIGHT="$(mktemp)"
+trap 'rm -f "$CROSS_LEFT" "$CROSS_RIGHT"' EXIT
+jq '[.[] | select(.package == "main")]'   "$TYPES_FIXTURE" > "$CROSS_LEFT"
+jq '[.[] | select(.package == "shared")]' "$TYPES_FIXTURE" > "$CROSS_RIGHT"
+
+assert_cross_catalog_jsonl() {
+  local query="$1"
+  local expected_prefix="$2"
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl LEFT_LABEL=left RIGHT_LABEL=right \
+    jq -n -L "$QUERIES_DIR" \
+      --slurpfile left "$CROSS_LEFT" --slurpfile right "$CROSS_RIGHT" \
+      -rf "$QUERIES_DIR/$query" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s: query crashed: %s\n" "$query" "$jsonl"
+    return
+  }
+  if [[ -z "$jsonl" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s: produced no clusters (fixture has ShadowedName in both packages — should match)\n" "$query"
+    return
+  fi
+  local line_count=0
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    line_count=$((line_count + 1))
+    if ! echo "$line" | jq empty 2>/dev/null; then
+      FAIL=$((FAIL + 1))
+      printf "  ✗ %s line %d: invalid JSON\n" "$query" "$line_count"
+      return
+    fi
+    local cid
+    cid="$(echo "$line" | jq -r '.cluster_id')"
+    if [[ "$cid" != "$expected_prefix"* ]]; then
+      FAIL=$((FAIL + 1))
+      printf "  ✗ %s line %d: cluster_id '%s' does not start with '%s'\n" "$query" "$line_count" "$cid" "$expected_prefix"
+      return
+    fi
+  done <<< "$jsonl"
+  PASS=$((PASS + 1))
+  printf "  ✓ %s: %d JSONL row(s), all with cluster_id starting '%s'\n" "$query" "$line_count" "$expected_prefix"
+}
+
+assert_cross_catalog_jsonl cross-catalog-name-collisions.jq "cross-catalog-name-collisions:"
+
+echo ""
 echo "=== Results ==="
 printf "Passed: %d\n" "$PASS"
 printf "Failed: %d\n" "$FAIL"
