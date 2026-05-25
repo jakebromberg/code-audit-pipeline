@@ -209,20 +209,14 @@ def _specifics_values_match(
     H0b fall-through: when the verbatim check fails on key K, the scorer
     re-checks `rec_val` against each entry of
     `specifics_alternatives.get(K, [])` using `_values_structurally_equal`.
-    A blessed-alternative match counts as a match for that key (no problem
-    appended) and flips `any_alternative_used`. Plants without
-    `specifics_alternatives` (or with no alternatives for K) reduce to
-    pre-H0b verbatim-only behavior. Validator rule 12 (PR 1) keeps the
-    `specifics_alternatives` dict structurally clean — string-valued lists
-    per key, ≤ H0B_ALTERNATIVES_CAP entries, no canonical duplicates.
+    A blessed-alternative match counts as a match for that key and flips
+    `any_alternative_used`. Plants without `specifics_alternatives` reduce
+    to pre-H0b verbatim-only behavior.
 
-    Returns (ok, problem_descriptions, any_alternative_used).
-    `problem_descriptions` is a list of `"key={key} manifest={manifest_val!r}
-    rec={rec_val!r} (alternatives: ...)"` strings for each key that matched
-    neither the canonical value nor any blessed alternative.
-    `any_alternative_used` is True iff at least one required key was
-    satisfied via a blessed alternative rather than verbatim — the caller
-    uses this to choose between `primary_match_full` and
+    Returns (ok, problem_descriptions, any_alternative_used). The third
+    element is True iff at least one required key was satisfied via a
+    blessed alternative rather than verbatim — the caller uses it to choose
+    between `primary_match_full` and
     `primary_match_specifics_blessed_alternative` labels.
 
     Precondition: caller has confirmed every key in `required_keys` is
@@ -244,9 +238,9 @@ def _specifics_values_match(
         if any(_values_structurally_equal(alt, rec_val) for alt in alternatives):
             any_alternative_used = True
             continue  # H0b blessed-alternative hit
+        suffix = f" (alternatives: {alternatives})" if alternatives else ""
         problems.append(
-            f"key={key!r} manifest={manifest_val!r} rec={rec_val!r} "
-            f"(alternatives: {alternatives or 'none'})"
+            f"key={key!r} manifest={manifest_val!r} rec={rec_val!r}{suffix}"
         )
     return (not problems, problems, any_alternative_used)
 
