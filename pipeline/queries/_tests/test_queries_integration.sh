@@ -200,6 +200,35 @@ assert_cross_catalog_jsonl() {
 
 assert_cross_catalog_jsonl cross-catalog-name-collisions.jq "cross-catalog-name-collisions:"
 
+# Verdict-assignment assertion. The verdict branching (FIELD_NAMES_MATCH /
+# FIELD_NAMES_DIVERGE / COMPARISON_UNAVAILABLE) is the query's load-bearing
+# classifier — the bare cluster_id-prefix check above doesn't exercise it.
+# The fixture's `ShadowedName` declares `[x:Int]` in main and again as
+# `[x:Int, y:String]` in main, and `[x:Int]` in shared. Per-catalog union:
+#   left  (main)   → ["x", "y"]
+#   right (shared) → ["x"]
+# → expected verdict: FIELD_NAMES_DIVERGE.
+assert_cross_catalog_verdict() {
+  local query="$1"
+  local target_name="$2"
+  local expected_verdict="$3"
+  local actual
+  actual="$(OUTPUT_FORMAT=jsonl LEFT_LABEL=left RIGHT_LABEL=right \
+    jq -n -L "$QUERIES_DIR" \
+      --slurpfile left "$CROSS_LEFT" --slurpfile right "$CROSS_RIGHT" \
+      -rf "$QUERIES_DIR/$query" 2>/dev/null \
+    | jq -rs --arg name "$target_name" '.[] | select(.name == $name) | .verdict' 2>/dev/null)"
+  if [[ "$actual" == "$expected_verdict" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ %s: %s verdict = %s\n" "$query" "$target_name" "$expected_verdict"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s: %s verdict was '%s', expected '%s'\n" "$query" "$target_name" "$actual" "$expected_verdict"
+  fi
+}
+
+assert_cross_catalog_verdict cross-catalog-name-collisions.jq ShadowedName FIELD_NAMES_DIVERGE
+
 echo ""
 echo "=== Results ==="
 printf "Passed: %d\n" "$PASS"
