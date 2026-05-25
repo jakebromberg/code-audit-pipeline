@@ -71,14 +71,6 @@ H0B_ADDABLE_FIELDS: frozenset[str] = frozenset(
 )
 
 
-class ScopeError(Exception):
-    """Aggregated set of scope violations to print in one report."""
-
-    def __init__(self, violations: list[str]) -> None:
-        super().__init__(f"{len(violations)} scope violation(s)")
-        self.violations = violations
-
-
 def load_manifest_from_ref(ref: str, path: Path) -> dict:
     """Use `git show` to load the manifest at the given ref. Raises CalledProcessError on failure."""
     repo_relative = path.resolve().relative_to(REPO_ROOT)
@@ -146,8 +138,7 @@ def _diff_primary_answer(
 
 
 def _diff_plant_root(plant_id: str, base_plant: dict, head_plant: dict) -> list[str]:
-    """Compare top-level plant fields (not primary_answer). PR 2 must touch zero
-    top-level fields — alternatives all live under primary_answer."""
+    """Compare top-level plant fields (excluding primary_answer). Returns violation list."""
     violations: list[str] = []
     base_keys = set(base_plant) - {"primary_answer"}
     head_keys = set(head_plant) - {"primary_answer"}
@@ -173,15 +164,16 @@ def _diff_plant_root(plant_id: str, base_plant: dict, head_plant: dict) -> list[
     return violations
 
 
-def check_scope(base_manifest: dict, head_manifest: dict) -> list[str]:
+def check_scope(
+    base_manifest: dict, head_manifest: dict
+) -> tuple[list[str], dict[str, dict]]:
     """Apply constraints (b) and (c). Constraint (a) is enforced by the caller (git diff
-    file-list check). Returns the aggregated violation list."""
+    file-list check). Returns (violations, head_by_id) so the caller can reuse the index."""
     violations: list[str] = []
 
     base_by_id = index_by_plant_id(base_manifest)
     head_by_id = index_by_plant_id(head_manifest)
 
-    # No plants added or removed.
     added_plants = set(head_by_id) - set(base_by_id)
     removed_plants = set(base_by_id) - set(head_by_id)
     if added_plants:
@@ -193,10 +185,8 @@ def check_scope(base_manifest: dict, head_manifest: dict) -> list[str]:
         base_plant = base_by_id[plant_id]
         head_plant = head_by_id[plant_id]
 
-        # Top-level diff: must be empty (constraint c at the plant level).
         violations.extend(_diff_plant_root(plant_id, base_plant, head_plant))
 
-        # Per-plant primary_answer diff.
         base_primary = base_plant.get("primary_answer", {})
         head_primary = head_plant.get("primary_answer", {})
         if not isinstance(base_primary, dict):
@@ -208,16 +198,15 @@ def check_scope(base_manifest: dict, head_manifest: dict) -> list[str]:
 
         primary_violations = _diff_primary_answer(plant_id, base_primary, head_primary)
 
-        # Constraint (b): only the 17 panel-routed plants may be touched.
-        if primary_violations or base_primary != head_primary:
-            if plant_id not in PANEL_ROUTED_PLANTS:
-                violations.append(
-                    f"plant {plant_id}: primary_answer modified but plant is NOT in the "
-                    f"17-plant panel-routed scope; H0b curation must not touch unrelated plants"
-                )
+        if primary_violations and plant_id not in PANEL_ROUTED_PLANTS:
+            violations.append(
+                f"plant {plant_id}: primary_answer modified but plant is NOT in the "
+                f"{len(PANEL_ROUTED_PLANTS)}-plant panel-routed scope; "
+                "H0b curation must not touch unrelated plants"
+            )
         violations.extend(primary_violations)
 
-    return violations
+    return violations, head_by_id
 
 
 def check_files_touched(base_ref: str, manifest_path: Path) -> list[str]:
@@ -276,7 +265,8 @@ def main() -> int:
         except subprocess.CalledProcessError as exc:
             print(f"error: git diff failed: {exc.stderr}", file=sys.stderr)
             return 2
-    all_violations.extend(check_scope(base_manifest, head_manifest))
+    scope_violations, head_by_id = check_scope(base_manifest, head_manifest)
+    all_violations.extend(scope_violations)
 
     if all_violations:
         print(f"FAIL: {len(all_violations)} H0b curation-scope violation(s):", file=sys.stderr)
@@ -284,9 +274,7 @@ def main() -> int:
             print(f"  - {v}", file=sys.stderr)
         return 1
 
-    # Successful report (printed to stdout so it can be pasted into PR 2 description
-    # per the plan §5 acceptance checklist).
-    head_by_id = index_by_plant_id(head_manifest)
+    # Successful report — stdout content is pasted into PR 2 description per plan §5.
     touched_plants = sorted(
         pid for pid, p in head_by_id.items()
         if p.get("primary_answer", {}).get("specifics_alternatives")
@@ -295,7 +283,8 @@ def main() -> int:
     print(f"OK: H0b curation-scope pre-flight passed against base={args.base_ref}.")
     print(f"  (a) Files touched: {args.manifest.relative_to(REPO_ROOT)} only — passed.")
     print(
-        f"  (b) Plants modified: {len(touched_plants)} of 17 panel-routed plants — passed."
+        f"  (b) Plants modified: {len(touched_plants)} of {len(PANEL_ROUTED_PLANTS)} "
+        f"panel-routed plants — passed."
         + (f" ({', '.join(touched_plants)})" if touched_plants else "")
     )
     print(

@@ -40,11 +40,11 @@ DEFAULT_PANEL_ROUTING = (
 )
 
 # Only `primary_match_specifics_*` match reasons are scope for H0b's loosening.
-# Other panel routes (`other_routes_to_panel`, `wrong_category_enumerated`,
-# `panel_promoted`, etc.) are not addressed by `specifics_alternatives` — adding
-# alternatives wouldn't change their match decision.
 SPECIFICS_MATCH_REASON_PREFIX = "primary_match_specifics_"
 
+# Inverse of the note-format producer at experiments/v7-refactor-recommendation/
+# auto-scorer.py (see _specifics_values_match). If that producer's format ever
+# changes, update this regex in lockstep.
 KEY_PATTERN = re.compile(r"^key='([^']+)'")
 
 
@@ -97,21 +97,14 @@ def collect_keys_per_plant(panel_routing_path: Path) -> dict[str, set[str]]:
 
 
 def format_text(keys_by_plant: dict[str, set[str]]) -> str:
-    """Human-readable table: one line per (plant, comma-separated-keys)."""
-    lines = []
-    lines.append("Plant-and-keys scope for H0b curation (rows: panel-routed plants;")
-    lines.append("columns: specifics keys with at least one outside-tolerance panel")
-    lines.append("route in analyses-v1-clean/panel-routing.jsonl).")
-    lines.append("")
+    """One line per plant: `<plant_id>  <comma-separated keys>`."""
     if not keys_by_plant:
-        lines.append("(no plants had primary_match_specifics_* panel routes)")
-        return "\n".join(lines) + "\n"
+        return "(no plants had primary_match_specifics_* panel routes)\n"
     width = max(len(pid) for pid in keys_by_plant)
+    lines = []
     for plant_id in sorted(keys_by_plant, key=lambda p: tuple(int(x) for x in p.split("."))):
         keys = sorted(keys_by_plant[plant_id])
-        lines.append(f"  {plant_id:<{width}}  {', '.join(keys)}")
-    lines.append("")
-    lines.append(f"Total plants in scope: {len(keys_by_plant)}.")
+        lines.append(f"{plant_id:<{width}}  {', '.join(keys)}")
     return "\n".join(lines) + "\n"
 
 
@@ -136,11 +129,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if not args.panel_routing.exists():
-        print(f"error: panel-routing file not found: {args.panel_routing}", file=sys.stderr)
+    try:
+        keys_by_plant = collect_keys_per_plant(args.panel_routing)
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
-
-    keys_by_plant = collect_keys_per_plant(args.panel_routing)
     output = format_text(keys_by_plant) if args.format == "text" else format_json(keys_by_plant)
     sys.stdout.write(output)
     return 0
