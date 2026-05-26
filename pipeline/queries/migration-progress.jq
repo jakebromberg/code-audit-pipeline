@@ -35,19 +35,17 @@ include "_canonical";
 
 # Optional filters live in $ENV (jq errors on undefined --arg, so $ENV is the
 # clean default-empty-string mechanism here, matching OUTPUT_FORMAT's pattern).
-($ENV.PACKAGE           // "")     as $pkg_filter
-| ($ENV.KIND_PREFIX     // "")     as $kind_filter
-| ((($ENV.INCLUDE_GENERATED // "false") | ascii_downcase) == "true") as $include_gen
+($ENV.PACKAGE         // "")           as $pkg_filter
+| ($ENV.KIND_PREFIX   // "")           as $kind_filter
+| (($ENV.INCLUDE_GENERATED // "") == "true") as $include_gen
 | ([.[]
     | select($include_gen or ((.generated // false) != true))
     | select($pkg_filter  == "" or .package == $pkg_filter)
     | select($kind_filter == "" or ((.kind // "") | startswith($kind_filter)))]) as $all
 | ([$all[] | select(.shape_sig == $old_sig)]) as $on_old
-| ([$all[] | select(.shape_sig == $new_sig)]) as $on_new
 | ($on_old | length) as $n_old
-| ($on_new | length) as $n_new
-| (($n_old + $n_new) | if . == 0 then 1 else . end) as $denom
-| (($n_new * 100) / $denom | floor) as $pct
+| ($n_old + ([$all[] | select(.shape_sig == $new_sig)] | length)) as $total
+| (if $total == 0 then 0 else (($total - $n_old) * 100 / $total | floor) end) as $pct
 | ([$on_old[] | select(.touched_in_window // false)]
    | sort_by(.package, .file, .line)) as $stragglers
 | {
@@ -57,9 +55,9 @@ include "_canonical";
     old_sig: $old_sig,
     new_sig: $new_sig,
     on_old: $n_old,
-    on_new: $n_new,
+    on_new: ($total - $n_old),
     percent_migrated: $pct,
-    no_matches: (($n_old + $n_new) == 0),
+    no_matches: ($total == 0),
     sigs_identical: ($old_sig == $new_sig and $old_sig != ""),
     stragglers: ($stragglers | map({name, kind, package, file, line}))
   }
