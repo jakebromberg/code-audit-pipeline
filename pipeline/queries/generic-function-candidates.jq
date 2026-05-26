@@ -77,7 +77,7 @@ def best_buddy(a; bs; max_subs):
   | sort_by(.sym_count)
   | if length > 0 then .[0] else null end;
 
-. as $all
+entries as $all
 | ([ $all[] | select((.generated // false) != true and (.body_line_count // 0) >= 3) ]) as $fns
 | $threshold as $thr
 | [

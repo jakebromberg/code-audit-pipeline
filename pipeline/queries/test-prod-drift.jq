@@ -35,7 +35,7 @@
 
 include "_canonical";
 
-[ .[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $all
+[ entries[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $all
 # Pre-partition into prod and test halves so the pair-generation loop is a T·P
 # cross-product instead of the full N² upper-triangle followed by an XOR filter.
 # The XOR identity (one prod, one test) falls out of the partition shape; the

@@ -80,7 +80,7 @@ jq -rf pipeline/queries/file-duplicates.jq file-hashes.json
 
 ## What the catalog contains
 
-One JSON record per declared type. The contract is in [`docs/pipeline-contract.md`](docs/pipeline-contract.md). Core fields every extractor emits:
+Top-level JSON is `{schema_version: "1.1", extractor: {...}, entries: [...]}` — one record per declared type inside `entries`. The contract is in [`docs/pipeline-contract.md`](docs/pipeline-contract.md). Core fields every extractor emits:
 
 | Field | Meaning |
 |---|---|
@@ -92,7 +92,13 @@ One JSON record per declared type. The contract is in [`docs/pipeline-contract.m
 | `shape_sig` | `fields.join("|").lower` — deterministic hash for exact-duplicate clustering |
 | `touched_in_window` | true if `file` appears in the `--touched` JSON list |
 | `generated` | true for `.d.ts` or files under `generated/` |
+| `is_test` | true if `file` matches test/fixture path patterns (see contract for the normative set) |
 | `exported` | from-file export status |
+| `extends` | sorted array of direct supertype names — empty if the declaration has no heritage |
+| `references` | sorted array of `{name, kind: "type-ref"}` — names referenced in the declaration body, type-parameter-scoped, deny-listed against built-ins |
+| `references_count` | `references \| length` — derived; emitted explicitly so queries don't pay the inline length call |
+
+Pass `--emit-references-graph <path>` to additionally write a sibling `references.json` with an inverted edge list (`from`/`to` keyed by `(package, name)`, with same-package-then-shared resolution).
 
 ## Cluster queries
 

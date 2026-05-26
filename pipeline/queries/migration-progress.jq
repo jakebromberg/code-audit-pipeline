@@ -40,7 +40,7 @@ include "_canonical";
 ($ENV.PACKAGE         // "")           as $pkg_filter
 | ($ENV.KIND_PREFIX   // "")           as $kind_filter
 | (($ENV.INCLUDE_GENERATED // "") == "true") as $include_gen
-| ([.[]
+| ([entries[]
     | select($include_gen or ((.generated // false) != true))
     | select($pkg_filter  == "" or .package == $pkg_filter)
     | select($kind_filter == "" or ((.kind // "") | startswith($kind_filter)))]) as $all

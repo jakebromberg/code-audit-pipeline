@@ -56,6 +56,18 @@
 
 def output_format: ($ENV.OUTPUT_FORMAT // "text");
 
+# Schema v1.1 (per docs/pipeline-contract.md) wraps the catalog as
+#   {schema_version: "1.1", extractor: {...}, entries: [...]}
+# Queries that used to start with `[ .[] | ... ]` now use `[ entries[] | ... ]`.
+# This helper also accepts the legacy bare-array form for one release so older
+# catalog dumps (and synthetic test fixtures predating the wrapper) keep working.
+# Drop the back-compat branch when the deprecation window closes.
+def entries:
+  if type == "array" then .
+  elif type == "object" and has("entries") then .entries
+  else error("expected catalog: top-level must be an array (v1.0) or an object with .entries (v1.1)")
+  end;
+
 # Sorted-names cluster_id: prefix + ":" + sorted_names_joined_with_plus.
 def cluster_id_sorted_names(prefix; names):
   prefix + ":" + (names | sort | join("+"));

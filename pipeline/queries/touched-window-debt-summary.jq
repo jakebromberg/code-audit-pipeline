@@ -49,7 +49,7 @@ def render_cluster:
 
 ($ENV.THRESHOLD     // "0.7" | tonumber) as $thr
 | (($ENV.ONLY_TOUCHED // "") == "true")   as $only_touched
-| . as $all
+| entries as $all
 
 # 1. exact-duplicates — group by shape_sig, ≥2 decls, exclude generated/null.
 # Sort by -size to match exact-duplicates.jq's `sort_by(-(.decls | length))`

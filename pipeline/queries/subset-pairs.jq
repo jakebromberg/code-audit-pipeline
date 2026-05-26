@@ -20,7 +20,7 @@
 
 include "_canonical";
 
-[ .[] | select(.fields != null and (.fields | length) >= 2 and (.generated // false) != true) ] as $bs
+[ entries[] | select(.fields != null and (.fields | length) >= 2 and (.generated // false) != true) ] as $bs
 | [
     range(0; $bs | length) as $i
     | range(0; $bs | length) as $j

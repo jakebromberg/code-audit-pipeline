@@ -13,42 +13,56 @@ Each section below specifies one. Queries in `pipeline/queries/` consume one spe
 
 ## Type catalog (`type-catalog.json`)
 
-The type catalog is a single JSON array. Each entry describes one declared type-like construct.
+The type catalog is a top-level **wrapper object** carrying the schema version, an `extractor` provenance block, and the entry array. (Pre-v1.1 catalogs were a bare array; see [Schema versioning and back-compat](#schema-versioning-and-back-compat) below.)
 
 ```jsonc
-[
-  {
-    "name": "FlowsheetEntry",            // identifier as declared
-    "kind": "interface",                  // see "Kinds" below
-    "package": "main",                    // which root this came from
-    "file": "src/models/flowsheet.ts",   // path relative to that root
-    "line": 42,                           // 1-indexed
-    "exported": true,                     // true if exported from the file
-    "generated": false,                   // true if .d.ts or under generated/
-    "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
+{
+  "schema_version": "1.1",
+  "extractor": {
+    "language": "typescript",
+    "name": "type-catalog",
+    "version": "0.4.0"                   // extractor package version
+  },
+  "entries": [
+    {
+      "name": "FlowsheetEntry",            // identifier as declared
+      "kind": "interface",                  // see "Kinds" below
+      "package": "main",                    // which root this came from
+      "file": "src/models/flowsheet.ts",   // path relative to that root
+      "line": 42,                           // 1-indexed
+      "exported": true,                     // true if exported from the file
+      "generated": false,                   // true if .d.ts or under generated/
+      "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
 
-    "fields": [                           // sorted "name:type" list, or null
-      "album_title:string | null",
-      "artist_name:string | null",
-      "id:number"
-    ],
-    "fields_structured": [                // V7 §6.1: parallel to `fields`, with split name/type + flags
-      { "name": "album_title", "type": "string | null", "is_optional": true,  "is_static": false },
-      { "name": "artist_name", "type": "string | null", "is_optional": true,  "is_static": false },
-      { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
-    ],
-    "shape_sig": "album_title:string | null|artist_name:string | null|id:number",  // fields.join("|").lower
+      "fields": [                           // sorted "name:type" list, or null
+        "album_title:string | null",
+        "artist_name:string | null",
+        "id:number"
+      ],
+      "fields_structured": [                // V7 §6.1: parallel to `fields`, with split name/type + flags
+        { "name": "album_title", "type": "string | null", "is_optional": true,  "is_static": false },
+        { "name": "artist_name", "type": "string | null", "is_optional": true,  "is_static": false },
+        { "name": "id",          "type": "number",        "is_optional": false, "is_static": false }
+      ],
+      "shape_sig": "album_title:string | null|artist_name:string | null|id:number",  // fields.join("|").lower
 
-    "touched_in_window": false,           // true if file is in --touched JSON list
+      "touched_in_window": false,           // true if file is in --touched JSON list
 
-    // Optional, kind-dependent:
-    "generics": "T,U",                    // type-parameter names if generic
-    "type_text": "Pick<X, 'a' | 'b'>",   // for non-object type aliases
-    "type_sig": "pick<x, 'a' | 'b'>",    // normalized type_text for clustering
-    "infer_ref": { "kind": "InferSelectModel", "table": "user" }, // ORM-derived types
-    "db_table_name": "user_accounts"      // for ORM table declarations
-  }
-]
+      "extends": ["BaseEntry"],             // direct supertype names, sorted alpha
+      "references": [                       // names referenced in body, sorted by name
+        { "name": "FlowsheetMetadata", "kind": "type-ref" }
+      ],
+      "references_count": 1,                // == references | length
+
+      // Optional, kind-dependent:
+      "generics": "T,U",                    // type-parameter names if generic
+      "type_text": "Pick<X, 'a' | 'b'>",   // for non-object type aliases
+      "type_sig": "pick<x, 'a' | 'b'>",    // normalized type_text for clustering
+      "infer_ref": { "kind": "InferSelectModel", "table": "user" }, // ORM-derived types
+      "db_table_name": "user_accounts"      // for ORM table declarations
+    }
+  ]
+}
 ```
 
 ### V7 §6.1: `fields_structured`
@@ -115,7 +129,9 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Required fields
 
-- `name`, `kind`, `package`, `file`, `line`, `is_test`
+- `name`, `kind`, `package`, `file`, `line`, `is_test`, `extends`, `references`, `references_count`
+
+`extends` and `references` are arrays (possibly empty) on every entry — never `null`. Empty extends/references arrays still serialize so consumers can do `(entries[] | select(.references_count == 0))` without a `// 0` fallback. `references_count` is a derived field: `references | length`. It's emitted explicitly because jq queries that filter on it are noisier with the inline length call.
 
 ## Required-when-applicable
 
@@ -125,6 +141,7 @@ Languages without an exact analog can extend with their own kind values — keep
 ## Optional but useful
 
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
+- `reference_count` (grep-style identifier-occurrence count, populated by a second pass — coarse "name appears anywhere in scanned source" signal; distinct from `references_count` which is the structural count of typed references inside this declaration's body)
 
 ### `infer_ref` shape
 
@@ -148,6 +165,72 @@ If at least one operand can't be resolved (utility types like `Pick<X, 'a'>`, co
 This is additive: intersection types that resolve get treated like normal shape-bearing constructs by `subset-pairs.jq`, `near-duplicates.jq`, `exact-duplicates.jq`, etc. Intersection entries that fail to resolve stay invisible to those queries, as before.
 
 **Order-dependent conflict resolution.** When two operands declare the same field name with different types (`type X = { a: string } & { a: number }`), the extractor keeps the FIRST occurrence in declaration order. TypeScript's true semantics would intersect (`string & number = never`); the substrate flattens to the first binding so `shape_sig` stays deterministic. This is a clustering tool, not a type-checker — if you need conflict detection, compare operand field-type pairs separately, or wait for the dedicated check that will accompany #5 (substrate-emitted cluster_ids).
+
+### `extends` and `references` semantics
+
+Both fields are sorted (alphabetically), deduplicated, and never `null` (empty array on declarations with no heritage / no body refs).
+
+**`extends`** is the supertype-edge axis. Populated for:
+
+| Construct | `extends` content |
+|---|---|
+| `interface X extends A, B {}` | `["A", "B"]` |
+| `type X = A & B & { … }` | `["A", "B"]` (intersection-named operands) |
+| `type X = A & B` (pure intersection, no literal) | `["A", "B"]` |
+| `type X = A` (simple alias to a name) | `["A"]` (resolves through the intersection mechanic when the alias is canonical) |
+| `type X = A \| B` (union) | `[]` — union variants are *references*, not `extends`. Treating union variants as inheritance would over-claim. |
+| `type X = Pick<Y, "a">` (utility alias) | `[]` — the utility itself isn't a supertype. |
+| `zod-object`, `drizzle-table`, `type-alias-other` | `[]` in v1 (best-effort) |
+
+**`references`** is the names-in-body axis. Populated for every declaration with a recognizable type body. Each entry is `{name: string, kind: "type-ref"}`. The `kind` slot is present from v1 so future kinds (`call-ref`, `import-ref`) extend without a schema break.
+
+Type-parameter names declared by the enclosing declaration are excluded from `references` (so `interface Foo<T> { x: T }` produces `references: []`, not `[{name: "T"}]`). Mapped types (`{[K in keyof S]: …}`) and function types (`<T>(x: T) => T`) introduce their own scopes for the same reason — the walker threads a `Set<string>` of in-scope type-parameter names so nested generics shadow correctly.
+
+A curated **deny-list of built-in / utility type names** (`Pick`, `Omit`, `Partial`, `Promise`, `Array`, `Map`, `Date`, etc., plus the Drizzle infer helpers `InferSelectModel` / `InferInsertModel` which are already first-class via `infer_ref`) excludes these from references. Without the filter, `Promise` and `Pick` would dominate every graph as the highest-degree nodes. The complete list lives in `extractors/typescript/type-catalog.mjs` as a single `BUILTIN_TYPE_DENYLIST` constant — adding new entries (e.g., a TS lib upgrade adds `NoInfer`) is a one-line change.
+
+**v1 node coverage** for the references walker (TypeScript extractor):
+
+- Full support: `TypeReferenceNode`, `TypeLiteralNode`, `UnionTypeNode`, `IntersectionTypeNode`, `ArrayTypeNode`, `TupleTypeNode`, `IndexedAccessTypeNode`, `MappedTypeNode`, `TypeQueryNode` (`typeof X` — emits `X`), `ImportTypeNode` (`import("x").Y` — emits `Y` via the qualifier), `ParenthesizedTypeNode`, `FunctionTypeNode`, `ConstructorTypeNode`.
+- Deferred (walks children, may produce false positives): `ConditionalTypeNode`, `InferTypeNode`, `TemplateLiteralTypeNode`, `TypeOperatorNode`, `ThisTypeNode`, `LiteralTypeNode`. The walker descends via `ts.forEachChild`, so identifiers buried in these still surface via their `TypeReferenceNode` descendants — the *node form itself* isn't modeled (e.g., `infer R` doesn't produce a special `kind`).
+- Best-effort (v1 ships empty references): `zod-object`, `drizzle-table`. Their builder DSLs are not walked. The `type-alias-infer-model` kind walks the inner type argument and surfaces the table identifier as a reference, e.g., `InferSelectModel<typeof users>` → `references: [{name: "users", kind: "type-ref"}]`.
+
+**Self-references** are emitted: `interface Node { children?: Node[] }` produces `references: [{name: "Node", kind: "type-ref"}]`. The graph view consumer wants the self-loop edge; suppressing it would obscure recursive structure.
+
+**Qualified-name extraction**: for `TypeReferenceNode` whose `typeName` is a `QualifiedName` (e.g., `Namespace.Inner.Type`), the **leftmost** identifier is emitted as the reference (`Namespace`). This matches the resolution rule used by the sibling `references.json` artifact's `(package, name)` lookup. Heritage clauses (`interface X extends Lib.Foo`) preserve the full dotted form — the diverging convention is documented and rare in practice.
+
+### Sibling `references.json` artifact
+
+When invoked with `--emit-references-graph <path>`, the extractor writes an inverted edge list to `<path>`:
+
+```jsonc
+{
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": { "package": "main", "name": "FlowsheetView" },
+      "to":   { "package": "main", "name": "FlowsheetEntry" },
+      "kind": "type-ref",
+      "resolved": true
+    },
+    {
+      "from": { "package": "main", "name": "RemoteShape" },
+      "to":   { "package": "main", "name": "Unknown" },
+      "kind": "type-ref",
+      "resolved": false
+    }
+  ]
+}
+```
+
+Each `references[]` entry on a declaration produces one edge. Resolution prefers a same-package target; failing that, a `shared`-package target; failing that, marks the edge `resolved: false` with `to.package == from.package` (fallback for unresolved external names). Edges are deduplicated by `(from.package, from.name, to.package, to.name)` and sorted by the same key, so two runs over the same input produce byte-identical files.
+
+The artifact is the right home for inverted ("what depends on X?") queries:
+
+```jq
+.edges | map(select(.to.name == "FlowsheetEntry")) | group_by(.from.package)
+```
+
+The inline `references[]` field on each catalog entry is the right home for forward ("what does X depend on?") queries — including the graph-view consumer that needs per-node outgoing edges.
 
 ## Conventions
 
@@ -342,15 +425,35 @@ Walks `<root>` recursively for `Package.swift` files (skipping `.git`, `.build`,
 
 Exit code: `0` if at least one `Package.swift` or `project.pbxproj` was discovered; `1` if neither was found.
 
+## Schema versioning and back-compat
+
+The catalog top level carries `schema_version: "1.1"`. The current TS extractor always emits the wrapper form (`{schema_version, extractor, entries}`); the bare-array form is a pre-v1.1 artifact.
+
+**Query migration.** Queries consume entries via the `entries` helper in `pipeline/queries/_canonical.jq`, which accepts both forms for one deprecation cycle:
+
+```jq
+def entries:
+  if type == "array" then .                            # v1.0 bare-array
+  elif type == "object" and has("entries") then .entries  # v1.1 wrapper
+  else error("expected catalog: top-level must be array (v1.0) or object with .entries (v1.1)")
+  end;
+```
+
+Each query starts its top-level pipeline with `entries[]` (or `entries as $all`) instead of the bare `.[]`. To migrate a downstream-authored query: replace `.[]` (or `. as $all`) with `entries[]` (or `entries as $all`) at the top-level entry point, and `include "_canonical";` if not already included.
+
+**End of deprecation:** the bare-array branch will be removed in the next breaking schema bump (forward-looking — no concrete schedule). Until then, both forms work uniformly.
+
+The diff machinery (see #117) refuses to compare catalogs with different `schema_version` values — version coercion is intentionally not a transparent operation.
+
 ## CLI contract
 
 Every extractor:
 
 ```
-extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>]
+extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>]
 ```
 
-Defaults: `--output` writes to stdout. Summary stats (file counts, kind histogram, error count) go to stderr.
+Defaults: `--output` writes to stdout. `--emit-references-graph` is off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
 
 Exit code: `0` if at least one file was successfully indexed, `1` if no files could be parsed.
 

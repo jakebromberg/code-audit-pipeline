@@ -11,15 +11,21 @@
 import ts from 'typescript';
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, relative, resolve, dirname, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+
+const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
+const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
+const SCHEMA_VERSION = '1.1';
 
 const { values } = parseArgs({
   options: {
-    root:           { type: 'string' },
-    shared:         { type: 'string' },
-    touched:        { type: 'string' },
-    output:         { type: 'string' },
-    help:           { type: 'boolean', default: false },
+    root:                    { type: 'string' },
+    shared:                  { type: 'string' },
+    touched:                 { type: 'string' },
+    output:                  { type: 'string' },
+    'emit-references-graph': { type: 'string' },
+    help:                    { type: 'boolean', default: false },
   },
 });
 
@@ -32,10 +38,20 @@ if (values.help || !values.root) {
   --touched        Optional. Path to a JSON array of file paths (relative to --root)
                    to mark as touched_in_window=true.
   --output         Optional. Write JSON to this path. Default: stdout.
+  --emit-references-graph <path>
+                   Optional. Write a sibling references.json artifact
+                   (per docs/pipeline-contract.md §sibling artifacts) to
+                   <path>. The file contains an inverted edge list keyed by
+                   (package, name); resolution prefers same-package targets,
+                   falls back to the shared package, then marks unresolved.
+
+Output: {"schema_version": "${SCHEMA_VERSION}", "extractor": {...}, "entries": [...]}.
+Queries that consume the catalog must read from .entries (see _canonical.jq's
+"entries" helper, which also accepts the legacy bare-array form for one release).
 
 Test files are always extracted; every row carries an \`is_test\` flag derived
 from the file path. To exclude tests post-hoc, pipe through:
-  jq 'map(select(.is_test | not))'
+  jq '.entries | map(select(.is_test | not))'
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -47,6 +63,35 @@ const TOUCHED = values.touched
   : new Set();
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
+
+// Built-in / utility type names excluded from `references` extraction. Without
+// this filter, every async function's `Promise<X>` and every projection's
+// `Pick<X, …>` would dominate the graph, with `Promise` and `Pick` becoming
+// the highest-degree nodes. Keeping the list in one place makes adding TS-lib
+// additions (e.g., `NoInfer` from 5.4) a one-line change.
+const BUILTIN_TYPE_DENYLIST = new Set([
+  // Generic utility types
+  'Pick', 'Omit', 'Partial', 'Required', 'Readonly', 'Record', 'NonNullable',
+  'Awaited', 'Parameters', 'ReturnType', 'ConstructorParameters', 'InstanceType',
+  'ThisParameterType', 'OmitThisParameter', 'Uppercase', 'Lowercase',
+  'Capitalize', 'Uncapitalize', 'NoInfer', 'Exclude', 'Extract',
+  // Drizzle infer helpers — these are first-class on `infer_ref`, so treating
+  // them as plain references would duplicate the structured signal noisily.
+  'InferSelectModel', 'InferInsertModel',
+  // Containers
+  'Array', 'ReadonlyArray', 'Map', 'ReadonlyMap', 'Set', 'ReadonlySet',
+  'WeakMap', 'WeakSet',
+  // Async / iteration
+  'Promise', 'PromiseLike', 'Iterable', 'Iterator', 'AsyncIterable',
+  'AsyncIterator', 'Generator', 'AsyncGenerator', 'IterableIterator',
+  // Built-in objects
+  'Date', 'RegExp', 'Error', 'URL', 'URLSearchParams', 'Blob', 'ArrayBuffer',
+  'Uint8Array', 'Int8Array', 'Uint16Array', 'Int16Array', 'Uint32Array',
+  'Int32Array', 'Float32Array', 'Float64Array', 'BigInt64Array',
+  'BigUint64Array', 'Uint8ClampedArray', 'DataView', 'SharedArrayBuffer',
+  // Primitive wrappers
+  'Object', 'String', 'Number', 'Boolean', 'Symbol', 'BigInt', 'Function',
+]);
 
 // --- Sibling-shared-package detection (warning only) ---
 
@@ -173,6 +218,9 @@ function membersToFields(members, sf, opts) {
           generics: null,
           fields: innerFields,
           shape_sig: shapeSig(innerFields),
+          extends: [],
+          references: [],
+          references_count: 0,
           synthetic: true,
           parent: opts.ownerName,
         });
@@ -258,6 +306,158 @@ function exportedMod(node) {
   return !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
 }
 
+// Leftmost identifier extraction for `QualifiedName` chains
+// (`Namespace.Inner.Type` → `Namespace`). Mirrors the resolution rule the
+// downstream (`package, name`) lookup uses — the leftmost is what
+// distinguishes namespaces, not the deepest segment.
+function getLeftmostIdentifierText(typeName) {
+  if (typeName.kind === ts.SyntaxKind.Identifier) return typeName.text;
+  if (typeName.kind === ts.SyntaxKind.QualifiedName) return getLeftmostIdentifierText(typeName.left);
+  return typeName.getText ? typeName.getText() : null;
+}
+
+// Recursive walker over TS type nodes. Adds the names of all user-defined
+// type references it finds to `sink`, threading `scope` (a Set of in-scope
+// type-parameter names) so generics like `interface Foo<T> { x: T }` don't
+// emit `T` as a reference. Function and mapped types introduce new scopes —
+// the new scope is a child Set union, never a mutation of the parent.
+//
+// Coverage:
+//   - TypeReferenceNode: name extracted via leftmost-identifier; type arguments recursed.
+//   - FunctionTypeNode / ConstructorTypeNode: type parameters introduce a child scope;
+//     parameter and return types walked under the child.
+//   - MappedTypeNode: the key parameter (`[K in …]`) introduces a child scope; the
+//     constraint (`keyof Source`) walks in the parent scope, the value type in the child.
+//   - All other type nodes (TypeLiteral, Union, Intersection, Array, Tuple,
+//     IndexedAccess, Parenthesized, ConditionalType, InferType, TemplateLiteral,
+//     TypeOperator, Literal, TypeQuery, ImportType) recurse via `ts.forEachChild`.
+//     This catches identifiers buried in deferred-coverage nodes via their
+//     TypeReferenceNode descendants. Note: `typeof X` (TypeQueryNode) and
+//     `import("x").Y` (ImportTypeNode) embed their target identifiers in
+//     non-type positions; the v1 walker reaches them via `forEachChild` but
+//     does not lift them out of those positions — Phase 5 (F5) adds explicit
+//     cases that surface `X` and `Y` respectively.
+function extractReferences(typeNode, sf, scope, sink) {
+  if (!typeNode) return;
+
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const name = getLeftmostIdentifierText(typeNode.typeName);
+    if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
+      sink.add(name);
+    }
+    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
+    return;
+  }
+
+  if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
+    const child = new Set(scope);
+    if (typeNode.typeParameters) {
+      for (const tp of typeNode.typeParameters) child.add(tp.name.text);
+      for (const tp of typeNode.typeParameters) {
+        if (tp.constraint) extractReferences(tp.constraint, sf, child, sink);
+      }
+    }
+    typeNode.parameters?.forEach((p) => { if (p.type) extractReferences(p.type, sf, child, sink); });
+    if (typeNode.type) extractReferences(typeNode.type, sf, child, sink);
+    return;
+  }
+
+  if (ts.isMappedTypeNode(typeNode) && typeNode.typeParameter) {
+    const child = new Set(scope);
+    child.add(typeNode.typeParameter.name.text);
+    if (typeNode.typeParameter.constraint) {
+      extractReferences(typeNode.typeParameter.constraint, sf, scope, sink);
+    }
+    if (typeNode.type) extractReferences(typeNode.type, sf, child, sink);
+    return;
+  }
+
+  if (ts.isTypeQueryNode(typeNode)) {
+    if (typeNode.exprName) {
+      const name = getLeftmostIdentifierText(typeNode.exprName);
+      if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
+        sink.add(name);
+      }
+    }
+    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
+    return;
+  }
+
+  if (ts.isImportTypeNode(typeNode)) {
+    if (typeNode.qualifier) {
+      const name = getLeftmostIdentifierText(typeNode.qualifier);
+      if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
+        sink.add(name);
+      }
+    }
+    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
+    return;
+  }
+
+  ts.forEachChild(typeNode, (c) => extractReferences(c, sf, scope, sink));
+}
+
+// In-scope type parameters for the enclosing declaration (interface or alias).
+function buildScopeFromTypeParams(typeParameters) {
+  const scope = new Set();
+  if (typeParameters) {
+    for (const tp of typeParameters) scope.add(tp.name.text);
+  }
+  return scope;
+}
+
+// Collect `references` for an interface: type-parameter bounds plus every
+// member's type. Returns sorted, deduplicated `{name, kind: "type-ref"}` array.
+function refsForInterface(node, sf) {
+  const scope = buildScopeFromTypeParams(node.typeParameters);
+  const sink = new Set();
+  if (node.typeParameters) {
+    for (const tp of node.typeParameters) {
+      if (tp.constraint) extractReferences(tp.constraint, sf, scope, sink);
+    }
+  }
+  for (const m of node.members) {
+    extractReferences(m, sf, scope, sink);
+  }
+  return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
+}
+
+// Collect `references` for a type-alias: type-parameter bounds plus the alias body.
+function refsForTypeAlias(node, sf) {
+  const scope = buildScopeFromTypeParams(node.typeParameters);
+  const sink = new Set();
+  if (node.typeParameters) {
+    for (const tp of node.typeParameters) {
+      if (tp.constraint) extractReferences(tp.constraint, sf, scope, sink);
+    }
+  }
+  extractReferences(node.type, sf, scope, sink);
+  return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
+}
+
+// Heritage-clause supertype names for `interface X extends A, B {}`. Returns a
+// sorted, deduplicated array of names. Implements §F1: identifiers in each
+// `ExpressionWithTypeArguments` of an `extends` clause. Implements clauses are
+// ignored (TS doesn't model implementation; `implements` is structural on the
+// implementing side, not a supertype edge on the declaring side).
+//
+// Qualified expressions (`extends Namespace.Foo`) round-trip the full dotted
+// source text rather than splitting — this is rare in practice and the
+// downstream resolution pass handles the `(package, name)` lookup uniformly.
+function extractExtendsFromInterface(node, sf) {
+  if (!node.heritageClauses) return [];
+  const names = new Set();
+  for (const clause of node.heritageClauses) {
+    if (clause.token !== ts.SyntaxKind.ExtendsKeyword) continue;
+    for (const ewta of clause.types) {
+      const expr = ewta.expression;
+      if (ts.isIdentifier(expr)) names.add(expr.text);
+      else names.add(normalize(expr.getText(sf)));
+    }
+  }
+  return [...names].sort();
+}
+
 function extractFromFile(filePath, pkgName, pkgRoot) {
   const text = readFileSync(filePath, 'utf8');
   countIdentifiers(text);
@@ -283,10 +483,14 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
 
   function pushBase(node, partial) {
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+    const refs = partial.references ?? [];
     results.push({
       ...rowDefaults,
       line: line + 1,
       ...partial,
+      extends: partial.extends ?? [],
+      references: refs,
+      references_count: refs.length,
     });
   }
 
@@ -298,6 +502,8 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         rowDefaults,
       });
       const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
+      const extendsList = extractExtendsFromInterface(node, sf);
+      const referencesList = refsForInterface(node, sf);
       pushBase(node, {
         name: node.name.text,
         kind: 'interface',
@@ -305,6 +511,8 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         generics,
         fields,
         shape_sig: shapeSig(fields),
+        extends: extendsList,
+        references: referencesList,
       });
     }
 
@@ -350,6 +558,15 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         }
       }
 
+      const referencesList = refsForTypeAlias(node, sf);
+      // Intersection-extends: per §6.3, named operands of an intersection
+      // (`type X = A & B & {...}`) go into `extends`. Inline literals don't —
+      // they extend an anonymous shape, not a name. Union variants are
+      // *references*, not `extends`, since they describe possible-types not
+      // is-a relationships.
+      const extendsList = (kind === 'type-alias-intersection' && operands)
+        ? [...new Set(operands.filter((op) => op.kind === 'ref').map((op) => op.name))].sort()
+        : [];
       pushBase(node, {
         name: node.name.text,
         kind,
@@ -361,6 +578,8 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         type_sig,
         infer_ref,
         operands,
+        extends: extendsList,
+        references: referencesList,
       });
     }
 
@@ -552,12 +771,71 @@ if (syntheticCount > 0) {
 }
 process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
-const json = JSON.stringify(all, null, 2);
+const catalog = {
+  schema_version: SCHEMA_VERSION,
+  extractor: {
+    language: 'typescript',
+    name: 'type-catalog',
+    version: EXTRACTOR_VERSION,
+  },
+  entries: all,
+};
+const json = JSON.stringify(catalog, null, 2);
 if (values.output) {
   writeFileSync(values.output, json);
   process.stderr.write(`\nWrote ${values.output}\n`);
 } else {
   process.stdout.write(json);
+}
+
+// --- Sibling references.json artifact ---
+// Inverted edge list. Resolution: same-package first, then 'shared', else
+// unresolved (resolved: false, to.package == from.package). The edge list is
+// deduplicated and sorted for determinism.
+if (values['emit-references-graph']) {
+  const namesByPackage = new Map();
+  for (const e of all) {
+    let names = namesByPackage.get(e.package);
+    if (!names) { names = new Set(); namesByPackage.set(e.package, names); }
+    names.add(e.name);
+  }
+  const sharedNames = namesByPackage.get('shared');
+  const edges = [];
+  const seen = new Set();
+  for (const e of all) {
+    if (!e.references || e.references.length === 0) continue;
+    const sameNames = namesByPackage.get(e.package);
+    for (const ref of e.references) {
+      let toPackage = e.package;
+      let resolved = false;
+      if (sameNames?.has(ref.name)) {
+        toPackage = e.package;
+        resolved = true;
+      } else if (sharedNames?.has(ref.name) && e.package !== 'shared') {
+        toPackage = 'shared';
+        resolved = true;
+      }
+      const key = `${e.package} ${e.name} ${toPackage} ${ref.name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push({
+        from: { package: e.package, name: e.name },
+        to:   { package: toPackage, name: ref.name },
+        kind: 'type-ref',
+        resolved,
+      });
+    }
+  }
+  edges.sort((a, b) => {
+    if (a.from.package !== b.from.package) return a.from.package < b.from.package ? -1 : 1;
+    if (a.from.name    !== b.from.name)    return a.from.name    < b.from.name    ? -1 : 1;
+    if (a.to.package   !== b.to.package)   return a.to.package   < b.to.package   ? -1 : 1;
+    if (a.to.name      !== b.to.name)      return a.to.name      < b.to.name      ? -1 : 1;
+    return 0;
+  });
+  const graph = { schema_version: SCHEMA_VERSION, edges };
+  writeFileSync(values['emit-references-graph'], JSON.stringify(graph, null, 2));
+  process.stderr.write(`Wrote references graph (${edges.length} edges) to ${values['emit-references-graph']}\n`);
 }
 
 process.exit(mainFiles.length > 0 ? 0 : 1);

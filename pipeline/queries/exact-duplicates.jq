@@ -17,7 +17,7 @@ include "_canonical";
 # (codegen output declares every type both in its own file and again in a consolidated `.d.ts`,
 # producing 50+ "duplicate" clusters that an agent already understands as codegen, not drift).
 # Cross-package-shadows still surfaces main↔shared/generated collisions, which is the real signal.
-[ .[] | select(.shape_sig != null and .shape_sig != "" and (.generated // false) != true) ]
+[ entries[] | select(.shape_sig != null and .shape_sig != "" and (.generated // false) != true) ]
 | group_by(.shape_sig)
 | map(select(length > 1))
 | map({

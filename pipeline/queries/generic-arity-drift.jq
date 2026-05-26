@@ -24,7 +24,7 @@ include "_canonical";
 # together (the contract permits omission, the TS extractor emits null).
 def arity: if . == null or . == "" then 0 else (split(",") | length) end;
 
-[ .[]
+[ entries[]
   | select((.generated // false) != true)
   | select((.kind // "") | startswith("interface") or startswith("type-alias"))
   | . + {_arity: (.generics | arity)} ]

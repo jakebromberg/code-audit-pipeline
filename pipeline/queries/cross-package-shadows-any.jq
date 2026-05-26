@@ -16,7 +16,7 @@
 
 include "_canonical";
 
-. as $all
+entries as $all
 | [ $all[]
     | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object")
     | select((.generated // false) != true)

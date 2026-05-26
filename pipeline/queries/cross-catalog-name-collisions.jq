@@ -98,8 +98,8 @@ def is_shape_bearing:
 | ($ENV.RIGHT_LABEL // "right") as $R
 |
 (
-  ($left[0]  | map(. + {catalog: $L}))
-  + ($right[0] | map(. + {catalog: $R}))
+  ($left[0]  | entries | map(. + {catalog: $L}))
+  + ($right[0] | entries | map(. + {catalog: $R}))
 )
 | map(select(is_shape_bearing))
 | group_by(.name)

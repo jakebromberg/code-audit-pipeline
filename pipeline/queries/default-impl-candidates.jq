@@ -48,7 +48,7 @@ include "_canonical";
 
 # `type_of` lives in `_canonical.jq` as a shared naming utility.
 
-. as $all
+entries as $all
 | [ $all[]
     | select((.generated // false) != true)
     | select((.body_line_count // 0) >= 3)

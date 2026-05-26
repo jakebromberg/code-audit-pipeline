@@ -17,7 +17,7 @@
 
 include "_canonical";
 
-[ .[] | select(.package == "main" and .fields and (.fields | length) >= 3) ] as $bs
+[ entries[] | select(.package == "main" and .fields and (.fields | length) >= 3) ] as $bs
 | [
     range(0; $bs | length) as $i
     | range($i + 1; $bs | length) as $j

@@ -22,7 +22,7 @@
 
 include "_canonical";
 
-[ .[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $bs
+[ entries[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $bs
 | [
     range(0; $bs | length) as $i
     | range($i + 1; $bs | length) as $j
