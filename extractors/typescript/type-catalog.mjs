@@ -19,13 +19,12 @@ const { values } = parseArgs({
     shared:         { type: 'string' },
     touched:        { type: 'string' },
     output:         { type: 'string' },
-    'include-tests':{ type: 'boolean', default: false },
     help:           { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--include-tests]
+  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>]
 
   --root           Required. Root of the codebase to scan.
   --shared         Optional. A secondary package root (canonical types you compare
@@ -33,7 +32,10 @@ if (values.help || !values.root) {
   --touched        Optional. Path to a JSON array of file paths (relative to --root)
                    to mark as touched_in_window=true.
   --output         Optional. Write JSON to this path. Default: stdout.
-  --include-tests  Optional. Don't skip tests/ and *.test.ts / *.spec.ts files.
+
+Test files are always extracted; every row carries an \`is_test\` flag derived
+from the file path. To exclude tests post-hoc, pipe through:
+  jq 'map(select(.is_test | not))'
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -43,10 +45,8 @@ const SHARED = values.shared ? resolve(values.shared) : null;
 const TOUCHED = values.touched
   ? new Set(JSON.parse(readFileSync(values.touched, 'utf8')))
   : new Set();
-const INCLUDE_TESTS = values['include-tests'];
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
-if (!INCLUDE_TESTS) SKIP_DIRS.add('tests');
 
 // --- Sibling-shared-package detection (warning only) ---
 
@@ -110,7 +110,6 @@ function walkDir(root) {
         walk(full);
       } else if (e.isFile()) {
         if (!/\.(tsx|ts|mts|cts)$/.test(e.name)) continue;
-        if (!INCLUDE_TESTS && /\.(test|spec)\.(tsx|ts)$/.test(e.name)) continue;
         out.push(full);
       }
     }
@@ -122,6 +121,21 @@ function walkDir(root) {
 const normalize = (s) => (s ?? '').replace(/\s+/g, ' ').trim();
 const shapeSig = (fields) => [...fields].sort().join('|').toLowerCase();
 const typeSig = (text) => normalize(text).toLowerCase();
+
+// Test-path classification. Pattern set is normative — duplicated verbatim in
+// docs/pipeline-contract.md so other-language extractors (#115) stay aligned.
+const TEST_DIRS = new Set([
+  'tests', 'test', '__tests__', '__test__',
+  'spec', '__mocks__', '__fixtures__', 'fixtures', 'e2e',
+]);
+const TEST_FILE_RE = /\.(test|spec|fixture|fixtures|mock|mocks)\.(tsx|ts|mts|cts)$/;
+function isTestPath(relPath) {
+  const segments = relPath.split('/');
+  for (let i = 0; i < segments.length - 1; i++) {
+    if (TEST_DIRS.has(segments[i])) return true;
+  }
+  return TEST_FILE_RE.test(segments[segments.length - 1]);
+}
 
 // --- Identifier-occurrence counter (for reference_count, grep-approximation) ---
 const idCounts = new Map();
@@ -135,7 +149,7 @@ function countIdentifiers(text) {
 }
 
 function membersToFields(members, sf, opts) {
-  // opts: { ownerName, emitSynthetic, pkgName, relPath, isTouched, generated } — when present,
+  // opts: { ownerName, emitSynthetic, pkgName, relPath, isTouched, generated, isTest } — when present,
   // nested TypeLiteralNodes on properties emit synthetic catalog entries.
   return members
     .filter((m) => ts.isPropertySignature(m) && m.name)
@@ -155,6 +169,7 @@ function membersToFields(members, sf, opts) {
           line: line + 1,
           touched_in_window: opts.isTouched,
           generated: opts.generated,
+          is_test: opts.isTest,
           name: innerName,
           kind: 'inline-object',
           exported: false,
@@ -261,6 +276,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
   // touched_in_window meaningful only for main package
   const isTouched = pkgName === 'main' && TOUCHED.has(relPath);
   const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts');
+  const isTest = isTestPath(relPath);
   const results = [];
   const emitSynthetic = (entry) => results.push(entry);
 
@@ -272,6 +288,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       line: line + 1,
       touched_in_window: isTouched,
       generated: isGenerated,
+      is_test: isTest,
       ...partial,
     });
   }
@@ -285,6 +302,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         relPath,
         isTouched,
         generated: isGenerated,
+        isTest,
       });
       const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
       pushBase(node, {
@@ -315,6 +333,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
           relPath,
           isTouched,
           generated: isGenerated,
+          isTest,
         });
         shape_sig = shapeSig(fields);
         kind = 'type-alias-object';
@@ -524,10 +543,12 @@ process.stderr.write(`\nTotal entries: ${all.length} (errors: ${errors})\n`);
 const byKind = {};
 const byPkg = {};
 let syntheticCount = 0;
+let isTestCount = 0;
 for (const e of all) {
   byKind[e.kind] = (byKind[e.kind] || 0) + 1;
   byPkg[e.package] = (byPkg[e.package] || 0) + 1;
   if (e.synthetic) syntheticCount++;
+  if (e.is_test) isTestCount++;
 }
 process.stderr.write('By kind:\n');
 for (const [k, v] of Object.entries(byKind).sort((a, b) => b[1] - a[1])) {
@@ -540,6 +561,7 @@ for (const [k, v] of Object.entries(byPkg)) {
 if (syntheticCount > 0) {
   process.stderr.write(`Synthetic (inline-literal) entries: ${syntheticCount}\n`);
 }
+process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
 const json = JSON.stringify(all, null, 2);
 if (values.output) {
