@@ -210,6 +210,25 @@ test('fixture 19: legacy InferSelectModel and modern $inferSelect both reference
   assert.deepEqual(modern.references, [{ name: 'usersTable', kind: 'type-ref' }]);
 });
 
+test('fixture 04: union variants surface as references, not extends', () => {
+  const cat = extractCatalog();
+  const r = findEntry(cat, 'Result');
+  assert.ok(r);
+  assert.equal(r.kind, 'type-alias-union');
+  assert.deepEqual(r.extends, []);
+  assert.deepEqual(r.references, [
+    { name: 'Err', kind: 'type-ref' },
+    { name: 'Ok', kind: 'type-ref' },
+  ]);
+});
+
+test('fixture 20: declarations referencing only built-ins surface no references', () => {
+  const cat = extractCatalog();
+  const b = findEntry(cat, 'OnlyBuiltins');
+  assert.ok(b);
+  assert.deepEqual(b.references, []);
+});
+
 test('--emit-references-graph writes a sibling references.json with sorted, deduped edges', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'tc-refs-'));
   const refsPath = join(tmp, 'references.json');

@@ -349,6 +349,9 @@ function extractReferences(typeNode, sf, scope, sink) {
     if (typeNode.typeParameter.constraint) {
       extractReferences(typeNode.typeParameter.constraint, sf, scope, sink);
     }
+    // `as` rename clause (TS 4.1+): `{[K in keyof T as `prefix_${S & string}`]: ...}`.
+    // S only appears in `nameType` — without this recurse it would never surface.
+    if (typeNode.nameType) extractReferences(typeNode.nameType, sf, child, sink);
     if (typeNode.type) extractReferences(typeNode.type, sf, child, sink);
     return;
   }
