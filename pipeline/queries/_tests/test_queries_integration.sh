@@ -214,21 +214,86 @@ assert_migration_progress_semantic "no_matches" 0 0 0 "" \
 # Sigs identical: should emit a warning row. The JSONL surface still has on_old/on_new
 # populated, but sigs_identical=true. Verify the flag.
 assert_migration_progress_sigs_identical() {
-  local result
+  local result flag on_old on_new pct
   result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
     --arg old_sig "id:number" --arg new_sig "id:number" --arg label "Degenerate" \
     -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)"
-  local flag
-  flag="$(echo "$result" | jq -r '.sigs_identical')"
-  if [[ "$flag" == "true" ]]; then
+  IFS=$'\t' read -r flag on_old on_new pct < <(echo "$result" \
+    | jq -r '[.sigs_identical, .on_old, .on_new, .percent_migrated] | @tsv')
+  # When sigs match, the numeric fields should zero out so JSONL consumers don't
+  # silently consume double-counted on_old/on_new and a meaningless 50% pct.
+  if [[ "$flag" == "true" && "$on_old" == "0" && "$on_new" == "0" && "$pct" == "0" ]]; then
     PASS=$((PASS + 1))
-    printf "  ✓ migration-progress (sigs_identical): flag set\n"
+    printf "  ✓ migration-progress (sigs_identical): flag set, numerics zeroed\n"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ migration-progress (sigs_identical): expected true, got %s\n" "$flag"
+    printf "  ✗ migration-progress (sigs_identical): expected flag=true with on_old/on_new/pct all 0, got flag=%s on_old=%s on_new=%s pct=%s\n" \
+      "$flag" "$on_old" "$on_new" "$pct"
   fi
 }
 assert_migration_progress_sigs_identical
+
+# JSONL row-count invariant: migration-progress emits exactly one row per
+# invocation (it's a single-cluster query keyed on the user's label). Lock this
+# in so a future refactor that accidentally fans out is caught.
+assert_migration_progress_single_row() {
+  local result line_count
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration" \
+    -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)"
+  line_count="$(echo "$result" | grep -c .)"
+  if [[ "$line_count" == "1" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ migration-progress (single-row invariant): 1 JSONL row\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (single-row invariant): expected 1 row, got %s\n" "$line_count"
+  fi
+}
+assert_migration_progress_single_row
+
+# KIND_PREFIX filter: with zod-object rows in the fixture (sigs x:zod-string and
+# x:zod-number), KIND_PREFIX=zod restricts $all to the two zod rows; setting old
+# and new to those sigs yields 1/1, 50%, ZodOldX as straggler (touched_in_window).
+assert_migration_progress_semantic "KIND_PREFIX=zod" 1 1 50 "ZodOldX" \
+  KIND_PREFIX=zod \
+  -- --arg old_sig "x:zod-string" --arg new_sig "x:zod-number" --arg label "Zod-shape-migration"
+
+# Cluster_id slug: spaces and other non-identifier chars in the label must not
+# leak into the cluster_id (downstream parsers split on whitespace).
+assert_migration_progress_cluster_id_slug() {
+  local result cid
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id type migration" \
+    -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)"
+  cid="$(echo "$result" | jq -r '.cluster_id')"
+  if [[ "$cid" == "migration-progress:Id-type-migration" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ migration-progress (cluster_id slug): '%s' (label normalized)\n" "$cid"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (cluster_id slug): expected 'migration-progress:Id-type-migration', got '%s'\n" "$cid"
+  fi
+}
+assert_migration_progress_cluster_id_slug
+
+# Text-mode straggler line: the cid= marker assertion only checks for one
+# substring; lock in the actual straggler-row format too so a future refactor
+# that drops the file:line tail or the [kind] brackets is caught.
+assert_migration_progress_text_straggler() {
+  local text
+  text="$(jq -L "$QUERIES_DIR" -r \
+    --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration" \
+    -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)"
+  if [[ "$text" == *"    OldA [interface] — main:a.ts:1"* ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ migration-progress (text straggler line): rendered\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (text straggler line): missing 'OldA [interface] — main:a.ts:1' in:\n%s\n" "$text"
+  fi
+}
+assert_migration_progress_text_straggler
 
 echo ""
 echo "=== Text-mode cid= markers ==="

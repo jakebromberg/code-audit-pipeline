@@ -9,6 +9,7 @@
 # Optional filters / knobs (env vars):
 #   PACKAGE=main              restrict to one package
 #   KIND_PREFIX=interface     restrict to kinds starting with <string>
+#   INCLUDE_GENERATED=true    do not exclude generated:true rows (excluded by default)
 #   MIN_COUNT=2               floor on cluster size (default 2)
 #   SAMPLE_SIZE=3             names to show per sig (default 3)
 #
@@ -22,11 +23,12 @@ include "_canonical";
 
 ($ENV.PACKAGE         // "")    as $pkg_filter
 | ($ENV.KIND_PREFIX   // "")    as $kind_filter
+| (($ENV.INCLUDE_GENERATED // "") == "true") as $include_gen
 | (($ENV.MIN_COUNT    // "2")   | tonumber) as $min
 | (($ENV.SAMPLE_SIZE  // "3")   | tonumber) as $sample
 | [.[]
     | select(.shape_sig != null and .shape_sig != "")
-    | select((.generated // false) != true)
+    | select($include_gen or ((.generated // false) != true))
     | select($pkg_filter == "" or .package == $pkg_filter)
     | select($kind_filter == "" or ((.kind // "") | startswith($kind_filter)))]
 | group_by(.shape_sig)
