@@ -114,6 +114,7 @@ All operate on the JSON catalog and emit human-readable output. Drop into a chat
 | `generic-arity-drift.jq` | Declarations sharing a name but differing in type-parameter arity (`Repository<T>` vs `Repository<T, K>`). Deterministic; scoped to `interface` and `type-alias-*` kinds | type |
 | `generic-convention-bound.jq` | Declarations whose field types reference a type-parameter-shaped identifier (`T`, `K`, `TStats`, `TInput`, …) that the declaration's own `generics` does not bind. Heuristic — built-in TS allowlist plus opt-in `EXTRA_BUILTINS` env knob. Upgrade path to a structured `type_refs` cut tracked in issue #146 (the earlier #131 design folded into the schema v1.1 work) | type |
 | `touched-window-debt-summary.jq` | PR-time meta-query: for each of the four original cluster types (`exact-duplicates`, `name-collisions`, `cross-package-shadows`, `near-duplicates`), reports the fraction of clusters with ≥1 touched-in-window member and lists those touched clusters. Optional `THRESHOLD` / `ONLY_TOUCHED` env knobs. One page; the four source queries become drill-downs | type |
+| `orphan-infer-model.jq` | Drizzle tables nothing in the catalog derives a TS type from via `InferSelectModel` / `InferInsertModel` / `$inferSelect` / `$inferInsert`. Splits "no either" (dead-or-archive) from "no InferSelect" / "no InferInsert" half-orphans (hand-rolled mirror types). Optional `INCLUDE_GENERATED=true` env knob | type |
 
 ## Adding a new extractor
 

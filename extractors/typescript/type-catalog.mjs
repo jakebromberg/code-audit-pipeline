@@ -223,6 +223,15 @@ function isDrizzleTableCall(call) {
 }
 
 function isInferModelType(typeNode, sf) {
+  // Modern Drizzle API: `typeof T.$inferSelect` / `typeof T.$inferInsert`. These
+  // are TypeQueryNodes (TypeQueryNode → QualifiedName) rather than TypeReferenceNodes,
+  // so the legacy InferSelectModel<typeof T> branch below won't see them.
+  if (ts.isTypeQueryNode(typeNode) && ts.isQualifiedName(typeNode.exprName)) {
+    const prop = typeNode.exprName.right.text;
+    if (prop === '$inferSelect' || prop === '$inferInsert') {
+      return { kind: prop, table: typeNode.exprName.left.getText(sf) };
+    }
+  }
   if (!ts.isTypeReferenceNode(typeNode)) return null;
   const refName = typeNode.typeName.getText(sf);
   if (refName !== 'InferSelectModel' && refName !== 'InferInsertModel') return null;
