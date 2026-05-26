@@ -714,6 +714,94 @@ assert_debt_summary_row "THRESHOLD=0.99 collapses near-duplicates" \
   "near-duplicates" 0 0 \
   THRESHOLD=0.99 --
 
+# JSONL row-count invariant: the meta-query emits exactly four rows per
+# invocation (one per indexed cluster type), regardless of how many touched
+# clusters each row contains. Lock this in so a future refactor that drops
+# a cluster type or fans out the array is caught — the per-row count tests
+# above lookup by cluster_type and would still pass if a row vanished.
+assert_debt_summary_jsonl_row_count() {
+  local env_prefix=() jq_args=()
+  local result line_count cluster_types
+  result="$(_debt_summary_run)"
+  line_count="$(echo "$result" | grep -c .)"
+  cluster_types="$(echo "$result" | jq -rs 'map(.cluster_type) | sort | join(",")')"
+  local expected="cross-package-shadows,exact-duplicates,name-collisions,near-duplicates"
+  if [[ "$line_count" == "4" && "$cluster_types" == "$expected" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ debt-summary (JSONL row-count invariant): 4 rows covering all four cluster types\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ debt-summary (JSONL row-count invariant): expected 4 rows with cluster_types=[%s], got %s rows with [%s]\n" \
+      "$expected" "$line_count" "$cluster_types"
+  fi
+}
+assert_debt_summary_jsonl_row_count
+
+# Text-mode header-table coverage: the four cluster-type names must each
+# appear as a header row in default text output. The cid= marker test only
+# checks for a single substring, so a future refactor that drops a row from
+# the literal cluster_types array (or its header rendering) would slip past.
+assert_debt_summary_text_header_rows() {
+  local text missing=""
+  text="$(jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)"
+  for ct in exact-duplicates name-collisions cross-package-shadows near-duplicates; do
+    if [[ "$text" != *"$ct: "*" touched / "*" total ("*"%) cid=touched-window-debt-summary:$ct"* ]]; then
+      missing="${missing}${ct} "
+    fi
+  done
+  if [[ -z "$missing" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ debt-summary (text header rows): all four cluster types present in header table\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ debt-summary (text header rows): missing header rows for: %s. output:\n%s\n" "$missing" "$text"
+  fi
+}
+assert_debt_summary_text_header_rows
+
+# Detail-block ordering: each cluster type's touched_clusters list must be
+# sorted to match the source query's documented order. Source orderings:
+#   exact-duplicates       — sort_by(-(.decls | length))
+#   name-collisions        — sort_by(-(.decls | length), .name)
+#   cross-package-shadows  — sort_by(.name)
+#   near-duplicates        — sort_by(-(.jacc))
+#
+# The baseline fixture has 1 touched cluster per type, so the divergence is
+# only visible when multiple clusters exist. Use a small synthetic fixture
+# that has both a 3-decl and a 2-decl exact-duplicates cluster, both touched.
+# group_by(.shape_sig) would order them alphabetically (A first); source
+# sort puts the 3-decl one first (Z first).
+assert_debt_summary_detail_sort_order() {
+  local tmp_fixture result first_cid
+  tmp_fixture="$(mktemp)"
+  cat > "$tmp_fixture" <<'EOF'
+[
+  {"name":"AAA","kind":"interface","package":"main","file":"a.ts","line":1,"fields":["x:int"],"shape_sig":"a:int","touched_in_window":true,"generated":false},
+  {"name":"AAB","kind":"interface","package":"main","file":"b.ts","line":1,"fields":["x:int"],"shape_sig":"a:int","touched_in_window":true,"generated":false},
+  {"name":"ZZA","kind":"interface","package":"main","file":"c.ts","line":1,"fields":["y:string"],"shape_sig":"z:string","touched_in_window":true,"generated":false},
+  {"name":"ZZB","kind":"interface","package":"main","file":"d.ts","line":1,"fields":["y:string"],"shape_sig":"z:string","touched_in_window":true,"generated":false},
+  {"name":"ZZC","kind":"interface","package":"main","file":"e.ts","line":1,"fields":["y:string"],"shape_sig":"z:string","touched_in_window":true,"generated":false}
+]
+EOF
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$tmp_fixture" 2>&1)"
+  rm -f "$tmp_fixture"
+  # The 3-decl cluster (Z*) should appear first in touched_clusters per
+  # source-query sort_by(-(.decls | length)).
+  first_cid="$(echo "$result" \
+    | jq -rs '.[] | select(.cluster_type == "exact-duplicates") | .touched_clusters[0].cluster_id')"
+  if [[ "$first_cid" == "exact-duplicates:ZZA+ZZB+ZZC" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ debt-summary (detail sort order): exact-duplicates ordered by -size (3-decl cluster first)\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ debt-summary (detail sort order): expected first touched_clusters cid='exact-duplicates:ZZA+ZZB+ZZC', got '%s'. output:\n%s\n" \
+      "$first_cid" "$result"
+  fi
+}
+assert_debt_summary_detail_sort_order
+
 echo ""
 echo "=== Text-mode cid= markers ==="
 assert_text_has_cid exact-duplicates.jq "$TYPES_FIXTURE"
