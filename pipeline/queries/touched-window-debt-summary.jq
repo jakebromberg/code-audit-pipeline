@@ -52,15 +52,20 @@ def render_cluster:
 | . as $all
 
 # 1. exact-duplicates — group by shape_sig, ≥2 decls, exclude generated/null.
+# Sort by -size to match exact-duplicates.jq's `sort_by(-(.decls | length))`
+# so the detail-block order tracks the source query.
 | ([ $all[] | select(.shape_sig != null and .shape_sig != "" and (.generated // false) != true) ]
    | group_by(.shape_sig)
    | map(select(length > 1))
    | map({
        cluster_id: cluster_id_sorted_names("exact-duplicates"; map(.name)),
        decls: map({name, kind, package, file, line, touched_in_window})
-     })) as $exact_dupes
+     })
+   | sort_by(-(.decls | length))) as $exact_dupes
 
 # 2. name-collisions — group by name, ≥2 decls, in ≥2 distinct files.
+# Sort by (-size, name) to match name-collisions.jq's
+# `sort_by(-(.decls | length), .name)`.
 | ([ $all[] | select((.generated // false) != true) ]
    | group_by(.name)
    | map(select(length > 1))
@@ -68,10 +73,12 @@ def render_cluster:
    | map({
        cluster_id: cluster_id_single_name("name-collisions"; .[0].name),
        decls: map({name, kind, package, file, line, touched_in_window})
-     })) as $name_collisions
+     })
+   | sort_by(-(.decls | length), .decls[0].name)) as $name_collisions
 
 # 3. cross-package-shadows — main-package decl whose name exists in shared
-# (interface or type-alias-object).
+# (interface or type-alias-object). Sort by name to match
+# cross-package-shadows.jq's `sort_by(.name)`.
 | ([ $all[] | select(.package == "shared" and (.kind == "interface" or .kind == "type-alias-object")) ]
    | map(.name) | unique) as $shared_names
 | ([ $all[]
@@ -82,7 +89,8 @@ def render_cluster:
    | map({
        cluster_id: cluster_id_single_name("cross-package-shadows"; .[0].name),
        decls: map({name, kind, package, file, line, touched_in_window})
-     })) as $cross_shadows
+     })
+   | sort_by(.decls[0].name)) as $cross_shadows
 
 # 4. near-duplicates — main-package pairs with field-name Jaccard ≥ THRESHOLD
 # and < 1.0 (exact matches are exact-duplicates' job). Both sides need ≥3
@@ -90,6 +98,11 @@ def render_cluster:
 #
 # `_fset` is precomputed once per candidate so the O(N²) pair loop doesn't
 # re-parse each decl's fields on every pairing.
+#
+# `jacc` is carried through the intermediate object so the list can be sorted
+# by Jaccard descending (matching near-duplicates.jq's `sort_by(-(.jacc))`);
+# it is stripped from the final cluster shape so the meta-query's output
+# schema stays {cluster_id, decls}.
 | ([ $all[]
      | select(.package == "main" and .fields and (.fields | length) >= 3)
      | . + { _fset: (.fields | map(split(":") | .[0]) | map(sub("\\?$"; ""))) } ]) as $nd_decls
@@ -103,13 +116,16 @@ def render_cluster:
     | ($af | map(select(. as $x | $bf | index($x))) | length) as $ic
     | ($ic / $u) as $jacc
     | select($jacc >= $thr and $jacc < 1.0)
-    | { cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
+    | { _jacc: $jacc,
+        cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
         decls: [
           {name: $a.name, kind: $a.kind, package: $a.package, file: $a.file, line: $a.line, touched_in_window: $a.touched_in_window},
           {name: $b.name, kind: $b.kind, package: $b.package, file: $b.file, line: $b.line, touched_in_window: $b.touched_in_window}
         ]
       }
-  ]) as $near_dupes
+  ]
+   | sort_by(-(._jacc))
+   | map(del(._jacc))) as $near_dupes
 
 | (any($all[]; .touched_in_window // false) | not) as $no_touched_context
 
