@@ -149,8 +149,9 @@ function countIdentifiers(text) {
 }
 
 function membersToFields(members, sf, opts) {
-  // opts: { ownerName, emitSynthetic, pkgName, relPath, isTouched, generated, isTest } — when present,
-  // nested TypeLiteralNodes on properties emit synthetic catalog entries.
+  // opts: { ownerName, emitSynthetic, rowDefaults } — when present, nested
+  // TypeLiteralNodes on properties emit synthetic catalog entries inheriting
+  // their parent record's per-file defaults (package/file/touched/generated/is_test).
   return members
     .filter((m) => ts.isPropertySignature(m) && m.name)
     .map((m) => {
@@ -164,12 +165,8 @@ function membersToFields(members, sf, opts) {
         const innerFields = membersToFields(typeNode.members, sf, { ...opts, ownerName: innerName });
         const { line } = sf.getLineAndCharacterOfPosition(typeNode.getStart(sf));
         opts.emitSynthetic({
-          package: opts.pkgName,
-          file: opts.relPath,
+          ...opts.rowDefaults,
           line: line + 1,
-          touched_in_window: opts.isTouched,
-          generated: opts.generated,
-          is_test: opts.isTest,
           name: innerName,
           kind: 'inline-object',
           exported: false,
@@ -274,21 +271,21 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
   );
   const relPath = relative(pkgRoot, filePath);
   // touched_in_window meaningful only for main package
-  const isTouched = pkgName === 'main' && TOUCHED.has(relPath);
-  const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts');
-  const isTest = isTestPath(relPath);
+  const rowDefaults = {
+    package: pkgName,
+    file: relPath,
+    touched_in_window: pkgName === 'main' && TOUCHED.has(relPath),
+    generated: /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts'),
+    is_test: isTestPath(relPath),
+  };
   const results = [];
   const emitSynthetic = (entry) => results.push(entry);
 
   function pushBase(node, partial) {
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
     results.push({
-      package: pkgName,
-      file: relPath,
+      ...rowDefaults,
       line: line + 1,
-      touched_in_window: isTouched,
-      generated: isGenerated,
-      is_test: isTest,
       ...partial,
     });
   }
@@ -298,11 +295,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       const fields = membersToFields(node.members, sf, {
         ownerName: node.name.text,
         emitSynthetic,
-        pkgName,
-        relPath,
-        isTouched,
-        generated: isGenerated,
-        isTest,
+        rowDefaults,
       });
       const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
       pushBase(node, {
@@ -329,11 +322,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         fields = membersToFields(node.type.members, sf, {
           ownerName: node.name.text,
           emitSynthetic,
-          pkgName,
-          relPath,
-          isTouched,
-          generated: isGenerated,
-          isTest,
+          rowDefaults,
         });
         shape_sig = shapeSig(fields);
         kind = 'type-alias-object';

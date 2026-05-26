@@ -1042,16 +1042,12 @@ assert_is_test_extractor() {
     printf "  ✗ is_test extractor: type-catalog.mjs not found at %s\n" "$TYPE_CATALOG_BIN"
     return
   fi
-  local tmp catalog
-  tmp="$(mktemp -d)"
-  cp -R "$IS_TEST_TREE"/. "$tmp/"
-  catalog="$(node "$TYPE_CATALOG_BIN" --root "$tmp" 2>/dev/null)" || {
+  local catalog
+  catalog="$(node "$TYPE_CATALOG_BIN" --root "$IS_TEST_TREE" 2>/dev/null)" || {
     FAIL=$((FAIL + 1))
     printf "  ✗ is_test extractor: type-catalog.mjs crashed on is-test-tree\n"
-    rm -rf "$tmp"
     return
   }
-  rm -rf "$tmp"
 
   # One jq pass: emit the mis-classified set as "file [want=W got=G]" joined by ", ".
   # Empty string means every file's is_test matched expectation.

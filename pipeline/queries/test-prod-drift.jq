@@ -35,17 +35,15 @@
 
 include "_canonical";
 
-[ .[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $bs
+[ .[] | select(.fields and (.fields | length) >= 3 and (.generated // false) != true) ] as $all
+# Pre-partition into prod and test halves so the pair-generation loop is a T·P
+# cross-product instead of the full N² upper-triangle followed by an XOR filter.
+# The XOR identity (one prod, one test) falls out of the partition shape; the
+# ($a = prod, $b = test) ordering convention falls out of which set indexes outer.
+| [ $all[] | select((.is_test // false) | not) ] as $prods
+| [ $all[] | select(.is_test // false) ]         as $tests
 | [
-    range(0; $bs | length) as $i
-    | range($i + 1; $bs | length) as $j
-    | $bs[$i] as $x | $bs[$j] as $y
-    # XOR on is_test — cheaper to filter on a boolean than to compute Jaccard
-    # for pairs we'd discard anyway.
-    | select(($x.is_test // false) != ($y.is_test // false))
-    # Reorder so $a is the prod (non-test) side and $b is the test side.
-    | (if ($x.is_test // false) then $y else $x end) as $a
-    | (if ($x.is_test // false) then $x else $y end) as $b
+    $prods[] as $a | $tests[] as $b
     | ($a.fields | map(split(":") | .[0]) | map(sub("\\?$"; "")) | unique) as $af
     | ($b.fields | map(split(":") | .[0]) | map(sub("\\?$"; "")) | unique) as $bf
     | ($af + $bf | unique | length) as $u
