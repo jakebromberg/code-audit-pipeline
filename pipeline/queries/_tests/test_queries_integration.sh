@@ -397,11 +397,7 @@ echo "=== Generic-parameter queries ==="
 assert_jsonl_has_prefix generic-arity-drift.jq "$GENERICS_FIXTURE" "generic-arity-drift:"
 assert_jsonl_has_prefix generic-convention-bound.jq "$GENERICS_FIXTURE" "generic-convention-bound:"
 
-# Semantic correctness for generic-arity-drift. Group-by-name, flag groups whose
-# declarations don't all share the same arity. Pass "ABSENT" as the expected
-# arities CSV to assert the named cluster does NOT appear (single-decl or
-# kind-filtered-out cases).
-assert_generic_arity_drift_semantic() {
+assert_generic_arity_drift_present() {
   local label="$1"; shift
   local target_name="$1"; shift
   local expected_arities_csv="$1"; shift
@@ -416,49 +412,65 @@ assert_generic_arity_drift_semantic() {
   actual="$(echo "$result" | jq -rs --arg n "$target_name" \
     '.[] | select(.name == $n) | (.decls | map(.arity) | sort | join(","))')"
 
-  if [[ "$expected_arities_csv" == "ABSENT" ]]; then
-    if [[ -z "$actual" ]]; then
-      PASS=$((PASS + 1))
-      printf "  ✓ generic-arity-drift (%s): %s absent\n" "$label" "$target_name"
-    else
-      FAIL=$((FAIL + 1))
-      printf "  ✗ generic-arity-drift (%s): %s should be absent, got arities=%s\n" \
-        "$label" "$target_name" "$actual"
-    fi
+  if [[ "$actual" == "$expected_arities_csv" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ generic-arity-drift (%s): %s arities=%s\n" "$label" "$target_name" "$actual"
   else
-    if [[ "$actual" == "$expected_arities_csv" ]]; then
-      PASS=$((PASS + 1))
-      printf "  ✓ generic-arity-drift (%s): %s arities=%s\n" "$label" "$target_name" "$actual"
-    else
-      FAIL=$((FAIL + 1))
-      printf "  ✗ generic-arity-drift (%s): %s expected arities=%s, got '%s'\n" \
-        "$label" "$target_name" "$expected_arities_csv" "$actual"
-    fi
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-arity-drift (%s): %s expected arities=%s, got '%s'\n" \
+      "$label" "$target_name" "$expected_arities_csv" "$actual"
   fi
 }
 
-assert_generic_arity_drift_semantic "Repository present"   "Repository"     "1,2"
-assert_generic_arity_drift_semantic "Foo cross-kind"       "Foo"            "1,2"
-assert_generic_arity_drift_semantic "SyncResult single"    "SyncResult"     "ABSENT"
-assert_generic_arity_drift_semantic "Bar single"           "Bar"            "ABSENT"
-assert_generic_arity_drift_semantic "ShouldNotGroup kind"  "ShouldNotGroup" "ABSENT"
-
-# Semantic correctness for generic-convention-bound. Per-row regex residue check;
-# we read the row's `suspects` array (sorted+joined). Pass "ABSENT" to assert
-# the named row does NOT appear (clean / built-in-only / non-typeparam-shaped).
-# Arg shape mirrors the migration-progress semantic helper:
-#   label target_name expected_suspects_csv [ENV=val ...] -- [--arg key val ...]
-assert_generic_convention_bound_semantic() {
+assert_generic_arity_drift_absent() {
   local label="$1"; shift
   local target_name="$1"; shift
-  local expected_suspects_csv="$1"; shift
-  local env_prefix=()
+
+  local result count
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/generic-arity-drift.jq" "$GENERICS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-arity-drift (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  count="$(echo "$result" | jq -rs --arg n "$target_name" \
+    '[.[] | select(.name == $n)] | length')"
+
+  if [[ "$count" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ generic-arity-drift (%s): %s absent\n" "$label" "$target_name"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-arity-drift (%s): %s should be absent, but %s row(s) match\n" \
+      "$label" "$target_name" "$count"
+  fi
+}
+
+assert_generic_arity_drift_present "Repository present"  "Repository"     "1,2"
+assert_generic_arity_drift_present "Foo cross-kind"      "Foo"            "1,2"
+assert_generic_arity_drift_absent  "SyncResult single"   "SyncResult"
+assert_generic_arity_drift_absent  "Bar single"          "Bar"
+assert_generic_arity_drift_absent  "ShouldNotGroup kind" "ShouldNotGroup"
+
+# Arg shape (both helpers): label target_name [expected_suspects_csv]
+#   [ENV=val ...] -- [--arg key val ...]
+# Tokens before "--" become env-var prefix; tokens after are jq args.
+_parse_env_and_jq_args() {
+  env_prefix=()
   while (( $# > 0 )) && [[ "$1" != "--" ]]; do
     env_prefix+=("$1")
     shift
   done
   [[ "${1:-}" == "--" ]] && shift
-  local jq_args=("$@")
+  jq_args=("$@")
+}
+
+assert_generic_convention_bound_present() {
+  local label="$1"; shift
+  local target_name="$1"; shift
+  local expected_suspects_csv="$1"; shift
+  local env_prefix jq_args
+  _parse_env_and_jq_args "$@"
 
   local result actual
   result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
@@ -471,46 +483,60 @@ assert_generic_convention_bound_semantic() {
   actual="$(echo "$result" | jq -rs --arg n "$target_name" \
     '.[] | select(.name == $n) | (.suspects | sort | join(","))')"
 
-  if [[ "$expected_suspects_csv" == "ABSENT" ]]; then
-    if [[ -z "$actual" ]]; then
-      PASS=$((PASS + 1))
-      printf "  ✓ generic-convention-bound (%s): %s absent\n" "$label" "$target_name"
-    else
-      FAIL=$((FAIL + 1))
-      printf "  ✗ generic-convention-bound (%s): %s should be absent, got suspects=%s\n" \
-        "$label" "$target_name" "$actual"
-    fi
+  if [[ "$actual" == "$expected_suspects_csv" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ generic-convention-bound (%s): %s suspects=%s\n" "$label" "$target_name" "$actual"
   else
-    if [[ "$actual" == "$expected_suspects_csv" ]]; then
-      PASS=$((PASS + 1))
-      printf "  ✓ generic-convention-bound (%s): %s suspects=%s\n" "$label" "$target_name" "$actual"
-    else
-      FAIL=$((FAIL + 1))
-      printf "  ✗ generic-convention-bound (%s): %s expected suspects=%s, got '%s'\n" \
-        "$label" "$target_name" "$expected_suspects_csv" "$actual"
-    fi
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-convention-bound (%s): %s expected suspects=%s, got '%s'\n" \
+      "$label" "$target_name" "$expected_suspects_csv" "$actual"
   fi
 }
 
-# Positive cases: residue is non-empty and matches the typeparam convention.
-assert_generic_convention_bound_semantic "SyncResult TStats"  "SyncResult"  "TStats" --
-assert_generic_convention_bound_semantic "BackfillJob TOutput" "BackfillJob" "TOutput" --
+assert_generic_convention_bound_absent() {
+  local label="$1"; shift
+  local target_name="$1"; shift
+  local env_prefix jq_args
+  _parse_env_and_jq_args "$@"
 
-# Negative cases — must not flag:
-assert_generic_convention_bound_semantic "Bar bound T"        "Bar"               "ABSENT" --
-assert_generic_convention_bound_semantic "Repository bound"   "Repository"        "ABSENT" --
-assert_generic_convention_bound_semantic "Baz built-ins only" "Baz"               "ABSENT" --
-assert_generic_convention_bound_semantic "Order app types"    "Order"             "ABSENT" --
-assert_generic_convention_bound_semantic "Foo bound T,U"      "Foo"               "ABSENT" --
-assert_generic_convention_bound_semantic "BuiltinExhaustion"  "BuiltinExhaustion" "ABSENT" --
+  local result count
+  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
+    jq -L "$QUERIES_DIR" -r "${jq_args[@]}" \
+    -f "$QUERIES_DIR/generic-convention-bound.jq" "$GENERICS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-convention-bound (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  count="$(echo "$result" | jq -rs --arg n "$target_name" \
+    '[.[] | select(.name == $n)] | length')"
 
-# Knob coverage: EXTRA_BUILTINS extends the allowlist via comma-joined env var.
-assert_generic_convention_bound_semantic "EXTRA_BUILTINS=TStats drops SyncResult" \
-  "SyncResult" "ABSENT" EXTRA_BUILTINS=TStats --
-assert_generic_convention_bound_semantic "EXTRA_BUILTINS=TStats,TOutput drops SyncResult" \
-  "SyncResult"  "ABSENT" EXTRA_BUILTINS=TStats,TOutput --
-assert_generic_convention_bound_semantic "EXTRA_BUILTINS=TStats,TOutput drops BackfillJob" \
-  "BackfillJob" "ABSENT" EXTRA_BUILTINS=TStats,TOutput --
+  if [[ "$count" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ generic-convention-bound (%s): %s absent\n" "$label" "$target_name"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-convention-bound (%s): %s should be absent, but %s row(s) match\n" \
+      "$label" "$target_name" "$count"
+  fi
+}
+
+assert_generic_convention_bound_present "SyncResult TStats"   "SyncResult"  "TStats"  --
+assert_generic_convention_bound_present "BackfillJob TOutput" "BackfillJob" "TOutput" --
+
+assert_generic_convention_bound_absent "Bar bound T"        "Bar"               --
+assert_generic_convention_bound_absent "Repository bound"   "Repository"        --
+assert_generic_convention_bound_absent "Baz built-ins only" "Baz"               --
+assert_generic_convention_bound_absent "Order app types"    "Order"             --
+assert_generic_convention_bound_absent "Foo bound T,U"      "Foo"               --
+assert_generic_convention_bound_absent "BuiltinExhaustion"  "BuiltinExhaustion" --
+
+# EXTRA_BUILTINS extends the allowlist via comma-joined env var.
+assert_generic_convention_bound_absent "EXTRA_BUILTINS=TStats drops SyncResult" \
+  "SyncResult"  EXTRA_BUILTINS=TStats --
+assert_generic_convention_bound_absent "EXTRA_BUILTINS=TStats,TOutput drops SyncResult" \
+  "SyncResult"  EXTRA_BUILTINS=TStats,TOutput --
+assert_generic_convention_bound_absent "EXTRA_BUILTINS=TStats,TOutput drops BackfillJob" \
+  "BackfillJob" EXTRA_BUILTINS=TStats,TOutput --
 
 echo ""
 echo "=== Text-mode cid= markers ==="

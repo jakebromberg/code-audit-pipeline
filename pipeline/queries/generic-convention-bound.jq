@@ -51,16 +51,13 @@ def builtins: [
 #   Microsoft-style prefix: TFoo, TInput, TStats — leading T then uppercase.
 def looks_like_typeparam: test("^T[A-Z]") or test("^[TKVUER]$");
 
-($ENV.EXTRA_BUILTINS // "" | split(",") | map(select(length > 0))) as $extra
-| (builtins + $extra) as $allowlist
+(builtins + ($ENV.EXTRA_BUILTINS // "" | split(",") | map(select(length > 0)))) as $allowlist
 | [.[]
     | select((.generated // false) != true)
     | select(.fields != null and (.fields | length) > 0)
     | . as $row
     | ($row.generics // "" | split(",") | map(select(length > 0))) as $bound
-    # split(":")[1:]|join(":") handles field types that themselves contain a
-    # colon (TS conditional types like `T extends U ? a : b` are rare in
-    # interface fields but defensive).
+    # Right-of-first-colon: defensive against field types that themselves contain ":".
     | ([$row.fields[] | split(":")[1:] | join(":") | scan("[A-Z]\\w*")] | unique) as $referenced
     | ($referenced - $bound - $allowlist) as $residue
     | ($residue | map(select(looks_like_typeparam))) as $suspects

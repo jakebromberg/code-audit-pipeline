@@ -24,20 +24,20 @@ include "_canonical";
 # together (the contract permits omission, the TS extractor emits null).
 def arity: if . == null or . == "" then 0 else (split(",") | length) end;
 
-# V2 substrate convention: exclude generated codegen.
 [ .[]
   | select((.generated // false) != true)
-  | select((.kind // "") | startswith("interface") or startswith("type-alias")) ]
+  | select((.kind // "") | startswith("interface") or startswith("type-alias"))
+  | . + {_arity: (.generics | arity)} ]
 | group_by(.name)
 | map(select(length > 1))
-| map(select((map(.generics | arity) | unique | length) > 1))
+| map(select((map(._arity) | unique | length) > 1))
 | map({
     cluster_id: cluster_id_single_name("generic-arity-drift"; .[0].name),
     query: "generic-arity-drift",
     name: .[0].name,
     decls: (map({
       kind, package, file, line, touched_in_window,
-      arity: (.generics | arity),
+      arity: ._arity,
       generics: (.generics // "")
     }) | sort_by(.arity, .package, .file, .line))
   })
