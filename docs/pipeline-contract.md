@@ -105,7 +105,7 @@ The flat `fields[]` form is preserved unchanged for V6-era queries; new queries 
 | `type-alias-object` | `type X = { … }` | Python: `TypedDict`; Go: `type X struct { … }` |
 | `type-alias-union` | `type X = A \| B \| C` | Python: `Union[…]`; Rust: enum variants |
 | `type-alias-intersection` | `type X = A & B` | (rare elsewhere) |
-| `type-alias-infer-model` | `type X = InferSelectModel<typeof T>` | SQLAlchemy: `Mapped[…]`; Django: model classes |
+| `type-alias-infer-model` | `type X = InferSelectModel<typeof T>` or `type X = typeof T.$inferSelect` | SQLAlchemy: `Mapped[…]`; Django: model classes |
 | `type-alias-other` | other utility types | mapped/conditional types |
 | `zod-object` | `const X = z.object({ … })` | Python: Pydantic `BaseModel`; Go: validator tags |
 | `drizzle-table` | `pgTable("…", { … })` or `wxyc_schema.table(…)` | Python: SQLAlchemy `Table(…)`; Go: GORM struct |
@@ -124,6 +124,13 @@ Languages without an exact analog can extend with their own kind values — keep
 ## Optional but useful
 
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
+
+### `infer_ref` shape
+
+For `type-alias-infer-model` records, `infer_ref` carries:
+
+- `kind` — one of four legal values: `InferSelectModel`, `InferInsertModel` (legacy `drizzle-orm` API) or `$inferSelect`, `$inferInsert` (modern Drizzle API). Both APIs are semantically equivalent; the extractor recognizes them in the same `infer_ref` shape so a single join can match either spelling.
+- `table` — the TypeScript identifier (not the SQL string). `InferSelectModel<typeof flowsheet>` and `typeof flowsheet.$inferSelect` both record `table: "flowsheet"`. Cross-package joins against `drizzle-table.name` (the variable name, not `db_table_name`) work uniformly.
 
 ### Intersection-type resolution
 

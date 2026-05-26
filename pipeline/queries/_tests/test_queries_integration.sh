@@ -22,6 +22,9 @@ MIGRATION_FIXTURE="$FIXTURES_DIR/migration.input.json"
 GENERICS_FIXTURE="$FIXTURES_DIR/generics.input.json"
 DEBT_SUMMARY_FIXTURE="$FIXTURES_DIR/debt-summary.input.json"
 DEBT_SUMMARY_NO_CONTEXT_FIXTURE="$FIXTURES_DIR/debt-summary-no-context.input.json"
+INFER_MODEL_SAMPLE_TS="$FIXTURES_DIR/infer-model-sample.ts"
+TYPE_CATALOG_BIN="$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)/type-catalog.mjs"
+ORPHAN_INFER_MODEL_FIXTURE="$FIXTURES_DIR/orphan-infer-model.input.json"
 
 PASS=0
 FAIL=0
@@ -826,6 +829,151 @@ assert_text_has_cid shape-sig-frequency.jq "$MIGRATION_FIXTURE"
 assert_text_has_cid generic-arity-drift.jq "$GENERICS_FIXTURE"
 assert_text_has_cid generic-convention-bound.jq "$GENERICS_FIXTURE"
 assert_text_has_cid touched-window-debt-summary.jq "$DEBT_SUMMARY_FIXTURE"
+
+echo ""
+echo "=== Extractor: \$inferSelect / \$inferInsert recognition ==="
+# Runs the TypeScript extractor against an isolated tmpdir holding the
+# infer-model sample. Asserts the catalog carries `type-alias-infer-model` rows
+# for both the legacy InferSelectModel/InferInsertModel API and the modern
+# `typeof T.$inferSelect` / `typeof T.$inferInsert` API, with `infer_ref.table`
+# resolving to the drizzle table variable name (`users`).
+assert_infer_model_extractor() {
+  if ! command -v node >/dev/null 2>&1; then
+    printf "  SKIP infer-model extractor smoke test: node not on PATH\n"
+    return
+  fi
+  local tmp catalog
+  tmp="$(mktemp -d)"
+  cp "$INFER_MODEL_SAMPLE_TS" "$tmp/sample.ts"
+  catalog="$(node "$TYPE_CATALOG_BIN" --root "$tmp" 2>/dev/null)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ infer-model extractor: type-catalog.mjs crashed on sample.ts\n"
+    rm -rf "$tmp"
+    return
+  }
+  rm -rf "$tmp"
+
+  local expected_pairs=(
+    "InferSelectModel:LegacyUser"
+    "InferInsertModel:LegacyNewUser"
+    "\$inferSelect:ModernUser"
+    "\$inferInsert:ModernNewUser"
+  )
+  local missing=""
+  local row_count
+  for pair in "${expected_pairs[@]}"; do
+    local kind="${pair%%:*}"
+    local name="${pair##*:}"
+    row_count="$(echo "$catalog" | jq --arg k "$kind" --arg n "$name" \
+      '[.[] | select(.kind == "type-alias-infer-model" and .name == $n and .infer_ref.kind == $k and .infer_ref.table == "users")] | length')"
+    if [[ "$row_count" != "1" ]]; then
+      missing="${missing}${kind}/${name} "
+    fi
+  done
+
+  if [[ -z "$missing" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ infer-model extractor: all four infer_ref kinds present\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ infer-model extractor: missing rows for: %s\n" "$missing"
+    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.[] | select(.kind == "type-alias-infer-model" or .kind == "type-alias-other" or .kind == "drizzle-table") | {name, kind, infer_ref}]')"
+  fi
+}
+assert_infer_model_extractor
+
+echo ""
+echo "=== Orphan-InferModel query ==="
+assert_jsonl_has_prefix orphan-infer-model.jq "$ORPHAN_INFER_MODEL_FIXTURE" "orphan-infer-model:"
+
+# Semantic correctness for orphan-infer-model. Fixture (orphan-infer-model.input.json):
+#   user_archive  — drizzle-table, no derivation             → orphan, "no either"
+#   user          — drizzle-table + Legacy + LegacyNew       → not reported
+#   session       — drizzle-table + SessionView (Sel only)   → orphan, "no InferInsert"
+#   post          — drizzle-table + PostRow ($inferSelect)   → orphan, "no InferInsert"
+#   shared_thing  — drizzle-table in shared + SharedDerived ($inferSelect) in main → not reported
+#   empty         — drizzle-table with empty fields, no derivation → orphan, "no either"
+#   legacy_table  — drizzle-table with generated:true, no derivation → not reported by default
+assert_orphan_infer_model_baseline() {
+  local result rows
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/orphan-infer-model.jq" "$ORPHAN_INFER_MODEL_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (baseline): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  if [[ "$rows" != "4" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
+    return
+  fi
+  local expected_pairs=(
+    "user_archive:no either"
+    "session:no InferInsert"
+    "post:no InferInsert"
+    "empty:no either"
+  )
+  local missing=""
+  for pair in "${expected_pairs[@]}"; do
+    local name="${pair%%:*}"
+    local label="${pair##*:}"
+    local got
+    got="$(echo "$result" | jq -rs --arg n "$name" '.[] | select(.name == $n) | .missing')"
+    if [[ "$got" != "$label" ]]; then
+      missing="${missing}${name}(want='${label}',got='${got}') "
+    fi
+  done
+  if [[ -z "$missing" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ orphan-infer-model (baseline): 4 orphans with expected missing labels\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (baseline): label mismatch: %s\n" "$missing"
+  fi
+}
+assert_orphan_infer_model_baseline
+
+assert_orphan_infer_model_include_generated() {
+  local result rows has_legacy_table
+  result="$(OUTPUT_FORMAT=jsonl INCLUDE_GENERATED=true jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/orphan-infer-model.jq" "$ORPHAN_INFER_MODEL_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (INCLUDE_GENERATED=true): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  has_legacy_table="$(echo "$result" | jq -rs '[.[] | select(.name == "legacy_table")] | length')"
+  if [[ "$rows" == "5" && "$has_legacy_table" == "1" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ orphan-infer-model (INCLUDE_GENERATED=true): 5 rows including legacy_table\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (INCLUDE_GENERATED=true): expected 5 rows with legacy_table present, got %s rows (legacy_table count=%s)\n" \
+      "$rows" "$has_legacy_table"
+  fi
+}
+assert_orphan_infer_model_include_generated
+
+# Cross-package join: shared_thing is declared in package=shared and derived
+# via $inferSelect in package=main. The anti-join must build the derived-name
+# set across both packages, not filtered by .package.
+assert_orphan_infer_model_cross_package() {
+  local result has_shared_thing
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/orphan-infer-model.jq" "$ORPHAN_INFER_MODEL_FIXTURE" 2>&1)"
+  has_shared_thing="$(echo "$result" | jq -rs '[.[] | select(.name == "shared_thing")] | length')"
+  if [[ "$has_shared_thing" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ orphan-infer-model (cross-package join): shared_thing not reported\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (cross-package join): shared_thing reported as orphan (cross-package join failed)\n"
+  fi
+}
+assert_orphan_infer_model_cross_package
+
+assert_text_has_cid orphan-infer-model.jq "$ORPHAN_INFER_MODEL_FIXTURE"
 
 echo ""
 echo "=== Cross-catalog queries ==="
