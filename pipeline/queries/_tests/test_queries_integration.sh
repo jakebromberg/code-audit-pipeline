@@ -147,17 +147,15 @@ assert_migration_progress_semantic() {
   local expected_on_new="$1"; shift
   local expected_pct="$1"; shift
   local expected_stragglers="$1"; shift   # comma-separated names, "" for none
-  # Remaining args are split into env-var prefix (KEY=value tokens) and jq args.
+  # Arg shape: [ENV=val ...] -- [--arg key val ...]
+  # Tokens before "--" become env-var prefix; tokens after are jq args.
   local env_prefix=()
-  local jq_args=()
-  while (( $# > 0 )); do
-    if [[ "$1" == *=* && "$1" != --* ]]; then
-      env_prefix+=("$1")
-    else
-      jq_args+=("$1")
-    fi
+  while (( $# > 0 )) && [[ "$1" != "--" ]]; do
+    env_prefix+=("$1")
     shift
   done
+  [[ "${1:-}" == "--" ]] && shift
+  local jq_args=("$@")
 
   local result
   result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
@@ -169,10 +167,8 @@ assert_migration_progress_semantic() {
   }
 
   local on_old on_new pct stragglers
-  on_old="$(echo "$result"     | jq -r '.on_old')"
-  on_new="$(echo "$result"     | jq -r '.on_new')"
-  pct="$(echo "$result"        | jq -r '.percent_migrated')"
-  stragglers="$(echo "$result" | jq -r '.stragglers | map(.name) | join(",")')"
+  IFS=$'\t' read -r on_old on_new pct stragglers < <(echo "$result" \
+    | jq -r '[.on_old, .on_new, .percent_migrated, (.stragglers | map(.name) | join(","))] | @tsv')
 
   if [[ "$on_old" == "$expected_on_old" \
      && "$on_new" == "$expected_on_new" \
@@ -191,29 +187,29 @@ assert_migration_progress_semantic() {
 
 # Baseline (no filters): default excludes generated. main has 2 old + 2 new; shared adds 1 new → 2/3, 60%.
 assert_migration_progress_semantic "baseline" 2 3 60 "OldA" \
-  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+  -- --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 
 # Package filter restricts to main: 2 old + 2 new = 50%.
 assert_migration_progress_semantic "PACKAGE=main" 2 2 50 "OldA" \
   PACKAGE=main \
-  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+  -- --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 
 # Include generated: GeneratedOld also matches id:number → 3 old, 3 new (still 50%, +1 GeneratedOld on old).
 assert_migration_progress_semantic "INCLUDE_GENERATED=true" 3 3 50 "OldA" \
   INCLUDE_GENERATED=true \
-  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+  -- --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 
 # 100% migrated: no rows match old_sig.
 assert_migration_progress_semantic "100pct" 0 3 100 "" \
-  --arg old_sig "does:not:exist" --arg new_sig "id:string" --arg label "Hypothetical"
+  -- --arg old_sig "does:not:exist" --arg new_sig "id:string" --arg label "Hypothetical"
 
 # 0% migrated: no rows match new_sig. OldA is the only touched-in-window straggler.
 assert_migration_progress_semantic "0pct" 2 0 0 "OldA" \
-  --arg old_sig "id:number" --arg new_sig "does:not:exist" --arg label "Hypothetical"
+  -- --arg old_sig "id:number" --arg new_sig "does:not:exist" --arg label "Hypothetical"
 
 # No matches at all: division-by-zero guard. Both sigs absent → 0/0 collapses to 0% (denom guard).
 assert_migration_progress_semantic "no_matches" 0 0 0 "" \
-  --arg old_sig "no:match:a" --arg new_sig "no:match:b" --arg label "Nothing"
+  -- --arg old_sig "no:match:a" --arg new_sig "no:match:b" --arg label "Nothing"
 
 # Sigs identical: should emit a warning row. The JSONL surface still has on_old/on_new
 # populated, but sigs_identical=true. Verify the flag.
