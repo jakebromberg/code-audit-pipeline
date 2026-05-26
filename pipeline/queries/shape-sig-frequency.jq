@@ -17,7 +17,14 @@
 #
 # Output: one row per shape_sig, ordered by count desc then shape_sig asc.
 #
-# cluster_id format:  shape-sig-frequency:<shape_sig>
+# cluster_id format:  shape-sig-frequency:<shape_sig-slug>
+# The shape_sig is whitespace-slugged (runs of whitespace → `-`) for the
+# cluster_id only. Per the canonical contract, `shape_sig` is allowed to carry
+# spaces (e.g. `album_title:string | null|...` from TS-normalized union types),
+# but cluster_ids must be single whitespace-free tokens — downstream parsers
+# split on whitespace. The verbatim shape_sig stays in the `shape_sig` field.
+# Colons and pipes are preserved (existing queries like subset-pairs already
+# embed `:` in cluster_ids), so the slug stays human-readable.
 
 include "_canonical";
 
@@ -33,13 +40,17 @@ include "_canonical";
     | select($kind_filter == "" or ((.kind // "") | startswith($kind_filter)))]
 | group_by(.shape_sig)
 | map(select(length >= $min))
-| map({
-    cluster_id: cluster_id_single_name("shape-sig-frequency"; .[0].shape_sig),
-    query: "shape-sig-frequency",
-    shape_sig: .[0].shape_sig,
-    count: length,
-    sample_names: (map(.name) | unique | .[0:$sample])
-  })
+| map(
+    .[0].shape_sig as $sig
+    | ($sig | gsub("\\s+"; "-")) as $sig_slug
+    | {
+        cluster_id: cluster_id_single_name("shape-sig-frequency"; $sig_slug),
+        query: "shape-sig-frequency",
+        shape_sig: $sig,
+        count: length,
+        sample_names: (map(.name) | unique | .[0:$sample])
+      }
+  )
 | sort_by(-.count, .shape_sig)
 | .[]
 | if output_format == "jsonl" then

@@ -295,6 +295,102 @@ assert_migration_progress_text_straggler() {
 }
 assert_migration_progress_text_straggler
 
+# shape-sig-frequency knob coverage. The bare prefix/cid assertions above don't
+# exercise PACKAGE / KIND_PREFIX / INCLUDE_GENERATED / MIN_COUNT / SAMPLE_SIZE.
+# These mirror the migration-progress.jq coverage so the discovery sibling
+# carries the same regression net.
+#
+# Reads one shape-sig-frequency row whose shape_sig matches the target and
+# returns its `count` field. Returns empty string if no row matches.
+shape_sig_count() {
+  local target_sig="$1"
+  local jsonl="$2"
+  echo "$jsonl" | jq -rs --arg sig "$target_sig" '.[] | select(.shape_sig == $sig) | .count'
+}
+
+assert_shape_sig_frequency_knob() {
+  local label="$1"; shift
+  local target_sig="$1"; shift
+  local expected_count="$1"; shift
+  local env_prefix=()
+  while (( $# > 0 )) && [[ "$1" != "--" ]]; do
+    env_prefix+=("$1")
+    shift
+  done
+  [[ "${1:-}" == "--" ]] && shift
+  local jq_args=("$@")
+
+  local result actual
+  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
+    jq -L "$QUERIES_DIR" -r "${jq_args[@]}" \
+    -f "$QUERIES_DIR/shape-sig-frequency.jq" "$MIGRATION_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shape-sig-frequency (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  actual="$(shape_sig_count "$target_sig" "$result")"
+  if [[ "$actual" == "$expected_count" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ shape-sig-frequency (%s): %s count=%s\n" "$label" "$target_sig" "$actual"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shape-sig-frequency (%s): %s count=%s, expected %s. full output:\n%s\n" \
+      "$label" "$target_sig" "$actual" "$expected_count" "$result"
+  fi
+}
+
+# Default excludes generated: id:number has OldA + OldB = 2 (GeneratedOld is filtered).
+assert_shape_sig_frequency_knob "baseline excludes generated" "id:number" 2 --
+
+# INCLUDE_GENERATED=true: GeneratedOld also matches id:number → 3.
+assert_shape_sig_frequency_knob "INCLUDE_GENERATED=true" "id:number" 3 \
+  INCLUDE_GENERATED=true --
+
+# PACKAGE=shared: only SharedNewA matches id:string → fixture row needs MIN_COUNT=1 to surface.
+assert_shape_sig_frequency_knob "PACKAGE=shared" "id:string" 1 \
+  PACKAGE=shared MIN_COUNT=1 --
+
+# KIND_PREFIX=zod: restricts to the two zod-object rows; each shape_sig appears once,
+# so MIN_COUNT=1 needed to keep the rows.
+assert_shape_sig_frequency_knob "KIND_PREFIX=zod" "x:zod-string" 1 \
+  KIND_PREFIX=zod MIN_COUNT=1 --
+
+# MIN_COUNT=3 floor: only id:string clears (3 rows); id:number (2) drops out.
+assert_shape_sig_frequency_knob "MIN_COUNT=3 keeps id:string" "id:string" 3 \
+  MIN_COUNT=3 --
+assert_shape_sig_frequency_knob "MIN_COUNT=3 drops id:number" "id:number" "" \
+  MIN_COUNT=3 --
+
+# Cluster_id slug: when shape_sig carries whitespace (allowed by the canonical
+# contract — TS-normalized union types like `string | null` propagate spaces),
+# the cluster_id must still be a single whitespace-free token. Construct a
+# minimal synthetic fixture and check the slugged id.
+assert_shape_sig_frequency_cluster_id_slug() {
+  local tmp_fixture result cid sig
+  tmp_fixture="$(mktemp)"
+  cat > "$tmp_fixture" <<'EOF'
+[
+  {"name":"A","kind":"interface","package":"main","file":"a.ts","line":1,"shape_sig":"foo:bar | baz","fields":["foo:bar | baz"],"touched_in_window":false,"generated":false},
+  {"name":"B","kind":"interface","package":"main","file":"b.ts","line":2,"shape_sig":"foo:bar | baz","fields":["foo:bar | baz"],"touched_in_window":false,"generated":false}
+]
+EOF
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/shape-sig-frequency.jq" "$tmp_fixture" 2>&1)"
+  rm -f "$tmp_fixture"
+  cid="$(echo "$result" | jq -r '.cluster_id')"
+  sig="$(echo "$result" | jq -r '.shape_sig')"
+  # cluster_id must be whitespace-free; verbatim shape_sig is preserved in the data field.
+  if [[ "$cid" == "shape-sig-frequency:foo:bar-|-baz" && "$sig" == "foo:bar | baz" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ shape-sig-frequency (cluster_id slug): cid='%s' shape_sig='%s'\n" "$cid" "$sig"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shape-sig-frequency (cluster_id slug): expected cid='shape-sig-frequency:foo:bar-|-baz' shape_sig='foo:bar | baz', got cid='%s' shape_sig='%s'\n" \
+      "$cid" "$sig"
+  fi
+}
+assert_shape_sig_frequency_cluster_id_slug
+
 echo ""
 echo "=== Text-mode cid= markers ==="
 assert_text_has_cid exact-duplicates.jq "$TYPES_FIXTURE"
