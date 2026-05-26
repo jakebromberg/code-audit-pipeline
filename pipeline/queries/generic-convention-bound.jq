@@ -65,7 +65,7 @@ def split_trim_csv:
   split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0));
 
 (builtins + ($ENV.EXTRA_BUILTINS // "" | split_trim_csv)) as $allowlist
-| [.[]
+| [entries[]
     | select((.generated // false) != true)
     | select(.fields != null and (.fields | length) > 0)
     | . as $row

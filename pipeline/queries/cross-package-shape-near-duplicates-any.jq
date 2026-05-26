@@ -21,7 +21,7 @@
 
 include "_canonical";
 
-. as $all
+entries as $all
 | $threshold as $thr
 | ([ $all[]
      | select(.fields != null and (.fields | length) >= 3)

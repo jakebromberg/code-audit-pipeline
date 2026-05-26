@@ -44,7 +44,7 @@
 
 include "_canonical";
 
-[ .[]
+[ entries[]
   | select((.generated // false) != true)
   | select(.kind == "type-alias-object")
   | select(.fields != null and (.fields | length) >= 2)

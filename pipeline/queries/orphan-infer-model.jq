@@ -42,7 +42,7 @@
 include "_canonical";
 
 (($ENV.INCLUDE_GENERATED // "") == "true") as $include_gen
-| . as $all
+| entries as $all
 | ([$all[] | select(.kind == "type-alias-infer-model" and .infer_ref)]) as $derivs
 | ($derivs
     | map(select(.infer_ref.kind == "InferSelectModel" or .infer_ref.kind == "$inferSelect"))

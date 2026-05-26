@@ -870,7 +870,7 @@ assert_infer_model_extractor() {
       {"k":"$inferSelect","n":"ModernUser"},
       {"k":"$inferInsert","n":"ModernNewUser"}
     ] as $expected
-    | . as $catalog
+    | .entries as $catalog
     | [ $expected[]
         | . as $e
         | select(
@@ -891,7 +891,7 @@ assert_infer_model_extractor() {
   else
     FAIL=$((FAIL + 1))
     printf "  ✗ infer-model extractor: missing rows for: %s\n" "$missing"
-    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.[] | select(.kind == "type-alias-infer-model" or .kind == "type-alias-other" or .kind == "drizzle-table") | {name, kind, infer_ref}]')"
+    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.entries[] | select(.kind == "type-alias-infer-model" or .kind == "type-alias-other" or .kind == "drizzle-table") | {name, kind, infer_ref}]')"
   fi
 }
 assert_infer_model_extractor
@@ -1064,7 +1064,7 @@ assert_is_test_extractor() {
       {"f":"__fixtures__/factory.ts",    "t":true},
       {"f":"e2e/login.ts",               "t":true}
     ] as $expected
-    | . as $catalog
+    | .entries as $catalog
     | [ $expected[]
         | . as $e
         # NB: jq `//` treats `false` as nullish — use `==` directly so false-vs-missing stays distinguishable.
@@ -1082,7 +1082,7 @@ assert_is_test_extractor() {
   else
     FAIL=$((FAIL + 1))
     printf "  ✗ is_test extractor: %s\n" "$mismatched"
-    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.[] | {file, name, is_test}]')"
+    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.entries[] | {file, name, is_test}]')"
   fi
 }
 assert_is_test_extractor

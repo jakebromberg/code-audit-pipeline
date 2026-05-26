@@ -33,7 +33,7 @@
 
 include "_canonical";
 
-[ .[]
+[ entries[]
   | select((.generated // false) != true)
   | select(.kind == "interface")
   | select(.fields != null and (.fields | length) >= 2)

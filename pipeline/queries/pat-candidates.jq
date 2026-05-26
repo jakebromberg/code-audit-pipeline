@@ -68,7 +68,7 @@
 
 include "_canonical";
 
-[ .[]
+[ entries[]
   | select((.generated // false) != true)
   | select(.kind == "interface" or .kind == "type-alias-object")
   | select(.fields != null and (.fields | length) >= 2)

@@ -33,7 +33,7 @@ include "_canonical";
 | (($ENV.INCLUDE_GENERATED // "") == "true") as $include_gen
 | (($ENV.MIN_COUNT    // "2")   | tonumber) as $min
 | (($ENV.SAMPLE_SIZE  // "3")   | tonumber) as $sample
-| [.[]
+| [entries[]
     | select(.shape_sig != null and .shape_sig != "")
     | select($include_gen or ((.generated // false) != true))
     | select($pkg_filter == "" or .package == $pkg_filter)

@@ -19,7 +19,7 @@
 
 include "_canonical";
 
-. as $all
+entries as $all
 | ([ $all[] | select((.generated // false) != true) ]) as $files
 
 # Section 1: exact byte duplicates. Filter 0-byte files — empty stubs aren't substantive

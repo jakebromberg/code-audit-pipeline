@@ -16,7 +16,7 @@
 
 include "_canonical";
 
-. as $all
+entries as $all
 | ([ $all[] | select(.package == "shared" and (.kind == "interface" or .kind == "type-alias-object")) ]
    | map(.name) | unique) as $shared_names
 | [ $all[]
