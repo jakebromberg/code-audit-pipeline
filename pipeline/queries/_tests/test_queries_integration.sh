@@ -18,6 +18,7 @@ FIXTURES_DIR="$SCRIPT_DIR/fixtures"
 TYPES_FIXTURE="$FIXTURES_DIR/types.input.json"
 FUNCS_FIXTURE="$FIXTURES_DIR/functions.input.json"
 FILES_FIXTURE="$FIXTURES_DIR/files.input.json"
+MIGRATION_FIXTURE="$FIXTURES_DIR/migration.input.json"
 
 PASS=0
 FAIL=0
@@ -130,6 +131,110 @@ echo "=== File-hash query ==="
 assert_jsonl_has_prefix file-duplicates.jq "$FILES_FIXTURE" "file-duplicates-"
 
 echo ""
+echo "=== Migration-progress queries ==="
+assert_jsonl_has_prefix migration-progress.jq "$MIGRATION_FIXTURE" "migration-progress:" \
+  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+assert_jsonl_has_prefix shape-sig-frequency.jq "$MIGRATION_FIXTURE" "shape-sig-frequency:"
+
+# Semantic correctness for migration-progress. The fixture is hand-tuned:
+#   id:number — OldA (touched), OldB             → 2 on old, 1 straggler
+#   id:string — NewA, NewB (touched), SharedNewA → 3 on new
+#   GeneratedOld is excluded by default (generated:true).
+# With package="main" filter, SharedNewA drops out: 2 on old, 2 on new = 50%, straggler = OldA.
+assert_migration_progress_semantic() {
+  local label="$1"; shift
+  local expected_on_old="$1"; shift
+  local expected_on_new="$1"; shift
+  local expected_pct="$1"; shift
+  local expected_stragglers="$1"; shift   # comma-separated names, "" for none
+  # Remaining args are split into env-var prefix (KEY=value tokens) and jq args.
+  local env_prefix=()
+  local jq_args=()
+  while (( $# > 0 )); do
+    if [[ "$1" == *=* && "$1" != --* ]]; then
+      env_prefix+=("$1")
+    else
+      jq_args+=("$1")
+    fi
+    shift
+  done
+
+  local result
+  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
+    jq -L "$QUERIES_DIR" -r "${jq_args[@]}" \
+    -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+
+  local on_old on_new pct stragglers
+  on_old="$(echo "$result"     | jq -r '.on_old')"
+  on_new="$(echo "$result"     | jq -r '.on_new')"
+  pct="$(echo "$result"        | jq -r '.percent_migrated')"
+  stragglers="$(echo "$result" | jq -r '.stragglers | map(.name) | join(",")')"
+
+  if [[ "$on_old" == "$expected_on_old" \
+     && "$on_new" == "$expected_on_new" \
+     && "$pct"    == "$expected_pct" \
+     && "$stragglers" == "$expected_stragglers" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ migration-progress (%s): on_old=%s on_new=%s pct=%s stragglers=[%s]\n" \
+      "$label" "$on_old" "$on_new" "$pct" "$stragglers"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (%s): got (on_old=%s on_new=%s pct=%s stragglers=[%s]), expected (on_old=%s on_new=%s pct=%s stragglers=[%s])\n" \
+      "$label" "$on_old" "$on_new" "$pct" "$stragglers" \
+      "$expected_on_old" "$expected_on_new" "$expected_pct" "$expected_stragglers"
+  fi
+}
+
+# Baseline (no filters): default excludes generated. main has 2 old + 2 new; shared adds 1 new → 2/3, 60%.
+assert_migration_progress_semantic "baseline" 2 3 60 "OldA" \
+  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+
+# Package filter restricts to main: 2 old + 2 new = 50%.
+assert_migration_progress_semantic "PACKAGE=main" 2 2 50 "OldA" \
+  PACKAGE=main \
+  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+
+# Include generated: GeneratedOld also matches id:number → 3 old, 3 new (still 50%, +1 GeneratedOld on old).
+assert_migration_progress_semantic "INCLUDE_GENERATED=true" 3 3 50 "OldA" \
+  INCLUDE_GENERATED=true \
+  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+
+# 100% migrated: no rows match old_sig.
+assert_migration_progress_semantic "100pct" 0 3 100 "" \
+  --arg old_sig "does:not:exist" --arg new_sig "id:string" --arg label "Hypothetical"
+
+# 0% migrated: no rows match new_sig. OldA is the only touched-in-window straggler.
+assert_migration_progress_semantic "0pct" 2 0 0 "OldA" \
+  --arg old_sig "id:number" --arg new_sig "does:not:exist" --arg label "Hypothetical"
+
+# No matches at all: division-by-zero guard. Both sigs absent → 0/0 collapses to 0% (denom guard).
+assert_migration_progress_semantic "no_matches" 0 0 0 "" \
+  --arg old_sig "no:match:a" --arg new_sig "no:match:b" --arg label "Nothing"
+
+# Sigs identical: should emit a warning row. The JSONL surface still has on_old/on_new
+# populated, but sigs_identical=true. Verify the flag.
+assert_migration_progress_sigs_identical() {
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --arg old_sig "id:number" --arg new_sig "id:number" --arg label "Degenerate" \
+    -f "$QUERIES_DIR/migration-progress.jq" "$MIGRATION_FIXTURE" 2>&1)"
+  local flag
+  flag="$(echo "$result" | jq -r '.sigs_identical')"
+  if [[ "$flag" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ migration-progress (sigs_identical): flag set\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ migration-progress (sigs_identical): expected true, got %s\n" "$flag"
+  fi
+}
+assert_migration_progress_sigs_identical
+
+echo ""
 echo "=== Text-mode cid= markers ==="
 assert_text_has_cid exact-duplicates.jq "$TYPES_FIXTURE"
 assert_text_has_cid name-collisions.jq "$TYPES_FIXTURE"
@@ -147,6 +252,9 @@ assert_text_has_cid function-duplicates.jq "$FUNCS_FIXTURE" --argjson threshold 
 assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
+assert_text_has_cid migration-progress.jq "$MIGRATION_FIXTURE" \
+  --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+assert_text_has_cid shape-sig-frequency.jq "$MIGRATION_FIXTURE"
 
 echo ""
 echo "=== Cross-catalog queries ==="

@@ -109,6 +109,8 @@ All operate on the JSON catalog and emit human-readable output. Drop into a chat
 | `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
 | `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |
 | `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language). Verdict per cluster: `FIELD_NAMES_MATCH` / `FIELD_NAMES_DIVERGE` / `COMPARISON_UNAVAILABLE` | type, two-catalog |
+| `migration-progress.jq` | Counts decls on old vs new `shape_sig`, computes % migrated, lists touched-in-window stragglers still on the old shape. Takes `--arg old_sig --arg new_sig --arg label`; optional `PACKAGE` / `KIND_PREFIX` / `INCLUDE_GENERATED` env filters | type |
+| `shape-sig-frequency.jq` | Lists `shape_sig` values by count desc with sample names. Discovery helper for picking `old_sig` / `new_sig` inputs to `migration-progress.jq` | type |
 
 ## Adding a new extractor
 
@@ -121,7 +123,7 @@ Any language with an AST library works. Each extractor must:
 
 The contract doc has the minimum schema. The TypeScript extractor (~280 lines, uses `typescript`) is the reference. Suggested next:
 
-- **Python** — `ast` (stdlib): `ClassDef`, `AnnAssign`, Pydantic `BaseModel` subclasses, SQLAlchemy declarative bases, FastAPI route handlers
+- **Python** — `ast` (stdlib): `ClassDef`, `AnnAssign`, Pydantic `BaseModel` subclasses, SQLAlchemy declarative bases, FastAPI route handlers. The walked-from-real-codebase feasibility study is in [`docs/python-extractor-design-notes.md`](docs/python-extractor-design-notes.md); it converges with the Swift notes on a "parse + recognize contracts" middle ground for both languages.
 - **Rust** — `syn` crate, or treesitter-rust
 - **Go** — `go/ast` + `go/parser` (stdlib): `*ast.StructType`, `*ast.InterfaceType`
 - **Swift** — `SwiftSyntax`. The walked-from-real-codebase feasibility study is in [`docs/swift-extractor-design-notes.md`](docs/swift-extractor-design-notes.md); it covers what an AST-only extractor faithfully captures vs. where macros, property wrappers, and result builders force fidelity-loss markers.
@@ -132,7 +134,7 @@ Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 sou
 
 ## Experiment series
 
-The project's validation track. Each experiment doc records its setup, plant set, results, and what changed about the methodology. Read in order if you want the full development arc:
+The project's validation track. Each experiment doc records its setup, plant set, results, and what changed about the methodology. The series starts with the V1 dj-site experiment ([`docs/dj-site-divergence-experiment.md`](docs/dj-site-divergence-experiment.md)) — a second TypeScript data point comparing pipeline-aware agent interpretation against cold-agent direct analysis, which surfaced five contract additions (`.tsx` indexing, default-on `--shared` warning, reference counts, subset detector, inline-literal expansion) the TypeScript substrate needed before a second-language extractor was worth building. The V2 protocol designed to address V1's confounds is in [`docs/dj-site-divergence-experiment-v2-methodology.md`](docs/dj-site-divergence-experiment-v2-methodology.md). Read in order for the full development arc:
 
 | Experiment | Layer | Question | Doc |
 |---|---|---|---|
