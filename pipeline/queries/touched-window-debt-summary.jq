@@ -8,13 +8,6 @@
 # JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -rf pipeline/queries/touched-window-debt-summary.jq catalog.json
 #              (4 rows, one per cluster type, deterministic order)
 #
-# Purpose: a reviewer at PR time should not have to run four cluster queries
-# and mentally union the asterisks to find which clusters their PR touches.
-# This meta-query does the union — for each cluster type, it reports the
-# fraction of clusters with at least one touched-in-window member, and lists
-# those touched clusters with their source cluster_ids. The four individual
-# queries become drill-downs when this meta-query flags a hit.
-#
 # Cluster types indexed (the original four; extending to more is a 5-7 line
 # append to the cluster_types array below):
 #   - exact-duplicates       (source: exact-duplicates.jq)
@@ -28,15 +21,14 @@
 #
 # Optional knobs:
 #   THRESHOLD=0.7        near-duplicates Jaccard floor (default 0.7, matches
-#                        near-duplicates.jq). Surface as env var to keep the
-#                        invocation flag-free, matching OUTPUT_FORMAT.
+#                        near-duplicates.jq). Env var (not --argjson) so the
+#                        invocation stays flag-free, matching OUTPUT_FORMAT.
 #   ONLY_TOUCHED=true    suppress the detail block for cluster types with
 #                        zero touched clusters. Header table still shows them.
 #
-# When no row in the catalog has `touched_in_window: true` (extractor ran
-# without --touched), text mode prepends a banner explaining this; JSONL mode
-# emits the same four rows with `touched: 0` (no banner — it's a text-mode
-# affordance).
+# When no row in the catalog carries `touched_in_window: true`, text mode
+# prepends a banner pointing at the extractor's --touched flag. JSONL mode
+# just emits four rows with `touched: 0` — no banner.
 #
 # cluster_id format:  touched-window-debt-summary:<cluster-type>
 #   One row per cluster type per invocation. The cluster-type slug matches
@@ -45,14 +37,10 @@
 
 include "_canonical";
 
-# A cluster is touched if any of its decls has touched_in_window: true.
 # All four cluster types are normalized to a {cluster_id, decls} shape so
-# this predicate works uniformly.
+# this predicate works uniformly across them.
 def cluster_has_touched: any(.decls[]; .touched_in_window // false);
 
-# Per-cluster text rendering. Inside a detail block, each touched cluster
-# gets its source cluster_id on a header line and one indented line per decl
-# with a "*" marker for touched ones (matching the source queries' text mode).
 def render_cluster:
   "  [\(.decls | length) decl(s)] cid=\(.cluster_id)\n"
   + (.decls
@@ -99,15 +87,20 @@ def render_cluster:
 # 4. near-duplicates — main-package pairs with field-name Jaccard ≥ THRESHOLD
 # and < 1.0 (exact matches are exact-duplicates' job). Both sides need ≥3
 # fields per the source query.
-| ([ $all[] | select(.package == "main" and .fields and (.fields | length) >= 3) ]) as $nd_decls
+#
+# `_fset` is precomputed once per candidate so the O(N²) pair loop doesn't
+# re-parse each decl's fields on every pairing.
+| ([ $all[]
+     | select(.package == "main" and .fields and (.fields | length) >= 3)
+     | . + { _fset: (.fields | map(split(":") | .[0]) | map(sub("\\?$"; ""))) } ]) as $nd_decls
 | ([
     range(0; $nd_decls | length) as $i
     | range($i + 1; $nd_decls | length) as $j
     | $nd_decls[$i] as $a | $nd_decls[$j] as $b
-    | ($a.fields | map(split(":") | .[0]) | map(sub("\\?$"; ""))) as $af
-    | ($b.fields | map(split(":") | .[0]) | map(sub("\\?$"; ""))) as $bf
+    | ($a._fset) as $af
+    | ($b._fset) as $bf
     | ($af + $bf | unique | length) as $u
-    | ([$af, $bf] | .[0] | map(select(. as $x | [$bf[]] | index($x))) | length) as $ic
+    | ($af | map(select(. as $x | $bf | index($x))) | length) as $ic
     | ($ic / $u) as $jacc
     | select($jacc >= $thr and $jacc < 1.0)
     | { cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
@@ -118,7 +111,6 @@ def render_cluster:
       }
   ]) as $near_dupes
 
-# No-context banner predicate: true when not a single row carries the flag.
 | (any($all[]; .touched_in_window // false) | not) as $no_touched_context
 
 | [
@@ -127,17 +119,19 @@ def render_cluster:
     {cluster_type: "cross-package-shadows", clusters: $cross_shadows},
     {cluster_type: "near-duplicates",       clusters: $near_dupes}
   ]
-| map({
-    cluster_id: cluster_id_single_name("touched-window-debt-summary"; .cluster_type),
-    query: "touched-window-debt-summary",
-    cluster_type: .cluster_type,
-    touched: (.clusters | map(select(cluster_has_touched)) | length),
-    total:   (.clusters | length),
-    percent_touched: (if (.clusters | length) == 0 then 0
-                      else ((.clusters | map(select(cluster_has_touched)) | length) * 100 / (.clusters | length) | floor)
-                      end),
-    touched_clusters: (.clusters | map(select(cluster_has_touched)))
-  })
+| map(
+    (.clusters | map(select(cluster_has_touched))) as $touched_list
+    | (.clusters | length) as $n_total
+    | ($touched_list | length) as $n_touched
+    | {
+        cluster_id: cluster_id_single_name("touched-window-debt-summary"; .cluster_type),
+        query: "touched-window-debt-summary",
+        cluster_type: .cluster_type,
+        touched: $n_touched,
+        total:   $n_total,
+        percent_touched: (if $n_total == 0 then 0 else ($n_touched * 100 / $n_total | floor) end),
+        touched_clusters: $touched_list
+      })
 | if output_format == "jsonl" then
     .[] | @json
   else
