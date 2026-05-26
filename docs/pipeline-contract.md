@@ -272,7 +272,7 @@ The file-hash catalog is a single JSON array. Each entry describes one source fi
 
 **Normalization.** `CRLF` → `LF`, trailing whitespace stripped per line, trailing blank lines dropped. `sha256_normalized` catches "same file, editor / line-ending drift" pairs that raw `sha256` would miss.
 
-**Skip rules.** Same dir skip-list as the type extractor (`.dotdirs`, `node_modules`, `dist`, `build`, `coverage`, `tests` unless `--include-tests`). Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`). (Forward-looking: alignment with the type extractor's `is_test`-flag model is pending — see `## Type catalog` → `### Test path patterns`.)
+**Skip rules.** Skips `.dotdirs`, `node_modules`, `dist`, `build`, `coverage` (shared with the type extractor) plus `tests/` and `*.test.*` / `*.spec.*` files unless `--include-tests` is passed. Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`). (Forward-looking: the type extractor has dropped `--include-tests` and tags every row with `is_test` instead — see `## Type catalog` → `### Test path patterns`. Aligning file-hashes with that model is pending.)
 
 Used by `pipeline/queries/file-duplicates.jq`, which emits two sections: exact-byte clusters and whitespace-normalized-only clusters (files identical after normalization but not byte-equal).
 
