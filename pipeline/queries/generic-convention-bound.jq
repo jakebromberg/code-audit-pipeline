@@ -18,10 +18,13 @@
 #     use `TFoo` for non-generic types);
 #   - false negatives: lowercase or non-conventional type parameter names.
 # It will graduate to a precise structured cut once an extractor emits a
-# resolved `type_refs` list per field — tracked in issue #131. When that
-# lands, this query rewrites from a regex on raw text into an anti-join on a
-# structured array. The heuristic stays available as a fallback for catalogs
-# that pre-date the schema bump.
+# resolved `type_refs` list per field — see issue #146 (TS extractor: emit
+# `extends` + `references` edges, schema v1.1) for the live design. (The
+# earlier #131 ticket that proposed a dedicated `type_refs` field was closed
+# as not-planned; the work folded into #146.) When the edges land, this query
+# rewrites from a regex on raw text into an anti-join on the structured
+# array. The heuristic stays available as a fallback for catalogs that
+# pre-date the schema bump.
 #
 # Optional knobs:
 #   EXTRA_BUILTINS=Foo,Bar    extend the built-in allowlist (comma-joined)
@@ -51,12 +54,22 @@ def builtins: [
 #   Microsoft-style prefix: TFoo, TInput, TStats — leading T then uppercase.
 def looks_like_typeparam: test("^T[A-Z]") or test("^[TKVUER]$");
 
-(builtins + ($ENV.EXTRA_BUILTINS // "" | split(",") | map(select(length > 0)))) as $allowlist
+# Comma-split that tolerates incidental whitespace around items. The contract
+# example shows `"generics": "T,U"` (no spaces) and current extractors emit
+# that form, but the contract doesn't pin the whitespace; a hand-edited
+# fixture or a future extractor could emit `"T, U"`. The same tolerance
+# applies to EXTRA_BUILTINS, where users naturally write `"TFoo, TBar"` from
+# the shell. Trim each token after split so the allowlist subtraction works
+# either way.
+def split_trim_csv:
+  split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0));
+
+(builtins + ($ENV.EXTRA_BUILTINS // "" | split_trim_csv)) as $allowlist
 | [.[]
     | select((.generated // false) != true)
     | select(.fields != null and (.fields | length) > 0)
     | . as $row
-    | ($row.generics // "" | split(",") | map(select(length > 0))) as $bound
+    | ($row.generics // "" | split_trim_csv) as $bound
     # Right-of-first-colon: defensive against field types that themselves contain ":".
     | ([$row.fields[] | split(":")[1:] | join(":") | scan("[A-Z]\\w*")] | unique) as $referenced
     | ($referenced - $bound - $allowlist) as $residue

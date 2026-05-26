@@ -538,6 +538,41 @@ assert_generic_convention_bound_absent "EXTRA_BUILTINS=TStats,TOutput drops Sync
 assert_generic_convention_bound_absent "EXTRA_BUILTINS=TStats,TOutput drops BackfillJob" \
   "BackfillJob" EXTRA_BUILTINS=TStats,TOutput --
 
+# Whitespace tolerance: humans naturally write `Foo, Bar` (with a space) from
+# the shell. Each split-on-comma site must trim surrounding whitespace so the
+# allowlist subtraction matches `Bar` regardless of how the user spaced it.
+assert_generic_convention_bound_absent "EXTRA_BUILTINS='TStats, TOutput' (whitespace) drops SyncResult" \
+  "SyncResult"  "EXTRA_BUILTINS=TStats, TOutput" --
+assert_generic_convention_bound_absent "EXTRA_BUILTINS='TStats, TOutput' (whitespace) drops BackfillJob" \
+  "BackfillJob" "EXTRA_BUILTINS=TStats, TOutput" --
+
+# Whitespace tolerance: bound `generics` field. Current TS/Swift extractors
+# emit comma-only joins, but the contract does not pin whitespace and a
+# hand-edited fixture or a future extractor could emit `"T, K"`. The query
+# must still treat K as bound (not as an unbound suspect).
+assert_generic_convention_bound_whitespace_generics() {
+  local tmp_fixture result count
+  tmp_fixture="$(mktemp)"
+  cat > "$tmp_fixture" <<'EOF'
+[
+  {"name":"WithSpaces","kind":"interface","package":"main","file":"a.ts","line":1,"shape_sig":"x:T|y:K","fields":["x:T","y:K"],"generics":"T, K","touched_in_window":false,"generated":false}
+]
+EOF
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/generic-convention-bound.jq" "$tmp_fixture" 2>&1)"
+  rm -f "$tmp_fixture"
+  count="$(echo "$result" | jq -rs 'length')"
+  if [[ "$count" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ generic-convention-bound (generics='T, K' whitespace): K treated as bound, no suspects\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ generic-convention-bound (generics='T, K' whitespace): expected no rows, got %s. output:\n%s\n" \
+      "$count" "$result"
+  fi
+}
+assert_generic_convention_bound_whitespace_generics
+
 echo ""
 echo "=== Text-mode cid= markers ==="
 assert_text_has_cid exact-duplicates.jq "$TYPES_FIXTURE"

@@ -11,7 +11,7 @@ Two query files plus matching tests, fixture, and a README row each. Both files 
 | File | Purpose | LOC budget |
 |---|---|---|
 | `pipeline/queries/generic-arity-drift.jq` | Group declarations by `.name`; flag groups whose `generics` arities are not all equal. Deterministic — output is a function of the schema's `generics` field. | ~30 |
-| `pipeline/queries/generic-convention-bound.jq` | Per-row regex residue check: extract `[A-Z]\w*` identifiers from `fields[]` right-of-colon, subtract row's `generics` + built-in allowlist, flag if any residue token looks like a type parameter (`T`, `K`, `V`, `U`, `R`, `E`, or `T[A-Z]\w*`). Heuristic — header docstring says so, with upgrade path to #131's `type_refs`. | ~45 |
+| `pipeline/queries/generic-convention-bound.jq` | Per-row regex residue check: extract `[A-Z]\w*` identifiers from `fields[]` right-of-colon, subtract row's `generics` + built-in allowlist, flag if any residue token looks like a type parameter (`T`, `K`, `V`, `U`, `R`, `E`, or `T[A-Z]\w*`). Heuristic — header docstring says so, with upgrade path to the structured `type_refs` work tracked in #146 (the original #131 design folded into the schema v1.1 edges work). | ~45 |
 | `pipeline/queries/_tests/fixtures/generics.input.json` | Hand-tuned plant catalog covering the seven test cases enumerated in the issue body. | ~25 lines JSON |
 | `pipeline/queries/_tests/test_queries_integration.sh` | Two `assert_jsonl_has_prefix` calls + two `assert_text_has_cid` calls + one semantic helper per query. | +60 lines |
 | `README.md` | Two new rows in the Cluster queries table. | +2 lines |
@@ -79,7 +79,7 @@ TDD: write fixture + tests first, then implement query 1 to green, then query 2 
 - **`generic-convention-bound.jq` scan idiom:** `[$row.fields[] | split(":")[1:] | join(":") | [scan("[A-Z]\\w*")] | .[]] | unique` — the `[1:]` slice + `join(":")` handles field types that themselves contain a `:` (rare but defensive; Swift's `Result<Foo, Error>` doesn't but TS conditional types occasionally do).
 - **`looks_like_typeparam` regex:** `test("^T[A-Z]") or test("^[TKVUER]$")`. Single-letter set covers the conventional names; `T[A-Z]\w*` covers the Microsoft/TS convention.
 - **`EXTRA_BUILTINS` parsing:** `($ENV.EXTRA_BUILTINS // "" | split(",") | map(select(length > 0)))`. Empty default, split on comma, drop empty tokens.
-- **Header docstring for convention-bound** must include the heuristic disclaimer + upgrade path to #131 verbatim — substrate principle is "deterministic where possible; honest about the seams where not."
+- **Header docstring for convention-bound** must include the heuristic disclaimer + upgrade path to the live `type_refs` ticket (#146 today, originally #131) — substrate principle is "deterministic where possible; honest about the seams where not."
 - **jq gotchas** (per `CLAUDE.md`): `-r` everywhere, plain `"..."` inside `\(...)` interpolation, no `\"...\"` over-escaping.
 
 ## What this PR does not change
@@ -91,5 +91,5 @@ TDD: write fixture + tests first, then implement query 1 to green, then query 2 
 ## Out-of-scope follow-ups (deliberate)
 
 - `generic-param-name-drift.jq` (open question #2 fallout) — defer until a real refactor needs it.
-- `type_refs`-based rewrite of convention-bound — blocked on #131. Header docstring documents the upgrade path.
+- `type_refs`-based rewrite of convention-bound — blocked on #146 (the earlier #131 ticket closed as not-planned; the work folded into the schema v1.1 edges design). Header docstring documents the upgrade path.
 - Function-signature generics — out of lane entirely; tracked in #133's function-kind work.
