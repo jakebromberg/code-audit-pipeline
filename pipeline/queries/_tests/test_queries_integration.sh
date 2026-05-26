@@ -25,6 +25,8 @@ DEBT_SUMMARY_NO_CONTEXT_FIXTURE="$FIXTURES_DIR/debt-summary-no-context.input.jso
 INFER_MODEL_SAMPLE_TS="$FIXTURES_DIR/infer-model-sample.ts"
 TYPE_CATALOG_BIN="$SCRIPT_DIR/../../../extractors/typescript/type-catalog.mjs"
 ORPHAN_INFER_MODEL_FIXTURE="$FIXTURES_DIR/orphan-infer-model.input.json"
+IS_TEST_TREE="$FIXTURES_DIR/is-test-tree"
+TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
 
 PASS=0
 FAIL=0
@@ -1018,6 +1020,120 @@ assert_orphan_infer_model_touched_marker() {
 assert_orphan_infer_model_touched_marker
 
 assert_text_has_cid orphan-infer-model.jq "$ORPHAN_INFER_MODEL_FIXTURE"
+
+echo ""
+echo "=== is_test extractor + test-prod-drift query ==="
+
+# Drives the TypeScript extractor against the synthetic is-test-tree/ fixture
+# and asserts each file's expected is_test classification. The tree exercises:
+#   - non-test prod file (src/foo.ts)
+#   - dot-suffix patterns (.test, .spec, .mock)
+#   - lowercase fixtures/ subdir
+#   - underscored test/fixture dirs (__tests__, __fixtures__)
+#   - non-underscored test dir (tests/) at any depth
+#   - e2e/ dir
+assert_is_test_extractor() {
+  if ! command -v node >/dev/null 2>&1; then
+    printf "  SKIP is_test extractor smoke test: node not on PATH\n"
+    return
+  fi
+  if [[ ! -f "$TYPE_CATALOG_BIN" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ is_test extractor: type-catalog.mjs not found at %s\n" "$TYPE_CATALOG_BIN"
+    return
+  fi
+  local tmp catalog
+  tmp="$(mktemp -d)"
+  cp -R "$IS_TEST_TREE"/. "$tmp/"
+  catalog="$(node "$TYPE_CATALOG_BIN" --root "$tmp" 2>/dev/null)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ is_test extractor: type-catalog.mjs crashed on is-test-tree\n"
+    rm -rf "$tmp"
+    return
+  }
+  rm -rf "$tmp"
+
+  # One jq pass: emit the mis-classified set as "file [want=W got=G]" joined by ", ".
+  # Empty string means every file's is_test matched expectation.
+  local mismatched
+  mismatched="$(echo "$catalog" | jq -r '
+    [
+      {"f":"src/foo.ts",                 "t":false},
+      {"f":"src/foo.test.ts",            "t":true},
+      {"f":"src/foo.spec.ts",            "t":true},
+      {"f":"src/foo.mock.ts",            "t":true},
+      {"f":"src/fixtures/data.ts",       "t":true},
+      {"f":"tests/integration/bar.ts",   "t":true},
+      {"f":"__tests__/baz.ts",           "t":true},
+      {"f":"__fixtures__/factory.ts",    "t":true},
+      {"f":"e2e/login.ts",               "t":true}
+    ] as $expected
+    | . as $catalog
+    | [ $expected[]
+        | . as $e
+        # NB: jq `//` treats `false` as nullish — use `==` directly so false-vs-missing stays distinguishable.
+        | ([$catalog[] | select(.file == $e.f)] | first) as $row
+        | if $row == null then "\($e.f) [want=\($e.t) got=missing]"
+          elif $row.is_test == null then "\($e.f) [want=\($e.t) got=missing-field]"
+          elif $row.is_test != $e.t then "\($e.f) [want=\($e.t) got=\($row.is_test)]"
+          else empty
+          end ]
+    | join(", ")')"
+
+  if [[ -z "$mismatched" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ is_test extractor: all 9 file classifications correct\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ is_test extractor: %s\n" "$mismatched"
+    printf "    catalog:\n%s\n" "$(echo "$catalog" | jq '[.[] | {file, name, is_test}]')"
+  fi
+}
+assert_is_test_extractor
+
+assert_jsonl_has_prefix test-prod-drift.jq "$TEST_PROD_DRIFT_FIXTURE" "test-prod-drift:" --argjson threshold 0.5
+
+# Semantic correctness for test-prod-drift. Fixture (test-prod-drift.input.json):
+#   User <-> UserFixture       — XOR matches, jaccard 0.75      → emit (prod-first: User)
+#   Address <-> AddressTest    — XOR matches, jaccard 1.0       → exclude (< 1.0 clause)
+#   Order <-> OrderDraft       — both is_test=false             → exclude (XOR)
+#   Legacy1 <-> Legacy2        — neither carries is_test field  → exclude (back-compat: both default false)
+#   GeneratedProd <-> TestThing — GeneratedProd.generated=true  → exclude (candidate filter)
+# Net: exactly one row, with prod-side (User) reported as `a`, fixture-side (UserFixture) as `b`.
+assert_test_prod_drift_baseline() {
+  local result rows
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
+    -f "$QUERIES_DIR/test-prod-drift.jq" "$TEST_PROD_DRIFT_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ test-prod-drift (baseline): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  if [[ "$rows" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ test-prod-drift (baseline): expected 1 row, got %s:\n%s\n" "$rows" "$result"
+    return
+  fi
+  # Verify the row: a.name=User (prod), b.name=UserFixture (test), a.is_test=false, b.is_test=true.
+  local diag
+  diag="$(echo "$result" | jq -r '
+    . as $r
+    | if ($r.a.name == "User" and $r.b.name == "UserFixture"
+           and ($r.a.is_test // false) == false
+           and ($r.b.is_test // false) == true) then ""
+      else "a=\($r.a.name)(is_test=\($r.a.is_test // "null")) b=\($r.b.name)(is_test=\($r.b.is_test // "null"))"
+      end')"
+  if [[ -z "$diag" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ test-prod-drift (baseline): emits User (prod) <-> UserFixture (test)\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ test-prod-drift (baseline): wrong row ordering — %s\n" "$diag"
+  fi
+}
+assert_test_prod_drift_baseline
+
+assert_text_has_cid test-prod-drift.jq "$TEST_PROD_DRIFT_FIXTURE" --argjson threshold 0.5
 
 echo ""
 echo "=== Cross-catalog queries ==="

@@ -25,6 +25,7 @@ The type catalog is a single JSON array. Each entry describes one declared type-
     "line": 42,                           // 1-indexed
     "exported": true,                     // true if exported from the file
     "generated": false,                   // true if .d.ts or under generated/
+    "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
 
     "fields": [                           // sorted "name:type" list, or null
       "album_title:string | null",
@@ -114,7 +115,7 @@ Languages without an exact analog can extend with their own kind values — keep
 
 ## Required fields
 
-- `name`, `kind`, `package`, `file`, `line`
+- `name`, `kind`, `package`, `file`, `line`, `is_test`
 
 ## Required-when-applicable
 
@@ -179,11 +180,40 @@ Cluster queries that compare across packages always include the `package` field 
 
 Default skip-list (extractors may extend):
 
-- `node_modules/`, `dist/`, `build/`, `coverage/`, `tests/`
+- `node_modules/`, `dist/`, `build/`, `coverage/`
 - **Any directory beginning with `.`** — `.git/`, `.next/`, `.claude/`, `.cursor/`, `.idea/`, `.vscode/`. These typically hold IDE/agent state or git worktree clones; descending into them inflates the catalog with near-duplicate copies of the same repo.
-- Files matching `*.test.*`, `*.spec.*`
 
-Use `--include-tests` to keep test directories in scope when auditing test-fixture duplication.
+Test files are always extracted; every row carries an `is_test: bool` flag derived from the file path. To exclude tests post-hoc from a catalog, pipe through `jq 'map(select(.is_test | not))'`.
+
+### Test path patterns
+
+`is_test` is true if **any** of the following match a row's `file` path. The patterns below are normative — other-language extractors must implement the same set so cluster queries don't have to special-case per language. Language-specific extensions are MUST-when-applicable and are listed below.
+
+**Universal directory patterns** (any path segment, any depth):
+
+- `tests`, `test`, `__tests__`, `__test__`
+- `spec`
+- `__mocks__`
+- `__fixtures__`, `fixtures`
+- `e2e`
+
+**Universal filename patterns** (basename only):
+
+- `*.test.<ext>` / `*.spec.<ext>` — for whichever source extensions the extractor reads
+- `*.fixture.<ext>` / `*.fixtures.<ext>`
+- `*.mock.<ext>` / `*.mocks.<ext>`
+
+**Language-specific extensions:**
+
+| Language | Additional patterns |
+|---|---|
+| TypeScript | `<ext>` ∈ `{ts, tsx, mts, cts}` for the universal filename patterns |
+| Python | `test_*.py`, `*_test.py`, `conftest.py` |
+| Go | `*_test.go` |
+| Swift | `Tests/` (capital T, SwiftPM convention). Extractors may extend with AST-based `XCTestCase`-subclass detection. |
+| Rust | `tests/` (integration-test convention, already covered universally). Extractors may extend with AST-based `#[cfg(test)]`-module detection. |
+
+The AST-based extensions noted above (Swift `XCTestCase`, Rust `#[cfg(test)]`) fall under the "extractor may extend" clause — they're permitted and encouraged, but not required for v1 parity.
 
 ## Function catalog (`function-catalog.json`)
 
@@ -242,7 +272,7 @@ The file-hash catalog is a single JSON array. Each entry describes one source fi
 
 **Normalization.** `CRLF` → `LF`, trailing whitespace stripped per line, trailing blank lines dropped. `sha256_normalized` catches "same file, editor / line-ending drift" pairs that raw `sha256` would miss.
 
-**Skip rules.** Same dir skip-list as the type extractor (`.dotdirs`, `node_modules`, `dist`, `build`, `coverage`, `tests` unless `--include-tests`). Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`).
+**Skip rules.** Same dir skip-list as the type extractor (`.dotdirs`, `node_modules`, `dist`, `build`, `coverage`, `tests` unless `--include-tests`). Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`). (Forward-looking: alignment with the type extractor's `is_test`-flag model is pending — see `## Type catalog` → `### Test path patterns`.)
 
 Used by `pipeline/queries/file-duplicates.jq`, which emits two sections: exact-byte clusters and whitespace-normalized-only clusters (files identical after normalization but not byte-equal).
 
@@ -317,7 +347,7 @@ Exit code: `0` if at least one `Package.swift` or `project.pbxproj` was discover
 Every extractor:
 
 ```
-extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--include-tests]
+extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>]
 ```
 
 Defaults: `--output` writes to stdout. Summary stats (file counts, kind histogram, error count) go to stderr.
