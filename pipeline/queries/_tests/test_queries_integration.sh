@@ -23,7 +23,7 @@ GENERICS_FIXTURE="$FIXTURES_DIR/generics.input.json"
 DEBT_SUMMARY_FIXTURE="$FIXTURES_DIR/debt-summary.input.json"
 DEBT_SUMMARY_NO_CONTEXT_FIXTURE="$FIXTURES_DIR/debt-summary-no-context.input.json"
 INFER_MODEL_SAMPLE_TS="$FIXTURES_DIR/infer-model-sample.ts"
-TYPE_CATALOG_BIN="$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)/type-catalog.mjs"
+TYPE_CATALOG_BIN="$SCRIPT_DIR/../../../extractors/typescript/type-catalog.mjs"
 ORPHAN_INFER_MODEL_FIXTURE="$FIXTURES_DIR/orphan-infer-model.input.json"
 
 PASS=0
@@ -842,6 +842,11 @@ assert_infer_model_extractor() {
     printf "  SKIP infer-model extractor smoke test: node not on PATH\n"
     return
   fi
+  if [[ ! -f "$TYPE_CATALOG_BIN" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ infer-model extractor: type-catalog.mjs not found at %s\n" "$TYPE_CATALOG_BIN"
+    return
+  fi
   local tmp catalog
   tmp="$(mktemp -d)"
   cp "$INFER_MODEL_SAMPLE_TS" "$tmp/sample.ts"
@@ -853,23 +858,30 @@ assert_infer_model_extractor() {
   }
   rm -rf "$tmp"
 
-  local expected_pairs=(
-    "InferSelectModel:LegacyUser"
-    "InferInsertModel:LegacyNewUser"
-    "\$inferSelect:ModernUser"
-    "\$inferInsert:ModernNewUser"
-  )
-  local missing=""
-  local row_count
-  for pair in "${expected_pairs[@]}"; do
-    local kind="${pair%%:*}"
-    local name="${pair##*:}"
-    row_count="$(echo "$catalog" | jq --arg k "$kind" --arg n "$name" \
-      '[.[] | select(.kind == "type-alias-infer-model" and .name == $n and .infer_ref.kind == $k and .infer_ref.table == "users")] | length')"
-    if [[ "$row_count" != "1" ]]; then
-      missing="${missing}${kind}/${name} "
-    fi
-  done
+  # Build the expected pair set as JSON, then ask jq once which pairs are
+  # present in the catalog. Returns the comma-joined missing set, or empty.
+  local missing
+  missing="$(echo "$catalog" | jq -r '
+    [
+      {"k":"InferSelectModel","n":"LegacyUser"},
+      {"k":"InferInsertModel","n":"LegacyNewUser"},
+      {"k":"$inferSelect","n":"ModernUser"},
+      {"k":"$inferInsert","n":"ModernNewUser"}
+    ] as $expected
+    | . as $catalog
+    | [ $expected[]
+        | . as $e
+        | select(
+            [ $catalog[]
+              | select(
+                  .kind == "type-alias-infer-model"
+                  and .name == $e.n
+                  and .infer_ref.kind == $e.k
+                  and .infer_ref.table == "users"
+                )
+            ] | length != 1)
+        | "\($e.k)/\($e.n)" ]
+    | join(", ")')"
 
   if [[ -z "$missing" ]]; then
     PASS=$((PASS + 1))
@@ -908,28 +920,29 @@ assert_orphan_infer_model_baseline() {
     printf "  ✗ orphan-infer-model (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
     return
   fi
-  local expected_pairs=(
-    "user_archive:no either"
-    "session:no InferInsert"
-    "post:no InferInsert"
-    "empty:no either"
-  )
-  local missing=""
-  for pair in "${expected_pairs[@]}"; do
-    local name="${pair%%:*}"
-    local label="${pair##*:}"
-    local got
-    got="$(echo "$result" | jq -rs --arg n "$name" '.[] | select(.name == $n) | .missing')"
-    if [[ "$got" != "$label" ]]; then
-      missing="${missing}${name}(want='${label}',got='${got}') "
-    fi
-  done
-  if [[ -z "$missing" ]]; then
+  # One jq pass: for each expected (name, label) pair, emit "name [want=L got=G]"
+  # if the catalog disagrees, otherwise emit nothing.
+  local mismatches
+  mismatches="$(echo "$result" | jq -rs '
+    [
+      {"n":"user_archive","l":"no either"},
+      {"n":"session","l":"no InferInsert"},
+      {"n":"post","l":"no InferInsert"},
+      {"n":"empty","l":"no either"}
+    ] as $expected
+    | . as $rows
+    | [ $expected[]
+        | . as $e
+        | ($rows | map(select(.name == $e.n)) | first | .missing // "<missing>") as $got
+        | select($got != $e.l)
+        | "\($e.n) [want=\($e.l) got=\($got)]" ]
+    | join("; ")')"
+  if [[ -z "$mismatches" ]]; then
     PASS=$((PASS + 1))
     printf "  ✓ orphan-infer-model (baseline): 4 orphans with expected missing labels\n"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ orphan-infer-model (baseline): label mismatch: %s\n" "$missing"
+    printf "  ✗ orphan-infer-model (baseline): label mismatch: %s\n" "$mismatches"
   fi
 }
 assert_orphan_infer_model_baseline
@@ -955,23 +968,54 @@ assert_orphan_infer_model_include_generated() {
 }
 assert_orphan_infer_model_include_generated
 
-# Cross-package join: shared_thing is declared in package=shared and derived
-# via $inferSelect in package=main. The anti-join must build the derived-name
-# set across both packages, not filtered by .package.
-assert_orphan_infer_model_cross_package() {
-  local result has_shared_thing
+# Cross-package join, bidirectional: the baseline test already covers the
+# fully-covered case (shared_thing has both Sel and Ins derivations in main, so
+# it stays out of the orphan list — if cross-package were broken, baseline
+# would fail with an extra row). This test removes SharedDerivedInsert from the
+# fixture, so shared_thing should now surface as a "no InferInsert" half-orphan
+# — exercising the Insert side of the join independently from the Select side.
+assert_orphan_infer_model_cross_package_half() {
+  local fixture_no_insert result missing_label
+  fixture_no_insert="$(mktemp)"
+  jq '[.[] | select(.name != "SharedDerivedInsert")]' \
+    "$ORPHAN_INFER_MODEL_FIXTURE" > "$fixture_no_insert"
   result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
-    -f "$QUERIES_DIR/orphan-infer-model.jq" "$ORPHAN_INFER_MODEL_FIXTURE" 2>&1)"
-  has_shared_thing="$(echo "$result" | jq -rs '[.[] | select(.name == "shared_thing")] | length')"
-  if [[ "$has_shared_thing" == "0" ]]; then
+    -f "$QUERIES_DIR/orphan-infer-model.jq" "$fixture_no_insert" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (cross-package half-orphan): crashed: %s\n" "$result"
+    rm -f "$fixture_no_insert"
+    return
+  }
+  rm -f "$fixture_no_insert"
+  missing_label="$(echo "$result" \
+    | jq -rs '.[] | select(.name == "shared_thing") | .missing')"
+  if [[ "$missing_label" == "no InferInsert" ]]; then
     PASS=$((PASS + 1))
-    printf "  ✓ orphan-infer-model (cross-package join): shared_thing not reported\n"
+    printf "  ✓ orphan-infer-model (cross-package half-orphan): shared_thing surfaces as 'no InferInsert' when only the Sel derivation remains\n"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ orphan-infer-model (cross-package join): shared_thing reported as orphan (cross-package join failed)\n"
+    printf "  ✗ orphan-infer-model (cross-package half-orphan): expected shared_thing.missing == 'no InferInsert', got '%s'. output:\n%s\n" \
+      "$missing_label" "$result"
   fi
 }
-assert_orphan_infer_model_cross_package
+assert_orphan_infer_model_cross_package_half
+
+# Touched-window marker: session.touched_in_window=true in the fixture; text
+# mode must prefix its row with '*'. Locks in the touched-marker convention
+# shared with every other query in this directory.
+assert_orphan_infer_model_touched_marker() {
+  local text
+  text="$(jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/orphan-infer-model.jq" "$ORPHAN_INFER_MODEL_FIXTURE" 2>&1)"
+  if [[ "$text" == *"* session [no InferInsert]"* ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ orphan-infer-model (touched marker): session row prefixed with '*'\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ orphan-infer-model (touched marker): expected '* session [no InferInsert]' in text output:\n%s\n" "$text"
+  fi
+}
+assert_orphan_infer_model_touched_marker
 
 assert_text_has_cid orphan-infer-model.jq "$ORPHAN_INFER_MODEL_FIXTURE"
 
