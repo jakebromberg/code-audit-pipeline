@@ -23,12 +23,19 @@ function runExtractor(args = []) {
   });
 }
 
+// Cached across the suite: the fixture tree doesn't change between tests, so
+// spawning the extractor 20+ times instead of once is pure overhead. Tests
+// that need a fresh subprocess (exit-code checks, determinism cross-run,
+// --emit-references-graph artifact) call `runExtractor()` directly instead.
+let _cachedCatalog = null;
 function extractCatalog() {
+  if (_cachedCatalog) return _cachedCatalog;
   const res = runExtractor();
   if (res.status !== 0) {
     throw new Error(`extractor failed (status ${res.status}): ${res.stderr}`);
   }
-  return JSON.parse(res.stdout);
+  _cachedCatalog = JSON.parse(res.stdout);
+  return _cachedCatalog;
 }
 
 function findEntry(catalog, name) {

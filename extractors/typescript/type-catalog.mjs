@@ -30,7 +30,7 @@ const { values } = parseArgs({
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>]
+  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>]
 
   --root           Required. Root of the codebase to scan.
   --shared         Optional. A secondary package root (canonical types you compare
@@ -316,38 +316,19 @@ function getLeftmostIdentifierText(typeName) {
   return typeName.getText ? typeName.getText() : null;
 }
 
-// Recursive walker over TS type nodes. Adds the names of all user-defined
-// type references it finds to `sink`, threading `scope` (a Set of in-scope
-// type-parameter names) so generics like `interface Foo<T> { x: T }` don't
-// emit `T` as a reference. Function and mapped types introduce new scopes —
-// the new scope is a child Set union, never a mutation of the parent.
-//
-// Coverage:
-//   - TypeReferenceNode: name extracted via leftmost-identifier; type arguments recursed.
-//   - FunctionTypeNode / ConstructorTypeNode: type parameters introduce a child scope;
-//     parameter and return types walked under the child.
-//   - MappedTypeNode: the key parameter (`[K in …]`) introduces a child scope; the
-//     constraint (`keyof Source`) walks in the parent scope, the value type in the child.
-//   - All other type nodes (TypeLiteral, Union, Intersection, Array, Tuple,
-//     IndexedAccess, Parenthesized, ConditionalType, InferType, TemplateLiteral,
-//     TypeOperator, Literal, TypeQuery, ImportType) recurse via `ts.forEachChild`.
-//     This catches identifiers buried in deferred-coverage nodes via their
-//     TypeReferenceNode descendants. Note: `typeof X` (TypeQueryNode) and
-//     `import("x").Y` (ImportTypeNode) embed their target identifiers in
-//     non-type positions; the v1 walker reaches them via `forEachChild` but
-//     does not lift them out of those positions — Phase 5 (F5) adds explicit
-//     cases that surface `X` and `Y` respectively.
+// Recursive walker over TS type nodes. Adds user-defined type references to
+// `sink`, threading `scope` (a Set of in-scope type-parameter names) so
+// generics like `interface Foo<T> { x: T }` don't emit `T` as a reference.
+// Function and mapped types introduce new scopes — the new scope is a child
+// Set union, never a mutation of the parent.
 function extractReferences(typeNode, sf, scope, sink) {
   if (!typeNode) return;
 
-  if (ts.isTypeReferenceNode(typeNode)) {
-    const name = getLeftmostIdentifierText(typeNode.typeName);
-    if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
-      sink.add(name);
-    }
-    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
-    return;
-  }
+  // TypeReference / TypeQuery / ImportType all share the same shape: pull a
+  // leftmost-identifier out of a name node, filter, recurse type arguments.
+  if (ts.isTypeReferenceNode(typeNode))  return pushNamedRef(typeNode.typeName,  typeNode, sf, scope, sink);
+  if (ts.isTypeQueryNode(typeNode))      return pushNamedRef(typeNode.exprName,  typeNode, sf, scope, sink);
+  if (ts.isImportTypeNode(typeNode))     return pushNamedRef(typeNode.qualifier, typeNode, sf, scope, sink);
 
   if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
     const child = new Set(scope);
@@ -372,66 +353,33 @@ function extractReferences(typeNode, sf, scope, sink) {
     return;
   }
 
-  if (ts.isTypeQueryNode(typeNode)) {
-    if (typeNode.exprName) {
-      const name = getLeftmostIdentifierText(typeNode.exprName);
-      if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
-        sink.add(name);
-      }
-    }
-    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
-    return;
-  }
-
-  if (ts.isImportTypeNode(typeNode)) {
-    if (typeNode.qualifier) {
-      const name = getLeftmostIdentifierText(typeNode.qualifier);
-      if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
-        sink.add(name);
-      }
-    }
-    typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
-    return;
-  }
-
   ts.forEachChild(typeNode, (c) => extractReferences(c, sf, scope, sink));
 }
 
-// In-scope type parameters for the enclosing declaration (interface or alias).
-function buildScopeFromTypeParams(typeParameters) {
+function pushNamedRef(nameNode, typeNode, sf, scope, sink) {
+  if (nameNode) {
+    const name = getLeftmostIdentifierText(nameNode);
+    if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
+      sink.add(name);
+    }
+  }
+  typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
+}
+
+// Collect `references` for a declaration. Walks each type-parameter constraint
+// (`<T extends Item>` adds Item), then walks every body node passed in
+// `bodyNodes` with the declaration's type parameters in scope. Returns sorted,
+// deduplicated `{name, kind: "type-ref"}` array.
+function refsForDecl(node, sf, bodyNodes) {
   const scope = new Set();
-  if (typeParameters) {
-    for (const tp of typeParameters) scope.add(tp.name.text);
-  }
-  return scope;
-}
-
-// Collect `references` for an interface: type-parameter bounds plus every
-// member's type. Returns sorted, deduplicated `{name, kind: "type-ref"}` array.
-function refsForInterface(node, sf) {
-  const scope = buildScopeFromTypeParams(node.typeParameters);
   const sink = new Set();
   if (node.typeParameters) {
+    for (const tp of node.typeParameters) scope.add(tp.name.text);
     for (const tp of node.typeParameters) {
       if (tp.constraint) extractReferences(tp.constraint, sf, scope, sink);
     }
   }
-  for (const m of node.members) {
-    extractReferences(m, sf, scope, sink);
-  }
-  return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
-}
-
-// Collect `references` for a type-alias: type-parameter bounds plus the alias body.
-function refsForTypeAlias(node, sf) {
-  const scope = buildScopeFromTypeParams(node.typeParameters);
-  const sink = new Set();
-  if (node.typeParameters) {
-    for (const tp of node.typeParameters) {
-      if (tp.constraint) extractReferences(tp.constraint, sf, scope, sink);
-    }
-  }
-  extractReferences(node.type, sf, scope, sink);
+  for (const n of bodyNodes) extractReferences(n, sf, scope, sink);
   return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
 }
 
@@ -503,7 +451,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       });
       const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
       const extendsList = extractExtendsFromInterface(node, sf);
-      const referencesList = refsForInterface(node, sf);
+      const referencesList = refsForDecl(node, sf, node.members);
       pushBase(node, {
         name: node.name.text,
         kind: 'interface',
@@ -558,7 +506,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         }
       }
 
-      const referencesList = refsForTypeAlias(node, sf);
+      const referencesList = refsForDecl(node, sf, [node.type]);
       // Intersection-extends: per §6.3, named operands of an intersection
       // (`type X = A & B & {...}`) go into `extends`. Inline literals don't —
       // they extend an anonymous shape, not a name. Union variants are
