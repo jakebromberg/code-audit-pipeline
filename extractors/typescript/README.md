@@ -97,4 +97,4 @@ Each record carries:
 
 Used by `pipeline/queries/function-duplicates.jq`, which emits two sections: exact body-hash clusters and pairwise Jaccard near-duplicates (default threshold 0.7, override with `--argjson threshold 0.6` etc).
 
-Skip rules and `--include-tests` work the same way as `type-catalog.mjs`. Functions with `< --min-body-lines` (default 3) normalized lines are skipped — one-liners and trivial stubs aren't useful duplication signal.
+Skip rules: same dotdir + `node_modules` / `dist` / `build` / `coverage` skip-list as `type-catalog.mjs`, plus `tests/` and `*.test.ts` / `*.spec.ts` files skipped unless `--include-tests` is passed. (`type-catalog.mjs` no longer has `--include-tests`: it always extracts test files and tags every row with an `is_test` flag instead — aligning function-catalog with that model is a follow-up.) Functions with `< --min-body-lines` (default 3) normalized lines are skipped — one-liners and trivial stubs aren't useful duplication signal.
