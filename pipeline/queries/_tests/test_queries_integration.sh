@@ -579,15 +579,18 @@ echo ""
 echo "=== Touched-window debt summary ==="
 assert_jsonl_has_prefix touched-window-debt-summary.jq "$DEBT_SUMMARY_FIXTURE" "touched-window-debt-summary:"
 
-# Semantic: one row per cluster type, with deterministic touched/total counts
-# from the fixture. Fixture summary (cross-pollution avoided by design — User
-# cross-package-shadow rows share file="user.ts" so name-collisions's
-# unique-files filter drops them):
-#   exact-duplicates:      Foo+Bar (touched), Baz1+Baz2 (untouched)       → 1/2
-#   name-collisions:       Repository (touched), Logger (untouched)       → 1/2
-#   cross-package-shadows: User                                           → 0/1
-#   near-duplicates:       Person+Contact (touched), Order+Cart (untouched) → 1/2
-assert_debt_summary_row_semantic() {
+# Fixture cross-pollination is intentionally suppressed for deterministic
+# counts: the User cross-package-shadow rows share file="user.ts" across
+# packages so name-collisions's ≥2-distinct-files filter drops them.
+# Expected per-type: exact-duplicates 1/2, name-collisions 1/2,
+# cross-package-shadows 0/1, near-duplicates 1/2.
+_debt_summary_run() {
+  env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
+    jq -L "$QUERIES_DIR" -r "${jq_args[@]}" \
+    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1
+}
+
+assert_debt_summary_row() {
   local label="$1"; shift
   local cluster_type="$1"; shift
   local expected_touched="$1"; shift
@@ -596,9 +599,7 @@ assert_debt_summary_row_semantic() {
   _parse_env_and_jq_args "$@"
 
   local result actual_touched actual_total
-  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
-    jq -L "$QUERIES_DIR" -r "${jq_args[@]}" \
-    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)" || {
+  result="$(_debt_summary_run)" || {
     FAIL=$((FAIL + 1))
     printf "  ✗ debt-summary-row (%s): crashed: %s\n" "$label" "$result"
     return
@@ -617,21 +618,19 @@ assert_debt_summary_row_semantic() {
   fi
 }
 
-assert_debt_summary_row_semantic "baseline exact-duplicates"      "exact-duplicates"      1 2 --
-assert_debt_summary_row_semantic "baseline name-collisions"       "name-collisions"       1 2 --
-assert_debt_summary_row_semantic "baseline cross-package-shadows" "cross-package-shadows" 0 1 --
-assert_debt_summary_row_semantic "baseline near-duplicates"       "near-duplicates"       1 2 --
+assert_debt_summary_row "baseline exact-duplicates"      "exact-duplicates"      1 2 --
+assert_debt_summary_row "baseline name-collisions"       "name-collisions"       1 2 --
+assert_debt_summary_row "baseline cross-package-shadows" "cross-package-shadows" 0 1 --
+assert_debt_summary_row "baseline near-duplicates"       "near-duplicates"       1 2 --
 
-# Semantic: the touched cluster's source-query cluster_id appears in the meta-
-# row's touched_clusters[]. Match by substring against the embedded source cid.
-assert_debt_summary_touched_cluster_present() {
+assert_debt_summary_touched_cluster() {
   local label="$1"; shift
   local cluster_type="$1"; shift
   local cid_substring="$1"; shift
+  local env_prefix=() jq_args=()
 
   local result has_match
-  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
-    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)" || {
+  result="$(_debt_summary_run)" || {
     FAIL=$((FAIL + 1))
     printf "  ✗ debt-summary-touched-cluster (%s): crashed: %s\n" "$label" "$result"
     return
@@ -651,17 +650,18 @@ assert_debt_summary_touched_cluster_present() {
   fi
 }
 
-assert_debt_summary_touched_cluster_present "Foo in exact-duplicates"        "exact-duplicates"  "Foo"
-assert_debt_summary_touched_cluster_present "Repository in name-collisions"  "name-collisions"   "Repository"
-assert_debt_summary_touched_cluster_present "Person in near-duplicates"      "near-duplicates"   "Person"
+assert_debt_summary_touched_cluster "Foo in exact-duplicates"        "exact-duplicates"  "Foo"
+assert_debt_summary_touched_cluster "Repository in name-collisions"  "name-collisions"   "Repository"
+assert_debt_summary_touched_cluster "Person in near-duplicates"      "near-duplicates"   "Person"
 
-# No-context fixture: when no row has touched_in_window=true, text mode
-# prepends a banner. JSONL mode emits four rows, all with touched=0.
+# Banner grep matches `--touched <pr.json>` — the actionable CLI invariant —
+# rather than the prose phrasing, so paraphrasing the banner copy doesn't
+# silently invalidate the test.
 assert_debt_summary_no_context_banner() {
   local text
   text="$(jq -L "$QUERIES_DIR" -r \
     -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_NO_CONTEXT_FIXTURE" 2>&1)"
-  if [[ "$text" == *"no touched_in_window flags set"* ]]; then
+  if [[ "$text" == *"--touched <pr.json>"* ]]; then
     PASS=$((PASS + 1))
     printf "  ✓ debt-summary (no-context banner): rendered\n"
   else
@@ -687,17 +687,15 @@ assert_debt_summary_no_context_jsonl_zeros() {
 }
 assert_debt_summary_no_context_jsonl_zeros
 
-# Knob: ONLY_TOUCHED=true suppresses the text-mode detail block for cluster
-# types with zero touched (cross-package-shadows). The header table row stays.
+# Two invocations are needed: this assertion is presence-vs-absence on the
+# detail block, which can only be observed by diffing baseline against the
+# ONLY_TOUCHED=true run.
 assert_debt_summary_only_touched_text() {
   local with_only_touched without_only_touched
   with_only_touched="$(env OUTPUT_FORMAT=text ONLY_TOUCHED=true jq -L "$QUERIES_DIR" -r \
     -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)"
   without_only_touched="$(env OUTPUT_FORMAT=text jq -L "$QUERIES_DIR" -r \
     -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)"
-  # Baseline must include the cross-package-shadows detail block; with
-  # ONLY_TOUCHED=true it must be suppressed. The header table row (which uses
-  # "cluster-type: N touched / N total") must remain in both cases.
   if [[ "$with_only_touched"    != *"cross-package-shadows detail"* \
      && "$without_only_touched" == *"cross-package-shadows detail"* \
      && "$with_only_touched"    == *"cross-package-shadows: 0 touched"* ]]; then
@@ -710,25 +708,11 @@ assert_debt_summary_only_touched_text() {
 }
 assert_debt_summary_only_touched_text
 
-# Knob: THRESHOLD=0.99 raises the near-duplicates bar above any pair in the
-# fixture (Person↔Contact and Order↔Cart are both Jaccard 0.8). The
-# near-duplicates row should report 0/0.
-assert_debt_summary_threshold_high() {
-  local result actual_touched actual_total
-  result="$(env OUTPUT_FORMAT=jsonl THRESHOLD=0.99 jq -L "$QUERIES_DIR" -r \
-    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_FIXTURE" 2>&1)"
-  IFS=$'\t' read -r actual_touched actual_total < <(echo "$result" \
-    | jq -rs '.[] | select(.cluster_type == "near-duplicates") | [.touched, .total] | @tsv')
-  if [[ "$actual_touched" == "0" && "$actual_total" == "0" ]]; then
-    PASS=$((PASS + 1))
-    printf "  ✓ debt-summary (THRESHOLD=0.99): near-duplicates touched=0/total=0 (no pairs clear the bar)\n"
-  else
-    FAIL=$((FAIL + 1))
-    printf "  ✗ debt-summary (THRESHOLD=0.99): expected near-duplicates 0/0, got touched=%s/total=%s\n" \
-      "$actual_touched" "$actual_total"
-  fi
-}
-assert_debt_summary_threshold_high
+# THRESHOLD=0.99 lifts the Jaccard floor above both fixture pairs (each at
+# 0.8), so the near-duplicates row collapses to 0/0.
+assert_debt_summary_row "THRESHOLD=0.99 collapses near-duplicates" \
+  "near-duplicates" 0 0 \
+  THRESHOLD=0.99 --
 
 echo ""
 echo "=== Text-mode cid= markers ==="
