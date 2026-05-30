@@ -173,7 +173,14 @@ fi
 # documents self-references as emitted. A regression that drops them (or that
 # breaks the references walker entirely) shows up here, where every other
 # entry would still have references: [].
-if jq -e '[.entries[] | select(.name == "FlowsheetEntry") | .references | map(.name) | index("FlowsheetEntry")] | all(. != null)' "$RUN1" >/dev/null; then
+#
+# The `length > 0` guard prevents vacuous truth when no entry is named
+# FlowsheetEntry — `[] | all(...)` is true in jq; without the guard, a
+# regression that dropped the entry entirely would silently pass.
+if jq -e '
+  ([.entries[] | select(.name == "FlowsheetEntry")] | length > 0) and
+  ([.entries[] | select(.name == "FlowsheetEntry") | .references | any(.name == "FlowsheetEntry")] | all)
+' "$RUN1" >/dev/null; then
   pass "FlowsheetEntry.references contains self-reference"
 else
   fail "FlowsheetEntry.references missing self-reference: $(jq -c '.entries[] | select(.name == "FlowsheetEntry") | .references' "$RUN1")"
@@ -183,17 +190,31 @@ fi
 # Field-presence alone isn't enough — a regression in extractDrizzleTableFields
 # or the first-arg pull would emit structurally-complete entries with degraded
 # content. Pin the content the contract documents.
-if jq -e '.entries[] | select(.name == "stations") | (.db_table_name == "stations") and (.fields | type == "array") and (.fields | length > 0)' "$RUN1" >/dev/null; then
+#
+# `[...] | all` (vs streaming `select | <predicate>`) matters because
+# `jq -e` on a multi-output stream returns success based on the LAST output
+# only — one degraded entry followed by a valid one would silently PASS.
+# `length > 0` guards against vacuous truth when no `stations` entry exists.
+if jq -e '
+  ([.entries[] | select(.name == "stations")] | length > 0) and
+  ([.entries[] | select(.name == "stations") | (.db_table_name == "stations") and (.fields | type == "array") and (.fields | length > 0)] | all)
+' "$RUN1" >/dev/null; then
   pass "stations has db_table_name=\"stations\" and non-empty fields"
 else
-  fail "stations content degraded: $(jq -c '.entries[] | select(.name == "stations") | {db_table_name, fields}' "$RUN1")"
+  fail "stations content degraded: $(jq -c '[.entries[] | select(.name == "stations") | {db_table_name, fields}]' "$RUN1")"
 fi
 
 # ---- Assertion: zod schema has populated fields ----------------------------
-if jq -e '.entries[] | select(.name == "ListenerSchema") | (.fields | type == "array") and (.fields | length > 0)' "$RUN1" >/dev/null; then
+# Same length+all pattern as the drizzle assertion above — guards against both
+# vacuous truth (no ListenerSchema entry) and `jq -e` last-output masking
+# (one degraded + one valid).
+if jq -e '
+  ([.entries[] | select(.name == "ListenerSchema")] | length > 0) and
+  ([.entries[] | select(.name == "ListenerSchema") | (.fields | type == "array") and (.fields | length > 0)] | all)
+' "$RUN1" >/dev/null; then
   pass "ListenerSchema has non-empty fields"
 else
-  fail "ListenerSchema fields degraded: $(jq -c '.entries[] | select(.name == "ListenerSchema") | .fields' "$RUN1")"
+  fail "ListenerSchema fields degraded: $(jq -c '[.entries[] | select(.name == "ListenerSchema") | .fields]' "$RUN1")"
 fi
 
 # ---- Assertion: determinism (byte-identical across runs) -------------------
