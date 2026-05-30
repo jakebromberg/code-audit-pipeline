@@ -103,9 +103,9 @@ include "_canonical";
     @json
   else
     "[\(.field_count) fields, \(.slot_diff_count) slot diff(s)] \(.left.name) (\(.left.kind)) <-> \(.right.name) (\(.right.kind)) cid=\(.cluster_id)\n"
-    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
-    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
+    + "    left:  \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    right: \(.right.package):\(.right.file):\(.right.line)\n"
     + "    shared names: \(.shared_member_names | join(", "))\n"
-    + "    A slot(s): \(.left_slots | join(" | "))\n"
-    + "    B slot(s): \(.right_slots | join(" | "))"
+    + "    left slot(s):  \(.left_slots | join(" | "))\n"
+    + "    right slot(s): \(.right_slots | join(" | "))"
   end

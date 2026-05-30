@@ -56,6 +56,10 @@
 #   sub_fields / sup_fields → left_fields / right_fields
 #   main / shared         → left / right   (cross-package-shape-near-duplicates)
 #   main_only / shared_only → left_only / right_only
+#   a_only_count          → diff_line_count (generic-function-candidates: renamed
+#                                            for clarity — it's the count of
+#                                            differing body lines, not the
+#                                            a-endpoint's exclusive-line count)
 #
 # Cluster_id format conventions (authoritative; see docs/pipeline-contract.md):
 #

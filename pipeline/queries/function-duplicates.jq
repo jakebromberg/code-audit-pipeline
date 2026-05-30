@@ -88,8 +88,8 @@ entries as $all
     + ( $near
         | map(
             "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.name)\(if .left.async then " (async)" else "" end) <-> \(.right.name)\(if .right.async then " (async)" else "" end) cid=\(.cluster_id)\n"
-            + "    A: \(.left.package):\(.left.file):\(.left.line)  [\(.left.body_line_count) lines, arity=\(.left.param_count)]\n"
-            + "    B: \(.right.package):\(.right.file):\(.right.line)  [\(.right.body_line_count) lines, arity=\(.right.param_count)]"
+            + "    left:  \(.left.package):\(.left.file):\(.left.line)  [\(.left.body_line_count) lines, arity=\(.left.param_count)]\n"
+            + "    right: \(.right.package):\(.right.file):\(.right.line)  [\(.right.body_line_count) lines, arity=\(.right.param_count)]"
           )
         | join("\n\n")
       )

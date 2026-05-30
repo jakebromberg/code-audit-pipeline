@@ -41,6 +41,6 @@ include "_canonical";
     @json
   else
     "[\((.jacc * 100) | floor)%] \(.left.name)@\(.left.file):\(.left.line)  <->  \(.right.name)@\(.right.file):\(.right.line) cid=\(.cluster_id)\n"
-    + "    A fields: \(.left_fields | join(", "))\n"
-    + "    B fields: \(.right_fields | join(", "))"
+    + "    left fields:  \(.left_fields | join(", "))\n"
+    + "    right fields: \(.right_fields | join(", "))"
   end
