@@ -388,8 +388,8 @@ function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
   };
   const results = [];
   const emitSynthetic = (entry) => results.push(entry);
-  // Raw import edges accumulated during the same walk as type extraction;
-  // resolved and sorted before return. null when --emit-files is off.
+  // null when --emit-files is off — short-circuits the dynamic-import branch
+  // inside visit() below.
   const rawImports = collectImports ? [] : null;
   if (collectImports) {
     for (const stmt of sf.statements) {
