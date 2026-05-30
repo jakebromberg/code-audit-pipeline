@@ -32,6 +32,11 @@
 
 set -eu
 
+# Sweep our pid-scoped tempfiles on any exit (success, validation failure,
+# upload error, signal). Without this an `set -eu` early-exit inside any of
+# the later stages would leak `/tmp/publish-catalog-*.$$.*` files.
+trap 'rm -f /tmp/publish-catalog-*.$$.* /tmp/publish-catalog-*.$$' EXIT
+
 usage() {
   cat >&2 <<'EOF'
 usage: publish-catalog.sh --repo NAME --sha SHA --catalogs-dir DIR
