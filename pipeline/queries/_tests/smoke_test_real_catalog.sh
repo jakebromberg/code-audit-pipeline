@@ -18,7 +18,7 @@ QUERIES_DIR="$REPO_ROOT/pipeline/queries"
 SWIFT_BIN="$REPO_ROOT/extractors/swift/.build/release/swift-catalog"
 WXYC_ROOT="${WXYC_ROOT:-$HOME/Developer/WXYC/wxyc-ios-64}"
 WORK_DIR="$(mktemp -d)"
-trap "rm -rf $WORK_DIR" EXIT
+trap 'rm -rf "$WORK_DIR"' EXIT
 
 if [[ ! -d "$WXYC_ROOT" ]]; then
   echo "SKIP: WXYC_ROOT=$WXYC_ROOT does not exist." >&2
