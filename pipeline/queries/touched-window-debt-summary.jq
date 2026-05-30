@@ -105,7 +105,7 @@ def render_cluster:
 # `jacc` is carried through the intermediate object so the list can be sorted
 # by Jaccard descending (matching near-duplicates.jq's `sort_by(-(.jacc))`);
 # it is stripped from the final cluster shape so the meta-query's output
-# schema stays {cluster_id, decls}.
+# schema stays {cluster_id, members}.
 | ([ $all[]
      | select(.package == "main" and .fields and (.fields | length) >= 3)
      | . + { _fset: (.fields | map(split(":") | .[0]) | map(sub("\\?$"; ""))) } ]) as $nd_decls
