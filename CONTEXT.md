@@ -34,8 +34,12 @@ _Avoid_: type (ambiguous), result-kind
 The deterministic layer of the pipeline: extractors + catalogs + queries + cluster envelopes. Everything below the optional agent synthesis step. Substrate changes are byte-reproducible; agent steps are not.
 _Avoid_: foundation, core
 
+**Catalog envelope**:
+The top-level object wrapping a catalog file's `entries: [...]` array, per #141. Carries `schema_version`, `extractor` (name, language, version, source_sha), `fingerprint_v`, and `generated_at`. Authoritative for catalog identity — these fields travel with the catalog file when it's moved between machines or snapshotted. `.audit/meta.json` caches a derived summary; the envelope itself is the source of truth.
+_Avoid_: catalog header (vague), metadata block (overloaded). Always say **catalog envelope** when "envelope" alone would be ambiguous with the cluster envelope.
+
 **Cluster envelope**:
-The canonical JSONL row shape every query emits, parameterized by `shape`. A `cluster`-shape row has `members: [...]`; a `pair`-shape row has `left` and `right`; a `metric`-shape row has the scalar and breakdown fields. The contract that the markdown renderer and the V7 agent layer both consume.
+The per-JSONL-row shape every query emits, parameterized by `shape`. A `cluster`-shape row has `members: [...]`; a `pair`-shape row has `left` and `right`; a `metric`-shape row has the scalar and breakdown fields. The contract that the markdown renderer and the V7 agent layer both consume. Distinct from the **catalog envelope** above — that wraps a file; this wraps a row.
 
 **Front-matter**:
 The structured `#! key: value` header at the top of a `.jq` file. Declares `query`, `catalog`, `shape`, `arg`, `env`, `formats`, `desc`, and optionally `version` and `engine`. Parsed by the binary; ignored by naked `jq` (lines begin with `#`, jq's comment marker).

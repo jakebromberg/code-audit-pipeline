@@ -1,5 +1,7 @@
 # Render reports from JSONL via shape-typed dispatch
 
+**Status:** Accepted. Terminology refined in ADR-0007 — this wrapper is referred to as the "cluster envelope" in cross-cutting docs to distinguish from #141's "catalog envelope."
+
 Every query declares a `shape` in its front-matter — `cluster`, `pair`, or `metric` — and emits JSONL conforming to that shape's envelope. The binary's markdown renderer dispatches on `shape` and consumes JSONL exclusively; it never concatenates text from queries' text-mode output. Cluster counts come from JSONL row counts. Text in the report is rendered from structured data by the binary, not by re-invoking the query in text mode.
 
 ## Considered Options
