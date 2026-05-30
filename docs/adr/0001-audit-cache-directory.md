@@ -1,5 +1,7 @@
 # Use `.audit/` as the binary's local cached state
 
+**Status:** Accepted. Amended by ADR-0007 (`meta.json` schema simplified; catalog-identity fields move to #141's catalog envelope).
+
 The `audit` binary stores catalogs and metadata in a hidden `.audit/` directory inside the user's repo, looked up implicitly by every subcommand. Catalogs are not passed as positional arguments to `audit query`; the binary finds them via the cwd-rooted convention. Provenance metadata in `.audit/meta.json` records the absolute root path, extraction timestamp, and extractor versions, so `audit query` can warn when the cwd no longer matches the catalog's origin and when source files have been modified since the catalog was extracted.
 
 ## Considered Options
