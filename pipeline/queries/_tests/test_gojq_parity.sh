@@ -23,6 +23,8 @@
 # Run from repo root:
 #   pipeline/queries/_tests/test_gojq_parity.sh
 
+# `-e` is omitted on purpose: run_parity captures jq/gojq exit codes via $?
+# to report which engine crashed, which set -e would short-circuit.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -58,6 +60,12 @@ CROSS_CAT_RIGHT="$CROSS_CAT_WORK/right.json"
 # catalog), and the split produces bare-array sub-catalogs.
 jq '[.[] | select(.package == "main")]'   "$TYPES_FIXTURE" > "$CROSS_CAT_LEFT"
 jq '[.[] | select(.package == "shared")]' "$TYPES_FIXTURE" > "$CROSS_CAT_RIGHT"
+[[ -s "$CROSS_CAT_LEFT" && -s "$CROSS_CAT_RIGHT" ]] \
+  || { echo "ERROR: cross-catalog split produced an empty file; check TYPES_FIXTURE" >&2; exit 2; }
+
+# Expected invocations = 2 (text + jsonl) per runnable query. Computed from
+# the queries dir so adding a query without a both_modes row is caught.
+EXPECTED_INVOCATIONS=$(( 2 * $(find "$QUERIES_DIR" -maxdepth 1 -name '[!_]*.jq' | wc -l | tr -d ' ') ))
 
 PASS=0
 FAIL=0
@@ -204,6 +212,13 @@ both_modes cross-catalog-name-collisions             "$QUERIES_DIR/cross-catalog
 echo ""
 echo "=== Summary ==="
 printf '  PASS: %d\n  FAIL: %d\n' "$PASS" "$FAIL"
+
+if (( PASS + FAIL != EXPECTED_INVOCATIONS )); then
+  printf '\nERROR: ran %d invocations, expected %d (2 × %d queries).\n' \
+    "$((PASS + FAIL))" "$EXPECTED_INVOCATIONS" "$((EXPECTED_INVOCATIONS / 2))" >&2
+  printf '       A new query was likely added without a corresponding both_modes row.\n' >&2
+  exit 2
+fi
 
 if (( FAIL > 0 )); then
   echo ""
