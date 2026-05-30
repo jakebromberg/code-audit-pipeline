@@ -17,6 +17,13 @@
 #
 # cluster_id format:  subset-pairs:LocSub__LocSup  (directed; sub then sup,
 #                     '__' separator; location keys — package:file:line:name)
+#
+# Envelope: shape: "pair", direction is encoded as left=sub (smaller),
+# right=sup (larger). The cluster_id keeps the sub__sup spelling so existing
+# downstream tooling that joins on cluster_id is unaffected; only the row
+# field names change.
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -31,24 +38,25 @@ include "_canonical";
     | select(($af | length) < ($bf | length))
     | ([$af[] | select(. as $f | $bf | index($f) != null)] | length) as $i_count
     | select($i_count == ($af | length))
-    | { sub: $a, sup: $b, sub_fields: $af, sup_fields: $bf, overlap: $i_count }
+    | { left: $a, right: $b, left_fields: $af, right_fields: $bf, overlap: $i_count }
   ]
-# Dedupe by the (sub.shape_sig + sup.shape_sig) pair so identical clusters collapse.
-| group_by((.sub.shape_sig // .sub.name) + "::" + (.sup.shape_sig // .sup.name))
+# Dedupe by the (left.shape_sig + right.shape_sig) pair so identical clusters collapse.
+| group_by((.left.shape_sig // .left.name) + "::" + (.right.shape_sig // .right.name))
 | map(.[0])
-| sort_by([(.sub_fields | length), (.sup_fields | length), .sub.name])
+| sort_by([(.left_fields | length), (.right_fields | length), .left.name])
 | map(. + {
-    cluster_id: cluster_id_directed_pair("subset-pairs"; loc_key(.sub); loc_key(.sup)),
-    query: "subset-pairs"
+    cluster_id: cluster_id_directed_pair("subset-pairs"; loc_key(.left); loc_key(.right)),
+    query: "subset-pairs",
+    shape: "pair"
   })
 | .[]
 | . as $row
 | if output_format == "jsonl" then
     @json
   else
-    "\($row.sub.name) [\($row.sub_fields | length) fields] ⊂ \($row.sup.name) [\($row.sup_fields | length) fields] cid=\($row.cluster_id)\n"
-    + "  sub:  \($row.sub.package)/\($row.sub.file):\($row.sub.line)\n"
-    + "  sup:  \($row.sup.package)/\($row.sup.file):\($row.sup.line)\n"
-    + "  shared fields: \($row.sub_fields | join(", "))\n"
-    + "  sup-only:      \([$row.sup_fields[] | select(. as $x | $row.sub_fields | index($x) == null)] | join(", "))\n"
+    "\($row.left.name) [\($row.left_fields | length) fields] ⊂ \($row.right.name) [\($row.right_fields | length) fields] cid=\($row.cluster_id)\n"
+    + "  sub:  \($row.left.package)/\($row.left.file):\($row.left.line)\n"
+    + "  sup:  \($row.right.package)/\($row.right.file):\($row.right.line)\n"
+    + "  shared fields: \($row.left_fields | join(", "))\n"
+    + "  sup-only:      \([$row.right_fields[] | select(. as $x | $row.left_fields | index($x) == null)] | join(", "))\n"
   end

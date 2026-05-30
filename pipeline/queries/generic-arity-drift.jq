@@ -17,6 +17,8 @@
 # share a name.
 #
 # cluster_id format:  generic-arity-drift:Name  (the colliding name)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -34,20 +36,21 @@ def arity: if . == null or . == "" then 0 else (split(",") | length) end;
 | map({
     cluster_id: cluster_id_single_name("generic-arity-drift"; .[0].name),
     query: "generic-arity-drift",
+    shape: "cluster",
     name: .[0].name,
-    decls: (map({
+    members: (map({
       kind, package, file, line, touched_in_window,
       arity: ._arity,
       generics: (.generics // "")
     }) | sort_by(.arity, .package, .file, .line))
   })
-| sort_by(-(.decls | length), .name)
+| sort_by(-(.members | length), .name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "\(.name) (\(.decls | length) decls, arities differ) cid=\(.cluster_id)\n"
-    + (.decls
+    "\(.name) (\(.members | length) decls, arities differ) cid=\(.cluster_id)\n"
+    + (.members
         | map("  \(if .touched_in_window then "*" else " " end) [\(.kind)] <\(if .generics == "" then "—" else .generics end)> arity=\(.arity) — \(.package):\(.file):\(.line)")
         | join("\n"))
   end

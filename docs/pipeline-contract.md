@@ -485,7 +485,25 @@ Every JSONL row is one self-contained cluster as a JSON object, with at minimum:
 
 **On `cluster_id` uniqueness:** within a single query's run, every emitted row has a unique `cluster_id`. This invariant is what lets the V7 trial harness join agent recommendations back to clusters without canonicalization heuristics. The integration tests in `pipeline/queries/_tests/test_queries_integration.sh` assert it per-query; downstream tooling can assume it.
 
-Query-specific fields (decls, members, jaccard, intersection, union, etc.) are emitted as the query computes them. Downstream consumers should treat the row as a structured snapshot rather than a fixed schema — Phase B of the V7 experiment runs a normalization pass that flattens these into the agent-prompt input shape; the raw schema captures everything the query knows.
+**On the `shape` field:** every row also carries `shape: "cluster"|"pair"|"metric"` per [ADR-0003](adr/0003-canonical-cluster-envelope.md). The shape names which envelope the row conforms to; the audit binary's renderer dispatches purely on `shape` (no per-query lookup table). The shape mirrors the `#! shape:` front-matter line at the top of each `.jq` file (single-shape queries) or one of its comma-separated values (dual-section queries like `function-duplicates.jq`). See "Cluster envelope" below.
+
+Query-specific payload fields (`jaccard`, `intersection`, `union`, `shape_sig`, `field_count`, `body_hash`, `swap_tokens`, `slot_diff_count`, etc.) are emitted as the query computes them. Envelope-level fields (`members`, `left`, `right`) are reserved per the shape contract below. Downstream consumers should treat the row as a structured snapshot — query-specific payload is appended to the envelope, never overrides it.
+
+### Cluster envelope (post-PR-1, [ADR-0003](adr/0003-canonical-cluster-envelope.md))
+
+Every JSONL row conforms to one of three shape envelopes. The `shape:` field on the row picks which envelope applies; the binary's renderer is shape-aware, not query-aware.
+
+| Shape | Required envelope fields | Notes |
+|---|---|---|
+| `cluster` | `cluster_id`, `query`, `shape`, `members[]` | N members grouped by a common key. `members[]` is a JSON array of decl objects. Includes single-member rows (e.g., `orphan-infer-model`, `generic-convention-bound`) — the envelope wraps the decl as `members: [{...}]` of length 1 so the renderer stays shape-aware, not arity-aware. |
+| `pair` | `cluster_id`, `query`, `shape`, `left`, `right` | Two endpoints. Field-set variants follow the prefix convention: `left_fields`/`right_fields`, `left_only`/`right_only`, `left_slots`/`right_slots`, `left_swap_tokens`/`right_swap_tokens`. |
+| `metric` | `cluster_id`, `query`, `shape` (+ arbitrary payload) | Single-value or summary row. No structural envelope fields beyond the trio; payload depends on the query. |
+
+**Pair direction.** The envelope is direction-free. Directed pairs (`subset-pairs`: `left ⊂ right`) and asymmetric pairs (`test-prod-drift`: `left=prod`/`right=test`; `cross-package-shape-near-duplicates`: `left=main`/`right=shared`) document their convention in the query header and preserve the role labels in text-mode output. JSONL always uses `left`/`right`. The renderer treats every pair uniformly; query-specific role labels appear only in text mode.
+
+**Front-matter declaration.** Each query's header carries a `#! shape: <value>` line ([ADR-0002](adr/0002-hybrid-registration.md) front-matter convention). Single-shape: `#! shape: cluster`. Dual-section: `#! shape: cluster, pair` (e.g., `function-duplicates.jq` emits cluster rows for the exact section and pair rows for the near section). The front-matter is informational/declarative; the renderer dispatches on each row's `shape` field, not on the front-matter.
+
+**Field-name reservation.** Within an envelope, the reserved field names are: `cluster_id`, `query`, `shape`, `members`, `left`, `right`, plus the `left_*`/`right_*` paired variants. Queries must not emit unrelated payload under these names. The reserved set may grow in future schema bumps (`catalog_format` version); back-compat removals follow the same deprecation cycle as catalog schema changes.
 
 ### `cluster_id` formats (substrate-emitted, stable)
 
@@ -509,7 +527,7 @@ Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonica
 
 **Why every pair-based query uses location keys instead of bare names:** Swift and TypeScript both allow the same `name` to appear on multiple records — `enum Foo` plus `extension Foo` adding computed properties is two records, both named `Foo`. The substrate emits one record per declaration, so pair-based queries that compare records can produce multiple pairs whose endpoints share names. A name-only id like `near-duplicates-any:PlayerState+PlaybackState` would collide whenever both `PlayerState` (enum + extension) and `PlaybackState` (enum + extension) participate in distinct pairs. Location keys (`package:file:line:name`, the same convention `function-duplicates` already used) make each endpoint unambiguous and the cluster_id unique. Real example surfaced on wxyc-ios-64: `PlayerState`/`PlaybackState` collisions on both `near-duplicates-any` (enum-pair plus extension-pair) and `subset-pairs`.
 
-**Grouped queries (`exact-duplicates`, `name-collisions`, `cross-package-shadows*`) keep bare names** because the row IS the group keyed by name (or shape_sig), with all decls in `members[]` (or `decls[]`). Same-name records collapse into the same row by design, not into separate rows that would collide.
+**Grouped queries (`exact-duplicates`, `name-collisions`, `cross-package-shadows*`) keep bare names** because the row IS the group keyed by name (or shape_sig), with all decls in `members[]`. Same-name records collapse into the same row by design, not into separate rows that would collide.
 
 **Why cross-package-shadows is one-row-per-name, not one-row-per-decl:** the original V2 emission was one row per shadowed *decl*, which meant multiple main-package decls shadowing the same shared name would all carry the same cluster_id `cross-package-shadows:Name`. That breaks the within-query uniqueness invariant. V7 changes the asymmetric query to mirror the -any variant: one row per shadowed name, with all main-package occurrences listed in `members`. The cluster_id remains `cross-package-shadows:Name`, now unambiguously identifying a single row.
 
@@ -530,7 +548,7 @@ Cluster-id construction lives in `pipeline/queries/_canonical.jq` so the rules a
 - `cluster_id_sorted_names(prefix; names)` — for N-member clusters keyed by sorted names.
 - `cluster_id_single_name(prefix; name)` — for single-name clusters.
 - `cluster_id_sorted_pair(prefix; a; b)` — for unordered pairs; pass `loc_key($x)` rather than bare names.
-- `cluster_id_directed_pair(prefix; sub; sup)` — for directed pairs (subset-pairs); pass `loc_key(.sub)` and `loc_key(.sup)`.
+- `cluster_id_directed_pair(prefix; sub; sup)` — for directed pairs (subset-pairs); pass `loc_key(.left)` and `loc_key(.right)`. The `sub`/`sup` parameter names are kept on the helper signature for historical clarity (sub-then-sup direction); the caller passes the row's `left`/`right` fields.
 - `cluster_id_sorted_paths(prefix; paths)` — for path-keyed clusters (file-duplicates).
 - `loc_key(decl)` — `package:file:line:name` location key for record disambiguation. Also aliased as `fn_location_key` for backwards compatibility.
 - `output_format` — `"text"` (default) or `"jsonl"`, read from `$ENV.OUTPUT_FORMAT`.

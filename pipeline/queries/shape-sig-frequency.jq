@@ -25,6 +25,8 @@
 # split on whitespace. The verbatim shape_sig stays in the `shape_sig` field.
 # Colons and pipes are preserved (existing queries like subset-pairs already
 # embed `:` in cluster_ids), so the slug stays human-readable.
+#
+#! shape: metric
 
 include "_canonical";
 
@@ -46,6 +48,7 @@ include "_canonical";
     | {
         cluster_id: cluster_id_single_name("shape-sig-frequency"; $sig_slug),
         query: "shape-sig-frequency",
+        shape: "metric",
         shape_sig: $sig,
         count: length,
         sample_names: (map(.name) | unique | .[0:$sample])

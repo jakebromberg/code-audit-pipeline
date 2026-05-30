@@ -34,16 +34,19 @@
 #   One row per cluster type per invocation. The cluster-type slug matches
 #   the source query's cluster_id prefix, so the four meta-rows index neatly
 #   alongside the source clusters they summarize.
+#
+#! shape: metric
 
 include "_canonical";
 
-# All four cluster types are normalized to a {cluster_id, decls} shape so
-# this predicate works uniformly across them.
-def cluster_has_touched: any(.decls[]; .touched_in_window // false);
+# All four cluster types are normalized to a {cluster_id, members} shape so
+# this predicate works uniformly across them. The inner clusters mirror the
+# source queries' cluster envelope (post-PR-1: members[] in place of decls[]).
+def cluster_has_touched: any(.members[]; .touched_in_window // false);
 
 def render_cluster:
-  "  [\(.decls | length) decl(s)] cid=\(.cluster_id)\n"
-  + (.decls
+  "  [\(.members | length) decl(s)] cid=\(.cluster_id)\n"
+  + (.members
       | map("    \(if .touched_in_window then "*" else " " end) \(.name) [\(.kind)] — \(.package):\(.file):\(.line)")
       | join("\n"));
 
@@ -52,29 +55,29 @@ def render_cluster:
 | entries as $all
 
 # 1. exact-duplicates — group by shape_sig, ≥2 decls, exclude generated/null.
-# Sort by -size to match exact-duplicates.jq's `sort_by(-(.decls | length))`
+# Sort by -size to match exact-duplicates.jq's `sort_by(-(.members | length))`
 # so the detail-block order tracks the source query.
 | ([ $all[] | select(.shape_sig != null and .shape_sig != "" and (.generated // false) != true) ]
    | group_by(.shape_sig)
    | map(select(length > 1))
    | map({
        cluster_id: cluster_id_sorted_names("exact-duplicates"; map(.name)),
-       decls: map({name, kind, package, file, line, touched_in_window})
+       members: map({name, kind, package, file, line, touched_in_window})
      })
-   | sort_by(-(.decls | length))) as $exact_dupes
+   | sort_by(-(.members | length))) as $exact_dupes
 
 # 2. name-collisions — group by name, ≥2 decls, in ≥2 distinct files.
 # Sort by (-size, name) to match name-collisions.jq's
-# `sort_by(-(.decls | length), .name)`.
+# `sort_by(-(.members | length), .name)`.
 | ([ $all[] | select((.generated // false) != true) ]
    | group_by(.name)
    | map(select(length > 1))
    | map(select((map(.file) | unique | length) > 1))
    | map({
        cluster_id: cluster_id_single_name("name-collisions"; .[0].name),
-       decls: map({name, kind, package, file, line, touched_in_window})
+       members: map({name, kind, package, file, line, touched_in_window})
      })
-   | sort_by(-(.decls | length), .decls[0].name)) as $name_collisions
+   | sort_by(-(.members | length), .members[0].name)) as $name_collisions
 
 # 3. cross-package-shadows — main-package decl whose name exists in shared
 # (interface or type-alias-object). Sort by name to match
@@ -88,9 +91,9 @@ def render_cluster:
    | group_by(.name)
    | map({
        cluster_id: cluster_id_single_name("cross-package-shadows"; .[0].name),
-       decls: map({name, kind, package, file, line, touched_in_window})
+       members: map({name, kind, package, file, line, touched_in_window})
      })
-   | sort_by(.decls[0].name)) as $cross_shadows
+   | sort_by(.members[0].name)) as $cross_shadows
 
 # 4. near-duplicates — main-package pairs with field-name Jaccard ≥ THRESHOLD
 # and < 1.0 (exact matches are exact-duplicates' job). Both sides need ≥3
@@ -118,7 +121,12 @@ def render_cluster:
     | select($jacc >= $thr and $jacc < 1.0)
     | { _jacc: $jacc,
         cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
-        decls: [
+        # near-duplicates is a pair-shape source query; the meta-query
+        # flattens its left/right endpoints into the cluster-envelope
+        # members[] so cluster_has_touched / render_cluster stay uniform
+        # across all four cluster types here. The inner cluster_id still
+        # uses the near-duplicates prefix so it joins to the source row.
+        members: [
           {name: $a.name, kind: $a.kind, package: $a.package, file: $a.file, line: $a.line, touched_in_window: $a.touched_in_window},
           {name: $b.name, kind: $b.kind, package: $b.package, file: $b.file, line: $b.line, touched_in_window: $b.touched_in_window}
         ]
@@ -142,6 +150,7 @@ def render_cluster:
     | {
         cluster_id: cluster_id_single_name("touched-window-debt-summary"; .cluster_type),
         query: "touched-window-debt-summary",
+        shape: "metric",
         cluster_type: .cluster_type,
         touched: $n_touched,
         total:   $n_total,

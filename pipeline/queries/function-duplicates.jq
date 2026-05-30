@@ -20,6 +20,8 @@
 # cluster_id formats:
 #   function-duplicates-exact:Loc+Loc+...   (sorted by package:file:line:name)
 #   function-duplicates-near:Loc+Loc        (sorted)
+#
+#! shape: cluster, pair
 
 include "_canonical";
 
@@ -34,15 +36,16 @@ entries as $all
     | map({
         cluster_id: cluster_id_sorted_names("function-duplicates-exact"; map(fn_location_key(.))),
         query: "function-duplicates-exact",
+        shape: "cluster",
         body_hash: .[0].body_hash,
         body_line_count: .[0].body_line_count,
-        decls: map({name, kind, package, file, line, async, param_count})
+        members: map({name, kind, package, file, line, async, param_count})
       })
-    | sort_by(-(.decls | length), -(.body_line_count))
+    | sort_by(-(.members | length), -(.body_line_count))
   ) as $exact
 
 # Names already covered by an exact cluster — exclude from near-dup section.
-| ( [ $exact[].decls[] | fn_location_key(.) ] | unique) as $exact_ids
+| ( [ $exact[].members[] | fn_location_key(.) ] | unique) as $exact_ids
 
 # --- Section 2: near-duplicate pairs (Jaccard ≥ threshold on body_lines, < 1.0) ---
 | ( [ range(0; $fns | length) as $i
@@ -60,7 +63,8 @@ entries as $all
       | select($jacc >= $thr and $jacc < 1.0)
       | { cluster_id: cluster_id_sorted_pair("function-duplicates-near"; fn_location_key($a); fn_location_key($b)),
           query: "function-duplicates-near",
-          jacc: $jacc, a: $a, b: $b, intersection: $ic, union: $u }
+          shape: "pair",
+          jacc: $jacc, left: $a, right: $b, intersection: $ic, union: $u }
     ]
     | sort_by(-(.jacc))
   ) as $near
@@ -73,8 +77,8 @@ entries as $all
     "=== exact body-hash clusters (\($exact | length)) ===\n"
     + ( $exact
         | map(
-            "[\(.body_line_count) lines, \(.decls | length) decls] cid=\(.cluster_id)\n"
-            + (.decls
+            "[\(.body_line_count) lines, \(.members | length) decls] cid=\(.cluster_id)\n"
+            + (.members
                | map("    \(.name)\(if .async then " (async)" else "" end) [\(.kind), arity=\(.param_count)] — \(.package):\(.file):\(.line)")
                | join("\n"))
           )
@@ -83,9 +87,9 @@ entries as $all
     + "\n\n=== near-duplicate pairs, Jaccard ≥ \($thr) (\($near | length)) ===\n"
     + ( $near
         | map(
-            "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.a.name)\(if .a.async then " (async)" else "" end) <-> \(.b.name)\(if .b.async then " (async)" else "" end) cid=\(.cluster_id)\n"
-            + "    A: \(.a.package):\(.a.file):\(.a.line)  [\(.a.body_line_count) lines, arity=\(.a.param_count)]\n"
-            + "    B: \(.b.package):\(.b.file):\(.b.line)  [\(.b.body_line_count) lines, arity=\(.b.param_count)]"
+            "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.name)\(if .left.async then " (async)" else "" end) <-> \(.right.name)\(if .right.async then " (async)" else "" end) cid=\(.cluster_id)\n"
+            + "    A: \(.left.package):\(.left.file):\(.left.line)  [\(.left.body_line_count) lines, arity=\(.left.param_count)]\n"
+            + "    B: \(.right.package):\(.right.file):\(.right.line)  [\(.right.body_line_count) lines, arity=\(.right.param_count)]"
           )
         | join("\n\n")
       )

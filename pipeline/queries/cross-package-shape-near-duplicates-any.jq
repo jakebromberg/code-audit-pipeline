@@ -18,6 +18,8 @@
 #
 # cluster_id format:  cross-package-shape-near-duplicates-any:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -41,20 +43,21 @@ entries as $all
     | select($jacc >= $thr and ($af | length) >= 3 and ($bf | length) >= 3)
     | { cluster_id: cluster_id_sorted_pair("cross-package-shape-near-duplicates-any"; loc_key($a); loc_key($b)),
         query: "cross-package-shape-near-duplicates-any",
-        jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
-        a_only: ([$af[] | . as $x | select(($bf | index($x)) == null)]),
-        b_only: ([$bf[] | . as $x | select(($af | index($x)) == null)])
+        shape: "pair",
+        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf, intersection: $ic, union: $u,
+        left_only:  ([$af[] | . as $x | select(($bf | index($x)) == null)]),
+        right_only: ([$bf[] | . as $x | select(($af | index($x)) == null)])
       }
   ]
-| sort_by(-(.jacc), .a.name, .b.name)
+| sort_by(-(.jacc), .left.name, .right.name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.a.package):\(.a.name)  <->  \(.b.package):\(.b.name) cid=\(.cluster_id)\n"
-    + "    A: \(.a.kind) — \(.a.file):\(.a.line)\n"
-    + "    B: \(.b.kind) — \(.b.file):\(.b.line)\n"
-    + "    A fields: \(.af | join(", "))\n"
-    + "    A only:   \(.a_only | join(", "))\n"
-    + "    B only:   \(.b_only | join(", "))"
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.package):\(.left.name)  <->  \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
+    + "    A: \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    B: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    A fields: \(.left_fields | join(", "))\n"
+    + "    A only:   \(.left_only | join(", "))\n"
+    + "    B only:   \(.right_only | join(", "))"
   end

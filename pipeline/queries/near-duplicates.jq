@@ -14,6 +14,8 @@
 #
 # cluster_id format:  near-duplicates:LocA+LocB  (sorted location keys
 #                                                 — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -30,14 +32,15 @@ include "_canonical";
     | select($jacc >= $threshold and $jacc < 1.0 and ($af | length) >= 3 and ($bf | length) >= 3)
     | { cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
         query: "near-duplicates",
-        jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf }
+        shape: "pair",
+        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf }
   ]
 | sort_by(-(.jacc))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%] \(.a.name)@\(.a.file):\(.a.line)  <->  \(.b.name)@\(.b.file):\(.b.line) cid=\(.cluster_id)\n"
-    + "    A fields: \(.af | join(", "))\n"
-    + "    B fields: \(.bf | join(", "))"
+    "[\((.jacc * 100) | floor)%] \(.left.name)@\(.left.file):\(.left.line)  <->  \(.right.name)@\(.right.file):\(.right.line) cid=\(.cluster_id)\n"
+    + "    A fields: \(.left_fields | join(", "))\n"
+    + "    B fields: \(.right_fields | join(", "))"
   end

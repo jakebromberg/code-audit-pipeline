@@ -13,6 +13,8 @@
 # packages where no single one is the canonical types module.
 #
 # cluster_id format:  cross-package-shadows-any:Name  (per shadowed name)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -26,16 +28,17 @@ entries as $all
 | map({
     cluster_id: cluster_id_single_name("cross-package-shadows-any"; .[0].name),
     query: "cross-package-shadows-any",
+    shape: "cluster",
     name: .[0].name,
-    locations: map({package, kind, file, line, shape_sig, touched_in_window})
+    members: map({package, kind, file, line, shape_sig, touched_in_window})
   })
-| sort_by(-(.locations | length), .name)
+| sort_by(-(.members | length), .name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "\(.name)  [\(.locations | length) packages, \(.locations | map(.package) | unique | length) distinct] cid=\(.cluster_id)\n"
-    + (.locations
+    "\(.name)  [\(.members | length) packages, \(.members | map(.package) | unique | length) distinct] cid=\(.cluster_id)\n"
+    + (.members
         | map("    \(if .touched_in_window then "*" else " " end) \(.package): \(.kind) — \(.file):\(.line)"
               + (if .shape_sig then "  sig=" + (.shape_sig | .[0:80]) else "" end))
         | join("\n"))

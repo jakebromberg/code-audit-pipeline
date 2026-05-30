@@ -38,6 +38,12 @@
 # Per-decl loc_key — drizzle table names can collide across packages
 # (re-export shimming patterns); loc_key keeps each orphan unambiguous within
 # the run.
+#
+# Envelope: shape: "cluster", members of length 1. Per-decl findings still
+# wrap into the cluster envelope so the renderer stays shape-aware; the
+# `missing` field at the top level carries the finding category.
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -60,22 +66,27 @@ include "_canonical";
     | {
         cluster_id: cluster_id_single_name("orphan-infer-model"; loc_key(.)),
         query: "orphan-infer-model",
-        name: .name,
-        db_table_name: .db_table_name,
-        package: .package,
-        file: .file,
-        line: .line,
-        touched_in_window: (.touched_in_window // false),
-        generated: (.generated // false),
+        shape: "cluster",
         missing: (if $has_sel == null and $has_ins == null then "no either"
                   elif $has_sel == null then "no InferSelect"
-                  else "no InferInsert" end)
+                  else "no InferInsert" end),
+        members: [{
+          name: .name,
+          kind: .kind,
+          package: .package,
+          file: .file,
+          line: .line,
+          touched_in_window: (.touched_in_window // false),
+          generated: (.generated // false),
+          db_table_name: .db_table_name
+        }]
       }
   ]
-| sort_by(.missing, .package, .name)
+| sort_by(.missing, .members[0].package, .members[0].name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "  \(if .touched_in_window then "*" else " " end) \(.name) [\(.missing)] db=\(.db_table_name // "?") — \(.package):\(.file):\(.line) cid=\(.cluster_id)"
+    (.members[0]) as $m
+    | "  \(if $m.touched_in_window then "*" else " " end) \($m.name) [\(.missing)] db=\($m.db_table_name // "?") — \($m.package):\($m.file):\($m.line) cid=\(.cluster_id)"
   end

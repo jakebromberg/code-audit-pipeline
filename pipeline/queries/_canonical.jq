@@ -8,6 +8,55 @@
 #
 # Address: GitHub issue #5 ("V5 substrate: substrate-emitted cluster_ids").
 #
+# ─── Cluster envelope (ADR-0003) ──────────────────────────────────────────
+#
+# Every JSONL row carries a `shape` field naming one of three envelopes. The
+# binary's markdown renderer (PR 4) dispatches purely on `shape`; queries
+# never need a per-query renderer. Queries also declare `#! shape: <value>`
+# in their front-matter (single value, or comma-separated for dual-section
+# queries) — see ADR-0002 for the front-matter convention.
+#
+#   shape: "cluster"   N members grouped by a common key. Envelope fields:
+#                      cluster_id, query, shape, members[]. The members[]
+#                      array contains one decl object per group member.
+#                      Includes single-member rows (e.g., orphan-infer-model,
+#                      generic-convention-bound) — the envelope wraps the
+#                      decl as members: [{...}] of length 1 so the renderer
+#                      stays shape-aware, not arity-aware.
+#
+#   shape: "pair"      Two endpoints. Envelope fields: cluster_id, query,
+#                      shape, left, right. The two endpoints are full decl
+#                      objects. Field-set variants use the same prefix:
+#                      left_fields/right_fields, left_only/right_only,
+#                      left_slots/right_slots, etc. Pair direction is
+#                      ENVELOPE-FREE: directed (subset-pairs: left ⊂ right)
+#                      and asymmetric (test-prod-drift: left=prod right=test;
+#                      cross-package-shape-near-duplicates: left=main
+#                      right=shared) queries document their convention in
+#                      the file header. The renderer treats all pairs
+#                      uniformly; query-specific role labels are restored in
+#                      text mode.
+#
+#   shape: "metric"    Single-value or summary row. Envelope fields:
+#                      cluster_id, query, shape, plus arbitrary query-
+#                      specific payload (percent_migrated, count, etc.).
+#                      No structural envelope fields beyond the trio.
+#
+# Field renames that landed in PR 1 (do not regress; keep in sync with
+# docs/pipeline-contract.md "Cluster envelope" section):
+#
+#   decls       → members           (cluster shape)
+#   locations   → members           (cross-package-shadows-any only)
+#   a / b       → left / right      (pair shape)
+#   af / bf     → left_fields / right_fields
+#   a_only / b_only       → left_only / right_only
+#   a_slots / b_slots     → left_slots / right_slots
+#   swap_tokens_a / swap_tokens_b → left_swap_tokens / right_swap_tokens
+#   sub / sup             → left / right   (subset-pairs; direction in header)
+#   sub_fields / sup_fields → left_fields / right_fields
+#   main / shared         → left / right   (cross-package-shape-near-duplicates)
+#   main_only / shared_only → left_only / right_only
+#
 # Cluster_id format conventions (authoritative; see docs/pipeline-contract.md):
 #
 #   exact-duplicates:A+B+...                      sorted names, '+' separator
