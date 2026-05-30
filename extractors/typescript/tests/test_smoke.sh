@@ -29,12 +29,21 @@ EXPECTED_SCHEMA_VERSION="1.1"
 # the assertion sorts both sides.
 EXPECTED_NAMES=(
   FlowsheetEntry
+  FlowsheetEntryWithStation
+  InternalDraftEntry
   ListenerProfile
   ListenerSchema
   PageEnvelope
+  Station
   SyncResult
   stations
 )
+
+# Pulled from package.json at script start so the assertion below catches the
+# "stale hardcoded literal" regression a semver regex would miss — a refactor
+# that replaces the dynamic `JSON.parse(readFileSync(...)).version` read in
+# type-catalog.mjs with a baked-in string passes a regex check forever.
+EXPECTED_VERSION="$(jq -r .version "$EXTRACTOR_ROOT/package.json")"
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -91,12 +100,13 @@ else
 fi
 
 # ---- Assertion: extractor provenance block is well-formed ------------------
-# The version regex is end-anchored: trailing garbage (build labels,
-# whitespace, partial bumps) should not pass.
-if jq -e '.extractor.language == "typescript" and .extractor.name == "type-catalog" and (.extractor.version | test("^\\d+\\.\\d+\\.\\d+$"))' "$RUN1" >/dev/null; then
-  pass "extractor block: language=typescript, name=type-catalog, version=semver"
+# Pin extractor.version to the exact `package.json.version` read at script
+# start — a regex check passes forever on a stale hardcoded literal, but the
+# extractor reads the live package.json on every run.
+if jq -e --arg v "$EXPECTED_VERSION" '.extractor.language == "typescript" and .extractor.name == "type-catalog" and .extractor.version == $v' "$RUN1" >/dev/null; then
+  pass "extractor block: language=typescript, name=type-catalog, version=$EXPECTED_VERSION"
 else
-  fail "extractor block malformed: $(jq -c .extractor "$RUN1")"
+  fail "extractor block malformed (expected version=$EXPECTED_VERSION): $(jq -c .extractor "$RUN1")"
 fi
 
 # ---- Assertion: entries[] is a non-empty array -----------------------------
@@ -141,12 +151,39 @@ assert_kind() {
   fi
 }
 
-assert_kind "FlowsheetEntry"  "interface"
-assert_kind "ListenerSchema"  "zod-object"
-assert_kind "stations"        "drizzle-table"
-assert_kind "PageEnvelope"    "type-alias-object"
-assert_kind "ListenerProfile" "interface"
-assert_kind "SyncResult"      "type-alias-union"
+assert_kind "FlowsheetEntry"             "interface"
+assert_kind "ListenerSchema"             "zod-object"
+assert_kind "stations"                   "drizzle-table"
+assert_kind "PageEnvelope"               "type-alias-object"
+assert_kind "ListenerProfile"            "interface"
+assert_kind "SyncResult"                 "type-alias-union"
+assert_kind "FlowsheetEntryWithStation"  "type-alias-intersection"
+assert_kind "Station"                    "type-alias-infer-model"
+assert_kind "InternalDraftEntry"         "interface"
+
+# ---- Assertion: exported flag, both branches -------------------------------
+# A regression in exportedMod() that flipped the default (always-true or
+# always-false — plausible after a TS lib upgrade changes how modifiers are
+# exposed via getModifiers()) would be invisible to a fixture where every
+# entry is exported. Pin one positive and one negative.
+assert_exported() {
+  local name="$1" expected="$2"
+  local count actual
+  count="$(jq --arg n "$name" '[.entries[] | select(.name == $n)] | length' "$RUN1")"
+  if [[ "$count" != "1" ]]; then
+    fail "exported($name): expected exactly 1 entry, found $count"
+    return
+  fi
+  actual="$(jq -r --arg n "$name" '.entries[] | select(.name == $n) | .exported' "$RUN1")"
+  if [[ "$actual" == "$expected" ]]; then
+    pass "exported($name) == $expected"
+  else
+    fail "exported($name): expected $expected, got $actual"
+  fi
+}
+
+assert_exported "FlowsheetEntry"     "true"
+assert_exported "InternalDraftEntry" "false"
 
 # ---- Assertion: required-on-every-entry fields are non-null ----------------
 # Per docs/pipeline-contract.md "Required fields" — every entry carries name,
