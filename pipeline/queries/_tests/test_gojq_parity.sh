@@ -61,75 +61,60 @@ jq '[.[] | select(.package == "shared")]' "$TYPES_FIXTURE" > "$CROSS_CAT_RIGHT"
 
 PASS=0
 FAIL=0
-DIVERGENCES=()
 
+# Normalize output for semantic comparison.
+# JSONL mode: pipe the whole stream through `jq -cS` to sort object keys —
+# gojq alphabetizes keys when serializing while jq preserves insertion order,
+# so byte comparison would spuriously fail on semantically identical records.
+# Text mode: pass through untouched (the queries' text output is hand-formatted
+# and already byte-identical between engines).
 normalize() {
-  # For JSONL: canonicalize every line via `jq -cS` (sort keys), then sort
-  # the line set. gojq alphabetizes object keys when serializing while jq
-  # preserves insertion order — semantically identical JSON, byte-different.
-  # Canonicalizing the keys before comparison is what tests SEMANTIC parity.
-  # For text mode: same downstream normalization is harmless (lines without
-  # `{`-prefix pass through `jq -cS` untouched if we feed via a guard).
-  awk '
-    /^\{/ {
-      cmd = "jq -cS . 2>/dev/null"
-      print | cmd
-      close(cmd)
-      next
-    }
-    { print }
-  ' | sed -e 's/[[:space:]]*$//' | sort
+  local format="$1"
+  if [[ "$format" == jsonl ]]; then
+    jq -cS .
+  else
+    cat
+  fi | sed -e 's/[[:space:]]*$//' | sort
 }
 
 sha() { shasum -a 256 | awk '{print $1}'; }
 
-# run_parity <label> <format:text|jsonl> <input:path-or-"-n"> <env-prefix> <jq-args...>
-# env-prefix: space-separated KEY=VALUE pairs (or empty string).
+# run_parity <label> <format:text|jsonl> <query_path> <input:path-or-"-n"> [jq-args...]
 run_parity() {
   local label="$1"
   local format="$2"
   local query_path="$3"
   local input="$4"
-  local env_prefix_str="$5"
-  shift 5
+  shift 4
   local args=("$@")
 
-  local jq_env=("OUTPUT_FORMAT=$format")
-  if [[ -n "$env_prefix_str" ]]; then
-    # shellcheck disable=SC2206
-    local extra=($env_prefix_str)
-    jq_env+=("${extra[@]}")
+  local null_flag=() input_args=()
+  if [[ "$input" == "-n" ]]; then
+    null_flag=(-n)
+  else
+    input_args=("$input")
   fi
 
   local out_jq out_gojq jq_rc gojq_rc
-  if [[ "$input" == "-n" ]]; then
-    out_jq="$(env "${jq_env[@]}" jq -n -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" 2>&1)"
-    jq_rc=$?
-    out_gojq="$(env "${jq_env[@]}" gojq -n -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" 2>&1)"
-    gojq_rc=$?
-  else
-    out_jq="$(env "${jq_env[@]}" jq -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" "$input" 2>&1)"
-    jq_rc=$?
-    out_gojq="$(env "${jq_env[@]}" gojq -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" "$input" 2>&1)"
-    gojq_rc=$?
-  fi
+  out_jq="$(OUTPUT_FORMAT="$format" jq   "${null_flag[@]}" -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" "${input_args[@]}" 2>&1)"
+  jq_rc=$?
+  out_gojq="$(OUTPUT_FORMAT="$format" gojq "${null_flag[@]}" -L "$QUERIES_DIR" -r "${args[@]}" -f "$query_path" "${input_args[@]}" 2>&1)"
+  gojq_rc=$?
 
   if (( jq_rc != 0 )); then
     FAIL=$((FAIL + 1))
-    DIVERGENCES+=("$label [$format]: jq crashed (rc=$jq_rc)")
     printf '  ✗ %s [%s]: jq crashed (rc=%d): %s\n' "$label" "$format" "$jq_rc" "$out_jq"
     return
   fi
   if (( gojq_rc != 0 )); then
     FAIL=$((FAIL + 1))
-    DIVERGENCES+=("$label [$format]: gojq crashed (rc=$gojq_rc)")
     printf '  ✗ %s [%s]: gojq crashed (rc=%d): %s\n' "$label" "$format" "$gojq_rc" "$out_gojq"
     return
   fi
 
   local hash_jq hash_gojq
-  hash_jq="$(printf '%s' "$out_jq" | normalize | sha)"
-  hash_gojq="$(printf '%s' "$out_gojq" | normalize | sha)"
+  hash_jq="$(printf '%s' "$out_jq"   | normalize "$format" | sha)"
+  hash_gojq="$(printf '%s' "$out_gojq" | normalize "$format" | sha)"
 
   if [[ "$hash_jq" == "$hash_gojq" ]]; then
     PASS=$((PASS + 1))
@@ -140,9 +125,8 @@ run_parity() {
     fi
   else
     FAIL=$((FAIL + 1))
-    DIVERGENCES+=("$label [$format]: output differs after normalization")
     printf '  ✗ %s [%s]: outputs differ\n' "$label" "$format"
-    diff <(printf '%s' "$out_jq" | normalize) <(printf '%s' "$out_gojq" | normalize) \
+    diff <(printf '%s' "$out_jq" | normalize "$format") <(printf '%s' "$out_gojq" | normalize "$format") \
       | head -30 | sed 's/^/      /'
   fi
 }
@@ -156,77 +140,72 @@ both_modes() {
 }
 
 echo "=== Type-catalog queries ==="
-both_modes exact-duplicates                          "$QUERIES_DIR/exact-duplicates.jq"                          "$TYPES_FIXTURE"   ""
-both_modes name-collisions                           "$QUERIES_DIR/name-collisions.jq"                           "$TYPES_FIXTURE"   ""
-both_modes cross-package-shadows                     "$QUERIES_DIR/cross-package-shadows.jq"                     "$TYPES_FIXTURE"   ""
-both_modes cross-package-shadows-any                 "$QUERIES_DIR/cross-package-shadows-any.jq"                 "$TYPES_FIXTURE"   ""
-both_modes near-duplicates                           "$QUERIES_DIR/near-duplicates.jq"                           "$TYPES_FIXTURE"   "" --argjson threshold 0.5
-both_modes near-duplicates-any                       "$QUERIES_DIR/near-duplicates-any.jq"                       "$TYPES_FIXTURE"   "" --argjson threshold 0.5
-both_modes cross-package-shape-near-duplicates       "$QUERIES_DIR/cross-package-shape-near-duplicates.jq"       "$TYPES_FIXTURE"   "" --argjson threshold 0.5
-both_modes cross-package-shape-near-duplicates-any   "$QUERIES_DIR/cross-package-shape-near-duplicates-any.jq"   "$TYPES_FIXTURE"   "" --argjson threshold 0.5
-both_modes subset-pairs                              "$QUERIES_DIR/subset-pairs.jq"                              "$TYPES_FIXTURE"   ""
-both_modes protocol-inheritance-candidates           "$QUERIES_DIR/protocol-inheritance-candidates.jq"           "$TYPES_FIXTURE"   "" --argjson min_overlap 2
-both_modes pat-candidates                            "$QUERIES_DIR/pat-candidates.jq"                            "$TYPES_FIXTURE"   "" --argjson max_slot_diffs 1
-both_modes generic-struct-candidates                 "$QUERIES_DIR/generic-struct-candidates.jq"                 "$TYPES_FIXTURE"   "" --argjson max_slot_diffs 1
+both_modes exact-duplicates                          "$QUERIES_DIR/exact-duplicates.jq"                          "$TYPES_FIXTURE"
+both_modes name-collisions                           "$QUERIES_DIR/name-collisions.jq"                           "$TYPES_FIXTURE"
+both_modes cross-package-shadows                     "$QUERIES_DIR/cross-package-shadows.jq"                     "$TYPES_FIXTURE"
+both_modes cross-package-shadows-any                 "$QUERIES_DIR/cross-package-shadows-any.jq"                 "$TYPES_FIXTURE"
+both_modes near-duplicates                           "$QUERIES_DIR/near-duplicates.jq"                           "$TYPES_FIXTURE" --argjson threshold 0.5
+both_modes near-duplicates-any                       "$QUERIES_DIR/near-duplicates-any.jq"                       "$TYPES_FIXTURE" --argjson threshold 0.5
+both_modes cross-package-shape-near-duplicates       "$QUERIES_DIR/cross-package-shape-near-duplicates.jq"       "$TYPES_FIXTURE" --argjson threshold 0.5
+both_modes cross-package-shape-near-duplicates-any   "$QUERIES_DIR/cross-package-shape-near-duplicates-any.jq"   "$TYPES_FIXTURE" --argjson threshold 0.5
+both_modes subset-pairs                              "$QUERIES_DIR/subset-pairs.jq"                              "$TYPES_FIXTURE"
+both_modes protocol-inheritance-candidates           "$QUERIES_DIR/protocol-inheritance-candidates.jq"           "$TYPES_FIXTURE" --argjson min_overlap 2
+both_modes pat-candidates                            "$QUERIES_DIR/pat-candidates.jq"                            "$TYPES_FIXTURE" --argjson max_slot_diffs 1
+both_modes generic-struct-candidates                 "$QUERIES_DIR/generic-struct-candidates.jq"                 "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 
 echo ""
 echo "=== Function-catalog queries ==="
-both_modes function-duplicates                       "$QUERIES_DIR/function-duplicates.jq"                       "$FUNCS_FIXTURE"   "" --argjson threshold 0.5
-both_modes default-impl-candidates                   "$QUERIES_DIR/default-impl-candidates.jq"                   "$FUNCS_FIXTURE"   "" --argjson min_conformers 2
-both_modes generic-function-candidates               "$QUERIES_DIR/generic-function-candidates.jq"               "$FUNCS_FIXTURE"   "" --argjson threshold 0.5 --argjson max_subs 2
+both_modes function-duplicates                       "$QUERIES_DIR/function-duplicates.jq"                       "$FUNCS_FIXTURE" --argjson threshold 0.5
+both_modes default-impl-candidates                   "$QUERIES_DIR/default-impl-candidates.jq"                   "$FUNCS_FIXTURE" --argjson min_conformers 2
+both_modes generic-function-candidates               "$QUERIES_DIR/generic-function-candidates.jq"               "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 
 echo ""
 echo "=== File-hash queries ==="
-both_modes file-duplicates                           "$QUERIES_DIR/file-duplicates.jq"                           "$FILES_FIXTURE"   ""
+both_modes file-duplicates                           "$QUERIES_DIR/file-duplicates.jq"                           "$FILES_FIXTURE"
 
 echo ""
 echo "=== Migration-progress queries ==="
-both_modes migration-progress                        "$QUERIES_DIR/migration-progress.jq"                        "$MIGRATION_FIXTURE" "" --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
-both_modes shape-sig-frequency                       "$QUERIES_DIR/shape-sig-frequency.jq"                       "$MIGRATION_FIXTURE" ""
+both_modes migration-progress                        "$QUERIES_DIR/migration-progress.jq"                        "$MIGRATION_FIXTURE" --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
+both_modes shape-sig-frequency                       "$QUERIES_DIR/shape-sig-frequency.jq"                       "$MIGRATION_FIXTURE"
 
 echo ""
 echo "=== Generic-drift queries ==="
-both_modes generic-arity-drift                       "$QUERIES_DIR/generic-arity-drift.jq"                       "$GENERICS_FIXTURE" ""
-both_modes generic-convention-bound                  "$QUERIES_DIR/generic-convention-bound.jq"                  "$GENERICS_FIXTURE" ""
+both_modes generic-arity-drift                       "$QUERIES_DIR/generic-arity-drift.jq"                       "$GENERICS_FIXTURE"
+both_modes generic-convention-bound                  "$QUERIES_DIR/generic-convention-bound.jq"                  "$GENERICS_FIXTURE"
 
 echo ""
 echo "=== Debt-summary query ==="
-both_modes touched-window-debt-summary               "$QUERIES_DIR/touched-window-debt-summary.jq"               "$DEBT_SUMMARY_FIXTURE" ""
+both_modes touched-window-debt-summary               "$QUERIES_DIR/touched-window-debt-summary.jq"               "$DEBT_SUMMARY_FIXTURE"
 
 echo ""
 echo "=== Orphan-infer-model query ==="
-both_modes orphan-infer-model                        "$QUERIES_DIR/orphan-infer-model.jq"                        "$ORPHAN_INFER_MODEL_FIXTURE" ""
+both_modes orphan-infer-model                        "$QUERIES_DIR/orphan-infer-model.jq"                        "$ORPHAN_INFER_MODEL_FIXTURE"
 
 echo ""
 echo "=== Test-prod-drift query ==="
-both_modes test-prod-drift                           "$QUERIES_DIR/test-prod-drift.jq"                           "$TEST_PROD_DRIFT_FIXTURE" "" --argjson threshold 0.5
+both_modes test-prod-drift                           "$QUERIES_DIR/test-prod-drift.jq"                           "$TEST_PROD_DRIFT_FIXTURE" --argjson threshold 0.5
 
 echo ""
 echo "=== Multi-catalog: dead-code (type-catalog + references-graph) ==="
-both_modes dead-code                                 "$QUERIES_DIR/dead-code.jq"                                 "$DEAD_CODE_CATALOG_FIXTURE" "" --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
+both_modes dead-code                                 "$QUERIES_DIR/dead-code.jq"                                 "$DEAD_CODE_CATALOG_FIXTURE" --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
 
 echo ""
 echo "=== Multi-catalog: public-api-leaks (function-catalog + type-catalog) ==="
-both_modes public-api-leaks                          "$QUERIES_DIR/public-api-leaks.jq"                          "$LEAKS_FUNCTIONS_FIXTURE"  "" --slurpfile types "$LEAKS_TYPES_FIXTURE"
+both_modes public-api-leaks                          "$QUERIES_DIR/public-api-leaks.jq"                          "$LEAKS_FUNCTIONS_FIXTURE" --slurpfile types "$LEAKS_TYPES_FIXTURE"
 
 echo ""
 echo "=== Files-catalog query ==="
-both_modes cross-package-backward-imports            "$QUERIES_DIR/cross-package-backward-imports.jq"            "$BACKWARD_IMPORTS_FIXTURE" ""
+both_modes cross-package-backward-imports            "$QUERIES_DIR/cross-package-backward-imports.jq"            "$BACKWARD_IMPORTS_FIXTURE"
 
 echo ""
 echo "=== Cross-catalog (null-input, two slurps) ==="
-both_modes cross-catalog-name-collisions             "$QUERIES_DIR/cross-catalog-name-collisions.jq"             "-n" "" --slurpfile left "$CROSS_CAT_LEFT" --slurpfile right "$CROSS_CAT_RIGHT"
+both_modes cross-catalog-name-collisions             "$QUERIES_DIR/cross-catalog-name-collisions.jq"             "-n" --slurpfile left "$CROSS_CAT_LEFT" --slurpfile right "$CROSS_CAT_RIGHT"
 
 echo ""
 echo "=== Summary ==="
 printf '  PASS: %d\n  FAIL: %d\n' "$PASS" "$FAIL"
 
 if (( FAIL > 0 )); then
-  echo ""
-  echo "Divergences:"
-  for d in "${DIVERGENCES[@]}"; do
-    printf '  - %s\n' "$d"
-  done
   echo ""
   echo "Divergent jsonl-mode queries should declare '#! engine: jq' in front-matter."
   echo "Text-mode divergences are informational and may not require an annotation."
