@@ -215,6 +215,33 @@ func TestInitMissingFromFlag(t *testing.T) {
 	}
 }
 
+// TestInitPreservesExecutableBit pins down that copyFile inherits the
+// source's permission bits. Real extractor/test scripts (e.g.
+// extractors/typescript/tests/test_smoke.sh) are 0o755 in the repo; losing
+// the exec bit on copy turns `./test_smoke.sh` into "permission denied".
+func TestInitPreservesExecutableBit(t *testing.T) {
+	src := setupSource(t)
+	// Drop an executable script into the source's extractor dir so the walk
+	// picks it up.
+	exe := filepath.Join(src, "extractors/typescript/tests/test_smoke.sh")
+	if err := os.MkdirAll(filepath.Dir(exe), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(exe, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	mustInit(t, src, dest)
+
+	info, err := os.Stat(filepath.Join(dest, "extractors/typescript/tests/test_smoke.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm()&0o111 == 0 {
+		t.Errorf("executable bit lost on copy: mode=%v", info.Mode().Perm())
+	}
+}
+
 func mustInit(t *testing.T, src, dest string) {
 	t.Helper()
 	var out bytes.Buffer
