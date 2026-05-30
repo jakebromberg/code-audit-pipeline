@@ -306,6 +306,10 @@ function exportedMod(node) {
   return !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
 }
 
+function genericsList(node) {
+  return node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
+}
+
 // Leftmost identifier extraction for `QualifiedName` chains
 // (`Namespace.Inner.Type` → `Namespace`). Mirrors the resolution rule the
 // downstream (`package, name`) lookup uses — the leftmost is what
@@ -387,14 +391,13 @@ function refsForDecl(node, sf, bodyNodes) {
 }
 
 // Heritage-clause supertype names for `interface X extends A, B {}`. Returns a
-// sorted, deduplicated array of names. Implements §F1: identifiers in each
-// `ExpressionWithTypeArguments` of an `extends` clause. Implements clauses are
-// ignored (TS doesn't model implementation; `implements` is structural on the
-// implementing side, not a supertype edge on the declaring side).
+// sorted, deduplicated array of names. `implements` clauses are ignored (TS
+// doesn't model implementation as a supertype edge on the declaring side).
 //
 // Qualified expressions (`extends Namespace.Foo`) round-trip the full dotted
-// source text rather than splitting — this is rare in practice and the
-// downstream resolution pass handles the `(package, name)` lookup uniformly.
+// source text rather than splitting — rare in practice, and the downstream
+// resolution pass handles the `(package, name)` lookup uniformly via the
+// leftmost identifier.
 function extractExtendsFromInterface(node, sf) {
   if (!node.heritageClauses) return [];
   const names = new Set();
@@ -452,7 +455,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         emitSynthetic,
         rowDefaults,
       });
-      const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
+      const generics = genericsList(node);
       const extendsList = extractExtendsFromInterface(node, sf);
       const referencesList = refsForDecl(node, sf, node.members);
       pushBase(node, {
@@ -468,7 +471,7 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
     }
 
     if (ts.isTypeAliasDeclaration(node)) {
-      const generics = node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
+      const generics = genericsList(node);
       let kind = 'type-alias-other';
       let fields = null;
       let shape_sig = null;
@@ -510,11 +513,10 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       }
 
       const referencesList = refsForDecl(node, sf, [node.type]);
-      // Intersection-extends: per §6.3, named operands of an intersection
-      // (`type X = A & B & {...}`) go into `extends`. Inline literals don't —
-      // they extend an anonymous shape, not a name. Union variants are
-      // *references*, not `extends`, since they describe possible-types not
-      // is-a relationships.
+      // Intersection-extends: named operands of `type X = A & B & {...}` go
+      // into `extends`. Inline literals don't — they extend an anonymous
+      // shape, not a name. Union variants land in `references`, not `extends`,
+      // since they describe possible-types not is-a relationships.
       const extendsList = (kind === 'type-alias-intersection' && operands)
         ? [...new Set(operands.filter((op) => op.kind === 'ref').map((op) => op.name))].sort()
         : [];
@@ -760,7 +762,6 @@ if (values['emit-references-graph']) {
       let toPackage = e.package;
       let resolved = false;
       if (sameNames?.has(ref.name)) {
-        toPackage = e.package;
         resolved = true;
       } else if (sharedNames?.has(ref.name) && e.package !== 'shared') {
         toPackage = 'shared';
