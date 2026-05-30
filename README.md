@@ -73,6 +73,8 @@ Both queries and extractors are resolved via a lookup-order chain ([ADR-0006](do
 
 `audit status` always prints the resolved source for both. The cwd-relative path makes contributor edits live without rebuilding the binary; the embedded fallback means a brewed binary works against any pre-existing catalog with no install steps.
 
+To point the binary at the tree `audit init` lays down (instead of the embedded set), set `AUDIT_HOME=$XDG_CONFIG_HOME/audit` (or `~/.config/audit`). Without `AUDIT_HOME` set and outside a checkout, queries resolve to the embedded copy — which is the intended default for the brewed binary.
+
 ## What the catalog contains
 
 Top-level JSON is `{schema_version: "1.1", extractor: {...}, entries: [...]}` — one record per declared type inside `entries`. The contract is in [`docs/pipeline-contract.md`](docs/pipeline-contract.md). Core fields every extractor emits:
