@@ -14,7 +14,11 @@
 #
 # cluster_id format:  cross-package-shadows-any:Name  (per shadowed name)
 #
+#! query: cross-package-shadows-any
 #! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Symmetric N-package shadow detector for codebases without a canonical shared.
 
 include "_canonical";
 

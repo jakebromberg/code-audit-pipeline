@@ -11,7 +11,11 @@
 #
 # cluster_id format:  name-collisions:Name  (the colliding name)
 #
+#! query: name-collisions
 #! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Same name declared in multiple packages — first-pass shadow signal.
 
 include "_canonical";
 

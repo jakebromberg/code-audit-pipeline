@@ -41,7 +41,12 @@
 # `suspects` field at the top level carries the unbound type-parameter
 # identifiers flagged on this decl.
 #
+#! query: generic-convention-bound
 #! shape: cluster
+#! catalog: type-catalog
+#! env: EXTRA_BUILTINS string ""
+#! formats: text, jsonl
+#! desc: Decls whose field types reference unbound T-style identifiers.
 
 include "_canonical";
 

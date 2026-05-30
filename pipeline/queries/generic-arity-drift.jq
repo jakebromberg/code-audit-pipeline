@@ -18,7 +18,11 @@
 #
 # cluster_id format:  generic-arity-drift:Name  (the colliding name)
 #
+#! query: generic-arity-drift
 #! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Same name with differing generic-parameter arity (Repository<T> vs Repository<T,K>).
 
 include "_canonical";
 
