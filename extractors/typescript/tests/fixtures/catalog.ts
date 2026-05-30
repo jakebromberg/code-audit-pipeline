@@ -1,17 +1,16 @@
-// Smoke-test fixture for type-catalog.mjs. Exercises the five declaration
-// shapes the CI smoke test asserts on. Names are deliberately distinct so the
-// presence assertions can't collide with one another.
+// Smoke-test fixture for type-catalog.mjs. Names are deliberately distinct so
+// the presence assertions can't collide. Pairs with secondary.ts so the
+// determinism guard exercises inter-file ordering, not just a single file.
 //
-// Covered shapes:
-//   - plain interface           -> FlowsheetEntry        (kind: interface)
-//   - Zod schema                -> ListenerSchema        (kind: zod-object)
-//   - Drizzle table             -> stations              (kind: drizzle-table)
-//   - generic type alias        -> PageEnvelope          (kind: type-alias-object, generics)
-//   - re-export (barrel)        -> re-exports `FlowsheetEntry` from this file
+// Covered shapes (this file):
+//   - plain interface w/ self-reference -> FlowsheetEntry     (kind: interface, references: ["FlowsheetEntry"])
+//   - Zod schema                        -> ListenerSchema     (kind: zod-object, fields populated)
+//   - Drizzle table                     -> stations           (kind: drizzle-table, db_table_name: "stations")
+//   - generic type alias                -> PageEnvelope       (kind: type-alias-object, generics)
 //
-// The fixture is deliberately small. End-to-end behavior is covered by the
-// node:test suite under extractors/typescript/test/. This file's only job is
-// to exercise the AST walker in a CI step that asserts contract conformance.
+// End-to-end behavior is covered by the node:test suite under
+// extractors/typescript/test/. This file exercises the AST walker in a CI
+// step that asserts contract conformance.
 
 import { z } from 'zod';
 import { pgTable, integer, text } from 'drizzle-orm/pg-core';
@@ -20,6 +19,7 @@ export interface FlowsheetEntry {
   id: number;
   artist_name: string | null;
   album_title: string | null;
+  previous_entry: FlowsheetEntry | null;
 }
 
 export const ListenerSchema = z.object({
@@ -36,5 +36,3 @@ export type PageEnvelope<T> = {
   items: T[];
   cursor: string | null;
 };
-
-export { FlowsheetEntry as FlowsheetEntryRe };
