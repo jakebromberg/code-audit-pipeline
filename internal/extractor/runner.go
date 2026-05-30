@@ -25,6 +25,7 @@ type Args struct {
 	Extensions     string // comma-separated
 	EmitReferences bool
 	EmitFiles      bool
+	IncludeImports bool
 }
 
 // Result records what the runner produced. CLIArgs is the subset of Args that
@@ -144,6 +145,8 @@ func whenSatisfied(when string, args Args) bool {
 		return args.MinBodyLines > 0
 	case "extensions_set":
 		return args.Extensions != ""
+	case "include_imports_enabled":
+		return args.IncludeImports
 	}
 	return false
 }
@@ -164,5 +167,7 @@ func recordArg(cli map[string]any, when string, args Args) {
 		cli["min_body_lines"] = args.MinBodyLines
 	case "extensions_set":
 		cli["extensions"] = args.Extensions
+	case "include_imports_enabled":
+		cli["include_imports"] = true
 	}
 }

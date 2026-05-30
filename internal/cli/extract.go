@@ -34,6 +34,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	includeTests := fs.Bool("include-tests", false, "include test files")
 	emitRefs := fs.Bool("emit-references", false, "request references sibling")
 	emitFiles := fs.Bool("emit-files", false, "request files sibling")
+	includeImports := fs.Bool("include-imports", false, "emit kind:import consumer-edge rows (TypeScript)")
 	extensions := fs.String("extensions", "", "comma-separated file extensions")
 	minBody := fs.Int("min-body-lines", 0, "function-body line threshold")
 	extractorsDir := fs.String("extractors-dir", "", "explicit extractors directory")
@@ -93,6 +94,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		Extensions:     *extensions,
 		EmitReferences: *emitRefs,
 		EmitFiles:      *emitFiles,
+		IncludeImports: *includeImports,
 	}
 
 	catalogsDir := filepath.Join(cache.Dir, "catalogs")

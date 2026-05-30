@@ -49,13 +49,14 @@ type Runtime struct {
 }
 
 var validWhen = map[string]bool{
-	"shared_set":          true,
-	"touched_set":         true,
-	"include_tests_set":   true,
-	"references_enabled":  true,
-	"files_enabled":       true,
-	"min_body_lines_set":  true,
-	"extensions_set":      true,
+	"shared_set":              true,
+	"touched_set":             true,
+	"include_tests_set":       true,
+	"references_enabled":      true,
+	"files_enabled":           true,
+	"min_body_lines_set":      true,
+	"extensions_set":          true,
+	"include_imports_enabled": true,
 }
 
 // Parse reads and validates a manifest.toml at the given path.
