@@ -32,7 +32,7 @@ func TestEmbeddedQueriesPresent(t *testing.T) {
 			count++
 		}
 	}
-	if count < 27 {
+	if count < 28 {
 		t.Errorf("embedded FS has %d .jq files; expected at least 28 (27 queries + _canonical)", count)
 	}
 }
