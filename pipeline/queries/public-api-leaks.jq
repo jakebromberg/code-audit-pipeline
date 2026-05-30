@@ -91,7 +91,7 @@ include "_canonical";
         leaks: $leaks
       }
   ]
-| sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name)
+| sort_by_member_loc
 | .[]
 | if output_format == "jsonl" then
     @json

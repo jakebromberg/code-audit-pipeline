@@ -155,6 +155,13 @@ def loc_key(decl):
 # helpers and tests reference it. New code should prefer loc_key.
 def fn_location_key(decl): loc_key(decl);
 
+# Stable sort for single-member cluster rows: orders by the same four fields
+# that loc_key composes (package, file, line, name) on members[0]. Used by
+# dead-code, generic-convention-bound, public-api-leaks — every query whose
+# rows wrap a single decl into members[{...}] and need a deterministic order.
+def sort_by_member_loc:
+  sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name);
+
 # ─── Naming utilities ─────────────────────────────────────────────────────
 #
 # Qualified-name → enclosing-type extraction. Used by default-impl-candidates
