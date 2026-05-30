@@ -57,7 +57,13 @@
 # cluster_id format:  generic-function-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: generic-function-candidates
 #! shape: pair
+#! catalog: function-catalog
+#! arg: threshold number required
+#! arg: max_subs number required
+#! formats: text, jsonl
+#! desc: Function pairs whose bodies differ only by a small identifier-substitution set.
 
 include "_canonical";
 

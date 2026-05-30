@@ -37,7 +37,12 @@
 # mode preserves the role labels (`prod:` / `test:`); JSONL uses
 # `left` / `right` per the envelope contract.
 #
+#! query: test-prod-drift
 #! shape: pair
+#! catalog: type-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Near-duplicate pairs with XOR on is_test — fixture drift signal.
 
 include "_canonical";
 

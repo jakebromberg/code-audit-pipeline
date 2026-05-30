@@ -25,7 +25,12 @@
 # mode preserves the role labels (`main:` / `shared:`); JSONL uses
 # `left` / `right` per the envelope contract.
 #
+#! query: cross-package-shape-near-duplicates
 #! shape: pair
+#! catalog: type-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Re-typed contract: main vs shared shape-similar but name-different pairs.
 
 include "_canonical";
 

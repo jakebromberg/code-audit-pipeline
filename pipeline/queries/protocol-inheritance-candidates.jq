@@ -31,7 +31,12 @@
 # cluster_id format:  protocol-inheritance-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: protocol-inheritance-candidates
 #! shape: pair
+#! catalog: type-catalog
+#! arg: min_overlap number required
+#! formats: text, jsonl
+#! desc: Same-package protocols sharing >= N member names — sibling-with-missing-parent candidates.
 
 include "_canonical";
 

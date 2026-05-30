@@ -20,7 +20,12 @@
 # cluster_id format:  near-duplicates-any:LocA+LocB  (sorted location keys
 #                                                     — package:file:line:name)
 #
+#! query: near-duplicates-any
 #! shape: pair
+#! catalog: type-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Symmetric N-package near-duplicate detector.
 
 include "_canonical";
 

@@ -42,7 +42,12 @@
 # cluster_id format:  generic-struct-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: generic-struct-candidates
 #! shape: pair
+#! catalog: type-catalog
+#! arg: max_slot_diffs number required
+#! formats: text, jsonl
+#! desc: Type pairs whose member-name sets match exactly but type strings differ at <= N slots.
 
 include "_canonical";
 
