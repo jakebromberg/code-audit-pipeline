@@ -5,7 +5,6 @@ package extractor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -167,8 +166,3 @@ func recordArg(cli map[string]any, when string, args Args) {
 		cli["extensions"] = args.Extensions
 	}
 }
-
-// ErrNoCommand signals the caller passed an empty manifest selection — used
-// by the CLI layer to distinguish "extractor invocation failed" from
-// "extractor was filtered out by --catalog flags."
-var ErrNoCommand = errors.New("extractor: no command matched")

@@ -99,6 +99,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	extractorDir := filepath.Join(xdir, name)
 
 	ran := 0
+	var firstErr error
 	for _, cmd := range m.Commands {
 		if len(only) > 0 && !contains(only, cmd.Catalog) {
 			continue
@@ -106,23 +107,35 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		results, err := extractor.Run(ctx, extractorDir, cmd, args, catalogsDir)
 		if err != nil {
 			fmt.Fprintf(out, "audit: extract %s/%s: %v\n", name, cmd.Catalog, err)
-			return 1
+			firstErr = err
+			break
 		}
 		for _, r := range results {
 			outBase := filepath.Base(r.OutputPath)
 			if err := cache.PutCatalog(r.Catalog, outBase, r.CLIArgs); err != nil {
 				fmt.Fprintf(out, "audit: cache put %s: %v\n", r.Catalog, err)
-				return 1
+				firstErr = err
+				break
 			}
+		}
+		if firstErr != nil {
+			break
 		}
 		ran++
 	}
-	if ran == 0 {
+	if ran == 0 && firstErr == nil {
 		fmt.Fprintf(out, "audit: no [[command]] blocks matched (manifest has %d, filter selected 0)\n", len(m.Commands))
 		return 2
 	}
-	if err := cache.Save(); err != nil {
-		fmt.Fprintf(out, "audit: save cache: %v\n", err)
+	// Save what we have even on partial failure — catalog files for completed
+	// commands are already on disk, so meta.json must record them too.
+	if ran > 0 {
+		if err := cache.Save(); err != nil {
+			fmt.Fprintf(out, "audit: save cache: %v\n", err)
+			return 1
+		}
+	}
+	if firstErr != nil {
 		return 1
 	}
 	fmt.Fprintf(out, "audit: extract %s ran %d command(s)\n", name, ran)

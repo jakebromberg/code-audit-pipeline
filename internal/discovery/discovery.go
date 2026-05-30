@@ -1,12 +1,15 @@
 // Package discovery implements the lookup-order chain from ADR-0006:
 //
 //	1. Explicit flag (--queries-dir / --extractors-dir)
-//	2. $AUDIT_HOME/{pipeline/queries,extractors}/
-//	3. cwd-relative ./pipeline/queries, ./extractors
+//	2. cwd-relative ./pipeline/queries, ./extractors
+//	3. $AUDIT_HOME/{pipeline/queries,extractors}/
 //	4. Fallback: bundled embed.FS (queries only), ~/.config/audit/extractors/
 //
-// Resolution stops at the first hit. The chosen source is returned with a
-// human-readable label so `audit status` can surface it.
+// cwd-relative wins over $AUDIT_HOME so a contributor working in a repo
+// clone picks up their local edits even when $AUDIT_HOME is set (e.g., by
+// `audit init` writing to a shell profile). Resolution stops at the first
+// hit. The chosen source is returned with a human-readable label so
+// `audit status` can surface it.
 package discovery
 
 import (
@@ -50,16 +53,16 @@ func ResolveQueriesDir(opts QueryOpts, embedded fs.FS) (Source, error) {
 	if opts.Flag != "" {
 		candidates = append(candidates, struct{ path, label string }{opts.Flag, "--queries-dir " + opts.Flag})
 	}
+	candidates = append(candidates, struct{ path, label string }{
+		filepath.Join(cwd, "pipeline", "queries"),
+		"cwd-relative " + filepath.Join(cwd, "pipeline", "queries"),
+	})
 	if opts.AuditHome != "" {
 		candidates = append(candidates, struct{ path, label string }{
 			filepath.Join(opts.AuditHome, "pipeline", "queries"),
 			"$AUDIT_HOME (" + opts.AuditHome + ")",
 		})
 	}
-	candidates = append(candidates, struct{ path, label string }{
-		filepath.Join(cwd, "pipeline", "queries"),
-		"cwd-relative " + filepath.Join(cwd, "pipeline", "queries"),
-	})
 
 	for _, c := range candidates {
 		if hasCanonical(c.path) {
@@ -99,16 +102,16 @@ func ResolveExtractorsDir(opts ExtractorOpts) (string, string, error) {
 	if opts.Flag != "" {
 		candidates = append(candidates, struct{ path, label string }{opts.Flag, "--extractors-dir " + opts.Flag})
 	}
+	candidates = append(candidates, struct{ path, label string }{
+		filepath.Join(cwd, "extractors"),
+		"cwd-relative " + filepath.Join(cwd, "extractors"),
+	})
 	if opts.AuditHome != "" {
 		candidates = append(candidates, struct{ path, label string }{
 			filepath.Join(opts.AuditHome, "extractors"),
 			"$AUDIT_HOME (" + opts.AuditHome + ")",
 		})
 	}
-	candidates = append(candidates, struct{ path, label string }{
-		filepath.Join(cwd, "extractors"),
-		"cwd-relative " + filepath.Join(cwd, "extractors"),
-	})
 	if opts.HomeDir != "" {
 		candidates = append(candidates, struct{ path, label string }{
 			filepath.Join(opts.HomeDir, ".config", "audit", "extractors"),
