@@ -120,13 +120,18 @@ if [ -z "$catalog_files" ]; then
   exit 1
 fi
 
-echo "[1/3] Validating and uploading catalogs..." >&2
+echo "[1/4] Validating every catalog before any upload..." >&2
 
-# IFS protects against catalog names with spaces (shouldn't happen but cheap).
+# Validate all files first — only after every catalog passes do we touch
+# the bucket. Prevents the orphan-upload case where file A validates+uploads
+# then file B fails validation, leaving A stranded under the SHA prefix
+# with no latest.json. The subshell `exit 1` inside the pipe-then-read loop
+# wouldn't terminate the script, so we record failure to a tempfile and
+# check it after the loop.
+val_status="/tmp/publish-catalog-val.$$.status"
+: > "$val_status"
 echo "$catalog_files" | while IFS= read -r path; do
   filename=$(basename "$path")
-  kind="${filename%.json}"
-  # Schema check: must be the v1.1 wrapper object with the required fields.
   if ! jq -e '
         type == "object"
         and (.schema_version | type == "string")
@@ -136,15 +141,26 @@ echo "$catalog_files" | while IFS= read -r path; do
              or (.nodes | type == "array"))
       ' "$path" >/dev/null 2>&1; then
     echo "  REFUSED: $filename is not a v1.1 wrapper-shaped catalog" >&2
-    exit 1
+    echo "fail" >> "$val_status"
   fi
+done
+if [ -s "$val_status" ]; then
+  rm -f "$val_status"
+  echo "publish-catalog.sh: validation failed; nothing uploaded" >&2
+  exit 1
+fi
+rm -f "$val_status"
+
+echo "[2/4] Uploading catalogs..." >&2
+echo "$catalog_files" | while IFS= read -r path; do
+  filename=$(basename "$path")
   upload "$path" "${prefix}/${filename}"
   echo "  uploaded ${prefix}/${filename}" >&2
 done
 
-# We re-derive metadata in a second pass because the `while ... | read` loop
-# above runs in a subshell, so any vars set in there don't survive.
-echo "[2/3] Building latest.json pointer..." >&2
+# We re-derive metadata in a separate pass because the `while ... | read`
+# loop above runs in a subshell, so any vars set in there don't survive.
+echo "[3/4] Building latest.json pointer..." >&2
 echo "$catalog_files" | while IFS= read -r path; do
   filename=$(basename "$path")
   kind="${filename%.json}"
@@ -173,7 +189,7 @@ upload "$latest_tmp" "by-repo/${path_segment}/latest.json"
 echo "  wrote by-repo/${path_segment}/latest.json" >&2
 rm -f "$latest_tmp" "/tmp/publish-catalog-meta.$$.txt"
 
-echo "[3/3] Refreshing index.json..." >&2
+echo "[4/4] Refreshing index.json..." >&2
 if [ "$skip_refresh" -eq 1 ]; then
   echo "  skipped (--skip-refresh)" >&2
 else

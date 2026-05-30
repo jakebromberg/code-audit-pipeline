@@ -155,21 +155,24 @@ fi
 new_count=0
 cached_count=0
 fail_count=0
-seen_repos_file="$cache_dir/.fetch-seen-repos.tmp"
-: > "$seen_repos_file"
+# Only repos with at least one cached-or-fetched catalog count as "present
+# in cache." A repo whose every catalog fails to fetch does NOT count —
+# otherwise the script would exit 0 with an empty cache and downstream
+# `jq -s 'map(.entries) | add' */latest.json` would silently produce zero
+# results.
+present_repos_file="$cache_dir/.fetch-present-repos.tmp"
+: > "$present_repos_file"
 
 log "[2/3] Fetching catalog objects from $bucket_url"
 
 while IFS=$'\t' read -r repo key expected_sha; do
-  echo "$repo" >> "$seen_repos_file"
-  # Flatten path-segment: index already maps repo -> path_segment, but the
-  # key contains the segment, so we can just store under cache_dir/<key>.
   dest="$cache_dir/$key"
   if [ -f "$dest" ]; then
     actual_sha=$(sha256_of "$dest")
     if [ "$actual_sha" = "$expected_sha" ]; then
       log "  cached  $repo  $(basename "$key")"
       cached_count=$((cached_count + 1))
+      echo "$repo" >> "$present_repos_file"
       continue
     fi
   fi
@@ -178,6 +181,7 @@ while IFS=$'\t' read -r repo key expected_sha; do
     if [ "$actual_sha" = "$expected_sha" ]; then
       log "  fetched $repo  $(basename "$key")"
       new_count=$((new_count + 1))
+      echo "$repo" >> "$present_repos_file"
     else
       echo "  SHA MISMATCH $repo  $(basename "$key"): index=$expected_sha actual=$actual_sha" >&2
       rm -f "$dest"
@@ -191,13 +195,13 @@ done <<EOF
 $work_list
 EOF
 
-distinct_repos=$(sort -u "$seen_repos_file" | wc -l | tr -d ' ')
-rm -f "$seen_repos_file"
+present_repos=$(sort -u "$present_repos_file" | wc -l | tr -d ' ')
+rm -f "$present_repos_file"
 
-log "[3/3] Summary: $distinct_repos repos / $new_count fetched / $cached_count cached / $fail_count failed"
+log "[3/3] Summary: $present_repos repos present / $new_count fetched / $cached_count cached / $fail_count failed"
 log "Cache: $cache_dir"
 
-if [ "$distinct_repos" -eq 0 ]; then
+if [ "$present_repos" -eq 0 ]; then
   exit 1
 fi
 exit 0

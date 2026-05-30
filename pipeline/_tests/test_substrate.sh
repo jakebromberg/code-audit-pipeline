@@ -142,6 +142,19 @@ assert_nonzero_exit "$rc" "malformed index exits nonzero"
 assert_contains "$out" "malformed index.json" "error message mentions malformed"
 rm -rf "$SCRATCH" "$BAD_MOCK"
 
+echo "=== fetch-catalogs.sh: exits 1 when every fetch fails (regression for review feedback) ==="
+SCRATCH=$(mk_scratch)
+DEAD_MOCK=$(mk_scratch)
+# Build a "bucket" that has an index pointing at keys that don't exist.
+cp "$MOCK/index.json" "$DEAD_MOCK/"
+# Intentionally omit by-repo/* — every GET will fail.
+out=$(AUDIT_BUCKET_URL="file://$DEAD_MOCK" AUDIT_LOCAL_CACHE="$SCRATCH" \
+  bash "$PIPELINE/fetch-catalogs.sh" 2>&1)
+rc=$?
+assert_nonzero_exit "$rc" "all-failed fetch exits nonzero"
+assert_contains "$out" "0 repos present" "summary reports zero present repos"
+rm -rf "$SCRATCH" "$DEAD_MOCK"
+
 echo "=== fetch-catalogs.sh: sha256 mismatch handled ==="
 SCRATCH=$(mk_scratch)
 TAMPER_MOCK=$(mk_scratch)
@@ -190,6 +203,45 @@ assert_eq "2" "$a_catalogs" "fake-repo-a has 2 catalogs in rebuilt latest"
 a_sha=$(jq -r '.repos[] | select(.repo == "wxyc/fake-repo-a") | .latest.catalogs[] | select(.kind == "type-catalog") | .sha256' "$SCRATCH/index.json")
 assert_eq "0d733bd04c183bd79e59774d8e9a7cf20cd46463abfb8f8489491fb8030dce63" "$a_sha" \
   "rebuilt sha256 matches the canonical fixture value"
+rm -rf "$SCRATCH"
+
+echo "=== refresh-index.mjs: --bucket-fs preflight rejects nonexistent dir ==="
+out=$(node "$PIPELINE/refresh-index.mjs" --bucket-fs /tmp/does-not-exist-xyz123 2>&1)
+rc=$?
+assert_nonzero_exit "$rc" "nonexistent dir exits nonzero"
+assert_contains "$out" "not a directory" "error message names the missing dir"
+
+echo "=== refresh-index.mjs: latest.json points at older prefix than bucket newest (drift) ==="
+SCRATCH=$(mk_scratch)
+cp -r "$MOCK/." "$SCRATCH/"
+rm -f "$SCRATCH/index.json"
+# Plant a future snapshot under fake-repo-a (must use hex chars for the short_sha).
+mkdir -p "$SCRATCH/by-repo/fake-repo-a/2099-12-31T23-59-59Z_aabbcc1"
+cat > "$SCRATCH/by-repo/fake-repo-a/2099-12-31T23-59-59Z_aabbcc1/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+# Don't update latest.json — that's the drift scenario.
+out=$(node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" 2>&1)
+assert_contains "$out" "but bucket newest is" "drift warning surfaced"
+prefix=$(jq -r '.repos[] | select(.path_segment == "fake-repo-a") | .latest.prefix' "$SCRATCH/index.json")
+assert_eq "by-repo/fake-repo-a/2099-12-31T23-59-59Z_aabbcc1/" "$prefix" \
+  "rebuilt prefix reflects bucket newest (not stale latest.json)"
+short_sha=$(jq -r '.repos[] | select(.path_segment == "fake-repo-a") | .latest.short_sha' "$SCRATCH/index.json")
+assert_eq "aabbcc1" "$short_sha" "short_sha derived from prefix directory name"
+commit_sha=$(jq -r '.repos[] | select(.path_segment == "fake-repo-a") | .latest.commit_sha' "$SCRATCH/index.json")
+assert_eq "null" "$commit_sha" "commit_sha null when stale latest.json can't be trusted"
+rm -rf "$SCRATCH"
+
+echo "=== refresh-index.mjs: canonical repo name falls back to path-segment alone (no org guess) ==="
+SCRATCH=$(mk_scratch)
+mkdir -p "$SCRATCH/by-repo/org-less-repo/2026-05-30T10-00-00Z_aaa1111"
+cat > "$SCRATCH/by-repo/org-less-repo/2026-05-30T10-00-00Z_aaa1111/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+# Intentionally no latest.json — forces the fallback path.
+node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" >/dev/null 2>&1
+canonical=$(jq -r '.repos[0].repo' "$SCRATCH/index.json")
+assert_eq "org-less-repo" "$canonical" "canonical name == path_segment when latest.json absent (no wxyc/ guess)"
 rm -rf "$SCRATCH"
 
 echo "=== refresh-index.mjs: --known-repos surfaces missing repos ==="
@@ -309,6 +361,29 @@ out=$(bash "$PIPELINE/publish-catalog.sh" \
 rc=$?
 assert_nonzero_exit "$rc" "bare-array publish exits nonzero"
 assert_contains "$out" "REFUSED" "refusal message emitted"
+rm -rf "$PUB_BUCKET" "$PUB_CAT"
+
+echo "=== publish-catalog.sh: mixed-validity batch uploads NOTHING (no orphan SHA prefix) ==="
+PUB_BUCKET=$(mk_scratch)
+PUB_CAT=$(mk_scratch)
+# One good catalog, one bare-array (refused). Pre-fix: the good one
+# uploaded before the bad one's validation failed — leaving an orphan.
+cat > "$PUB_CAT/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+printf '[{"name":"x"}]\n' > "$PUB_CAT/function-catalog.json"
+out=$(bash "$PIPELINE/publish-catalog.sh" \
+  --repo wxyc/mixed --sha bbbbbbb1234567 --catalogs-dir "$PUB_CAT" \
+  --bucket-fs "$PUB_BUCKET" --skip-refresh 2>&1)
+rc=$?
+assert_nonzero_exit "$rc" "mixed-batch publish exits nonzero"
+if [ -d "$PUB_BUCKET/by-repo/wxyc-mixed" ]; then
+  FAIL=$((FAIL + 1))
+  echo "  ✗ orphan SHA prefix created in the bucket"
+else
+  PASS=$((PASS + 1))
+  echo "  ✓ bucket untouched on validation failure"
+fi
 rm -rf "$PUB_BUCKET" "$PUB_CAT"
 
 echo "=== publish-catalog.sh: --skip-refresh leaves index alone ==="

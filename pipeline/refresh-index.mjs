@@ -36,7 +36,7 @@
 //
 // Stderr: one line per repo summary, plus a header/footer.
 
-import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync, renameSync, unlinkSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { join, dirname, posix } from 'node:path';
@@ -78,6 +78,13 @@ const STALE_DAYS = values['stale-days'] ? Number.parseInt(values['stale-days'], 
 // --- Backend abstraction -----------------------------------------------------
 
 function makeFilesystemBackend(rootDir) {
+  // Friendly preflight — without this the first putBytes inside the
+  // by-repo tree crashes with a raw ENOENT mkdir stack.
+  try {
+    if (!statSync(rootDir).isDirectory()) throw new Error('not a directory');
+  } catch (e) {
+    throw new Error(`refresh-index.mjs: --bucket-fs DIR is not a directory: ${rootDir} (${e.message})`);
+  }
   return {
     kind: 'fs',
     rootDir,
@@ -102,7 +109,12 @@ function makeFilesystemBackend(rootDir) {
     getBytes(key) {
       return readFileSync(join(rootDir, key));
     },
-    putBytes(key, bytes) {
+    // `_opts` is accepted for signature parity with the S3 backend's
+    // `{ifMatch}` — fs writes are atomic per rename and don't need CAS.
+    headETag() {
+      return null;
+    },
+    putBytes(key, bytes, _opts) {
       const dest = join(rootDir, key);
       mkdirSync(dirname(dest), { recursive: true });
       const tmp = `${dest}.tmp.${process.pid}`;
@@ -144,14 +156,46 @@ function makeS3Backend(bucket, endpoint) {
       const tmp = `/tmp/refresh-index-${process.pid}-${Date.now()}.bin`;
       sh(['s3api', 'get-object', '--bucket', bucket, '--key', key, tmp]);
       const bytes = readFileSync(tmp);
-      try { require('node:fs').unlinkSync(tmp); } catch {}
+      try { unlinkSync(tmp); } catch {}
       return bytes;
     },
-    putBytes(key, bytes) {
+    // Read the current ETag of `key` for an optimistic-concurrency PUT.
+    // Returns null if the object doesn't exist yet (first publish).
+    headETag(key) {
+      const res = spawnSync('aws', ['--endpoint-url', endpoint, 's3api', 'head-object', '--bucket', bucket, '--key', key], {
+        encoding: 'utf8',
+      });
+      if (res.status !== 0) return null;
+      try {
+        const parsed = JSON.parse(res.stdout || '{}');
+        return parsed.ETag ?? null;
+      } catch {
+        return null;
+      }
+    },
+    // S3 PUT. When `ifMatch` is set, the operation only succeeds if the
+    // remote ETag still matches — the brief's prescribed concurrency
+    // protocol. Throws a tagged Error on 412 so the caller's retry loop
+    // can recognize and back off.
+    putBytes(key, bytes, { ifMatch = null } = {}) {
       const tmp = `/tmp/refresh-index-put-${process.pid}-${Date.now()}.bin`;
       writeFileSync(tmp, bytes);
-      sh(['s3api', 'put-object', '--bucket', bucket, '--key', key, '--body', tmp, '--content-type', 'application/json']);
-      try { require('node:fs').unlinkSync(tmp); } catch {}
+      try {
+        const args = ['s3api', 'put-object', '--bucket', bucket, '--key', key, '--body', tmp, '--content-type', 'application/json'];
+        if (ifMatch) args.push('--if-match', ifMatch);
+        const res = spawnSync('aws', ['--endpoint-url', endpoint, ...args], { encoding: 'utf8' });
+        if (res.status !== 0) {
+          const stderr = res.stderr ?? '';
+          if (stderr.includes('PreconditionFailed') || stderr.includes('412')) {
+            const e = new Error(`precondition failed for ${key}`);
+            e.__precondition = true;
+            throw e;
+          }
+          throw new Error(`aws s3api put-object ${key} failed (status ${res.status}): ${stderr}`);
+        }
+      } finally {
+        try { unlinkSync(tmp); } catch {}
+      }
     },
   };
 }
@@ -192,13 +236,14 @@ for (const pathSegment of pathSegments) {
   const objs = reposByPath.get(pathSegment);
 
   // The `latest.json` pointer carries the canonical repo name; harvest it
-  // there. Without one, fall back to the path segment as the name.
-  let canonicalRepo = `wxyc/${pathSegment}`;
+  // there. Without one, fall back to the path segment alone — no org guess.
+  let canonicalRepo = pathSegment;
+  let pointerData = null;
   const latestPointer = objs.find((o) => o.suffix === 'latest.json');
   if (latestPointer) {
     try {
-      const parsed = JSON.parse(backend.getBytes(latestPointer.key).toString());
-      if (typeof parsed.repo === 'string') canonicalRepo = parsed.repo;
+      pointerData = JSON.parse(backend.getBytes(latestPointer.key).toString());
+      if (typeof pointerData.repo === 'string') canonicalRepo = pointerData.repo;
     } catch (e) {
       process.stderr.write(`  WARN ${pathSegment}: latest.json unparseable (${e.message})\n`);
     }
@@ -254,21 +299,25 @@ for (const pathSegment of pathSegments) {
     });
   }
 
-  // Derive commit_sha + short_sha from the latest-pointer if present, else
-  // from the ts-prefix (which embeds the short sha).
+  // Derive commit_sha + short_sha + published_at. `latest.json`'s data is
+  // only trusted when its `prefix` field actually matches the chosen
+  // `latestPrefix` — otherwise we're in a drift state (bucket has a newer
+  // snapshot than the pointer references) and the pointer is stale.
   let commitSha = null;
-  let shortSha = latestTs.split('_')[1] ?? null;
+  const shortSha = latestTs.split('_')[1] ?? null;
   let publishedAt = null;
-  if (latestPointer) {
-    try {
-      const parsed = JSON.parse(backend.getBytes(latestPointer.key).toString());
-      commitSha = parsed.commit_sha ?? commitSha;
-      publishedAt = parsed.published_at ?? null;
-    } catch {}
+  const pointerMatchesLatest = pointerData
+    && typeof pointerData.prefix === 'string'
+    && pointerData.prefix === latestPrefix;
+  if (pointerMatchesLatest) {
+    commitSha = pointerData.commit_sha ?? null;
+    publishedAt = pointerData.published_at ?? null;
+  } else if (pointerData) {
+    process.stderr.write(`  WARN ${pathSegment}: latest.json points at ${pointerData.prefix ?? '<no prefix>'} but bucket newest is ${latestPrefix} — deriving from prefix\n`);
   }
   if (!publishedAt) {
-    // Parse `2026-05-30T10-00-00Z` back into an ISO timestamp by undoing the
-    // dash-substitution in the time portion.
+    // Parse `2026-05-30T10-00-00Z` back into an ISO timestamp by undoing
+    // the dash-substitution in the time portion.
     const tsPart = latestTs.split('_')[0];
     publishedAt = tsPart.replace(/-(\d{2})-(\d{2})Z$/, ':$1:$2Z');
   }
@@ -337,6 +386,26 @@ if (values['dry-run']) {
   process.stdout.write(serialized);
   process.stderr.write(`\nDry-run: would write ${serialized.length} bytes to index.json\n`);
 } else {
-  backend.putBytes('index.json', Buffer.from(serialized));
+  // S3 backend: ETag-CAS so a concurrent publisher's writes aren't silently
+  // clobbered. Brief §2.5 / §3.4 / §7.2 prescribe this. Filesystem backend
+  // ignores `ifMatch` (atomic rename is the contention model there).
+  const MAX_RETRIES = 5;
+  let attempt = 0;
+  while (true) {
+    const ifMatch = backend.kind === 's3' ? backend.headETag('index.json') : null;
+    try {
+      backend.putBytes('index.json', Buffer.from(serialized), { ifMatch });
+      break;
+    } catch (e) {
+      if (e.__precondition && attempt < MAX_RETRIES - 1) {
+        attempt += 1;
+        const backoffMs = Math.min(2000, 100 * 2 ** attempt) + Math.floor(Math.random() * 100);
+        process.stderr.write(`  index.json ETag-CAS conflict (attempt ${attempt}/${MAX_RETRIES}); retrying in ${backoffMs}ms\n`);
+        await new Promise((r) => setTimeout(r, backoffMs));
+        continue;
+      }
+      throw e;
+    }
+  }
   process.stderr.write(`\nWrote index.json (${serialized.length} bytes, ${repos.length} repos, coverage ${coverage.ok}/${coverage.total_known_repos} ok)\n`);
 }
