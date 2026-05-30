@@ -21,7 +21,12 @@
 #   function-duplicates-exact:Loc+Loc+...   (sorted by package:file:line:name)
 #   function-duplicates-near:Loc+Loc        (sorted)
 #
+#! query: function-duplicates
 #! shape: cluster, pair
+#! catalog: function-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Function-body duplicates — exact (cluster) and near (pair) sections.
 
 include "_canonical";
 

@@ -17,7 +17,11 @@
 #   file-duplicates-exact:pkg:path+pkg:path+...   (sorted; package-qualified repo-relative paths)
 #   file-duplicates-norm:pkg:path+pkg:path+...    (sorted; package-qualified repo-relative paths)
 #
+#! query: file-duplicates
 #! shape: cluster
+#! catalog: file-hashes
+#! formats: text, jsonl
+#! desc: Files with identical content — exact-byte and whitespace-normalized sections.
 
 include "_canonical";
 
