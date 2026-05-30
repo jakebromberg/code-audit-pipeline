@@ -554,6 +554,52 @@ Every JSONL row conforms to one of three shape envelopes. The `shape:` field on 
 
 **Field-name reservation.** Within an envelope, the reserved field names are: `cluster_id`, `query`, `shape`, `members`, `left`, `right`, plus the `left_*`/`right_*` paired variants. Queries must not emit unrelated payload under these names. The reserved set may grow in future schema bumps (`catalog_format` version); back-compat removals follow the same deprecation cycle as catalog schema changes.
 
+### Front-matter grammar (post-PR-2, [ADR-0002](adr/0002-hybrid-registration.md))
+
+Each `.jq` query under `pipeline/queries/` carries a header block of single-line `#! key: value` directives that the future `audit` binary parses to register the query. The lines are jq comments — naked `jq` invocations are unaffected. `_canonical.jq` (library, never run standalone) does not carry front-matter.
+
+Recognized keys (PR 2 set; future versions may extend):
+
+| Key | Cardinality | Purpose |
+|---|---|---|
+| `query` | 1 | Stable identifier matching the `query:` field emitted on JSONL rows. Used as the `audit query <name>` selector. Must be unique across files. |
+| `shape` | 1 or 2 (comma-sep) | Cluster envelope shape — `cluster`, `pair`, or `metric`. Dual-section queries (`function-duplicates`) list both. The shape mirrors what each emitted row's `shape:` field carries. |
+| `catalog` | 1 or N (comma-sep) | Catalog kind(s) the query consumes. First entry is the positional input (jq sees it via `.entries[]`); trailing entries are `--slurpfile` mounts. |
+| `arg` | 0..N | `--argjson` / `--arg` flags the query requires. Triplet form: `arg: <name> <type> <default-or-required>`. `<type>` ∈ `number`/`string`/`json`. |
+| `env` | 0..N | Environment-variable knobs. Triplet form: `env: <NAME> <type> <default-or-empty>`. |
+| `formats` | 1 | Comma-separated `OUTPUT_FORMAT` values supported. Always `text, jsonl` for queries that emit JSONL; `text` only for ones that don't. |
+| `desc` | 1 | One-line description (≤ 100 chars). Surfaces in `audit query --help`. |
+| `version` | 0..1 | Front-matter grammar version (default 1 when absent). |
+
+**Worked example** — `exact-duplicates.jq`:
+
+```jq
+# exact-duplicates.jq — find type clusters with the same shape_sig
+# ...
+#! query: exact-duplicates
+#! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Cluster types whose shape_sig is identical (byte-equal field+type set).
+
+include "_canonical";
+...
+```
+
+The PR-2 integration suite ([`pipeline/queries/_tests/test_queries_integration.sh`](../pipeline/queries/_tests/test_queries_integration.sh)) validates: every required key present, `query:` values unique, `shape:` values from the reserved set, every `arg:` paired with `--argjson`/`--arg` use in the file, every `env: <NAME>` paired with `$ENV.NAME` use. PR 3's binary parser will run the same checks at registration time.
+
+### Extractor `manifest.toml` (post-PR-2, [ADR-0002](adr/0002-hybrid-registration.md))
+
+Each extractor directory (`extractors/typescript/`, `extractors/swift/`, `extractors/file-hashes/`) carries a `manifest.toml` declaring extractor identity, runtime prerequisites, and per-catalog invocation contract. Read by the future `audit` binary; the extractor scripts themselves are unchanged.
+
+Schema (versioned via `schema_version`):
+
+- `[extractor]` — `name`, `language`, `version`, `description`.
+- `[[command]]` (one or more) — per catalog kind the extractor produces. Fields: `catalog`, `output_file`, `invocation` (token list with `{root}`, `{output}`, `{shared}`, `{touched}`, … placeholders), `optional_args` (inline tables with activation conditions), `sibling_outputs` (artifacts emitted under additional catalog kinds when activated).
+- `[runtime]` — `requires` (prereq list the binary checks before invoking) and `setup_hint` (one-line install pointer surfaced on failure).
+
+See [`extractors/typescript/manifest.toml`](../extractors/typescript/manifest.toml) for the canonical example (TypeScript produces both `type-catalog` and `function-catalog`, with `references-graph` as a sibling output activated by the `--emit-references-graph` flag).
+
 ### `cluster_id` formats (substrate-emitted, stable)
 
 Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonical.jq`. The format is content-addressed: the same set of declarations always produces the same cluster_id, regardless of which trial or invocation surfaces them.
