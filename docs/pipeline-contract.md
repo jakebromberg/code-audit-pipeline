@@ -5,7 +5,7 @@ Every extractor in `extractors/<language>/` emits the same JSON shape so cluster
 The substrate has four catalog kinds today, each in its own JSON file:
 
 - `type-catalog.json` — type / interface / Zod / Drizzle declarations (shape-of-named-members).
-- `function-catalog.json` — function / method / arrow-function declarations (body-of-named-callable).
+- `function-catalog.json` — function / method / arrow-function declarations. Carries body-of-named-callable data (body_hash, body_lines for duplication clustering) **and** signature-of-named-callable data (typed params, return ref, outgoing references for cross-catalog type resolution).
 - `file-hashes.json` — file-level content hashes (raw and whitespace-normalized).
 - `package-graph.json` — inter-package dependency edges (V7 §6.5; see [Package graph](#package-graph-package-graphjson) below).
 
@@ -312,40 +312,78 @@ The AST-based extensions noted above (Swift `XCTestCase`, Rust `#[cfg(test)]`) f
 
 ## Function catalog (`function-catalog.json`)
 
-The function catalog is a single JSON array. Each entry describes one declared function-like construct (function declaration, class method, arrow function or function expression assigned to a named binding).
+The function catalog is a top-level **wrapper object** (schema v1.1) carrying schema version, extractor provenance, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
 
 ```jsonc
-[
-  {
-    "name": "betterAuthSessionToAuthenticationData",
-    "kind": "function",                          // function | method | arrow-function | function-expression
-    "package": "main",
-    "file": "lib/features/authentication/utilities.ts",
-    "line": 89,
-    "generated": false,
-    "exported": true,
-    "async": false,
-    "param_count": 1,
-    "param_names": ["session"],
-    "body_line_count": 48,                       // after normalization (comments stripped, blank lines dropped)
-    "body_length": 1500,                         // chars of normalized body
-    "body_hash": "<sha256 of normalized body>",  // exact-equality clustering
-    "body_lines": [                              // sorted-unique normalized non-empty lines
-      "const authority = mapRoleToAuthorization(roleToMap);",
-      "const token = session.session?.token;",
-      "…"
-    ]
-  }
-]
+{
+  "schema_version": "1.1",
+  "extractor": {
+    "language": "typescript",
+    "name": "function-catalog",
+    "version": "0.5.0"
+  },
+  "entries": [
+    {
+      "name": "betterAuthSessionToAuthenticationData",
+      "kind": "function",                          // function | method | arrow-function | function-expression
+      "package": "main",
+      "file": "lib/features/authentication/utilities.ts",
+      "line": 89,
+      "generated": false,
+      "exported": true,
+      "async": false,
+      "is_test": false,                            // file-path derived, same patterns as type-catalog
+      "touched_in_window": false,                  // from --touched JSON list
+      "synthetic": false,                          // always false; reserved for future
+
+      "param_count": 1,
+      "param_names": ["session"],
+
+      // Body-level data (duplication clustering). NULL when normalized body
+      // has fewer than --min-body-lines lines (default 3). The row is still
+      // emitted so signature-level data is available for one-liner functions.
+      "body_hash": "<sha256 of normalized body>",  // null for short bodies
+      "body_line_count": 48,                       // null for short bodies
+      "body_length": 1500,                         // null for short bodies
+      "body_lines": ["..."],                       // null for short bodies
+
+      // Signature-level data (cross-catalog type resolution).
+      "generics": "T,U",                           // comma-joined; empty string if none
+      "params": [
+        {
+          "name": "session",
+          "type_ref": "BetterAuthSession",         // single ident or null for primitives / inline shapes
+          "type_refs": [                           // full deduped set; same shape as type-catalog .references[]
+            { "name": "BetterAuthSession", "kind": "type-ref" }
+          ]
+        }
+      ],
+      "return_ref": "AuthenticationData",          // single ident or null
+      "references": [                              // sorted union of params[].type_refs + return_ref
+        { "name": "AuthenticationData", "kind": "type-ref" },
+        { "name": "BetterAuthSession",  "kind": "type-ref" }
+      ],
+      "references_count": 2,                       // == references | length
+
+      "signature_index": 0                         // 0 for non-overloaded; >0 for additional overload heads
+    }
+  ]
+}
 ```
 
 **Method-name qualification.** For class methods, `name` is `ClassName.methodName`. For methods on anonymous classes, just the method name.
 
 **Body normalization.** Comments (line `//` and block `/* */`) are stripped, internal whitespace runs collapsed to single spaces, each line trimmed, blank lines dropped. `body_hash` is sha256 of `body_lines.join('\n')`. `body_lines` is also de-duplicated and sorted, so it can serve as the input set for Jaccard pairwise comparison without further work.
 
-**Skip rules.** Functions with `< --min-body-lines` (default 3) normalized lines are not emitted — one-liners and trivial stubs aren't useful duplication signal. Generated files (`*.d.ts`, `generated/`) are marked `generated: true` like the type catalog.
+**Body-fields gating.** Functions whose normalized body has fewer than `--min-body-lines` (default 3) lines emit a row with `body_hash` / `body_lines` / `body_line_count` / `body_length` all `null`. Body-level cluster queries (`function-duplicates.jq`, `generic-function-candidates.jq`, `default-impl-candidates.jq`) early-filter with `select(.body_hash != null)`. Signature-level queries (`public-api-leaks.jq`) consume rows regardless of body presence — exported one-liner functions still need leak detection.
 
-Used by `pipeline/queries/function-duplicates.jq`, which emits two sections: exact body-hash clusters (size ≥ 2) and pairwise Jaccard near-duplicates on `body_lines` above a threshold (default 0.7).
+**Signature-level fields.** `type_ref` is the single-identifier form of a `TypeReferenceNode`; `null` for primitives, unions, anonymous inline shapes. `type_refs` is the full deduped set of references inside the param's type (handles `Foo | Bar`, generics expansion). The function-level `references` is the sorted-deduped union of all `params[].type_refs` plus the `return_ref` identifier (when non-null), with generics-bound names filtered out — so `function f<T>(x: T): T` records zero refs, not three. Resolution semantics match the type-catalog's `references[]`: name-only, unqualified, resolved by downstream queries against the type-catalog index.
+
+**Overloaded signatures.** TypeScript allows multiple declaration heads sharing one implementation body. Each head emits its own row with `signature_index` 0..N (0 = first declared head). The implementation head is the one with non-null `body_hash`. Overload-naive queries can ignore `signature_index`; overload-aware queries can dedupe by `(name, package, file)`.
+
+**Skip rules.** Generated files (`*.d.ts`, `generated/`) are marked `generated: true` like the type catalog. Tests are always extracted; `is_test` flag derived from the same file-path patterns the type catalog uses.
+
+Used by `pipeline/queries/function-duplicates.jq` (body clustering), `pipeline/queries/public-api-leaks.jq` (signature-level type leak detection — joins via `--slurpfile types type-catalog.json`), `pipeline/queries/generic-function-candidates.jq`, `pipeline/queries/default-impl-candidates.jq`.
 
 ## File-hash catalog (`file-hashes.json`)
 

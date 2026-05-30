@@ -13,6 +13,14 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from '
 import { join, relative, resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+  BUILTIN_TYPE_DENYLIST,
+  extractReferences,
+  genericsList,
+  getLeftmostIdentifierText,
+  pushNamedRef,
+  refsForDecl,
+} from './_lib/references.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
@@ -64,34 +72,9 @@ const TOUCHED = values.touched
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
 
-// Built-in / utility type names excluded from `references` extraction. Without
-// this filter, every async function's `Promise<X>` and every projection's
-// `Pick<X, …>` would dominate the graph, with `Promise` and `Pick` becoming
-// the highest-degree nodes. Keeping the list in one place makes adding TS-lib
-// additions (e.g., `NoInfer` from 5.4) a one-line change.
-const BUILTIN_TYPE_DENYLIST = new Set([
-  // Generic utility types
-  'Pick', 'Omit', 'Partial', 'Required', 'Readonly', 'Record', 'NonNullable',
-  'Awaited', 'Parameters', 'ReturnType', 'ConstructorParameters', 'InstanceType',
-  'ThisParameterType', 'OmitThisParameter', 'Uppercase', 'Lowercase',
-  'Capitalize', 'Uncapitalize', 'NoInfer', 'Exclude', 'Extract',
-  // Drizzle infer helpers — these are first-class on `infer_ref`, so treating
-  // them as plain references would duplicate the structured signal noisily.
-  'InferSelectModel', 'InferInsertModel',
-  // Containers
-  'Array', 'ReadonlyArray', 'Map', 'ReadonlyMap', 'Set', 'ReadonlySet',
-  'WeakMap', 'WeakSet',
-  // Async / iteration
-  'Promise', 'PromiseLike', 'Iterable', 'Iterator', 'AsyncIterable',
-  'AsyncIterator', 'Generator', 'AsyncGenerator', 'IterableIterator',
-  // Built-in objects
-  'Date', 'RegExp', 'Error', 'URL', 'URLSearchParams', 'Blob', 'ArrayBuffer',
-  'Uint8Array', 'Int8Array', 'Uint16Array', 'Int16Array', 'Uint32Array',
-  'Int32Array', 'Float32Array', 'Float64Array', 'BigInt64Array',
-  'BigUint64Array', 'Uint8ClampedArray', 'DataView', 'SharedArrayBuffer',
-  // Primitive wrappers
-  'Object', 'String', 'Number', 'Boolean', 'Symbol', 'BigInt', 'Function',
-]);
+// BUILTIN_TYPE_DENYLIST, extractReferences, pushNamedRef, refsForDecl,
+// getLeftmostIdentifierText, genericsList are imported from _lib/references.mjs
+// (shared with function-catalog.mjs).
 
 // --- Sibling-shared-package detection (warning only) ---
 
@@ -304,90 +287,6 @@ function isInferModelType(typeNode, sf) {
 
 function exportedMod(node) {
   return !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
-}
-
-function genericsList(node) {
-  return node.typeParameters?.map((p) => p.name.text).join(',') ?? null;
-}
-
-// Leftmost identifier extraction for `QualifiedName` chains
-// (`Namespace.Inner.Type` → `Namespace`). Mirrors the resolution rule the
-// downstream (`package, name`) lookup uses — the leftmost is what
-// distinguishes namespaces, not the deepest segment.
-function getLeftmostIdentifierText(typeName) {
-  if (typeName.kind === ts.SyntaxKind.Identifier) return typeName.text;
-  if (typeName.kind === ts.SyntaxKind.QualifiedName) return getLeftmostIdentifierText(typeName.left);
-  return typeName.getText ? typeName.getText() : null;
-}
-
-// Recursive walker over TS type nodes. Adds user-defined type references to
-// `sink`, threading `scope` (a Set of in-scope type-parameter names) so
-// generics like `interface Foo<T> { x: T }` don't emit `T` as a reference.
-// Function and mapped types introduce new scopes — the new scope is a child
-// Set union, never a mutation of the parent.
-function extractReferences(typeNode, sf, scope, sink) {
-  if (!typeNode) return;
-
-  // TypeReference / TypeQuery / ImportType all share the same shape: pull a
-  // leftmost-identifier out of a name node, filter, recurse type arguments.
-  if (ts.isTypeReferenceNode(typeNode))  return pushNamedRef(typeNode.typeName,  typeNode, sf, scope, sink);
-  if (ts.isTypeQueryNode(typeNode))      return pushNamedRef(typeNode.exprName,  typeNode, sf, scope, sink);
-  if (ts.isImportTypeNode(typeNode))     return pushNamedRef(typeNode.qualifier, typeNode, sf, scope, sink);
-
-  if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
-    const child = new Set(scope);
-    if (typeNode.typeParameters) {
-      for (const tp of typeNode.typeParameters) child.add(tp.name.text);
-      for (const tp of typeNode.typeParameters) {
-        if (tp.constraint) extractReferences(tp.constraint, sf, child, sink);
-      }
-    }
-    typeNode.parameters?.forEach((p) => { if (p.type) extractReferences(p.type, sf, child, sink); });
-    if (typeNode.type) extractReferences(typeNode.type, sf, child, sink);
-    return;
-  }
-
-  if (ts.isMappedTypeNode(typeNode) && typeNode.typeParameter) {
-    const child = new Set(scope);
-    child.add(typeNode.typeParameter.name.text);
-    if (typeNode.typeParameter.constraint) {
-      extractReferences(typeNode.typeParameter.constraint, sf, scope, sink);
-    }
-    // `as` rename clause (TS 4.1+): `{[K in keyof T as `prefix_${S & string}`]: ...}`.
-    // S only appears in `nameType` — without this recurse it would never surface.
-    if (typeNode.nameType) extractReferences(typeNode.nameType, sf, child, sink);
-    if (typeNode.type) extractReferences(typeNode.type, sf, child, sink);
-    return;
-  }
-
-  ts.forEachChild(typeNode, (c) => extractReferences(c, sf, scope, sink));
-}
-
-function pushNamedRef(nameNode, typeNode, sf, scope, sink) {
-  if (nameNode) {
-    const name = getLeftmostIdentifierText(nameNode);
-    if (name && !scope.has(name) && !BUILTIN_TYPE_DENYLIST.has(name)) {
-      sink.add(name);
-    }
-  }
-  typeNode.typeArguments?.forEach((arg) => extractReferences(arg, sf, scope, sink));
-}
-
-// Collect `references` for a declaration. Walks each type-parameter constraint
-// (`<T extends Item>` adds Item), then walks every body node passed in
-// `bodyNodes` with the declaration's type parameters in scope. Returns sorted,
-// deduplicated `{name, kind: "type-ref"}` array.
-function refsForDecl(node, sf, bodyNodes) {
-  const scope = new Set();
-  const sink = new Set();
-  if (node.typeParameters) {
-    for (const tp of node.typeParameters) scope.add(tp.name.text);
-    for (const tp of node.typeParameters) {
-      if (tp.constraint) extractReferences(tp.constraint, sf, scope, sink);
-    }
-  }
-  for (const n of bodyNodes) extractReferences(n, sf, scope, sink);
-  return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
 }
 
 // Heritage-clause supertype names for `interface X extends A, B {}`. Returns a
