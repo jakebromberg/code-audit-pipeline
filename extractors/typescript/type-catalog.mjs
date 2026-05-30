@@ -22,6 +22,8 @@ import {
   refsForDecl,
 } from './_lib/references.mjs';
 import { isTestPath } from './_lib/paths.mjs';
+import { compareBy } from './_lib/sort.mjs';
+import { writeSiblingArtifact } from './_lib/artifacts.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
@@ -581,12 +583,7 @@ function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
       const { package: pkg, path: rpath } = resolveImportSpec(r.spec, filePath);
       return { package: pkg, path: rpath, type_only: r.type_only, kind: r.kind, line: r.line };
     });
-    imports.sort((a, b) => {
-      if (a.package !== b.package) return a.package < b.package ? -1 : 1;
-      if (a.path !== b.path) return a.path < b.path ? -1 : 1;
-      if (a.kind !== b.kind) return a.kind < b.kind ? -1 : 1;
-      return a.line - b.line;
-    });
+    imports.sort(compareBy((r) => r.package, (r) => r.path, (r) => r.kind, (r) => r.line));
     fileRow = {
       path: relPath,
       package: pkgName,
@@ -800,16 +797,15 @@ if (values['emit-references-graph']) {
       });
     }
   }
-  edges.sort((a, b) => {
-    if (a.from.package !== b.from.package) return a.from.package < b.from.package ? -1 : 1;
-    if (a.from.name    !== b.from.name)    return a.from.name    < b.from.name    ? -1 : 1;
-    if (a.to.package   !== b.to.package)   return a.to.package   < b.to.package   ? -1 : 1;
-    if (a.to.name      !== b.to.name)      return a.to.name      < b.to.name      ? -1 : 1;
-    return 0;
+  edges.sort(compareBy((e) => e.from.package, (e) => e.from.name, (e) => e.to.package, (e) => e.to.name));
+  writeSiblingArtifact({
+    path: values['emit-references-graph'],
+    schema_version: SCHEMA_VERSION,
+    extractorMeta: { language: 'typescript', name: 'type-catalog', version: EXTRACTOR_VERSION },
+    payloadKey: 'edges',
+    payload: edges,
+    summary: `Wrote references graph (${edges.length} edges) to ${values['emit-references-graph']}`,
   });
-  const graph = { schema_version: SCHEMA_VERSION, edges };
-  writeFileSync(values['emit-references-graph'], JSON.stringify(graph, null, 2));
-  process.stderr.write(`Wrote references graph (${edges.length} edges) to ${values['emit-references-graph']}\n`);
 }
 
 // --- Sibling files.json artifact ---
@@ -818,23 +814,16 @@ if (values['emit-references-graph']) {
 // Documented in docs/pipeline-contract.md §files artifact. First consumer is
 // pipeline/queries/cross-package-backward-imports.jq.
 if (EMIT_FILES) {
-  fileEntries.sort((a, b) => {
-    if (a.package !== b.package) return a.package < b.package ? -1 : 1;
-    if (a.path !== b.path) return a.path < b.path ? -1 : 1;
-    return 0;
-  });
-  const filesArtifact = {
-    schema_version: SCHEMA_VERSION,
-    extractor: {
-      language: 'typescript',
-      name: 'type-catalog',
-      version: EXTRACTOR_VERSION,
-    },
-    entries: fileEntries,
-  };
+  fileEntries.sort(compareBy((f) => f.package, (f) => f.path));
   const edgeCount = fileEntries.reduce((acc, f) => acc + f.imports.length, 0);
-  writeFileSync(values['emit-files'], JSON.stringify(filesArtifact, null, 2));
-  process.stderr.write(`Wrote files (${fileEntries.length} files, ${edgeCount} edges) to ${values['emit-files']}\n`);
+  writeSiblingArtifact({
+    path: values['emit-files'],
+    schema_version: SCHEMA_VERSION,
+    extractorMeta: { language: 'typescript', name: 'type-catalog', version: EXTRACTOR_VERSION },
+    payloadKey: 'entries',
+    payload: fileEntries,
+    summary: `Wrote files (${fileEntries.length} files, ${edgeCount} edges) to ${values['emit-files']}`,
+  });
 }
 
 process.exit(mainFiles.length > 0 ? 0 : 1);

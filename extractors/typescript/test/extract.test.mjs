@@ -238,6 +238,8 @@ test('--emit-references-graph writes a sibling references.json with sorted, dedu
     assert.ok(existsSync(refsPath), 'references.json should be created');
     const refs = JSON.parse(readFileSync(refsPath, 'utf8'));
     assert.equal(refs.schema_version, '1.1');
+    assert.deepEqual(refs.extractor, { language: 'typescript', name: 'type-catalog', version: refs.extractor.version });
+    assert.match(refs.extractor.version, /^\d+\.\d+\.\d+$/, 'extractor.version must be semver-shaped');
     assert.ok(Array.isArray(refs.edges));
     assert.ok(refs.edges.length > 0, 'expected at least one edge');
     for (const edge of refs.edges) {
