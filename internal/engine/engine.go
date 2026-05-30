@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/itchyny/gojq"
 )
@@ -202,6 +203,17 @@ func runSystemJQ(ctx context.Context, opts Opts) error {
 	if opts.QueryFile == "" {
 		return errors.New("engine: system jq requires QueryFile")
 	}
+	libDir := opts.LibDir
+	if libDir == "" && opts.LibFS != nil {
+		// Embedded queries: materialize the library tree to a temp dir so jq
+		// can resolve `include "_canonical";` via -L.
+		dir, err := materializeLib(opts.LibFS)
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(dir)
+		libDir = dir
+	}
 	args := []string{}
 	if opts.Raw {
 		args = append(args, "-r")
@@ -209,8 +221,8 @@ func runSystemJQ(ctx context.Context, opts Opts) error {
 	if opts.InputPath == "" {
 		args = append(args, "-n")
 	}
-	if opts.LibDir != "" {
-		args = append(args, "-L", opts.LibDir)
+	if libDir != "" {
+		args = append(args, "-L", libDir)
 	}
 	for _, b := range opts.Bindings {
 		if b.IsJSON {
@@ -240,5 +252,33 @@ func runSystemJQ(ctx context.Context, opts Opts) error {
 		return fmt.Errorf("engine: jq subprocess: %w", err)
 	}
 	return nil
+}
+
+// materializeLib writes every regular file in libFS to a fresh temp directory
+// so the system-jq subprocess can find them via -L. Caller is responsible for
+// `os.RemoveAll(dir)`.
+func materializeLib(libFS fs.FS) (string, error) {
+	dir, err := os.MkdirTemp("", "audit-libjq-*")
+	if err != nil {
+		return "", fmt.Errorf("engine: tempdir for lib: %w", err)
+	}
+	err = fs.WalkDir(libFS, ".", func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, readErr := fs.ReadFile(libFS, path)
+		if readErr != nil {
+			return readErr
+		}
+		return os.WriteFile(filepath.Join(dir, path), data, 0o644)
+	})
+	if err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("engine: materialize lib: %w", err)
+	}
+	return dir, nil
 }
 

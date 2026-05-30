@@ -69,11 +69,12 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 		fmt.Fprintf(stdout, "audit: %v\n", err)
 		return 3
 	}
-	queryBody, queryFile, err := readQuery(qsrc, name)
+	queryBody, queryFile, cleanup, err := readQuery(qsrc, name)
 	if err != nil {
 		fmt.Fprintf(stdout, "audit: %v\n", err)
 		return 3
 	}
+	defer cleanup()
 	header, err := frontmatter.Parse(strings.NewReader(queryBody))
 	if err != nil {
 		fmt.Fprintf(stdout, "audit: front-matter %s: %v\n", name, err)
@@ -139,32 +140,40 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 	return 0
 }
 
-func readQuery(src discovery.Source, name string) (string, string, error) {
+// readQuery returns the query source, an on-disk path to it (for the
+// system-jq -f fallback), and a cleanup func the caller must defer. The
+// cleanup removes any temp files created for embedded-FS queries; it is a
+// no-op when the query already lives on disk.
+func readQuery(src discovery.Source, name string) (string, string, func(), error) {
 	filename := name + ".jq"
+	noop := func() {}
 	if src.FS != nil {
 		data, err := fs.ReadFile(src.FS, filename)
 		if err != nil {
-			return "", "", fmt.Errorf("read embedded query %s: %w", name, err)
+			return "", "", noop, fmt.Errorf("read embedded query %s: %w", name, err)
 		}
 		// Materialize to a temp file so the system-jq fallback path has a path
-		// to point at via -f. The cost is one tmpfile per query invocation —
-		// acceptable at PR-3 scale.
+		// to point at via -f. The caller cleans up via the returned func.
 		tmp, err := os.CreateTemp("", "audit-query-*.jq")
 		if err != nil {
-			return "", "", fmt.Errorf("tempfile: %w", err)
+			return "", "", noop, fmt.Errorf("tempfile: %w", err)
 		}
-		defer tmp.Close()
 		if _, err := tmp.Write(data); err != nil {
-			return "", "", fmt.Errorf("write tempfile: %w", err)
+			tmp.Close()
+			os.Remove(tmp.Name())
+			return "", "", noop, fmt.Errorf("write tempfile: %w", err)
 		}
-		return string(data), tmp.Name(), nil
+		tmp.Close()
+		path := tmp.Name()
+		cleanup := func() { os.Remove(path) }
+		return string(data), path, cleanup, nil
 	}
 	p := filepath.Join(src.Path, filename)
 	data, err := os.ReadFile(p)
 	if err != nil {
-		return "", "", fmt.Errorf("read query %s: %w", p, err)
+		return "", "", noop, fmt.Errorf("read query %s: %w", p, err)
 	}
-	return string(data), p, nil
+	return string(data), p, noop, nil
 }
 
 func supportsFormat(declared []string, want string) bool {

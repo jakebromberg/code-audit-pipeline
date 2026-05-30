@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -219,5 +220,40 @@ func TestRunSystemJQShellOut(t *testing.T) {
 	}
 	if strings.TrimSpace(out.String()) != "X" {
 		t.Errorf("out = %q", out.String())
+	}
+}
+
+func TestRunSystemJQWithEmbeddedLib(t *testing.T) {
+	// Confirms runSystemJQ materializes opts.LibFS to a temp dir and passes
+	// it as -L, so an `include "_canonical";` directive resolves on a
+	// brew-install binary with no on-disk pipeline/queries/.
+	if _, err := exec.LookPath("jq"); err != nil {
+		t.Skip("system jq not present")
+	}
+	libFS := fstest.MapFS{
+		"_canonical.jq": &fstest.MapFile{
+			Data: []byte(`def greeting: "hi";`),
+		},
+	}
+	dir := t.TempDir()
+	qfile := filepath.Join(dir, "q.jq")
+	if err := os.WriteFile(qfile, []byte(`include "_canonical"; greeting`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	err := Run(context.Background(), Opts{
+		QuerySource: `placeholder`,
+		QueryFile:   qfile,
+		LibFS:       libFS,
+		InputPath:   "",
+		Out:         &out,
+		Raw:         true,
+		UseSystemJQ: true,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if strings.TrimSpace(out.String()) != "hi" {
+		t.Errorf("out = %q, want hi", out.String())
 	}
 }
