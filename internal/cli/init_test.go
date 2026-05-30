@@ -156,6 +156,65 @@ func TestInitReconcilesAfterStateLoss(t *testing.T) {
 	}
 }
 
+// TestInitDryRun verifies --dry-run prints the planned actions and writes
+// neither the destination files nor the state file. Covers the path
+// classifyFiles → switch{stateNew}: `if *dryRun { ... }`.
+func TestInitDryRun(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--dry-run"}, &out)
+	if exit != 0 {
+		t.Fatalf("dry-run Init exit=%d, out=%s", exit, out.String())
+	}
+	if !strings.Contains(out.String(), "would copy NEW") {
+		t.Errorf("expected `would copy NEW` lines, got: %s", out.String())
+	}
+	// Destination must remain empty: no files copied, no state file written.
+	if _, err := os.Stat(filepath.Join(dest, "pipeline/queries/exact-duplicates.jq")); err == nil {
+		t.Errorf("dry-run wrote a file it shouldn't have")
+	}
+	if _, err := os.Stat(filepath.Join(dest, stateFile)); err == nil {
+		t.Errorf("dry-run wrote a state file it shouldn't have")
+	}
+}
+
+// TestInitRefusesSymlinkLoop verifies the guard against a dest that is a
+// symlink targeting the source (the developer setup ADR-0006 calls out).
+func TestInitRefusesSymlinkLoop(t *testing.T) {
+	src := setupSource(t)
+	destParent := t.TempDir()
+	dest := filepath.Join(destParent, "audit-home")
+	if err := os.Symlink(src, dest); err != nil {
+		t.Skipf("symlink unsupported on this platform: %v", err)
+	}
+
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	if exit == 0 {
+		t.Fatalf("expected non-zero exit for symlink loop, got 0; out=%s", out.String())
+	}
+	if !strings.Contains(out.String(), "refusing to copy into self") {
+		t.Errorf("expected `refusing to copy into self`, got: %s", out.String())
+	}
+}
+
+// TestInitMissingFromFlag exercises the --from-required validation path. The
+// init contract is "v1 requires --from"; this nails the error message and
+// exit code down so a regression to "default to cwd" doesn't slip through.
+func TestInitMissingFromFlag(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--dest", dest}, &out)
+	if exit != 2 {
+		t.Fatalf("missing --from Init exit=%d (want 2), out=%s", exit, out.String())
+	}
+	if !strings.Contains(out.String(), "--from") {
+		t.Errorf("expected --from in error, got: %s", out.String())
+	}
+}
+
 func mustInit(t *testing.T, src, dest string) {
 	t.Helper()
 	var out bytes.Buffer
