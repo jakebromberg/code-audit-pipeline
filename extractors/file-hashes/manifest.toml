@@ -1,0 +1,32 @@
+# manifest.toml — registration sidecar for the file-hashes extractor.
+#
+# Read by the future `audit` binary (per ADR-0002) to discover this extractor's
+# identity, runtime prerequisites, and per-catalog invocation contract.
+#
+# Token grammar in `invocation`:
+#   {root}        required positional, audited repo root
+#   {output}      target file under .audit/catalogs/<output_file>
+#   {shared}      secondary package root
+#   {extensions}  comma-separated list of file extensions to hash
+
+schema_version = 1
+
+[extractor]
+name = "file-hashes"
+language = "polyglot"
+version = "0.5.0"
+description = "Content-hash extractor (Node stdlib only); emits per-file raw and whitespace-normalized SHA-256."
+
+[[command]]
+catalog = "file-hashes"
+output_file = "file-hashes.json"
+invocation = ["node", "file-hashes.mjs", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--extensions", placeholder = "{extensions}", when = "extensions_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+]
+
+[runtime]
+requires = ["node >= 18"]
+setup_hint = "No additional setup — uses Node stdlib only."
