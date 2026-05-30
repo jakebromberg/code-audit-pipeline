@@ -19,7 +19,12 @@
 # cluster_id format:  cross-package-shape-near-duplicates-any:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: cross-package-shape-near-duplicates-any
 #! shape: pair
+#! catalog: type-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Symmetric N-package re-typed contract detector.
 
 include "_canonical";
 

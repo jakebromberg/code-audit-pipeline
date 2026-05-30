@@ -23,7 +23,11 @@
 # downstream tooling that joins on cluster_id is unaffected; only the row
 # field names change.
 #
+#! query: subset-pairs
 #! shape: pair
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Asymmetric pairs (A subset of B) — candidate composition / extraction lift.
 
 include "_canonical";
 

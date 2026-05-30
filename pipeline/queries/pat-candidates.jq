@@ -66,7 +66,12 @@
 # cluster_id format:  pat-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: pat-candidates
 #! shape: pair
+#! catalog: type-catalog
+#! arg: max_slot_diffs number required
+#! formats: text, jsonl
+#! desc: Protocol-with-associated-type lift candidates.
 
 include "_canonical";
 

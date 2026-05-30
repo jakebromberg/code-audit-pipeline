@@ -15,7 +15,12 @@
 # cluster_id format:  near-duplicates:LocA+LocB  (sorted location keys
 #                                                 — package:file:line:name)
 #
+#! query: near-duplicates
 #! shape: pair
+#! catalog: type-catalog
+#! arg: threshold number required
+#! formats: text, jsonl
+#! desc: Type pairs whose field-name sets have Jaccard >= threshold but != 1.
 
 include "_canonical";
 
