@@ -34,16 +34,23 @@ jobs:
           cache: 'npm'
           cache-dependency-path: extractors/typescript/package-lock.json
 
-      - name: Install gojq
+      - name: Cache gojq
         # gojq is the engine the binary will embed (per ADR-0005). The parity
         # test below verifies every query produces semantically equivalent
         # output under gojq and system jq, so the binary is safe to ship.
+        id: cache-gojq
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/gojq
+          key: gojq-${{ runner.os }}-0.12.19
+
+      - name: Install gojq
+        if: steps.cache-gojq.outputs.cache-hit != 'true'
         run: |
           GOJQ_VERSION=0.12.19
           curl -sSL "https://github.com/itchyny/gojq/releases/download/v${GOJQ_VERSION}/gojq_v${GOJQ_VERSION}_linux_amd64.tar.gz" \
             | tar -xz -C /tmp
           sudo mv "/tmp/gojq_v${GOJQ_VERSION}_linux_amd64/gojq" /usr/local/bin/gojq
-          gojq --version
 
       - name: Verify toolchain
         run: |
