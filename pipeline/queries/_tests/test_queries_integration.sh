@@ -1221,6 +1221,111 @@ assert_dead_code_e2e_extractor() {
 assert_dead_code_e2e_extractor
 
 echo ""
+echo "=== public-api-leaks query (function-catalog + type-catalog join) ==="
+# Two-file fixture pair: function-catalog primary, type-catalog slurped via
+# --slurpfile types. Same harness trick as dead-code in PR #176 — extra_args
+# pass through to jq verbatim.
+LEAKS_FUNCTIONS_FIXTURE="$FIXTURES_DIR/public-api-leaks-functions.input.json"
+LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
+
+assert_jsonl_has_prefix public-api-leaks.jq "$LEAKS_FUNCTIONS_FIXTURE" "public-api-leaks:" \
+  --slurpfile types "$LEAKS_TYPES_FIXTURE"
+
+# Semantic correctness. Planted set (functions side):
+#   cleanFn (exported, refs all exported)                   → no leak
+#   leakyParam (exported, param refs un-exported InternalReq) → flag
+#   leakyReturn (exported, return un-exported InternalResp)   → flag
+#   leakyBoth (exported, both un-exported)                    → flag (2 leak entries)
+#   nonExportedFn (NOT exported, refs un-exported)            → no leak (caller-export filter)
+#   genericFn (exported, refs only generic bindings)          → no leak (binding filter)
+#   crossPkgClean (exported, refs shared:CommonType exported) → no leak
+#   anonymousParam (exported, type_ref: null)                 → no leak (skipped — nothing to resolve)
+#   leakyMethodSkipped (kind:method, exported, leaky)         → no leak (kind:method skipped in v1)
+#   leakyFunctionVerifies (kind:function, leaky, same type as method) → flag (proves the method skip is *query-side*)
+# Expected flag set: {leakyParam, leakyReturn, leakyBoth, leakyFunctionVerifies}.
+assert_public_api_leaks_baseline() {
+  local result rows actual_set expected_set
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$LEAKS_TYPES_FIXTURE" \
+    -f "$QUERIES_DIR/public-api-leaks.jq" "$LEAKS_FUNCTIONS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (baseline): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  if [[ "$rows" != "4" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
+    return
+  fi
+  actual_set="$(echo "$result" | jq -r '"\(.package):\(.name)"' | sort | tr '\n' ',' | sed 's/,$//')"
+  expected_set="main:leakyBoth,main:leakyFunctionVerifies,main:leakyParam,main:leakyReturn"
+  if [[ "$actual_set" == "$expected_set" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ public-api-leaks (baseline): emits exactly {leakyParam, leakyReturn, leakyBoth, leakyFunctionVerifies}\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (baseline): row set mismatch\n      expected: %s\n      actual:   %s\n" "$expected_set" "$actual_set"
+  fi
+}
+assert_public_api_leaks_baseline
+
+# leakyBoth must report TWO leak entries (param + return), not one.
+assert_public_api_leaks_leakyboth_has_two_entries() {
+  local count
+  count="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$LEAKS_TYPES_FIXTURE" \
+    -f "$QUERIES_DIR/public-api-leaks.jq" "$LEAKS_FUNCTIONS_FIXTURE" 2>&1 \
+    | jq -r 'select(.name == "leakyBoth") | .leaks | length')"
+  if [[ "$count" == "2" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ public-api-leaks (leakyBoth): reports 2 leak entries (param + return)\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (leakyBoth): expected 2 leak entries, got %s\n" "$count"
+  fi
+}
+assert_public_api_leaks_leakyboth_has_two_entries
+
+assert_text_has_cid public-api-leaks.jq "$LEAKS_FUNCTIONS_FIXTURE" --slurpfile types "$LEAKS_TYPES_FIXTURE"
+
+# End-to-end smoke. Run live extractor over 21-function-signatures.ts + a
+# minimal type fixture (using fixture 01-simple-interface.ts for the type
+# half). The leakyHandler in 21 references InternalRequest (declared in 21
+# itself, not exported), so a leak should fire.
+assert_public_api_leaks_e2e_extractor() {
+  local extractor_dir tmp_root tmp_functions tmp_types result
+  extractor_dir="$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)"
+  tmp_root="$(mktemp -d)"
+  trap 'rm -rf "$tmp_root"' RETURN
+  tmp_functions="$tmp_root/functions.json"
+  tmp_types="$tmp_root/types.json"
+  cp "$extractor_dir/fixtures/21-function-signatures.ts" "$tmp_root/21-function-signatures.ts"
+  if ! node "$extractor_dir/function-catalog.mjs" --root "$tmp_root" --output "$tmp_functions" 2>/dev/null; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (e2e): function-catalog crashed\n"
+    return
+  fi
+  if ! node "$extractor_dir/type-catalog.mjs" --root "$tmp_root" --output "$tmp_types" 2>/dev/null; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (e2e): type-catalog crashed\n"
+    return
+  fi
+  if ! result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$tmp_types" \
+    -f "$QUERIES_DIR/public-api-leaks.jq" "$tmp_functions" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (e2e): query crashed:\n%s\n" "$result"
+    return
+  fi
+  if [[ -z "$result" ]] || ! echo "$result" | jq -e -s 'any(.name == "leakyHandler")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (e2e): expected leakyHandler in output, got:\n%s\n" "$result"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ public-api-leaks (e2e): query flags leakyHandler against real extractor output\n"
+}
+assert_public_api_leaks_e2e_extractor
+
+echo ""
 echo "=== Cross-catalog queries ==="
 # cross-catalog queries take two slurped catalogs rather than a single input,
 # so the assert_jsonl_has_prefix helper doesn't fit — inline the assertion.

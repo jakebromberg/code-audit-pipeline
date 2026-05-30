@@ -1,54 +1,80 @@
 #!/usr/bin/env node
 // function-catalog.mjs
 //
-// Walks every .ts / .tsx source file under --root (and optionally --shared) and emits
-// one JSON record per declared function-like construct: function declarations, method
-// declarations, and arrow/function expressions assigned to named bindings.
+// Walks every .ts / .tsx source file under --root (and optionally --shared)
+// and emits one JSON record per declared function-like construct:
+// FunctionDeclaration (including overload heads), MethodDeclaration,
+// ArrowFunction / FunctionExpression assigned to a named binding.
 //
 // Each record carries:
-//   - body_hash: SHA-256 of the normalized body text (comments + whitespace stripped)
-//   - body_lines: sorted-unique normalized non-empty non-comment lines (Jaccard input)
-//   - param_count: arity
+//   - body_hash / body_lines: duplication clustering (NULL when normalized
+//     body is shorter than --min-body-lines; the row is still emitted so
+//     signature-level queries see one-liners)
+//   - params[].type_ref + return_ref: cross-catalog type-resolution joins
+//     (#133 public-api-leaks.jq, future graph-view consumers)
+//   - signature_index: per (file, name) overload-head discriminator
+//   - is_test / touched_in_window / synthetic: universal flags matching
+//     type-catalog
 //
-// See ../../docs/pipeline-contract.md for the emitted schema.
+// See ../../docs/pipeline-contract.md > Function catalog for the v1.1 schema.
 
 import ts from 'typescript';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+  BUILTIN_TYPE_DENYLIST,
+  extractReferences,
+  genericsList,
+} from './_lib/references.mjs';
+import { isTestPath } from './_lib/paths.mjs';
+
+const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
+const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
+const SCHEMA_VERSION = '1.1';
 
 const { values } = parseArgs({
   options: {
-    root:           { type: 'string' },
-    shared:         { type: 'string' },
-    output:         { type: 'string' },
+    root:             { type: 'string' },
+    shared:           { type: 'string' },
+    touched:          { type: 'string' },
+    output:           { type: 'string' },
     'min-body-lines': { type: 'string', default: '3' },
-    'include-tests':{ type: 'boolean', default: false },
-    help:           { type: 'boolean', default: false },
+    help:             { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: function-catalog.mjs --root <path> [--shared <path>] [--output <path>] [--min-body-lines <n>] [--include-tests]
+  process.stderr.write(`usage: function-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--min-body-lines <n>]
 
   --root             Required. Root of the codebase to scan.
   --shared           Optional. A secondary package root. Tagged as package="shared".
+  --touched          Optional. JSON array of file paths (relative to --root) to mark touched_in_window=true.
   --output           Optional. Write JSON to this path. Default: stdout.
-  --min-body-lines   Optional. Skip functions whose normalized body has fewer than n lines
-                     (default 3). Filters out one-liners and stubs that aren't duplication signal.
-  --include-tests    Optional. Don't skip tests/ and *.test.ts / *.spec.ts files.
+  --min-body-lines   Optional. Threshold below which body fields (body_hash,
+                     body_lines, body_line_count, body_length) are emitted as
+                     null (default 3). The row itself is still emitted —
+                     signature-level queries need exported one-liner functions
+                     to be visible.
+
+Output: {"schema_version": "${SCHEMA_VERSION}", "extractor": {...}, "entries": [...]}.
+Test files are always extracted; every row carries an \`is_test\` flag derived
+from the file path. To exclude tests post-hoc, pipe through:
+  jq '.entries | map(select(.is_test | not))'
 `);
   process.exit(values.help ? 0 : 1);
 }
 
 const ROOT = resolve(values.root);
 const SHARED = values.shared ? resolve(values.shared) : null;
-const INCLUDE_TESTS = values['include-tests'];
 const MIN_BODY_LINES = Number(values['min-body-lines']) || 3;
+const TOUCHED = values.touched
+  ? new Set(JSON.parse(readFileSync(values.touched, 'utf8')))
+  : new Set();
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
-if (!INCLUDE_TESTS) SKIP_DIRS.add('tests');
 
 function walkDir(root) {
   const out = [];
@@ -64,7 +90,6 @@ function walkDir(root) {
         walk(full);
       } else if (e.isFile()) {
         if (!/\.(tsx|ts|mts|cts)$/.test(e.name)) continue;
-        if (!INCLUDE_TESTS && /\.(test|spec)\.(tsx|ts)$/.test(e.name)) continue;
         out.push(full);
       }
     }
@@ -73,14 +98,10 @@ function walkDir(root) {
   return out;
 }
 
-// Normalize body text: strip comments, collapse whitespace runs to single spaces,
-// trim each line, drop blank lines. The result is a multi-line string where each
-// line is a meaningful unit. Deterministic across whitespace-only edits.
+// --- Body normalization (unchanged from v1.0) ---
+
 function normalizeBody(text) {
-  // Strip /* ... */ block comments (non-greedy)
   let stripped = text.replace(/\/\*[\s\S]*?\*\//g, '');
-  // Strip line comments — match // ... to end of line, but not when // appears inside a string.
-  // A perfect regex is impractical here; we accept rare false strips for strings containing "//".
   stripped = stripped.replace(/\/\/[^\n]*/g, '');
   const lines = stripped
     .split('\n')
@@ -90,23 +111,14 @@ function normalizeBody(text) {
 }
 
 function bodyHashOf(normLines) {
-  const joined = normLines.join('\n');
-  return createHash('sha256').update(joined).digest('hex');
+  return createHash('sha256').update(normLines.join('\n')).digest('hex');
 }
 
 function bodyTextOf(node, sf) {
-  // Function/method declarations have a Block body; arrow functions have either a
-  // Block or an Expression. getText() handles all of these uniformly.
   return node ? node.getText(sf) : '';
 }
 
-function paramsOf(parameters, sf) {
-  if (!parameters) return { count: 0, names: [] };
-  return {
-    count: parameters.length,
-    names: parameters.map((p) => p.name.getText(sf)),
-  };
-}
+// --- Modifiers ---
 
 function exportedMod(node) {
   return !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
@@ -115,6 +127,71 @@ function exportedMod(node) {
 function asyncMod(node) {
   return !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword);
 }
+
+// --- Signature extraction ---
+//
+// `type_ref` is the simple-case sugar (bare TypeReferenceNode whose typeName
+// is an unbound, non-built-in Identifier with no type arguments); derived
+// from `type_refs` to avoid a second AST walk.
+
+function singleRefSugar(typeNode, refs) {
+  if (refs.length !== 1) return null;
+  if (!typeNode || !ts.isTypeReferenceNode(typeNode)) return null;
+  if (!ts.isIdentifier(typeNode.typeName)) return null;
+  if (typeNode.typeArguments) return null;
+  return refs[0].name;
+}
+
+function refsOfTypeNode(typeNode, sf, scope) {
+  if (!typeNode) return [];
+  const sink = new Set();
+  extractReferences(typeNode, sf, scope, sink);
+  return [...sink].sort().map((name) => ({ name, kind: 'type-ref' }));
+}
+
+function signaturesOf(node, sf) {
+  const scope = new Set();
+  const allRefs = new Set();
+  if (node.typeParameters) {
+    for (const tp of node.typeParameters) scope.add(tp.name.text);
+    for (const tp of node.typeParameters) {
+      if (tp.constraint) extractReferences(tp.constraint, sf, scope, allRefs);
+    }
+  }
+  const params = (node.parameters ?? []).map((p) => {
+    const type_refs = refsOfTypeNode(p.type, sf, scope);
+    for (const ref of type_refs) allRefs.add(ref.name);
+    return {
+      name: p.name.getText(sf),
+      type_ref: singleRefSugar(p.type, type_refs),
+      type_refs,
+    };
+  });
+  let return_ref = null;
+  if (node.type) {
+    const returnRefs = refsOfTypeNode(node.type, sf, scope);
+    for (const ref of returnRefs) allRefs.add(ref.name);
+    return_ref = singleRefSugar(node.type, returnRefs);
+  }
+  const references = [...allRefs].sort().map((name) => ({ name, kind: 'type-ref' }));
+  return { params, return_ref, references };
+}
+
+// Emit body-derived fields together — all four gate on `longEnough` and must
+// move in lockstep (silent asymmetry on body_lines would land here otherwise).
+function bodyFields(normLines, longEnough) {
+  if (!longEnough) {
+    return { body_line_count: null, body_length: null, body_hash: null, body_lines: null };
+  }
+  return {
+    body_line_count: normLines.length,
+    body_length: normLines.join('\n').length,
+    body_hash: bodyHashOf(normLines),
+    body_lines: [...new Set(normLines)].sort(),
+  };
+}
+
+// --- Per-file extraction ---
 
 function extractFromFile(filePath, pkgName, pkgRoot) {
   const text = readFileSync(filePath, 'utf8');
@@ -128,44 +205,59 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
   );
   const relPath = relative(pkgRoot, filePath);
   const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts');
+  const isTest = isTestPath(relPath);
+  const touched = pkgName === 'main' && TOUCHED.has(relPath);
+
+  // Per-file Map<name, next index>. Two FunctionDeclarations sharing a name
+  // in the same file -- whether overload heads at the top level or nested
+  // same-name functions -- get indices 0, 1, 2, ... in source order. The
+  // scope is intentionally per-(file, name) rather than per-(scope, name) so
+  // overload-aware queries can dedupe with a `(name, package, file)` key.
+  const sigIndex = new Map();
+
   const results = [];
 
-  function pushFunction({ node, name, kind, exported, isAsync, params, body }) {
-    const bodyText = bodyTextOf(body, sf);
-    const normLines = normalizeBody(bodyText);
-    if (normLines.length < MIN_BODY_LINES) return;
+  function pushFunction({ node, name, kind, exported, isAsync, body }) {
+    const normLines = body ? normalizeBody(bodyTextOf(body, sf)) : [];
+    const longEnough = normLines.length >= MIN_BODY_LINES;
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
-    const bodyHash = bodyHashOf(normLines);
-    const sortedUniqueLines = [...new Set(normLines)].sort();
+    const sig = signaturesOf(node, sf);
+    const idx = sigIndex.get(name) ?? 0;
+    sigIndex.set(name, idx + 1);
     results.push({
       package: pkgName,
       file: relPath,
       line: line + 1,
       generated: isGenerated,
+      is_test: isTest,
+      touched_in_window: touched,
+      synthetic: false,
       name,
       kind,
       exported,
       async: isAsync,
-      param_count: params.count,
-      param_names: params.names,
-      body_line_count: normLines.length,
-      body_length: normLines.join('\n').length,
-      body_hash: bodyHash,
-      body_lines: sortedUniqueLines,
+      param_count: sig.params.length,
+      param_names: sig.params.map((p) => p.name),
+      ...bodyFields(normLines, longEnough),
+      generics: genericsList(node) ?? '',
+      params: sig.params,
+      return_ref: sig.return_ref,
+      references: sig.references,
+      references_count: sig.references.length,
+      signature_index: idx,
     });
   }
 
   function visit(node) {
-    // function foo(...) { ... }
-    if (ts.isFunctionDeclaration(node) && node.name && node.body) {
+    // Top-level FunctionDeclaration. body is null for overload heads -- still emit.
+    if (ts.isFunctionDeclaration(node) && node.name) {
       pushFunction({
         node,
         name: node.name.text,
         kind: 'function',
         exported: exportedMod(node),
         isAsync: asyncMod(node),
-        params: paramsOf(node.parameters, sf),
-        body: node.body,
+        body: node.body ?? null,
       });
     }
 
@@ -184,7 +276,6 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         kind: 'method',
         exported: !!className && exportedMod(node.parent),
         isAsync: asyncMod(node),
-        params: paramsOf(node.parameters, sf),
         body: node.body,
       });
     }
@@ -200,22 +291,20 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
         }
         if (ts.isArrowFunction(init) && init.body) {
           pushFunction({
-            node: decl,
+            node: init,
             name: decl.name.text,
             kind: 'arrow-function',
             exported,
             isAsync: asyncMod(init),
-            params: paramsOf(init.parameters, sf),
             body: init.body,
           });
         } else if (ts.isFunctionExpression(init) && init.body) {
           pushFunction({
-            node: decl,
+            node: init,
             name: decl.name.text,
             kind: 'function-expression',
             exported,
             isAsync: asyncMod(init),
-            params: paramsOf(init.parameters, sf),
             body: init.body,
           });
         }
@@ -251,9 +340,11 @@ for (const f of sharedFiles) {
 process.stderr.write(`\nTotal functions: ${all.length} (errors: ${errors})\n`);
 const byKind = {};
 const byPkg = {};
+let isTestCount = 0;
 for (const e of all) {
   byKind[e.kind] = (byKind[e.kind] || 0) + 1;
   byPkg[e.package] = (byPkg[e.package] || 0) + 1;
+  if (e.is_test) isTestCount++;
 }
 process.stderr.write('By kind:\n');
 for (const [k, v] of Object.entries(byKind).sort((a, b) => b[1] - a[1])) {
@@ -263,8 +354,19 @@ process.stderr.write('By package:\n');
 for (const [k, v] of Object.entries(byPkg)) {
   process.stderr.write(`  ${String(v).padStart(5)}  ${k}\n`);
 }
+process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
-const json = JSON.stringify(all, null, 2);
+const catalog = {
+  schema_version: SCHEMA_VERSION,
+  extractor: {
+    language: 'typescript',
+    name: 'function-catalog',
+    version: EXTRACTOR_VERSION,
+  },
+  entries: all,
+};
+
+const json = JSON.stringify(catalog, null, 2);
 if (values.output) {
   writeFileSync(values.output, json);
   process.stderr.write(`\nWrote ${values.output}\n`);
