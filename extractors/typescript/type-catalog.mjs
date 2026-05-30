@@ -402,9 +402,12 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
   const rawImports = collectImports ? [] : null;
 
   // Per-symbol `kind: "import"` rows for the type-catalog (gated on
-  // --include-imports). One row per imported binding; pushed in walk order
-  // so they interleave with declaration rows by line — keeps the catalog's
-  // existing "walk order = output order" determinism contract intact.
+  // --include-imports). Top-level static imports + re-exports are emitted
+  // here, ahead of visit(sf) — so within a file the row order is:
+  //   1) every top-level import/re-export in source-line order, then
+  //   2) declaration + dynamic-import + require rows in AST-walk order.
+  // Both halves are deterministic, which is what the catalog contract
+  // actually depends on.
   function emitImportRowsForDecl(stmt, specifier, importForm) {
     const declTypeOnly = importForm === 're-export'
       ? stmt.isTypeOnly === true
@@ -447,12 +450,15 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
       pushImport({ name: null, imported_as: null, import_form: 'side-effect', type_only: false });
       return;
     }
+    let emittedAny = false;
     if (clause.name) {
       pushImport({ name: 'default', imported_as: clause.name.text, import_form: 'default', type_only: declTypeOnly });
+      emittedAny = true;
     }
     const nb = clause.namedBindings;
     if (nb && ts.isNamespaceImport(nb)) {
       pushImport({ name: '*', imported_as: nb.name.text, import_form: 'namespace', type_only: declTypeOnly });
+      emittedAny = true;
     } else if (nb && ts.isNamedImports(nb)) {
       for (const spec of nb.elements) {
         const localName = spec.name.text;
@@ -463,7 +469,14 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
           import_form: 'named',
           type_only: declTypeOnly || spec.isTypeOnly === true,
         });
+        emittedAny = true;
       }
+    }
+    // `import {} from "pkg"` parses as a named-imports clause with zero
+    // elements — semantically equivalent to a side-effect import. Treat it
+    // as such so the consumer edge to `pkg` is still recorded.
+    if (!emittedAny) {
+      pushImport({ name: null, imported_as: null, import_form: 'side-effect', type_only: false });
     }
   }
 
@@ -504,6 +517,7 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
     const parent = callNode.parent;
     if (parent && ts.isVariableDeclaration(parent)) {
       if (ts.isObjectBindingPattern(parent.name)) {
+        let emittedAny = false;
         for (const el of parent.name.elements) {
           if (!ts.isIdentifier(el.name)) continue; // skip nested binding patterns in v1
           const localName = el.name.text;
@@ -511,10 +525,13 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
             ? el.propertyName.text
             : localName;
           pushRequire({ name: originName, imported_as: localName });
+          emittedAny = true;
         }
-        return;
-      }
-      if (ts.isIdentifier(parent.name)) {
+        if (emittedAny) return;
+        // Destructure consists entirely of nested binding patterns
+        // (`const {a:{b}} = require('pkg')`). Fall through to the bare-call
+        // form so at least the package consumer edge is recorded.
+      } else if (ts.isIdentifier(parent.name)) {
         pushRequire({ name: '*', imported_as: parent.name.text });
         return;
       }

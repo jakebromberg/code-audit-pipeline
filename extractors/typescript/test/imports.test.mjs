@@ -63,8 +63,8 @@ test('with --include-imports, entry count grows by exactly the expected import c
   const cat = catalogWithImports();
   const baseline = catalogWithoutImports();
   const importRows = cat.entries.filter((e) => e.kind === 'import');
-  assert.equal(importRows.length, 26, `unexpected import row count: ${importRows.length}`);
-  assert.equal(cat.entries.length, baseline.entries.length + 26);
+  assert.equal(importRows.length, 28, `unexpected import row count: ${importRows.length}`);
+  assert.equal(cat.entries.length, baseline.entries.length + 28);
 });
 
 test('filtering out kind:"import" matches the no-flag catalog byte-for-byte', () => {
@@ -248,6 +248,33 @@ test('relative and absolute specifiers record origin_package=null, resolution="r
       name: 'default', imported_as: 'abs', import_form: 'default',
       origin_specifier: '/abs/path', origin_package: null,
       origin_resolution: 'relative', type_only: false,
+    },
+  ]);
+});
+
+test('empty-named: `import {} from "pkg"` emits a single side-effect row', () => {
+  // Empty named-imports clause is semantically equivalent to a side-effect
+  // import — the consumer-edge to the package must still be recorded.
+  const rows = importsFor(catalogWithImports(), '11-empty-named.ts');
+  assert.deepEqual(rows, [
+    {
+      name: null, imported_as: null, import_form: 'side-effect',
+      origin_specifier: '@wxyc/empty-named', origin_package: '@wxyc/empty-named',
+      origin_resolution: 'bare-specifier', type_only: false,
+    },
+  ]);
+});
+
+test('nested-require: all-nested destructure falls through to namespace require so the package edge survives', () => {
+  // `const { a: { b } } = require('pkg')` — every element is a nested
+  // binding pattern. Previously dropped silently; now records the package
+  // edge with name="*" and no local alias.
+  const rows = importsFor(catalogWithImports(), '12-nested-require.ts');
+  assert.deepEqual(rows, [
+    {
+      name: '*', imported_as: null, import_form: 'require',
+      origin_specifier: '@wxyc/nested-require', origin_package: '@wxyc/nested-require',
+      origin_resolution: 'bare-specifier', type_only: false,
     },
   ]);
 });
