@@ -11,6 +11,7 @@
 #   {shared}            secondary package root, when --shared is given
 #   {touched}           path to the JSON array of touched-in-window files
 #   {references_output} sibling artifact path when --emit-references-graph is on
+#   {files_output}      sibling artifact path when --emit-files is on
 #   {min_body_lines}    function-catalog-only threshold knob
 
 schema_version = 1
@@ -29,9 +30,11 @@ optional_args = [
   { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
   { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
   { flag = "--emit-references-graph", placeholder = "{references_output}", when = "references_enabled" },
+  { flag = "--emit-files", placeholder = "{files_output}", when = "files_enabled" },
 ]
 sibling_outputs = [
   { catalog = "references-graph", file = "references.json", when = "references_enabled" },
+  { catalog = "files", file = "files.json", when = "files_enabled" },
 ]
 
 [[command]]

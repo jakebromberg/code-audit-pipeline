@@ -46,7 +46,11 @@
 # file). The backward-edge list goes on `backward_imports[]` at the top
 # level so the renderer stays shape-aware.
 
+#! query: cross-package-backward-imports
 #! shape: cluster
+#! catalog: files
+#! formats: text, jsonl
+#! desc: shared/* files importing from main/* (the layering violation that motivates the --shared split).
 
 include "_canonical";
 
