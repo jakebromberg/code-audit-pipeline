@@ -86,6 +86,7 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 		marker := "ok"
 		if !r.Exists {
 			marker = "MISSING"
+			staleAny = true
 		} else if r.StaleSourceCount > 0 {
 			marker = fmt.Sprintf("%d files newer than catalog", r.StaleSourceCount)
 			staleAny = true

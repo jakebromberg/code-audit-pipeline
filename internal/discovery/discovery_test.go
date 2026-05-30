@@ -39,6 +39,43 @@ func TestQueriesFlagWins(t *testing.T) {
 	}
 }
 
+func TestQueriesCwdBeatsAuditHome(t *testing.T) {
+	// ADR-0006 prescribes cwd-relative before $AUDIT_HOME — a contributor
+	// working in a repo clone must pick up local edits even when AUDIT_HOME
+	// is set (e.g., by `audit init` in a shell profile).
+	cwdRoot := newQueriesDir(t)
+	homeRoot := newQueriesDir(t)
+	embedded := fstest.MapFS{"_canonical.jq": &fstest.MapFile{Data: []byte("# emb")}}
+	src, err := ResolveQueriesDir(QueryOpts{
+		AuditHome: homeRoot,
+		CWD:       cwdRoot,
+	}, embedded)
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if !strings.Contains(src.Label, "cwd-relative") {
+		t.Errorf("Label = %q, want cwd-relative hit (cwd should beat AUDIT_HOME)", src.Label)
+	}
+}
+
+func TestExtractorsCwdBeatsAuditHome(t *testing.T) {
+	cwd := t.TempDir()
+	home := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(cwd, "extractors", "typescript"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(home, "extractors", "typescript"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: cwd, AuditHome: home})
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if !strings.Contains(label, "cwd-relative") {
+		t.Errorf("label = %q, want cwd-relative (cwd should beat AUDIT_HOME)", label)
+	}
+}
+
 func TestQueriesEmbeddedFallback(t *testing.T) {
 	// Empty cwd (no pipeline/queries) and no flag — embedded wins.
 	tmp := t.TempDir()
