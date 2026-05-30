@@ -32,18 +32,17 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 
-brews:
+# goreleaser v2.10+ deprecated `brews:` in favor of `homebrew_casks:`; the cask
+# path ships pre-compiled binaries from the GitHub release rather than building
+# from source, which matches the artifacts the binary already produces.
+homebrew_casks:
   - name: audit
     repository:
       owner: jakebromberg
       name: homebrew-tap
     homepage: https://github.com/jakebromberg/code-audit-pipeline
     description: Cross-cutting structural analysis of codebases.
-    license: Anti-Capitalist-Software-License-1.4
-    install: |
-      bin.install "audit"
-    test: |
-      system "#{bin}/audit", "version"
+    binary: audit
 
 release:
   github:
