@@ -18,6 +18,7 @@ jobs:
           shellcheck \
             pipeline/queries/_tests/test_canonical.sh \
             pipeline/queries/_tests/test_queries_integration.sh \
+            pipeline/queries/_tests/test_gojq_parity.sh \
             pipeline/queries/_tests/smoke_test_real_catalog.sh \
             extractors/swift/tests/test_package_graph.sh
 
@@ -33,9 +34,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: extractors/typescript/package-lock.json
 
+      - name: Install gojq
+        # gojq is the engine the binary will embed (per ADR-0005). The parity
+        # test below verifies every query produces semantically equivalent
+        # output under gojq and system jq, so the binary is safe to ship.
+        run: |
+          GOJQ_VERSION=0.12.19
+          curl -sSL "https://github.com/itchyny/gojq/releases/download/v${GOJQ_VERSION}/gojq_v${GOJQ_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /tmp
+          sudo mv "/tmp/gojq_v${GOJQ_VERSION}_linux_amd64/gojq" /usr/local/bin/gojq
+          gojq --version
+
       - name: Verify toolchain
         run: |
           jq --version
+          gojq --version
           node --version
 
       - name: Install TypeScript extractor deps
@@ -53,6 +66,9 @@ jobs:
 
       - name: jq query integration tests
         run: pipeline/queries/_tests/test_queries_integration.sh
+
+      - name: gojq / jq parity tests
+        run: pipeline/queries/_tests/test_gojq_parity.sh
 
   swift:
     name: swift extractor
