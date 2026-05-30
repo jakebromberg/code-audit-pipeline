@@ -85,6 +85,25 @@ assert_jsonl_has_prefix() {
   printf "  ✓ %s: %d JSONL row(s), all with cluster_id starting '%s' (unique)\n" "$query" "$line_count" "$expected_prefix"
 }
 
+assert_envelope_shape() {
+  local query="$1"
+  local fixture="$2"
+  shift 2
+  local extra_args=("$@")
+
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r "${extra_args[@]}" \
+    -f "$QUERIES_DIR/$query" "$fixture" 2>&1 \
+    | jq -s 'all(.shape == "cluster" and (.members | length == 1))')"
+  if [[ "$result" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ %s (envelope): every row has shape:cluster and members of length 1\n" "$query"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s (envelope): expected uniform shape:cluster, members[0]; got %s\n" "$query" "$result"
+  fi
+}
+
 assert_text_has_cid() {
   local query="$1"
   local fixture="$2"
@@ -1147,21 +1166,7 @@ DEAD_CODE_REFS_FIXTURE="$FIXTURES_DIR/dead-code-references.input.json"
 assert_jsonl_has_prefix dead-code.jq "$DEAD_CODE_CATALOG_FIXTURE" "dead-code:" \
   --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
 
-# Envelope: each row is shape:"cluster" with one decl wrapped into members[0].
-assert_dead_code_envelope_shape() {
-  local result
-  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile refs "$DEAD_CODE_REFS_FIXTURE" \
-    -f "$QUERIES_DIR/dead-code.jq" "$DEAD_CODE_CATALOG_FIXTURE" 2>&1 \
-    | jq -s 'all(.shape == "cluster" and (.members | length == 1))')"
-  if [[ "$result" == "true" ]]; then
-    PASS=$((PASS + 1))
-    printf "  ✓ dead-code (envelope): every row has shape:cluster and members of length 1\n"
-  else
-    FAIL=$((FAIL + 1))
-    printf "  ✗ dead-code (envelope): expected uniform shape:cluster, members[0]; got %s\n" "$result"
-  fi
-}
-assert_dead_code_envelope_shape
+assert_envelope_shape dead-code.jq "$DEAD_CODE_CATALOG_FIXTURE" --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
 
 # Semantic correctness. Fixture (dead-code-catalog.input.json + edges):
 #   ZombieType (main, exported, 0 refs in)            → flag dead
@@ -1244,21 +1249,7 @@ echo "=== public-api-leaks query (function-catalog + type-catalog join) ==="
 LEAKS_FUNCTIONS_FIXTURE="$FIXTURES_DIR/public-api-leaks-functions.input.json"
 LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
 
-# Envelope: each row is shape:"cluster" with one function wrapped into members[0].
-assert_public_api_leaks_envelope_shape() {
-  local result
-  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$LEAKS_TYPES_FIXTURE" \
-    -f "$QUERIES_DIR/public-api-leaks.jq" "$LEAKS_FUNCTIONS_FIXTURE" 2>&1 \
-    | jq -s 'all(.shape == "cluster" and (.members | length == 1))')"
-  if [[ "$result" == "true" ]]; then
-    PASS=$((PASS + 1))
-    printf "  ✓ public-api-leaks (envelope): every row has shape:cluster and members of length 1\n"
-  else
-    FAIL=$((FAIL + 1))
-    printf "  ✗ public-api-leaks (envelope): expected uniform shape:cluster, members[0]; got %s\n" "$result"
-  fi
-}
-assert_public_api_leaks_envelope_shape
+assert_envelope_shape public-api-leaks.jq "$LEAKS_FUNCTIONS_FIXTURE" --slurpfile types "$LEAKS_TYPES_FIXTURE"
 
 assert_jsonl_has_prefix public-api-leaks.jq "$LEAKS_FUNCTIONS_FIXTURE" "public-api-leaks:" \
   --slurpfile types "$LEAKS_TYPES_FIXTURE"
@@ -1449,10 +1440,11 @@ echo "=== Front-matter well-formedness ==="
 assert_front_matter_well_formed() {
   local errors=0
   local seen_query_values=()
-  for f in "$QUERIES_DIR"/*.jq; do
+  # Leading-underscore filenames are libraries (_canonical.jq, future _*.jq),
+  # not runnable queries, and do not carry front-matter. Glob excludes them.
+  for f in "$QUERIES_DIR"/[!_]*.jq; do
     local base
     base="$(basename "$f")"
-    [[ "$base" == "_canonical.jq" ]] && continue
 
     # Required keys: query, shape, catalog, formats, desc.
     for key in query shape catalog formats desc; do
@@ -1487,7 +1479,6 @@ assert_front_matter_well_formed() {
           ;;
       esac
     done
-    unset IFS
 
     # Every `arg: <name>` must appear as --argjson <name> or --arg <name>
     # somewhere in the file (the prose `Run:` block, the body, or both).
@@ -1501,13 +1492,15 @@ assert_front_matter_well_formed() {
       fi
     done < <(grep '^#! arg:' "$f")
 
-    # Every `env: <NAME>` must be referenced as $ENV.NAME or env.NAME (or
-    # documented in prose) — uppercase identifier guards against false positives.
+    # Every `env: <NAME>` must be referenced from the query body as
+    # `$ENV.NAME` or `env.NAME`. Uppercase identifiers + the leading `$ENV.`/
+    # `env.` qualifier rule out false positives from prose comments or unrelated
+    # shell-style assignments.
     while IFS= read -r envline; do
       local envname
       envname="$(echo "$envline" | awk '{ print $3 }')"
       [[ -z "$envname" ]] && continue
-      if ! grep -qE "(\\\$ENV\\.${envname}|env\\.${envname}|${envname}=)" "$f"; then
+      if ! grep -qE "(\\\$ENV\\.${envname}|env\\.${envname})" "$f"; then
         printf "  ✗ %s: 'env: %s' declared but no \$ENV.%s reference found\n" "$base" "$envname" "$envname"
         errors=$((errors + 1))
       fi

@@ -102,7 +102,7 @@ def split_trim_csv:
           generics: ($row.generics // "")
         }]
       }]
-| sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name)
+| sort_by_member_loc
 | .[]
 | if output_format == "jsonl" then
     @json
