@@ -1,0 +1,49 @@
+# manifest.toml — registration sidecar for the Swift extractor.
+#
+# Read by the future `audit` binary (per ADR-0002) to discover this extractor's
+# identity, runtime prerequisites, and per-catalog invocation contract.
+#
+# Token grammar in `invocation`:
+#   {root}    required positional, audited repo root
+#   {output}  target file under .audit/catalogs/<output_file>
+#   {shared}  secondary package root (Swift extractor supports --shared)
+#
+# Dev-mode invocation; release-path migration to a built artifact (compiled
+# under .build/release/swift-catalog) is deferred — see PR 3.
+
+schema_version = 1
+
+[extractor]
+name = "swift"
+language = "swift"
+version = "0.5.0"
+description = "Swift AST extractor (SwiftSyntax); emits type, function, and package-graph catalogs."
+
+[[command]]
+catalog = "type-catalog"
+output_file = "type-catalog.json"
+invocation = ["swift", "run", "swift-catalog", "type", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+]
+
+[[command]]
+catalog = "function-catalog"
+output_file = "function-catalog.json"
+invocation = ["swift", "run", "swift-catalog", "func", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+  { flag = "--min-body-lines", placeholder = "{min_body_lines}", when = "min_body_lines_set" },
+]
+
+[[command]]
+catalog = "package-graph"
+output_file = "package-graph.json"
+invocation = ["swift", "run", "swift-catalog", "package-graph", "--root", "{root}", "--output", "{output}"]
+optional_args = []
+
+[runtime]
+requires = ["swift >= 6.0", "macOS >= 13"]
+setup_hint = "Install Swift 6.0+ (Xcode 16 or swift.org toolchain). First `swift run` invocation will resolve SwiftSyntax via Package.swift."
