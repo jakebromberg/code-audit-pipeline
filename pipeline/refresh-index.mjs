@@ -173,16 +173,20 @@ function makeS3Backend(bucket, endpoint) {
         return null;
       }
     },
-    // S3 PUT. When `ifMatch` is set, the operation only succeeds if the
-    // remote ETag still matches — the brief's prescribed concurrency
-    // protocol. Throws a tagged Error on 412 so the caller's retry loop
-    // can recognize and back off.
+    // S3 PUT with optional optimistic concurrency:
+    //   - `ifMatch`: require the remote ETag to match (replacement CAS).
+    //   - Otherwise, use `--if-none-match '*'` so a first-publish race
+    //     between two concurrent writers also fails one of them with a
+    //     precondition error instead of silently overwriting.
+    // Throws a tagged Error on 412 so the caller's retry loop can detect
+    // the conflict and recompute.
     putBytes(key, bytes, { ifMatch = null } = {}) {
       const tmp = `/tmp/refresh-index-put-${process.pid}-${Date.now()}.bin`;
       writeFileSync(tmp, bytes);
       try {
         const args = ['s3api', 'put-object', '--bucket', bucket, '--key', key, '--body', tmp, '--content-type', 'application/json'];
         if (ifMatch) args.push('--if-match', ifMatch);
+        else args.push('--if-none-match', '*');
         const res = spawnSync('aws', ['--endpoint-url', endpoint, ...args], { encoding: 'utf8' });
         if (res.status !== 0) {
           const stderr = res.stderr ?? '';
@@ -206,20 +210,10 @@ const backend = values['bucket-fs']
 
 // --- Rebuild logic -----------------------------------------------------------
 
-// Group every `by-repo/<repo>/...` key under its repo's path segment.
-const allKeys = backend.list('by-repo/');
-const reposByPath = new Map();
-for (const obj of allKeys) {
-  const m = obj.key.match(/^by-repo\/([^/]+)\/(.*)$/);
-  if (!m) continue;
-  const [, pathSegment, suffix] = m;
-  let bucket = reposByPath.get(pathSegment);
-  if (!bucket) { bucket = []; reposByPath.set(pathSegment, bucket); }
-  bucket.push({ ...obj, suffix });
-}
-
 // `repos.json` (optional) supplies the "known" repo list. Without it,
 // coverage's `total_known_repos` defaults to whatever's in the bucket.
+// Parsed once at script start — the listed repos are input config, not
+// derived from the bucket, so they don't change between retries.
 let knownRepos = null;
 if (values['known-repos']) {
   knownRepos = JSON.parse(readFileSync(values['known-repos'], 'utf8'));
@@ -228,184 +222,216 @@ if (values['known-repos']) {
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-const now = new Date();
-const repos = [];
+// recompute() re-runs the full list + enumerate + serialize pipeline. It's
+// called once at the top of each retry attempt so that a writer who lost
+// the ETag race re-reads the bucket and incorporates whatever the winning
+// writer added before retrying — brief §3.4 prescribes this. Without it,
+// the eventual successful retry would PUT a body computed from a stale
+// listing, silently overwriting the other writer's view.
+function recompute() {
+  const allKeys = backend.list('by-repo/');
+  const reposByPath = new Map();
+  for (const obj of allKeys) {
+    const m = obj.key.match(/^by-repo\/([^/]+)\/(.*)$/);
+    if (!m) continue;
+    const [, pathSegment, suffix] = m;
+    let bucketGroup = reposByPath.get(pathSegment);
+    if (!bucketGroup) { bucketGroup = []; reposByPath.set(pathSegment, bucketGroup); }
+    bucketGroup.push({ ...obj, suffix });
+  }
 
-const pathSegments = Array.from(reposByPath.keys()).sort();
-for (const pathSegment of pathSegments) {
-  const objs = reposByPath.get(pathSegment);
+  const now = new Date();
+  const repos = [];
 
-  // The `latest.json` pointer carries the canonical repo name; harvest it
-  // there. Without one, fall back to the path segment alone — no org guess.
-  let canonicalRepo = pathSegment;
-  let pointerData = null;
-  const latestPointer = objs.find((o) => o.suffix === 'latest.json');
-  if (latestPointer) {
-    try {
-      pointerData = JSON.parse(backend.getBytes(latestPointer.key).toString());
-      if (typeof pointerData.repo === 'string') canonicalRepo = pointerData.repo;
-    } catch (e) {
-      process.stderr.write(`  WARN ${pathSegment}: latest.json unparseable (${e.message})\n`);
+  const pathSegments = Array.from(reposByPath.keys()).sort();
+  for (const pathSegment of pathSegments) {
+    const objs = reposByPath.get(pathSegment);
+
+    // The `latest.json` pointer carries the canonical repo name; harvest it
+    // there. Without one, fall back to the path segment alone — no org guess.
+    let canonicalRepo = pathSegment;
+    let pointerData = null;
+    const latestPointer = objs.find((o) => o.suffix === 'latest.json');
+    if (latestPointer) {
+      try {
+        pointerData = JSON.parse(backend.getBytes(latestPointer.key).toString());
+        if (typeof pointerData.repo === 'string') canonicalRepo = pointerData.repo;
+      } catch (e) {
+        process.stderr.write(`  WARN ${pathSegment}: latest.json unparseable (${e.message})\n`);
+      }
     }
-  }
 
-  // Collect the timestamp-prefixed subdirs.
-  const tsPrefixes = new Set();
-  for (const o of objs) {
-    const m = o.suffix.match(/^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z_[0-9a-f]+)\//);
-    if (m) tsPrefixes.add(m[1]);
-  }
-  const tsSorted = Array.from(tsPrefixes).sort();
-  if (tsSorted.length === 0) {
+    // Collect the timestamp-prefixed subdirs.
+    const tsPrefixes = new Set();
+    for (const o of objs) {
+      const m = o.suffix.match(/^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z_[0-9a-f]+)\//);
+      if (m) tsPrefixes.add(m[1]);
+    }
+    const tsSorted = Array.from(tsPrefixes).sort();
+    if (tsSorted.length === 0) {
+      repos.push({
+        repo: canonicalRepo,
+        path_segment: pathSegment,
+        latest: null,
+        status: 'stale',
+        reason: 'no snapshot prefixes in bucket',
+      });
+      continue;
+    }
+
+    const latestTs = tsSorted[tsSorted.length - 1];
+    const latestPrefix = `by-repo/${pathSegment}/${latestTs}/`;
+    const latestObjs = objs.filter((o) => o.suffix.startsWith(`${latestTs}/`));
+
+    // Build per-catalog metadata. Catalog kind = filename stem.
+    const catalogs = [];
+    for (const o of latestObjs.sort((a, b) => a.suffix.localeCompare(b.suffix))) {
+      const filename = o.suffix.slice(`${latestTs}/`.length);
+      if (!filename.endsWith('.json')) continue;
+      const kind = filename.replace(/\.json$/, '');
+      const bytes = backend.getBytes(o.key);
+      let extractorBlock = null;
+      let entryCount = null;
+      try {
+        const parsed = JSON.parse(bytes.toString());
+        extractorBlock = parsed.extractor ?? null;
+        if (Array.isArray(parsed.entries)) entryCount = parsed.entries.length;
+        else if (Array.isArray(parsed.edges)) entryCount = parsed.edges.length;
+        else if (Array.isArray(parsed.nodes)) entryCount = parsed.nodes.length;
+      } catch (e) {
+        process.stderr.write(`  WARN ${pathSegment}: ${filename} unparseable (${e.message})\n`);
+      }
+      catalogs.push({
+        kind,
+        key: o.key,
+        extractor: extractorBlock,
+        size_bytes: o.size,
+        entry_count: entryCount,
+        sha256: sha256(bytes),
+      });
+    }
+
+    // Derive commit_sha + short_sha + published_at. `latest.json`'s data is
+    // only trusted when its `prefix` field actually matches the chosen
+    // `latestPrefix` — otherwise we're in a drift state (bucket has a newer
+    // snapshot than the pointer references) and the pointer is stale.
+    let commitSha = null;
+    const shortSha = latestTs.split('_')[1] ?? null;
+    let publishedAt = null;
+    const pointerMatchesLatest = pointerData
+      && typeof pointerData.prefix === 'string'
+      && pointerData.prefix === latestPrefix;
+    if (pointerMatchesLatest) {
+      commitSha = pointerData.commit_sha ?? null;
+      publishedAt = pointerData.published_at ?? null;
+    } else if (pointerData) {
+      process.stderr.write(`  WARN ${pathSegment}: latest.json points at ${pointerData.prefix ?? '<no prefix>'} but bucket newest is ${latestPrefix} — deriving from prefix\n`);
+    }
+    if (!publishedAt) {
+      // Parse `2026-05-30T10-00-00Z` back into an ISO timestamp by undoing
+      // the dash-substitution in the time portion.
+      const tsPart = latestTs.split('_')[0];
+      publishedAt = tsPart.replace(/-(\d{2})-(\d{2})Z$/, ':$1:$2Z');
+    }
+
+    const ageDays = (now - new Date(publishedAt)) / (1000 * 60 * 60 * 24);
+    const status = ageDays > STALE_DAYS ? 'stale' : 'ok';
+
+    const historyPrefixes = tsSorted
+      .slice(0, -1)
+      .slice(-HISTORY_KEEP)
+      .map((ts) => `by-repo/${pathSegment}/${ts}/`);
+
     repos.push({
       repo: canonicalRepo,
       path_segment: pathSegment,
-      latest: null,
-      status: 'stale',
-      reason: 'no snapshot prefixes in bucket',
+      latest: {
+        prefix: latestPrefix,
+        commit_sha: commitSha,
+        short_sha: shortSha,
+        published_at: publishedAt,
+        catalogs,
+      },
+      history_prefixes: historyPrefixes,
+      status,
+      ...(status === 'stale' ? { reason: `latest snapshot is ${Math.round(ageDays)}d old (> ${STALE_DAYS}d threshold)` } : {}),
     });
-    continue;
+
+    process.stderr.write(`  ${status === 'ok' ? '✓' : '!'} ${pathSegment}: ${catalogs.length} catalogs @ ${publishedAt}\n`);
   }
 
-  const latestTs = tsSorted[tsSorted.length - 1];
-  const latestPrefix = `by-repo/${pathSegment}/${latestTs}/`;
-  const latestObjs = objs.filter((o) => o.suffix.startsWith(`${latestTs}/`));
-
-  // Build per-catalog metadata. Catalog kind = filename stem.
-  const catalogs = [];
-  for (const o of latestObjs.sort((a, b) => a.suffix.localeCompare(b.suffix))) {
-    const filename = o.suffix.slice(`${latestTs}/`.length);
-    if (!filename.endsWith('.json')) continue;
-    const kind = filename.replace(/\.json$/, '');
-    const bytes = backend.getBytes(o.key);
-    let extractorBlock = null;
-    let entryCount = null;
-    try {
-      const parsed = JSON.parse(bytes.toString());
-      extractorBlock = parsed.extractor ?? null;
-      if (Array.isArray(parsed.entries)) entryCount = parsed.entries.length;
-      else if (Array.isArray(parsed.edges)) entryCount = parsed.edges.length;
-      else if (Array.isArray(parsed.nodes)) entryCount = parsed.nodes.length;
-    } catch (e) {
-      process.stderr.write(`  WARN ${pathSegment}: ${filename} unparseable (${e.message})\n`);
+  // Inject any known repos that weren't seen in the bucket as `missing`.
+  if (knownRepos) {
+    const seen = new Set(repos.map((r) => r.repo));
+    for (const name of knownRepos) {
+      if (seen.has(name)) continue;
+      repos.push({
+        repo: name,
+        path_segment: name.replace(/\//g, '-'),
+        latest: null,
+        status: 'missing',
+        reason: 'no entries in bucket',
+      });
     }
-    catalogs.push({
-      kind,
-      key: o.key,
-      extractor: extractorBlock,
-      size_bytes: o.size,
-      entry_count: entryCount,
-      sha256: sha256(bytes),
-    });
   }
 
-  // Derive commit_sha + short_sha + published_at. `latest.json`'s data is
-  // only trusted when its `prefix` field actually matches the chosen
-  // `latestPrefix` — otherwise we're in a drift state (bucket has a newer
-  // snapshot than the pointer references) and the pointer is stale.
-  let commitSha = null;
-  const shortSha = latestTs.split('_')[1] ?? null;
-  let publishedAt = null;
-  const pointerMatchesLatest = pointerData
-    && typeof pointerData.prefix === 'string'
-    && pointerData.prefix === latestPrefix;
-  if (pointerMatchesLatest) {
-    commitSha = pointerData.commit_sha ?? null;
-    publishedAt = pointerData.published_at ?? null;
-  } else if (pointerData) {
-    process.stderr.write(`  WARN ${pathSegment}: latest.json points at ${pointerData.prefix ?? '<no prefix>'} but bucket newest is ${latestPrefix} — deriving from prefix\n`);
-  }
-  if (!publishedAt) {
-    // Parse `2026-05-30T10-00-00Z` back into an ISO timestamp by undoing
-    // the dash-substitution in the time portion.
-    const tsPart = latestTs.split('_')[0];
-    publishedAt = tsPart.replace(/-(\d{2})-(\d{2})Z$/, ':$1:$2Z');
-  }
+  const coverage = {
+    total_known_repos: knownRepos ? knownRepos.length : repos.length,
+    ok: repos.filter((r) => r.status === 'ok').length,
+    stale: repos.filter((r) => r.status === 'stale').length,
+    failed_last_run: 0, // populated by publish-catalog.sh when a publish fails; here always 0
+    ...(knownRepos ? { missing: repos.filter((r) => r.status === 'missing').length } : {}),
+  };
 
-  const ageDays = (now - new Date(publishedAt)) / (1000 * 60 * 60 * 24);
-  const status = ageDays > STALE_DAYS ? 'stale' : 'ok';
+  const index = {
+    schema_version: SCHEMA_VERSION,
+    generated_at: now.toISOString(),
+    bucket: backend.kind === 's3' ? backend.bucket : `fs:${backend.rootDir}`,
+    region: process.env.AUDIT_REGION ?? 'auto',
+    repos,
+    coverage,
+  };
 
-  const historyPrefixes = tsSorted
-    .slice(0, -1)
-    .slice(-HISTORY_KEEP)
-    .map((ts) => `by-repo/${pathSegment}/${ts}/`);
-
-  repos.push({
-    repo: canonicalRepo,
-    path_segment: pathSegment,
-    latest: {
-      prefix: latestPrefix,
-      commit_sha: commitSha,
-      short_sha: shortSha,
-      published_at: publishedAt,
-      catalogs,
-    },
-    history_prefixes: historyPrefixes,
-    status,
-    ...(status === 'stale' ? { reason: `latest snapshot is ${Math.round(ageDays)}d old (> ${STALE_DAYS}d threshold)` } : {}),
-  });
-
-  process.stderr.write(`  ${status === 'ok' ? '✓' : '!'} ${pathSegment}: ${catalogs.length} catalogs @ ${publishedAt}\n`);
+  return {
+    serialized: `${JSON.stringify(index, null, 2)}\n`,
+    repoCount: repos.length,
+    coverageOk: coverage.ok,
+    coverageTotal: coverage.total_known_repos,
+  };
 }
 
-// Inject any known repos that weren't seen in the bucket as `missing`.
-if (knownRepos) {
-  const seen = new Set(repos.map((r) => r.repo));
-  for (const name of knownRepos) {
-    if (seen.has(name)) continue;
-    repos.push({
-      repo: name,
-      path_segment: name.replace(/\//g, '-'),
-      latest: null,
-      status: 'missing',
-      reason: 'no entries in bucket',
-    });
-  }
-}
-
-const coverage = {
-  total_known_repos: knownRepos ? knownRepos.length : repos.length,
-  ok: repos.filter((r) => r.status === 'ok').length,
-  stale: repos.filter((r) => r.status === 'stale').length,
-  failed_last_run: 0, // populated by publish-catalog.sh when a publish fails; here always 0
-  ...(knownRepos ? { missing: repos.filter((r) => r.status === 'missing').length } : {}),
-};
-
-const index = {
-  schema_version: SCHEMA_VERSION,
-  generated_at: now.toISOString(),
-  bucket: backend.kind === 's3' ? backend.bucket : `fs:${backend.rootDir}`,
-  region: process.env.AUDIT_REGION ?? 'auto',
-  repos,
-  coverage,
-};
-
-const serialized = `${JSON.stringify(index, null, 2)}\n`;
+const initial = recompute();
 
 if (values['dry-run']) {
-  process.stdout.write(serialized);
-  process.stderr.write(`\nDry-run: would write ${serialized.length} bytes to index.json\n`);
+  process.stdout.write(initial.serialized);
+  process.stderr.write(`\nDry-run: would write ${initial.serialized.length} bytes to index.json\n`);
 } else {
   // S3 backend: ETag-CAS so a concurrent publisher's writes aren't silently
-  // clobbered. Brief §2.5 / §3.4 / §7.2 prescribe this. Filesystem backend
-  // ignores `ifMatch` (atomic rename is the contention model there).
-  const MAX_RETRIES = 5;
-  let attempt = 0;
+  // clobbered. Brief §3.4 prescribes "each writer lists by-repo/<R>/ to
+  // compute the latest, then PUTs index.json with conditional If-Match on
+  // its ETag, retrying on 412 conflict" — note re-listing per attempt, so a
+  // loser's eventual successful PUT carries the winner's view, not the
+  // loser's stale serialization. Filesystem backend ignores `ifMatch`
+  // (atomic rename is the contention model there).
+  const MAX_ATTEMPTS = 5;
+  let computed = initial;
+  let attempt = 1;
   while (true) {
     const ifMatch = backend.kind === 's3' ? backend.headETag('index.json') : null;
     try {
-      backend.putBytes('index.json', Buffer.from(serialized), { ifMatch });
+      backend.putBytes('index.json', Buffer.from(computed.serialized), { ifMatch });
       break;
     } catch (e) {
-      if (e.__precondition && attempt < MAX_RETRIES - 1) {
-        attempt += 1;
+      if (e.__precondition && attempt < MAX_ATTEMPTS) {
         const backoffMs = Math.min(2000, 100 * 2 ** attempt) + Math.floor(Math.random() * 100);
-        process.stderr.write(`  index.json ETag-CAS conflict (attempt ${attempt}/${MAX_RETRIES}); retrying in ${backoffMs}ms\n`);
+        process.stderr.write(`  index.json conflict (attempt ${attempt}/${MAX_ATTEMPTS}); re-listing bucket and retrying in ${backoffMs}ms\n`);
         await new Promise((r) => setTimeout(r, backoffMs));
+        attempt += 1;
+        computed = recompute();
         continue;
       }
       throw e;
     }
   }
-  process.stderr.write(`\nWrote index.json (${serialized.length} bytes, ${repos.length} repos, coverage ${coverage.ok}/${coverage.total_known_repos} ok)\n`);
+  process.stderr.write(`\nWrote index.json (${computed.serialized.length} bytes, ${computed.repoCount} repos, coverage ${computed.coverageOk}/${computed.coverageTotal} ok)\n`);
 }

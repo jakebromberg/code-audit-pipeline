@@ -205,6 +205,44 @@ assert_eq "0d733bd04c183bd79e59774d8e9a7cf20cd46463abfb8f8489491fb8030dce63" "$a
   "rebuilt sha256 matches the canonical fixture value"
 rm -rf "$SCRATCH"
 
+echo "=== refresh-index.mjs: recompute() is byte-stable across consecutive runs (modulo generated_at) ==="
+SCRATCH=$(mk_scratch)
+cp -r "$MOCK/." "$SCRATCH/"
+rm -f "$SCRATCH/index.json"
+node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" >/dev/null 2>&1
+a=$(jq 'del(.generated_at)' "$SCRATCH/index.json")
+node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" >/dev/null 2>&1
+b=$(jq 'del(.generated_at)' "$SCRATCH/index.json")
+if [ "$a" = "$b" ]; then
+  PASS=$((PASS + 1))
+  echo "  ✓ recompute() output is deterministic — safe to re-run inside the retry loop"
+else
+  FAIL=$((FAIL + 1))
+  echo "  ✗ recompute() output drifts across runs (something other than generated_at differs)"
+fi
+rm -rf "$SCRATCH"
+
+echo "=== publish-catalog.sh: trap cleans up tempfiles even on validation failure ==="
+PUB_BUCKET=$(mk_scratch)
+PUB_CAT=$(mk_scratch)
+printf '[{"bare":"array"}]\n' > "$PUB_CAT/type-catalog.json"
+# Match by parent PID — publish-catalog.sh's `$$` is the script's own pid,
+# unknown to us, so we just check that no `publish-catalog-*.*.*` files
+# remain after the run finishes.
+before=$(find /tmp -maxdepth 1 -name 'publish-catalog-*' 2>/dev/null | wc -l | tr -d ' ')
+bash "$PIPELINE/publish-catalog.sh" \
+  --repo wxyc/trap-test --sha trapleak1234 --catalogs-dir "$PUB_CAT" \
+  --bucket-fs "$PUB_BUCKET" --skip-refresh >/dev/null 2>&1 || true
+after=$(find /tmp -maxdepth 1 -name 'publish-catalog-*' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$after" -le "$before" ]; then
+  PASS=$((PASS + 1))
+  echo "  ✓ trap left no new tempfiles ($before -> $after)"
+else
+  FAIL=$((FAIL + 1))
+  echo "  ✗ trap left $((after - before)) new tempfile(s)"
+fi
+rm -rf "$PUB_BUCKET" "$PUB_CAT"
+
 echo "=== refresh-index.mjs: --bucket-fs preflight rejects nonexistent dir ==="
 out=$(node "$PIPELINE/refresh-index.mjs" --bucket-fs /tmp/does-not-exist-xyz123 2>&1)
 rc=$?
