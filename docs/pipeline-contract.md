@@ -233,6 +233,17 @@ The artifact is the right home for inverted ("what depends on X?") queries:
 
 The inline `references[]` field on each catalog entry is the right home for forward ("what does X depend on?") queries — including the graph-view consumer that needs per-node outgoing edges.
 
+#### Consumer: `dead-code.jq`
+
+The first consumer of this artifact is `pipeline/queries/dead-code.jq`, which surfaces exported, non-generated declarations with zero resolved incoming references. Invocation:
+
+```bash
+jq -L pipeline/queries -r --slurpfile refs references.json \
+  -f pipeline/queries/dead-code.jq catalog.json
+```
+
+The query keeps only `resolved: true` edges (per the resolution rule above) and drops self-references (`type Tree = { children: Tree[] }` emits a `Tree → Tree` edge that the recursive-type author didn't intend as a live consumer), then projects each surviving entry whose incoming count is zero. Known v1 false-positive class: types kept alive only through barrel re-exports (`export { Foo } from './x'`) — the walker doesn't currently emit a synthetic edge for re-exports.
+
 ## Conventions
 
 ### Field encoding
