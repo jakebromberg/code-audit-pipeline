@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: |
+          shellcheck --version
+          shellcheck \
+            pipeline/queries/_tests/test_canonical.sh \
+            pipeline/queries/_tests/test_queries_integration.sh \
+            pipeline/queries/_tests/smoke_test_real_catalog.sh \
+            extractors/swift/tests/test_package_graph.sh
+
+  pipeline:
+    name: pipeline + typescript extractor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: extractors/typescript/package-lock.json
+
+      - name: Verify toolchain
+        run: |
+          jq --version
+          node --version
+
+      - name: Install TypeScript extractor deps
+        working-directory: extractors/typescript
+        run: npm ci
+
+      - name: Syntax-check extractor entrypoints
+        run: |
+          node --check extractors/typescript/type-catalog.mjs
+          node --check extractors/typescript/function-catalog.mjs
+          node --check extractors/file-hashes/file-hashes.mjs
+
+      - name: jq canonical helper tests
+        run: pipeline/queries/_tests/test_canonical.sh
+
+      - name: jq query integration tests
+        run: pipeline/queries/_tests/test_queries_integration.sh
+
+  swift:
+    name: swift extractor
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: extractors/swift
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Verify toolchain
+        run: |
+          swift --version
+          jq --version
+
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: |
+            extractors/swift/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('extractors/swift/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+
+      - name: Build
+        run: swift build
+
+      - name: Integration tests (package-graph)
+        run: tests/test_package_graph.sh
