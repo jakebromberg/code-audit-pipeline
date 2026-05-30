@@ -140,8 +140,17 @@ func runReportQuery(
 	}
 	inputPath, slurpfiles, err := wireCatalogs(absRoot, header, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "not cached") {
-			return sectionResult{name: name, skipped: err.Error()}, false
+		// Three skip-worthy classes: a catalog the query wants isn't cached
+		// yet; a two-of-same-kind cross-catalog query that can't run without
+		// explicit --catalog overrides the report driver doesn't synthesize
+		// (cross-catalog-name-collisions); and unknown catalog kinds the
+		// driver has no slurpfile mapping for. All three should land the
+		// query in the "Skipped queries" section, not fail the run.
+		msg := err.Error()
+		if strings.Contains(msg, "not cached") ||
+			strings.Contains(msg, "two-of-same-kind") ||
+			strings.Contains(msg, "no slurpfile variable mapping") {
+			return sectionResult{name: name, skipped: msg}, false
 		}
 		return sectionResult{name: name, err: err}, false
 	}

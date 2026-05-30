@@ -209,6 +209,62 @@ func TestE2EReport(t *testing.T) {
 	}
 }
 
+// TestReportSkipsTwoOfSameKindQueries ensures cross-catalog queries that
+// declare the same catalog kind twice (e.g. cross-catalog-name-collisions)
+// land in the "Skipped queries" section instead of failing the report. The
+// report driver doesn't synthesize the two --catalog overrides those queries
+// need; users wanting that query run it via `audit query --catalog A
+// --catalog B` directly.
+func TestReportSkipsTwoOfSameKindQueries(t *testing.T) {
+	tmp := t.TempDir()
+	cacheDir := filepath.Join(tmp, ".audit", "catalogs")
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	catalogPath := filepath.Join(cacheDir, "type-catalog.json")
+	body := `{"schema_version":"1.1","extractor":{"language":"x","name":"type-catalog","version":"0"},"entries":[]}`
+	if err := os.WriteFile(catalogPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	metaPath := filepath.Join(tmp, ".audit", "meta.json")
+	meta := map[string]any{
+		"audit_version": cli.Version,
+		"root":          tmp,
+		"catalogs": map[string]any{
+			"type-catalog": map[string]any{
+				"path":       "catalogs/type-catalog.json",
+				"source_sha": "seed",
+				"cli_args":   map[string]any{},
+			},
+		},
+	}
+	mdata, _ := json.MarshalIndent(meta, "", "  ")
+	if err := os.WriteFile(metaPath, mdata, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "cross-catalog-name-collisions",
+	}, &out, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d (want 0; two-of-same-kind should skip not fail), out=%s", exit, out.String())
+	}
+	matches, err := filepath.Glob(filepath.Join(tmp, ".audit", "reports", "findings-*.md"))
+	if err != nil || len(matches) != 1 {
+		t.Fatalf("expected one findings-*.md, got %d (err=%v)", len(matches), err)
+	}
+	data, _ := os.ReadFile(matches[0])
+	report := string(data)
+	if !strings.Contains(report, "cross-catalog-name-collisions") {
+		t.Errorf("report should list cross-catalog-name-collisions as skipped:\n%s", report)
+	}
+	if !strings.Contains(report, "two-of-same-kind") {
+		t.Errorf("skip reason should mention two-of-same-kind:\n%s", report)
+	}
+}
+
 // TestReportSkipsQueriesWithUnsatisfiedArgs ensures queries with required
 // --arg surface as skipped under --skip-missing-args rather than failing.
 func TestReportSkipsQueriesWithUnsatisfiedArgs(t *testing.T) {
