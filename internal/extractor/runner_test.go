@@ -3,8 +3,8 @@ package extractor
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
@@ -63,7 +63,7 @@ func TestRunRealExtractor(t *testing.T) {
 	if _, err := os.Stat("../../extractors/file-hashes/file-hashes.mjs"); err != nil {
 		t.Skip("file-hashes extractor script not present")
 	}
-	if _, err := lookNode(); err != nil {
+	if _, err := exec.LookPath("node"); err != nil {
 		t.Skip("node not on PATH")
 	}
 	m, err := manifest.Parse("../../extractors/file-hashes/manifest.toml")
@@ -94,40 +94,4 @@ func TestRunRealExtractor(t *testing.T) {
 	if _, err := os.Stat(res[0].OutputPath); err != nil {
 		t.Errorf("output missing: %v", err)
 	}
-}
-
-func lookNode() (string, error) {
-	if p, err := exec_LookPath("node"); err == nil {
-		return p, nil
-	}
-	return "", os.ErrNotExist
-}
-
-// exec.LookPath wrapper kept separate to avoid an import cycle in tests if a
-// future change pushes the runner package into the standard library shape.
-func exec_LookPath(name string) (string, error) {
-	if name == "" {
-		return "", os.ErrNotExist
-	}
-	// Reuse the same lookup the runner does.
-	p, err := lookPath(name)
-	if err != nil {
-		return "", err
-	}
-	if !strings.Contains(p, "/") {
-		return "", os.ErrNotExist
-	}
-	return p, nil
-}
-
-func lookPath(name string) (string, error) {
-	// Walk PATH manually so the test doesn't depend on exec.LookPath's
-	// behavior (which is what we want to verify the runner uses).
-	for _, dir := range filepath.SplitList(os.Getenv("PATH")) {
-		p := filepath.Join(dir, name)
-		if _, err := os.Stat(p); err == nil {
-			return p, nil
-		}
-	}
-	return "", os.ErrNotExist
 }

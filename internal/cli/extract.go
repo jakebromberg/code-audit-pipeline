@@ -59,22 +59,16 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	}
 	auditRootAbs, _ := filepath.Abs(auditRoot)
 
+	cwd, _ := os.Getwd()
 	xdir, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
 		Flag:      *extractorsDir,
 		AuditHome: os.Getenv("AUDIT_HOME"),
-		CWD:       auditRootAbs,
+		CWD:       cwd,
+		HomeDir:   homeDirOrEmpty(),
 	})
 	if err != nil {
-		// Also try the audit binary's cwd if the audit root has no extractors.
-		cwd, _ := os.Getwd()
-		xdir, _, err = discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
-			Flag: *extractorsDir, AuditHome: os.Getenv("AUDIT_HOME"), CWD: cwd,
-			HomeDir: homeDirOrEmpty(),
-		})
-		if err != nil {
-			fmt.Fprintf(out, "audit: %v\n", err)
-			return 3
-		}
+		fmt.Fprintf(out, "audit: %v\n", err)
+		return 3
 	}
 
 	manifestPath := filepath.Join(xdir, name, "manifest.toml")
