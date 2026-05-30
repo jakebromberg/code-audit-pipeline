@@ -1349,6 +1349,106 @@ assert_public_api_leaks_e2e_extractor() {
 assert_public_api_leaks_e2e_extractor
 
 echo ""
+echo "=== cross-package-backward-imports query (files.json layering check) ==="
+# Single-input query: takes a wrapped files.json (no slurp needed). Flags any
+# shared/* file that imports from main/* — the layering violation that
+# motivates the `--shared` split. v1 does not filter type_only / is_test /
+# dynamic-import; consumers can post-filter via `.backward_imports[]`.
+BACKWARD_IMPORTS_FIXTURE="$FIXTURES_DIR/cross-package-backward-imports-files.input.json"
+
+assert_jsonl_has_prefix cross-package-backward-imports.jq "$BACKWARD_IMPORTS_FIXTURE" \
+  "cross-package-backward-imports:"
+
+# Semantic correctness. Fixture (cross-package-backward-imports-files.input.json):
+#   shared:src/dto/lifted.ts             → flag (2 backward edges to main)
+#   shared:src/dto/clean.ts              → NOT flag (forward shared+extern only)
+#   shared:src/dto/primitives.ts         → NOT flag (no imports)
+#   shared:src/test/shared-test.test.ts  → flag (1 backward edge; is_test:true exposed but not filtered in v1)
+#   main:src/main-file.ts                → NOT flag (forward main→shared is allowed)
+#   main:src/internal/state.ts           → NOT flag (no imports)
+#   main:src/services/foo.ts             → NOT flag (no imports)
+# Expected flagged set: {shared:src/dto/lifted.ts, shared:src/test/shared-test.test.ts}.
+assert_backward_imports_baseline() {
+  local result rows actual_set expected_set
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/cross-package-backward-imports.jq" "$BACKWARD_IMPORTS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (baseline): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  if [[ "$rows" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (baseline): expected 2 rows, got %s:\n%s\n" "$rows" "$result"
+    return
+  fi
+  actual_set="$(echo "$result" | jq -r '.members[0].path' | sort | tr '\n' ',' | sed 's/,$//')"
+  expected_set="src/dto/lifted.ts,src/test/shared-test.test.ts"
+  if [[ "$actual_set" == "$expected_set" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ cross-package-backward-imports (baseline): flags exactly {lifted.ts, shared-test.test.ts}\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (baseline): row set mismatch\n      expected: %s\n      actual:   %s\n" \
+      "$expected_set" "$actual_set"
+  fi
+}
+assert_backward_imports_baseline
+
+# lifted.ts must report TWO backward_imports entries — proves grouping is per-file, not per-edge.
+assert_backward_imports_lifted_has_two_entries() {
+  local count
+  count="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/cross-package-backward-imports.jq" "$BACKWARD_IMPORTS_FIXTURE" 2>&1 \
+    | jq -r 'select(.members[0].path == "src/dto/lifted.ts") | .backward_imports | length')"
+  if [[ "$count" == "2" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ cross-package-backward-imports (lifted.ts): reports 2 backward edges grouped on one row\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (lifted.ts): expected 2 backward edges, got %s\n" "$count"
+  fi
+}
+assert_backward_imports_lifted_has_two_entries
+
+assert_text_has_cid cross-package-backward-imports.jq "$BACKWARD_IMPORTS_FIXTURE"
+
+# End-to-end smoke: run the live type-catalog extractor against an in-tree
+# fixture tree with a planted shared→main edge, emit files.json, run the
+# query. Proves the query interops with the real extractor's output, not
+# just hand-edited fixtures. If --emit-files's shape ever drifts, this
+# catches it before the extractor unit tests start lying.
+assert_backward_imports_e2e_extractor() {
+  local extractor_dir tree_dir tmp_root tmp_files result
+  extractor_dir="$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)"
+  tree_dir="$FIXTURES_DIR/cross-package-backward-imports-fixture-tree"
+  tmp_root="$(mktemp -d)"
+  trap 'rm -rf "$tmp_root"' RETURN
+  tmp_files="$tmp_root/files.json"
+  if ! node "$extractor_dir/type-catalog.mjs" \
+       --root "$tree_dir/main" --shared "$tree_dir/shared" \
+       --output "$tmp_root/catalog.json" --emit-files "$tmp_files" 2>/dev/null; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (e2e): extractor crashed\n"
+    return
+  fi
+  if ! result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/cross-package-backward-imports.jq" "$tmp_files" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (e2e): query crashed:\n%s\n" "$result"
+    return
+  fi
+  if [[ -z "$result" ]] || ! echo "$result" | jq -e -s 'any(.members[0].path == "src/dtos/lifted.ts")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ cross-package-backward-imports (e2e): expected lifted.ts in output, got:\n%s\n" "$result"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ cross-package-backward-imports (e2e): query flags planted backward edge against real extractor output\n"
+}
+assert_backward_imports_e2e_extractor
+
+echo ""
 echo "=== Cross-catalog queries ==="
 # cross-catalog queries take two slurped catalogs rather than a single input,
 # so the assert_jsonl_has_prefix helper doesn't fit — inline the assertion.

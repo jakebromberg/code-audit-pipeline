@@ -100,6 +100,8 @@ Top-level JSON is `{schema_version: "1.1", extractor: {...}, entries: [...]}` �
 
 Pass `--emit-references-graph <path>` to additionally write a sibling `references.json` with an inverted edge list (`from`/`to` keyed by `(package, name)`, with same-package-then-shared resolution).
 
+Pass `--emit-files <path>` to write a sibling `files.json` with per-file import edges (`{path, package, imports: [{package, path, type_only, kind, line}]}`). Imports are resolved against `--root`/`--shared` and tagged `main` / `shared` / `extern`. Consumed by `cross-package-backward-imports.jq` (and the future cycle-detection / unused-imports / dependency-mass queries).
+
 ## Cluster queries
 
 All operate on the JSON catalog and emit human-readable output. Drop into a chat or report.
@@ -124,6 +126,7 @@ All operate on the JSON catalog and emit human-readable output. Drop into a chat
 | `test-prod-drift.jq` | Near-duplicate type pairs where exactly one side is in a test path (XOR on `is_test`). Surfaces manually-maintained fixture shapes that have drifted from the prod model they mirror. Default threshold 0.5 (looser than `near-duplicates`' 0.7, since fixtures legitimately drop optional fields). Prod side rendered first in text output | type |
 | `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references. Joins the catalog against the sibling `references.json` artifact via `--slurpfile refs`. Self-references (`type Tree = { children: Tree[] }`) and unresolved external edges don't anchor a decl. Known v1 false-positive class: types kept alive only through barrel re-exports | type |
 | `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type — likely silent ABI breaks for downstream importers. Joins function-catalog primary with `--slurpfile types type-catalog.json`. V1 skips `kind: "method"` rows (re-enables when class-kind work lands) | function, type |
+| `cross-package-backward-imports.jq` | `shared/*` files that import from `main/*` — the layering violation that motivates the `--shared` split. No equivalent in `madge`/ESLint (those are file-level and language-locked; this query operates on the project's package cut). Consumes the sibling `files.json` artifact (`--emit-files`). V1 resolves relative paths only; documented limits include `tsconfig` aliases and CommonJS `require()` | files |
 
 ## Adding a new extractor
 
