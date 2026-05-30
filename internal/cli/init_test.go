@@ -156,6 +156,38 @@ func TestInitReconcilesAfterStateLoss(t *testing.T) {
 	}
 }
 
+// TestInitUpgradePullsNewSrc verifies --upgrade refreshes a CLEAN destination
+// when the source file has changed. Without this test, the central
+// `audit init --upgrade` happy path was only exercised indirectly via the
+// dirty / state-loss reconciliation tests.
+func TestInitUpgradePullsNewSrc(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	mustInit(t, src, dest)
+
+	// Update the source file (pristine sha changes).
+	srcFile := filepath.Join(src, "pipeline/queries/exact-duplicates.jq")
+	if err := os.WriteFile(srcFile, []byte("#! query: exact-duplicates (v2)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	if exit != 0 {
+		t.Fatalf("upgrade Init exit=%d, out=%s", exit, out.String())
+	}
+	got, err := os.ReadFile(filepath.Join(dest, "pipeline/queries/exact-duplicates.jq"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(got), "(v2)") {
+		t.Errorf("--upgrade did not refresh CLEAN file from new src: %q", string(got))
+	}
+	if !strings.Contains(out.String(), "upgraded") {
+		t.Errorf("expected `upgraded` in summary, got: %s", out.String())
+	}
+}
+
 // TestInitDryRun verifies --dry-run prints the planned actions and writes
 // neither the destination files nor the state file. Covers the path
 // classifyFiles → switch{stateNew}: `if *dryRun { ... }`.
