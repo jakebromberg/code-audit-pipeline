@@ -34,12 +34,13 @@ const { values } = parseArgs({
     touched:                 { type: 'string' },
     output:                  { type: 'string' },
     'emit-references-graph': { type: 'string' },
+    'emit-files':            { type: 'string' },
     help:                    { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>]
+  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>]
 
   --root           Required. Root of the codebase to scan.
   --shared         Optional. A secondary package root (canonical types you compare
@@ -53,6 +54,15 @@ if (values.help || !values.root) {
                    <path>. The file contains an inverted edge list keyed by
                    (package, name); resolution prefers same-package targets,
                    falls back to the shared package, then marks unresolved.
+  --emit-files <path>
+                   Optional. Write a sibling files.json artifact
+                   (per docs/pipeline-contract.md §files artifact) to <path>.
+                   The file contains one row per source file with its resolved
+                   import / re-export / dynamic-import edges, package-tagged
+                   (main / shared / extern). Consumed by the
+                   cross-package-backward-imports.jq query (and the future
+                   cycle-detection, unused-imports, dependency-mass-per-file
+                   queries).
 
 Output: {"schema_version": "${SCHEMA_VERSION}", "extractor": {...}, "entries": [...]}.
 Queries that consume the catalog must read from .entries (see _canonical.jq's
@@ -301,7 +311,62 @@ function extractExtendsFromInterface(node, sf) {
   return [...names].sort();
 }
 
-function extractFromFile(filePath, pkgName, pkgRoot) {
+// --- Per-file import edge resolver (for --emit-files / files.json) ---
+//
+// The walker itself lives inside extractFromFile so the type-extraction
+// recursion can collect dynamic-import calls in the same pass (one tree
+// walk per file, not two). What's down here is just the resolver and the
+// existence cache it shares across the whole run.
+//
+// Resolution: relative paths only in v1 (no tsconfig.json `paths` aliases —
+// docs/pipeline-contract.md §files artifact spells out the v1 scope).
+
+const RESOLVE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
+
+// Memoized across the whole extractor run: the same target gets probed
+// repeatedly (every file that imports './shared/x' produces the same set
+// of candidates). On a 300-file repo with ~10 imports/file, this collapses
+// ~27k stat calls down to ~3k unique paths.
+const _existsCache = new Map();
+function isExistingFile(absPath) {
+  const cached = _existsCache.get(absPath);
+  if (cached !== undefined) return cached;
+  const stat = statSync(absPath, { throwIfNoEntry: false });
+  const result = stat ? stat.isFile() : false;
+  _existsCache.set(absPath, result);
+  return result;
+}
+
+// POSIX-only guard: `relative()` never returns a leading "/" on Linux/macOS,
+// so the `!rel.startsWith('/')` clause is dead here. It's kept defensively
+// because `path.relative` does return absolute-looking strings on Windows
+// when the inputs share no drive root.
+function isUnderDir(absPath, dirPath) {
+  if (!dirPath) return false;
+  const rel = relative(dirPath, absPath);
+  return rel !== '' && !rel.startsWith('..') && !rel.startsWith('/');
+}
+
+function resolveImportSpec(spec, fromFilePath) {
+  if (!spec.startsWith('.')) {
+    return { package: 'extern', path: spec };
+  }
+  const baseAbs = resolve(dirname(fromFilePath), spec);
+  // Matches Node's resolver order for TS: exact, then each extension,
+  // then each /index.<ext>. First hit wins.
+  const candidates = [baseAbs];
+  for (const ext of RESOLVE_EXTENSIONS) candidates.push(baseAbs + ext);
+  for (const ext of RESOLVE_EXTENSIONS) candidates.push(join(baseAbs, 'index' + ext));
+  for (const c of candidates) {
+    if (!isExistingFile(c)) continue;
+    if (isUnderDir(c, ROOT)) return { package: 'main', path: relative(ROOT, c) };
+    if (isUnderDir(c, SHARED)) return { package: 'shared', path: relative(SHARED, c) };
+    return { package: 'extern', path: c };
+  }
+  return { package: 'extern', path: spec };
+}
+
+function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
   const text = readFileSync(filePath, 'utf8');
   countIdentifiers(text);
   const isTsx = filePath.endsWith('.tsx');
@@ -323,6 +388,30 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
   };
   const results = [];
   const emitSynthetic = (entry) => results.push(entry);
+  // Raw import edges accumulated during the same walk as type extraction;
+  // resolved and sorted before return. null when --emit-files is off.
+  const rawImports = collectImports ? [] : null;
+  if (collectImports) {
+    for (const stmt of sf.statements) {
+      if (ts.isImportDeclaration(stmt) && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)) {
+        const { line } = sf.getLineAndCharacterOfPosition(stmt.getStart(sf));
+        rawImports.push({
+          kind: 'import',
+          spec: stmt.moduleSpecifier.text,
+          type_only: stmt.importClause?.isTypeOnly === true,
+          line: line + 1,
+        });
+      } else if (ts.isExportDeclaration(stmt) && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)) {
+        const { line } = sf.getLineAndCharacterOfPosition(stmt.getStart(sf));
+        rawImports.push({
+          kind: 're-export',
+          spec: stmt.moduleSpecifier.text,
+          type_only: stmt.isTypeOnly === true,
+          line: line + 1,
+        });
+      }
+    }
+  }
 
   function pushBase(node, partial) {
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
@@ -464,11 +553,48 @@ function extractFromFile(filePath, pkgName, pkgRoot) {
       }
     }
 
+    // Dynamic imports can appear anywhere; piggyback on the type-extraction
+    // recursion so we don't pay for a second tree walk. Templated forms
+    // (`import(\`./${x}\`)`) are skipped — the spec isn't statically known.
+    if (collectImports
+        && ts.isCallExpression(node)
+        && node.expression.kind === ts.SyntaxKind.ImportKeyword
+        && node.arguments.length > 0
+        && ts.isStringLiteral(node.arguments[0])) {
+      const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+      rawImports.push({
+        kind: 'dynamic-import',
+        spec: node.arguments[0].text,
+        type_only: false,
+        line: line + 1,
+      });
+    }
+
     ts.forEachChild(node, visit);
   }
 
   visit(sf);
-  return results;
+
+  let fileRow = null;
+  if (collectImports) {
+    const imports = rawImports.map((r) => {
+      const { package: pkg, path: rpath } = resolveImportSpec(r.spec, filePath);
+      return { package: pkg, path: rpath, type_only: r.type_only, kind: r.kind, line: r.line };
+    });
+    imports.sort((a, b) => {
+      if (a.package !== b.package) return a.package < b.package ? -1 : 1;
+      if (a.path !== b.path) return a.path < b.path ? -1 : 1;
+      if (a.kind !== b.kind) return a.kind < b.kind ? -1 : 1;
+      return a.line - b.line;
+    });
+    fileRow = {
+      path: relPath,
+      package: pkgName,
+      is_test: rowDefaults.is_test,
+      imports,
+    };
+  }
+  return { entries: results, fileRow };
 }
 
 // --- Run ---
@@ -479,14 +605,21 @@ const sharedFiles = SHARED ? walkDir(SHARED) : [];
 process.stderr.write(`main: ${mainFiles.length} files\n`);
 if (SHARED) process.stderr.write(`shared: ${sharedFiles.length} files\n`);
 
+const EMIT_FILES = !!values['emit-files'];
 const all = [];
+const fileEntries = [];
 let errors = 0;
+function indexOne(f, pkg, pkgRoot) {
+  const { entries, fileRow } = extractFromFile(f, pkg, pkgRoot, EMIT_FILES);
+  all.push(...entries);
+  if (fileRow) fileEntries.push(fileRow);
+}
 for (const f of mainFiles) {
-  try { all.push(...extractFromFile(f, 'main', ROOT)); }
+  try { indexOne(f, 'main', ROOT); }
   catch (e) { errors++; process.stderr.write(`  ERR ${f}: ${e.message}\n`); }
 }
 for (const f of sharedFiles) {
-  try { all.push(...extractFromFile(f, 'shared', SHARED)); }
+  try { indexOne(f, 'shared', SHARED); }
   catch (e) { errors++; process.stderr.write(`  ERR ${f}: ${e.message}\n`); }
 }
 
@@ -677,6 +810,31 @@ if (values['emit-references-graph']) {
   const graph = { schema_version: SCHEMA_VERSION, edges };
   writeFileSync(values['emit-references-graph'], JSON.stringify(graph, null, 2));
   process.stderr.write(`Wrote references graph (${edges.length} edges) to ${values['emit-references-graph']}\n`);
+}
+
+// --- Sibling files.json artifact ---
+// Per-file import edges (static + re-export + dynamic). Resolved against
+// ROOT / SHARED to tag every edge with package ∈ {main, shared, extern}.
+// Documented in docs/pipeline-contract.md §files artifact. First consumer is
+// pipeline/queries/cross-package-backward-imports.jq.
+if (EMIT_FILES) {
+  fileEntries.sort((a, b) => {
+    if (a.package !== b.package) return a.package < b.package ? -1 : 1;
+    if (a.path !== b.path) return a.path < b.path ? -1 : 1;
+    return 0;
+  });
+  const filesArtifact = {
+    schema_version: SCHEMA_VERSION,
+    extractor: {
+      language: 'typescript',
+      name: 'type-catalog',
+      version: EXTRACTOR_VERSION,
+    },
+    entries: fileEntries,
+  };
+  const edgeCount = fileEntries.reduce((acc, f) => acc + f.imports.length, 0);
+  writeFileSync(values['emit-files'], JSON.stringify(filesArtifact, null, 2));
+  process.stderr.write(`Wrote files (${fileEntries.length} files, ${edgeCount} edges) to ${values['emit-files']}\n`);
 }
 
 process.exit(mainFiles.length > 0 ? 0 : 1);

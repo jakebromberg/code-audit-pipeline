@@ -42,6 +42,14 @@ node type-catalog.mjs \
   --root /path/to/repo \
   --touched ./candidates.json \
   --output catalog.json
+
+# Also emit sibling files.json (per-file import edges) for the
+# cross-package-backward-imports.jq layering check
+node type-catalog.mjs \
+  --root /path/to/main \
+  --shared /path/to/shared \
+  --output catalog.json \
+  --emit-files files.json
 ```
 
 Stats land on stderr; the catalog JSON lands on stdout (or `--output`).
@@ -65,7 +73,8 @@ For each, the script extracts a sorted `name:type` field list and computes `shap
 
 - Generic-instantiation resolution. `Pick<User, 'id'>` is recorded as a `type-alias-other` with its `type_text`, not expanded into its field set.
 - Computed property keys. Only literal property names are captured.
-- Imports tracking. Doesn't tell you whether `Foo` here is the same `Foo` imported elsewhere — only declared types are catalogued.
+- Import-graph type identity. `--emit-files` captures the file-level import edges (resolved against `--root` / `--shared`), but doesn't tell you whether `Foo` here is the same `Foo` declared by an import target — type-identity unification is a separate pass.
+- `tsconfig.json` `paths` aliases in the `--emit-files` resolver — v1 handles relative paths only.
 - JSDoc / TSDoc. Comments are ignored.
 
 These are all fine for type-duplication auditing, but if you want a richer surface — e.g., to feed a "missed imports" detector — wire in a real `ts.Program` with type-checker calls.

@@ -2,11 +2,12 @@
 
 Every extractor in `extractors/<language>/` emits the same JSON shape so cluster queries don't care which language they're operating on. This is the schema.
 
-The substrate has four catalog kinds today, each in its own JSON file:
+The substrate has five catalog kinds today, each in its own JSON file:
 
 - `type-catalog.json` — type / interface / Zod / Drizzle declarations (shape-of-named-members).
 - `function-catalog.json` — function / method / arrow-function declarations. Carries body-of-named-callable data (body_hash, body_lines for duplication clustering) **and** signature-of-named-callable data (typed params, return ref, outgoing references for cross-catalog type resolution).
 - `file-hashes.json` — file-level content hashes (raw and whitespace-normalized).
+- `files.json` — file-level import edges (sibling artifact emitted by `--emit-files`; see [Files artifact](#files-artifact-filesjson) below).
 - `package-graph.json` — inter-package dependency edges (V7 §6.5; see [Package graph](#package-graph-package-graphjson) below).
 
 Each section below specifies one. Queries in `pipeline/queries/` consume one specific catalog kind and document which.
@@ -310,6 +311,80 @@ Test files are always extracted; every row carries an `is_test: bool` flag deriv
 
 The AST-based extensions noted above (Swift `XCTestCase`, Rust `#[cfg(test)]`) fall under the "extractor may extend" clause — they're permitted and encouraged, but not required for v1 parity.
 
+## Files artifact (`files.json`)
+
+Sibling artifact emitted by `type-catalog.mjs --emit-files <path>` (opt-in). One row per source file, carrying the resolved import / re-export / dynamic-import edges leaving that file. Consumed by `pipeline/queries/cross-package-backward-imports.jq` (the first consumer; layering check that flags `shared/*` files importing from `main/*`) and forecast consumers include cycle-detection, unused-imports, dependency-mass-per-file, and the graph-view import-edge layer (#147, sub-issue of #119).
+
+The artifact is opt-in to keep existing extractor invocations byte-stable for users who aren't running the new queries yet — same pattern as `--emit-references-graph`.
+
+```jsonc
+{
+  "schema_version": "1.1",
+  "extractor": {
+    "language": "typescript",
+    "name": "type-catalog",
+    "version": "0.4.0"
+  },
+  "entries": [
+    {
+      "path": "src/services/flowsheet.service.ts",
+      "package": "main",
+      "is_test": false,
+      "imports": [
+        { "package": "main",   "path": "src/models/flowsheet.ts", "type_only": false, "kind": "import",         "line": 3 },
+        { "package": "shared", "path": "src/dtos/discogs.ts",     "type_only": true,  "kind": "import",         "line": 5 },
+        { "package": "extern", "path": "drizzle-orm",             "type_only": false, "kind": "import",         "line": 1 },
+        { "package": "main",   "path": "src/lib/lazy.ts",         "type_only": false, "kind": "dynamic-import", "line": 12 },
+        { "package": "main",   "path": "src/models/index.ts",     "type_only": false, "kind": "re-export",      "line": 1 }
+      ]
+    }
+  ]
+}
+```
+
+### Row fields
+
+| Field | Meaning |
+|---|---|
+| `path` | File path relative to its package root. Mirrors `file` on type-catalog rows. Field renamed to `path` because `file` reads awkwardly as a top-level key on a file-shaped row. |
+| `package` | `"main"` or `"shared"`. Externals never appear at the row level — every `entries[]` row is a real file. |
+| `is_test` | File-path-derived flag, same patterns as the type-catalog (`### Test path patterns` above). |
+| `imports[]` | Every import / re-export / dynamic-import edge from this file. |
+
+### Import-row fields
+
+| Field | Meaning |
+|---|---|
+| `package` | Resolved target package: `"main"`, `"shared"`, or `"extern"`. |
+| `path` | For `main`/`shared`, the resolved path relative to that package's root (joins on `entries[].path` for any same-row target). For `extern`, the verbatim `moduleSpecifier` text. |
+| `type_only` | Declaration-level `isTypeOnly` flag (`import type … from`, `export type { … } from`). `false` for `dynamic-import`. |
+| `kind` | `"import"` \| `"re-export"` \| `"dynamic-import"`. |
+| `line` | 1-indexed source line of the statement. |
+
+### Resolver
+
+- Relative specifiers (`./y`, `../foo/bar`) are resolved against the importing file's directory. Probe order: exact path, then `.ts`, `.tsx`, `.mts`, `.cts`, then the same set inside `<spec>/index.<ext>`. First hit wins.
+- Targets resolving under `--root` are tagged `package: "main"`; under `--shared`, tagged `package: "shared"`.
+- Targets resolving outside both, or non-relative specifiers (bare `'drizzle-orm'`, scoped `'@org/pkg'`, absolute `/abs/path`), are tagged `package: "extern"`. For unresolved or non-relative specs, `path` is the raw `moduleSpecifier` text — for `extern` targets that resolved to a concrete absolute path outside `ROOT`/`SHARED`, `path` is that absolute path.
+- No de-duplication per file: two imports of the same module produce two rows.
+
+### v1 limitations (known, documented)
+
+- **No `tsconfig.json` `paths` aliases.** An alias-based import (`import { X } from '@app/foo'`) is tagged `extern` with the raw alias text — a backward-imports check across aliases won't fire until the resolver learns aliases. Deferred to v2 because alias resolution adds nontrivial code (parse `tsconfig.json`, walk `extends`, apply `paths` regex) and most cycles don't cross alias boundaries.
+- **No CommonJS `require('./x')`.** The TS extractor is ESM-flavored. Mirrors the same gap in `eslint-plugin-import/no-cycle`.
+- **No per-specifier type-only annotation.** `import { type X, Y } from './y'` records `type_only: false` at the declaration level even though `X` itself is type-only. The layering check doesn't care, so v1 records only the declaration-level flag.
+- **Templated dynamic-import specifiers skipped.** `import(\`./${name}\`)` is silently dropped because the spec text isn't statically known.
+
+### Determinism
+
+- `entries[]` sorted by `(package, path)`.
+- `imports[]` within each entry sorted by `(package, path, kind, line)`.
+- Two runs over the same input produce byte-identical files.
+
+### Stats
+
+Stderr summary: `Wrote files (<N> files, <M> edges) to <path>`.
+
 ## Function catalog (`function-catalog.json`)
 
 The function catalog is a top-level **wrapper object** (schema v1.1) carrying schema version, extractor provenance, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
@@ -500,10 +575,10 @@ The diff machinery (see #117) refuses to compare catalogs with different `schema
 Every extractor:
 
 ```
-extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>]
+extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>]
 ```
 
-Defaults: `--output` writes to stdout. `--emit-references-graph` is off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
+Defaults: `--output` writes to stdout. `--emit-references-graph` and `--emit-files` are off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
 
 Exit code: `0` if at least one file was successfully indexed, `1` if no files could be parsed.
 
