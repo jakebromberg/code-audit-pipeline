@@ -21,6 +21,7 @@ import {
   pushNamedRef,
   refsForDecl,
 } from './_lib/references.mjs';
+import { isTestPath } from './_lib/paths.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
@@ -152,18 +153,7 @@ const typeSig = (text) => normalize(text).toLowerCase();
 
 // Test-path classification. Pattern set is normative — duplicated verbatim in
 // docs/pipeline-contract.md so other-language extractors (#115) stay aligned.
-const TEST_DIRS = new Set([
-  'tests', 'test', '__tests__', '__test__',
-  'spec', '__mocks__', '__fixtures__', 'fixtures', 'e2e',
-]);
-const TEST_FILE_RE = /\.(test|spec|fixture|fixtures|mock|mocks)\.(tsx|ts|mts|cts)$/;
-function isTestPath(relPath) {
-  const segments = relPath.split('/');
-  for (let i = 0; i < segments.length - 1; i++) {
-    if (TEST_DIRS.has(segments[i])) return true;
-  }
-  return TEST_FILE_RE.test(segments[segments.length - 1]);
-}
+// isTestPath imported from _lib/paths.mjs (shared with function-catalog).
 
 // --- Identifier-occurrence counter (for reference_count, grep-approximation) ---
 const idCounts = new Map();

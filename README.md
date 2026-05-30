@@ -123,6 +123,7 @@ All operate on the JSON catalog and emit human-readable output. Drop into a chat
 | `orphan-infer-model.jq` | Drizzle tables nothing in the catalog derives a TS type from via `InferSelectModel` / `InferInsertModel` / `$inferSelect` / `$inferInsert`. Splits "no either" (dead-or-archive) from "no InferSelect" / "no InferInsert" half-orphans (hand-rolled mirror types). Optional `INCLUDE_GENERATED=true` env knob | type |
 | `test-prod-drift.jq` | Near-duplicate type pairs where exactly one side is in a test path (XOR on `is_test`). Surfaces manually-maintained fixture shapes that have drifted from the prod model they mirror. Default threshold 0.5 (looser than `near-duplicates`' 0.7, since fixtures legitimately drop optional fields). Prod side rendered first in text output | type |
 | `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references. Joins the catalog against the sibling `references.json` artifact via `--slurpfile refs`. Self-references (`type Tree = { children: Tree[] }`) and unresolved external edges don't anchor a decl. Known v1 false-positive class: types kept alive only through barrel re-exports | type |
+| `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type — likely silent ABI breaks for downstream importers. Joins function-catalog primary with `--slurpfile types type-catalog.json`. V1 skips `kind: "method"` rows (re-enables when class-kind work lands) | function, type |
 
 ## Adding a new extractor
 
