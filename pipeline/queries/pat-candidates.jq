@@ -65,6 +65,8 @@
 #
 # cluster_id format:  pat-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -87,22 +89,23 @@ include "_canonical";
     | select($diff_count >= 1 and $diff_count <= $max_slot_diffs)
     | { cluster_id: cluster_id_sorted_pair("pat-candidates"; loc_key($a); loc_key($b)),
         query: "pat-candidates",
+        shape: "pair",
         field_count: ($af | length),
         slot_diff_count: $diff_count,
         shared_member_names: $a_names,
-        a_slots: [ range(0; $af | length) | select($af[.] != $bf[.]) | $af[.] ],
-        b_slots: [ range(0; $bf | length) | select($af[.] != $bf[.]) | $bf[.] ],
-        a: $a, b: $b }
+        left_slots: [ range(0; $af | length) | select($af[.] != $bf[.]) | $af[.] ],
+        right_slots: [ range(0; $bf | length) | select($af[.] != $bf[.]) | $bf[.] ],
+        left: $a, right: $b }
   ]
-| sort_by(-(.field_count), .slot_diff_count, .a.name)
+| sort_by(-(.field_count), .slot_diff_count, .left.name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\(.field_count) fields, \(.slot_diff_count) slot diff(s)] \(.a.name) (\(.a.kind)) <-> \(.b.name) (\(.b.kind)) cid=\(.cluster_id)\n"
-    + "    A: \(.a.package):\(.a.file):\(.a.line)\n"
-    + "    B: \(.b.package):\(.b.file):\(.b.line)\n"
+    "[\(.field_count) fields, \(.slot_diff_count) slot diff(s)] \(.left.name) (\(.left.kind)) <-> \(.right.name) (\(.right.kind)) cid=\(.cluster_id)\n"
+    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
     + "    shared names: \(.shared_member_names | join(", "))\n"
-    + "    A slot(s): \(.a_slots | join(" | "))\n"
-    + "    B slot(s): \(.b_slots | join(" | "))"
+    + "    A slot(s): \(.left_slots | join(" | "))\n"
+    + "    B slot(s): \(.right_slots | join(" | "))"
   end

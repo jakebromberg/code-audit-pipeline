@@ -56,6 +56,8 @@
 #
 # cluster_id format:  generic-function-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -107,23 +109,24 @@ entries as $all
     | select($swap_card >= 1 and $swap_card <= $max_subs * 2)
     | { cluster_id: cluster_id_sorted_pair("generic-function-candidates"; loc_key($a); loc_key($b)),
         query: "generic-function-candidates",
+        shape: "pair",
         jacc: $jacc,
         intersection: $ic,
         union: $u,
         body_line_count: $a.body_line_count,
-        a_only_count: ($a_only | length),
-        swap_tokens_a: $swap_a_all,
-        swap_tokens_b: $swap_b_all,
-        a: $a, b: $b }
+        diff_line_count: ($a_only | length),
+        left_swap_tokens: $swap_a_all,
+        right_swap_tokens: $swap_b_all,
+        left: $a, right: $b }
   ]
 | sort_by(-(.jacc))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union), \(.body_line_count) lines, \(.a_only_count) diff line(s)] \(.a.name) <-> \(.b.name) cid=\(.cluster_id)\n"
-    + "    A: \(.a.package):\(.a.file):\(.a.line)\n"
-    + "    B: \(.b.package):\(.b.file):\(.b.line)\n"
-    + "    A swap-tokens: \(.swap_tokens_a | join(", "))\n"
-    + "    B swap-tokens: \(.swap_tokens_b | join(", "))"
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union), \(.body_line_count) lines, \(.diff_line_count) diff line(s)] \(.left.name) <-> \(.right.name) cid=\(.cluster_id)\n"
+    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
+    + "    A swap-tokens: \(.left_swap_tokens | join(", "))\n"
+    + "    B swap-tokens: \(.right_swap_tokens | join(", "))"
   end

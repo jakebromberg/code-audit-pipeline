@@ -13,6 +13,8 @@
 #
 # cluster_id format:  cross-package-shadows:Name  (per shadowed name; ONE row per
 # shadowed name even if multiple main-package decls share it — see members[]).
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -28,6 +30,7 @@ entries as $all
 | map({
     cluster_id: cluster_id_single_name("cross-package-shadows"; .[0].name),
     query: "cross-package-shadows",
+    shape: "cluster",
     name: .[0].name,
     members: map({kind, package, file, line, touched_in_window, shape_sig})
   })

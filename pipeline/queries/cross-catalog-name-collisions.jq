@@ -75,6 +75,8 @@
 #
 #   Type-name comparison and same-name-different-DTO false positives are
 #   forecasts, not observed. Add variants if either becomes load-bearing.
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -129,11 +131,12 @@ def is_shape_bearing:
     | {
         cluster_id: cluster_id_single_name("cross-catalog-name-collisions"; $name),
         query: "cross-catalog-name-collisions",
+        shape: "cluster",
         name: $name,
         catalogs: $cats,
         verdict: $verdict,
         per_catalog_field_names: $per_catalog_fnames,
-        decls: map({catalog, kind, package, file, line, generated, shape_sig, fields})
+        members: map({catalog, kind, package, file, line, generated, shape_sig, fields})
       }
   )
 | sort_by(
@@ -147,7 +150,7 @@ def is_shape_bearing:
     @json
   else
     "\(.name) [\(.verdict)] (\(.catalogs | join(" + "))) cid=\(.cluster_id)\n"
-    + (.decls
+    + (.members
         | map("  [\(.catalog) \(.kind)\(if .generated then " generated" else "" end)] \(.package):\(.file):\(.line)")
         | join("\n"))
     + (if .verdict == "FIELD_NAMES_DIVERGE" then

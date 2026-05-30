@@ -32,6 +32,8 @@
 # cluster_id format:  migration-progress:<label-slug>  (one cluster per invocation;
 # the slug strips runs of non-identifier chars from the label so the id is a
 # single whitespace-free token. The verbatim label stays in the `label` field.)
+#
+#! shape: metric
 
 include "_canonical";
 
@@ -58,6 +60,7 @@ include "_canonical";
 | {
     cluster_id: cluster_id_single_name("migration-progress"; $label_slug),
     query: "migration-progress",
+    shape: "metric",
     label: $label,
     old_sig: $old_sig,
     new_sig: $new_sig,

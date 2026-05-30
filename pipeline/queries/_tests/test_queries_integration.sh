@@ -417,7 +417,7 @@ assert_generic_arity_drift_present() {
     return
   }
   actual="$(echo "$result" | jq -rs --arg n "$target_name" \
-    '.[] | select(.name == $n) | (.decls | map(.arity) | sort | join(","))')"
+    '.[] | select(.name == $n) | (.members | map(.arity) | sort | join(","))')"
 
   if [[ "$actual" == "$expected_arities_csv" ]]; then
     PASS=$((PASS + 1))
@@ -488,7 +488,7 @@ assert_generic_convention_bound_present() {
     return
   }
   actual="$(echo "$result" | jq -rs --arg n "$target_name" \
-    '.[] | select(.name == $n) | (.suspects | sort | join(","))')"
+    '.[] | select(.members[0].name == $n) | (.suspects | sort | join(","))')"
 
   if [[ "$actual" == "$expected_suspects_csv" ]]; then
     PASS=$((PASS + 1))
@@ -515,7 +515,7 @@ assert_generic_convention_bound_absent() {
     return
   }
   count="$(echo "$result" | jq -rs --arg n "$target_name" \
-    '[.[] | select(.name == $n)] | length')"
+    '[.[] | select(.members[0].name == $n)] | length')"
 
   if [[ "$count" == "0" ]]; then
     PASS=$((PASS + 1))
@@ -767,8 +767,8 @@ assert_debt_summary_text_header_rows
 
 # Detail-block ordering: each cluster type's touched_clusters list must be
 # sorted to match the source query's documented order. Source orderings:
-#   exact-duplicates       — sort_by(-(.decls | length))
-#   name-collisions        — sort_by(-(.decls | length), .name)
+#   exact-duplicates       — sort_by(-(.members | length))
+#   name-collisions        — sort_by(-(.members | length), .name)
 #   cross-package-shadows  — sort_by(.name)
 #   near-duplicates        — sort_by(-(.jacc))
 #
@@ -793,7 +793,7 @@ EOF
     -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$tmp_fixture" 2>&1)"
   rm -f "$tmp_fixture"
   # The 3-decl cluster (Z*) should appear first in touched_clusters per
-  # source-query sort_by(-(.decls | length)).
+  # source-query sort_by(-(.members | length)).
   first_cid="$(echo "$result" \
     | jq -rs '.[] | select(.cluster_type == "exact-duplicates") | .touched_clusters[0].cluster_id')"
   if [[ "$first_cid" == "exact-duplicates:ZZA+ZZB+ZZC" ]]; then
@@ -923,7 +923,8 @@ assert_orphan_infer_model_baseline() {
     return
   fi
   # One jq pass: for each expected (name, label) pair, emit "name [want=L got=G]"
-  # if the catalog disagrees, otherwise emit nothing.
+  # if the catalog disagrees, otherwise emit nothing. Per the cluster envelope,
+  # the decl identity lives in members[0]; the missing label stays at the top.
   local mismatches
   mismatches="$(echo "$result" | jq -rs '
     [
@@ -935,7 +936,7 @@ assert_orphan_infer_model_baseline() {
     | . as $rows
     | [ $expected[]
         | . as $e
-        | ($rows | map(select(.name == $e.n)) | first | .missing // "<missing>") as $got
+        | ($rows | map(select(.members[0].name == $e.n)) | first | .missing // "<missing>") as $got
         | select($got != $e.l)
         | "\($e.n) [want=\($e.l) got=\($got)]" ]
     | join("; ")')"
@@ -958,7 +959,7 @@ assert_orphan_infer_model_include_generated() {
     return
   }
   rows="$(echo "$result" | grep -c .)"
-  has_legacy_table="$(echo "$result" | jq -rs '[.[] | select(.name == "legacy_table")] | length')"
+  has_legacy_table="$(echo "$result" | jq -rs '[.[] | select(.members[0].name == "legacy_table")] | length')"
   if [[ "$rows" == "5" && "$has_legacy_table" == "1" ]]; then
     PASS=$((PASS + 1))
     printf "  ✓ orphan-infer-model (INCLUDE_GENERATED=true): 5 rows including legacy_table\n"
@@ -990,7 +991,7 @@ assert_orphan_infer_model_cross_package_half() {
   }
   rm -f "$fixture_no_insert"
   missing_label="$(echo "$result" \
-    | jq -rs '.[] | select(.name == "shared_thing") | .missing')"
+    | jq -rs '.[] | select(.members[0].name == "shared_thing") | .missing')"
   if [[ "$missing_label" == "no InferInsert" ]]; then
     PASS=$((PASS + 1))
     printf "  ✓ orphan-infer-model (cross-package half-orphan): shared_thing surfaces as 'no InferInsert' when only the Sel derivation remains\n"
@@ -1110,14 +1111,16 @@ assert_test_prod_drift_baseline() {
     printf "  ✗ test-prod-drift (baseline): expected 1 row, got %s:\n%s\n" "$rows" "$result"
     return
   fi
-  # Verify the row: a.name=User (prod), b.name=UserFixture (test), a.is_test=false, b.is_test=true.
+  # Verify the row: left.name=User (prod), right.name=UserFixture (test),
+  # left.is_test=false, right.is_test=true. Envelope convention for
+  # test-prod-drift is asymmetric: left=prod, right=test (per the query header).
   local diag
   diag="$(echo "$result" | jq -r '
     . as $r
-    | if ($r.a.name == "User" and $r.b.name == "UserFixture"
-           and ($r.a.is_test // false) == false
-           and ($r.b.is_test // false) == true) then ""
-      else "a=\($r.a.name)(is_test=\($r.a.is_test // "null")) b=\($r.b.name)(is_test=\($r.b.is_test // "null"))"
+    | if ($r.left.name == "User" and $r.right.name == "UserFixture"
+           and ($r.left.is_test // false) == false
+           and ($r.right.is_test // false) == true) then ""
+      else "left=\($r.left.name)(is_test=\($r.left.is_test // "null")) right=\($r.right.name)(is_test=\($r.right.is_test // "null"))"
       end')"
   if [[ -z "$diag" ]]; then
     PASS=$((PASS + 1))

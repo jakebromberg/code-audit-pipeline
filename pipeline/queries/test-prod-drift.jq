@@ -32,6 +32,12 @@
 #
 # cluster_id format:  test-prod-drift:LocA+LocB  (sorted location keys —
 #                                                 package:file:line:name)
+#
+# Envelope: shape: "pair". Asymmetric pair — left=prod, right=test. Text
+# mode preserves the role labels (`prod:` / `test:`); JSONL uses
+# `left` / `right` per the envelope contract.
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -53,16 +59,17 @@ include "_canonical";
     | select($jacc >= $threshold and $jacc < 1.0 and ($af | length) >= 3 and ($bf | length) >= 3)
     | { cluster_id: cluster_id_sorted_pair("test-prod-drift"; loc_key($a); loc_key($b)),
         query: "test-prod-drift",
-        jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf, intersection: $ic, union: $u }
+        shape: "pair",
+        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf, intersection: $ic, union: $u }
   ]
 | sort_by(-(.jacc))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] prod \(.a.package):\(.a.name)  <->  test \(.b.package):\(.b.name) cid=\(.cluster_id)\n"
-    + "    prod: \(.a.kind) — \(.a.file):\(.a.line)\n"
-    + "    test: \(.b.kind) — \(.b.file):\(.b.line)\n"
-    + "    prod fields: \(.af | join(", "))\n"
-    + "    test fields: \(.bf | join(", "))"
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] prod \(.left.package):\(.left.name)  <->  test \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
+    + "    prod: \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    test: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    prod fields: \(.left_fields | join(", "))\n"
+    + "    test fields: \(.right_fields | join(", "))"
   end

@@ -20,6 +20,12 @@
 #
 # cluster_id format:  cross-package-shape-near-duplicates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
+#
+# Envelope: shape: "pair". Asymmetric pair — left=main, right=shared. Text
+# mode preserves the role labels (`main:` / `shared:`); JSONL uses
+# `left` / `right` per the envelope contract.
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -46,20 +52,21 @@ entries as $all
     | select($jacc >= $thr and ($af | length) >= 3 and ($bf | length) >= 3)
     | { cluster_id: cluster_id_sorted_pair("cross-package-shape-near-duplicates"; loc_key($a); loc_key($b)),
         query: "cross-package-shape-near-duplicates",
-        jacc: $jacc, main: $a, shared: $b, af: $af, bf: $bf, intersection: $ic, union: $u,
-        shared_only: ([$bf[] | . as $x | select(($af | index($x)) == null)]),
-        main_only:   ([$af[] | . as $x | select(($bf | index($x)) == null)])
+        shape: "pair",
+        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf, intersection: $ic, union: $u,
+        right_only: ([$bf[] | . as $x | select(($af | index($x)) == null)]),
+        left_only:  ([$af[] | . as $x | select(($bf | index($x)) == null)])
       }
   ]
-| sort_by(-(.jacc), .main.name, .shared.name)
+| sort_by(-(.jacc), .left.name, .right.name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] main:\(.main.name)  <->  shared:\(.shared.name) cid=\(.cluster_id)\n"
-    + "    main:    \(.main.kind) — \(.main.file):\(.main.line)\n"
-    + "    shared:  \(.shared.kind)\(if .shared.generated then " (generated)" else "" end) — \(.shared.file):\(.shared.line)\n"
-    + "    shared field names: \(.bf | join(", "))\n"
-    + "    shared only:        \(.shared_only | join(", "))\n"
-    + "    main only:          \(.main_only | join(", "))"
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] main:\(.left.name)  <->  shared:\(.right.name) cid=\(.cluster_id)\n"
+    + "    main:    \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    shared:  \(.right.kind)\(if .right.generated then " (generated)" else "" end) — \(.right.file):\(.right.line)\n"
+    + "    shared field names: \(.right_fields | join(", "))\n"
+    + "    shared only:        \(.right_only | join(", "))\n"
+    + "    main only:          \(.left_only | join(", "))"
   end

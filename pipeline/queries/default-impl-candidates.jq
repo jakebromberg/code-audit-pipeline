@@ -43,6 +43,8 @@
 #
 # cluster_id format:  default-impl-candidates:LocA+LocB+...
 #                     (sorted location keys — package:file:line:name)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -67,23 +69,24 @@ entries as $all
     | (map(.package) | unique) as $pkgs
     | { cluster_id: cluster_id_sorted_names("default-impl-candidates"; map(loc_key(.))),
         query: "default-impl-candidates",
+        shape: "cluster",
         packages: $pkgs,
         pkg_count: ($pkgs | length),
         body_hash: .[0].body_hash,
         body_line_count: .[0].body_line_count,
         distinct_type_count: ($types | length),
         distinct_types: $types,
-        decls: map({name, kind, package, file, line, async, param_count}) }
+        members: map({name, kind, package, file, line, async, param_count}) }
   ]
 | sort_by(-(.distinct_type_count), -(.body_line_count))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\(.distinct_type_count) types across \(.pkg_count) pkg(s), \(.body_line_count) lines, \(.decls | length) decls] cid=\(.cluster_id)\n"
+    "[\(.distinct_type_count) types across \(.pkg_count) pkg(s), \(.body_line_count) lines, \(.members | length) decls] cid=\(.cluster_id)\n"
     + "    packages: \(.packages | join(", "))\n"
     + "    types: \(.distinct_types | join(", "))\n"
-    + (.decls
+    + (.members
        | map("    \(.name)\(if .async then " (async)" else "" end) [\(.kind), arity=\(.param_count)] — \(.package):\(.file):\(.line)")
        | join("\n"))
   end

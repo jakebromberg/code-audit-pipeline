@@ -10,6 +10,8 @@
 # "antipattern of name overloading").
 #
 # cluster_id format:  name-collisions:Name  (the colliding name)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -21,16 +23,17 @@ include "_canonical";
 | map({
     cluster_id: cluster_id_single_name("name-collisions"; .[0].name),
     query: "name-collisions",
+    shape: "cluster",
     name: .[0].name,
-    decls: map({kind, package, file, line, touched_in_window, shape_sig})
+    members: map({kind, package, file, line, touched_in_window, shape_sig})
   })
-| sort_by(-(.decls | length), .name)
+| sort_by(-(.members | length), .name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "\(.name) (\(.decls | length)) cid=\(.cluster_id)\n"
-    + (.decls
+    "\(.name) (\(.members | length)) cid=\(.cluster_id)\n"
+    + (.members
         | map("  \(if .touched_in_window then "*" else " " end) [\(.kind)] \(.package):\(.file):\(.line)"
               + (if .shape_sig then "  sig=" + (.shape_sig | .[0:80]) else "" end))
         | join("\n"))

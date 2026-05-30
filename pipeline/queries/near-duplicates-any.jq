@@ -19,6 +19,8 @@
 #
 # cluster_id format:  near-duplicates-any:LocA+LocB  (sorted location keys
 #                                                     — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -36,16 +38,17 @@ include "_canonical";
     | select($jacc >= $threshold and $jacc < 1.0 and ($af | length) >= 3 and ($bf | length) >= 3)
     | { cluster_id: cluster_id_sorted_pair("near-duplicates-any"; loc_key($a); loc_key($b)),
         query: "near-duplicates-any",
-        jacc: $jacc, a: $a, b: $b, af: $af, bf: $bf, intersection: $ic, union: $u }
+        shape: "pair",
+        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf, intersection: $ic, union: $u }
   ]
 | sort_by(-(.jacc))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.a.package):\(.a.name)  <->  \(.b.package):\(.b.name) cid=\(.cluster_id)\n"
-    + "    A: \(.a.kind) — \(.a.file):\(.a.line)\n"
-    + "    B: \(.b.kind) — \(.b.file):\(.b.line)\n"
-    + "    A fields: \(.af | join(", "))\n"
-    + "    B fields: \(.bf | join(", "))"
+    "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.package):\(.left.name)  <->  \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
+    + "    A: \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    B: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    A fields: \(.left_fields | join(", "))\n"
+    + "    B fields: \(.right_fields | join(", "))"
   end

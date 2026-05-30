@@ -30,6 +30,8 @@
 #
 # cluster_id format:  protocol-inheritance-candidates:LocA+LocB
 #                     (sorted location keys — package:file:line:name)
+#
+#! shape: pair
 
 include "_canonical";
 
@@ -49,22 +51,23 @@ include "_canonical";
     | select(($shared | length) >= $min_overlap)
     | { cluster_id: cluster_id_sorted_pair("protocol-inheritance-candidates"; loc_key($a); loc_key($b)),
         query: "protocol-inheritance-candidates",
+        shape: "pair",
         package: $a.package,
         overlap: ($shared | length),
         shared_members: $shared,
-        a_only: [$af[] | select(. as $f | $shared | index($f) == null)],
-        b_only: [$bf[] | select(. as $f | $shared | index($f) == null)],
-        a: $a, b: $b }
+        left_only:  [$af[] | select(. as $f | $shared | index($f) == null)],
+        right_only: [$bf[] | select(. as $f | $shared | index($f) == null)],
+        left: $a, right: $b }
   ]
-| sort_by(-(.overlap), .package, .a.name)
+| sort_by(-(.overlap), .package, .left.name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\(.package)  overlap=\(.overlap)] \(.a.name) <-> \(.b.name) cid=\(.cluster_id)\n"
-    + "    A: \(.a.package):\(.a.file):\(.a.line)\n"
-    + "    B: \(.b.package):\(.b.file):\(.b.line)\n"
+    "[\(.package)  overlap=\(.overlap)] \(.left.name) <-> \(.right.name) cid=\(.cluster_id)\n"
+    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
     + "    shared: \(.shared_members | join(", "))\n"
-    + "    A-only: \(.a_only | join(", "))\n"
-    + "    B-only: \(.b_only | join(", "))"
+    + "    A-only: \(.left_only | join(", "))\n"
+    + "    B-only: \(.right_only | join(", "))"
   end

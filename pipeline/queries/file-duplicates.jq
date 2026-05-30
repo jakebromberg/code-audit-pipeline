@@ -16,6 +16,8 @@
 # cluster_id formats:
 #   file-duplicates-exact:pkg:path+pkg:path+...   (sorted; package-qualified repo-relative paths)
 #   file-duplicates-norm:pkg:path+pkg:path+...    (sorted; package-qualified repo-relative paths)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -31,6 +33,7 @@ entries as $all
     | map({
         cluster_id: cluster_id_sorted_paths("file-duplicates-exact"; map("\(.package):\(.file)")),
         query: "file-duplicates-exact",
+        shape: "cluster",
         sha256: .[0].sha256,
         size_bytes: .[0].size_bytes,
         members: map({package, file, size_bytes})
@@ -49,6 +52,7 @@ entries as $all
     | map({
         cluster_id: cluster_id_sorted_paths("file-duplicates-norm"; map("\(.package):\(.file)")),
         query: "file-duplicates-norm",
+        shape: "cluster",
         sha256_normalized: .[0].sha256_normalized,
         size_normalized: .[0].size_normalized,
         members: map({package, file, size_bytes, size_normalized})

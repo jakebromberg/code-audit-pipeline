@@ -10,6 +10,8 @@
 # An asterisk (*) marks declarations touched during the audit window.
 #
 # cluster_id format:  exact-duplicates:NameA+NameB+...  (sorted, '+' separator)
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -23,17 +25,18 @@ include "_canonical";
 | map({
     cluster_id: cluster_id_sorted_names("exact-duplicates"; map(.name)),
     query: "exact-duplicates",
+    shape: "cluster",
     shape_sig: .[0].shape_sig,
     field_count: (.[0].fields | length),
-    decls: map({name, kind, package, file, line, touched_in_window})
+    members: map({name, kind, package, file, line, touched_in_window})
   })
-| sort_by(-(.decls | length))
+| sort_by(-(.members | length))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\(.field_count) fields, \(.decls | length) decls] cid=\(.cluster_id)\n"
-    + (.decls
+    "[\(.field_count) fields, \(.members | length) decls] cid=\(.cluster_id)\n"
+    + (.members
         | map("  \(if .touched_in_window then "*" else " " end) \(.name) (\(.kind)) — \(.package):\(.file):\(.line)")
         | join("\n"))
   end

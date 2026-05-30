@@ -35,6 +35,13 @@
 #   where loc_key is `package:file:line:name`. One row per offending decl,
 #   so the loc-key form guarantees within-query uniqueness even when two
 #   different decls share a name.
+#
+# Envelope: shape: "cluster", members of length 1. Per-decl findings still
+# wrap into the cluster envelope so the renderer stays shape-aware; the
+# `suspects` field at the top level carries the unbound type-parameter
+# identifiers flagged on this decl.
+#
+#! shape: cluster
 
 include "_canonical";
 
@@ -78,20 +85,24 @@ def split_trim_csv:
     | {
         cluster_id: cluster_id_single_name("generic-convention-bound"; loc_key($row)),
         query: "generic-convention-bound",
-        name: $row.name,
-        kind: $row.kind,
-        package: $row.package,
-        file: $row.file,
-        line: $row.line,
-        touched_in_window: ($row.touched_in_window // false),
-        generics: ($row.generics // ""),
-        suspects: ($suspects | sort)
+        shape: "cluster",
+        suspects: ($suspects | sort),
+        members: [{
+          name: $row.name,
+          kind: $row.kind,
+          package: $row.package,
+          file: $row.file,
+          line: $row.line,
+          touched_in_window: ($row.touched_in_window // false),
+          generics: ($row.generics // "")
+        }]
       }]
-| sort_by(.package, .file, .line, .name)
+| sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "\(.name) [\(.kind)] <\(if .generics == "" then "—" else .generics end)> — \(.package):\(.file):\(.line) cid=\(.cluster_id)\n"
-    + "  \(if .touched_in_window then "*" else " " end) unbound: \(.suspects | join(", "))"
+    (.members[0]) as $m
+    | "\($m.name) [\($m.kind)] <\(if $m.generics == "" then "—" else $m.generics end)> — \($m.package):\($m.file):\($m.line) cid=\(.cluster_id)\n"
+    + "  \(if $m.touched_in_window then "*" else " " end) unbound: \(.suspects | join(", "))"
   end
