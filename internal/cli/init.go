@@ -423,18 +423,26 @@ func sha256File(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// copyFile writes via tmp-then-rename. Creates the parent directory.
+// copyFile writes via tmp-then-rename. Creates the parent directory. Mode is
+// inherited from src, masked to the user/group/other rwx bits so an
+// over-permissive source (e.g. 0o777) doesn't leak through, and clamped to a
+// 0o644 minimum so we never produce an unreadable destination.
 func copyFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	mode := srcInfo.Mode().Perm() | 0o644
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 	tmp := dst + ".tmp"
-	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
@@ -444,6 +452,13 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	if err := out.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	// Explicit Chmod: O_CREATE applies the mode through umask, which can
+	// strip the executable bit on standard 0o022 umasks. Set it directly so
+	// shell scripts under extractors/ stay executable post-init.
+	if err := os.Chmod(tmp, mode); err != nil {
 		os.Remove(tmp)
 		return err
 	}
