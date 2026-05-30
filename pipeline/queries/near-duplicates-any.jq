@@ -47,8 +47,8 @@ include "_canonical";
     @json
   else
     "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.package):\(.left.name)  <->  \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
-    + "    A: \(.left.kind) — \(.left.file):\(.left.line)\n"
-    + "    B: \(.right.kind) — \(.right.file):\(.right.line)\n"
-    + "    A fields: \(.left_fields | join(", "))\n"
-    + "    B fields: \(.right_fields | join(", "))"
+    + "    left:  \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    right: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    left fields:  \(.left_fields | join(", "))\n"
+    + "    right fields: \(.right_fields | join(", "))"
   end

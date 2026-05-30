@@ -55,9 +55,9 @@ entries as $all
     @json
   else
     "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union)] \(.left.package):\(.left.name)  <->  \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
-    + "    A: \(.left.kind) — \(.left.file):\(.left.line)\n"
-    + "    B: \(.right.kind) — \(.right.file):\(.right.line)\n"
-    + "    A fields: \(.left_fields | join(", "))\n"
-    + "    A only:   \(.left_only | join(", "))\n"
-    + "    B only:   \(.right_only | join(", "))"
+    + "    left:  \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    right: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    left fields: \(.left_fields | join(", "))\n"
+    + "    left only:   \(.left_only | join(", "))\n"
+    + "    right only:  \(.right_only | join(", "))"
   end

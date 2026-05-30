@@ -125,8 +125,8 @@ entries as $all
     @json
   else
     "[\((.jacc * 100) | floor)%  ∩=\(.intersection) ∪=\(.union), \(.body_line_count) lines, \(.diff_line_count) diff line(s)] \(.left.name) <-> \(.right.name) cid=\(.cluster_id)\n"
-    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
-    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
-    + "    A swap-tokens: \(.left_swap_tokens | join(", "))\n"
-    + "    B swap-tokens: \(.right_swap_tokens | join(", "))"
+    + "    left:  \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    right: \(.right.package):\(.right.file):\(.right.line)\n"
+    + "    left swap-tokens:  \(.left_swap_tokens | join(", "))\n"
+    + "    right swap-tokens: \(.right_swap_tokens | join(", "))"
   end

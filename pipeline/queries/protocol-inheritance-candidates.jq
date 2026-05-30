@@ -65,9 +65,9 @@ include "_canonical";
     @json
   else
     "[\(.package)  overlap=\(.overlap)] \(.left.name) <-> \(.right.name) cid=\(.cluster_id)\n"
-    + "    A: \(.left.package):\(.left.file):\(.left.line)\n"
-    + "    B: \(.right.package):\(.right.file):\(.right.line)\n"
+    + "    left:  \(.left.package):\(.left.file):\(.left.line)\n"
+    + "    right: \(.right.package):\(.right.file):\(.right.line)\n"
     + "    shared: \(.shared_members | join(", "))\n"
-    + "    A-only: \(.left_only | join(", "))\n"
-    + "    B-only: \(.right_only | join(", "))"
+    + "    left-only:  \(.left_only | join(", "))\n"
+    + "    right-only: \(.right_only | join(", "))"
   end
