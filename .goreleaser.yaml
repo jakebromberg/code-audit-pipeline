@@ -1,0 +1,53 @@
+# goreleaser config for the `audit` binary. Driven by tag push on the
+# release workflow (.github/workflows/release.yml). See plans/pr4-renderers-report-init.md.
+version: 2
+
+project_name: audit
+
+before:
+  hooks:
+    - go generate ./...
+
+builds:
+  - id: audit
+    main: ./cmd/audit
+    binary: audit
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version={{.Version}}
+
+archives:
+  - id: audit
+    formats: [tar.gz]
+    name_template: >-
+      audit_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+brews:
+  - name: audit
+    repository:
+      owner: jakebromberg
+      name: homebrew-tap
+    homepage: https://github.com/jakebromberg/code-audit-pipeline
+    description: Cross-cutting structural analysis of codebases.
+    license: Anti-Capitalist-Software-License-1.4
+    install: |
+      bin.install "audit"
+    test: |
+      system "#{bin}/audit", "version"
+
+release:
+  github:
+    owner: jakebromberg
+    name: code-audit-pipeline
+  draft: false
+  prerelease: auto
