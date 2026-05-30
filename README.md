@@ -1,6 +1,6 @@
 # code-audit-pipeline
 
-A recipe for converting a codebase into **actionable refactor recommendations**. AST extractors emit a canonical type/function catalog; `jq` queries cluster the rhymes — duplicate types, parallel protocols, name-without-shape collisions, missed abstractions; an agent reads each cluster and proposes a concrete refactor with grounded rationale.
+A recipe for converting a codebase into **actionable refactor recommendations**. AST extractors emit a canonical type/function catalog; `jq` queries cluster the rhymes — duplicate types, parallel protocols, name-without-shape collisions, missed abstractions; an agent reads each cluster and proposes a concrete refactor with grounded rationale. The `audit` binary glues these stages into one command line.
 
 ## The principle
 
@@ -17,66 +17,61 @@ Two distinct things must work for the pipeline to be useful, and the project mea
 
 Both layers are necessary; neither is sufficient on its own.
 
-## The pipeline
-
-```
-1. Manifest      gh pr list --json …             → prs.json
-2. Classify      jq filter on file paths         → prs-classified.json
-3. Enumerate     jq join over candidate PRs      → candidates.json
-4. Catalog       AST extractor (per language)    → catalog.json
-5. Cluster       jq queries over catalog         → cluster rows (JSONL)
-6. Recommend     agent → per-cluster JSON recs   → refactor-recommendations.json
-```
-
-Steps 1–5 are the deterministic substrate. Step 6 is where LLM judgment lands — per-cluster, with cluster-row evidence as input and a structured JSON recommendation as output. The only language-specific phase is **4**. Everything else is `gh` + `jq` + the agent step.
-
-## Quick start (TypeScript repo, 5-week audit window)
+## Install
 
 ```bash
-# 1. Manifest — every PR merged in the last 5 weeks
-gh pr list --state merged --search "merged:>=$(date -v-5w +%Y-%m-%d)" --limit 300 \
-  --json number,title,mergedAt,author,headRefName,files,closingIssuesReferences,labels \
-  > prs.json
-
-# 2. Classify PRs by file-path signal (adapt path patterns to your repo)
-jq -f pipeline/classify.jq prs.json > prs-classified.json
-
-# 3. Enumerate candidate .ts files touched by code-touching PRs
-jq -s '
-  .[0] as $cls | .[1] as $prs
-  | ($cls | map(select(.primary == "code-touching" or .primary == "code")) | map(.number)) as $nums
-  | $prs | map(select(.number as $n | $nums | index($n)))
-  | map(.files[].path) | unique
-  | map(select(test("\\.(ts|mts|cts)$")))
-  | map(select(test("\\.(test|spec)\\.ts$") | not))
-' prs-classified.json prs.json > candidates.json
-
-# 4. Run the catalog
-cd extractors/typescript && npm install
-node type-catalog.mjs \
-  --root /path/to/your/repo \
-  --shared /path/to/sibling/shared-package \  # optional
-  --touched ../../candidates.json \           # optional
-  --output ../../catalog.json
-
-# 5. Cluster (queries emit multi-line strings — use -r for readable output)
-jq -rf pipeline/queries/exact-duplicates.jq catalog.json
-jq -rf pipeline/queries/name-collisions.jq catalog.json
-jq -rf pipeline/queries/cross-package-shadows.jq catalog.json
-jq -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates.jq catalog.json
-jq -rf pipeline/queries/subset-pairs.jq catalog.json
-jq -r --argjson threshold 0.7 -f pipeline/queries/cross-package-shape-near-duplicates.jq catalog.json
+brew install jakebromberg/tap/audit            # macOS / Linux
+go install github.com/jakebromberg/code-audit-pipeline/cmd/audit@latest
 ```
 
-For function-body and file-content duplicates (separate catalogs):
+Or download a tarball from [Releases](https://github.com/jakebromberg/code-audit-pipeline/releases).
+
+The binary embeds the full `pipeline/queries/*.jq` set, so cluster queries work immediately against any catalog you already have. Extractors live external (each has its own runtime — Node, Swift toolchain, future Python) and are bootstrapped via `audit init`.
+
+## Quick start
 
 ```bash
-node extractors/typescript/function-catalog.mjs --root /path/to/your/repo --output function-catalog.json
-jq -r --argjson threshold 0.7 -f pipeline/queries/function-duplicates.jq function-catalog.json
+# One-time: copy queries + extractors into ~/.config/audit/ from a local checkout.
+audit init --from /path/to/code-audit-pipeline
 
-node extractors/file-hashes/file-hashes.mjs --root /path/to/your/repo --output file-hashes.json
-jq -rf pipeline/queries/file-duplicates.jq file-hashes.json
+# Run the TypeScript extractor against your repo; output is cached under .audit/.
+audit extract typescript --root /path/to/your/repo
+
+# Inspect cached state and the resolved query/extractor sources.
+audit status
+
+# Run an individual query interactively (text-mode output, ergonomic for humans).
+audit query exact-duplicates
+audit query near-duplicates --arg threshold=0.7
+
+# Run every applicable query and write a single markdown report.
+audit report
+# → .audit/reports/findings-2026-05-30.md
 ```
+
+The full subcommand surface:
+
+| Subcommand | Purpose |
+|---|---|
+| `audit extract <name>` | Run an extractor; caches its catalog under `.audit/catalogs/`. |
+| `audit query <name>` | Evaluate a query against cached catalogs (or `--catalog <path>` override). |
+| `audit status` | Show `.audit/` state, resolved query/extractor sources, and staleness. |
+| `audit report` | Run every runnable query and write a markdown report to `.audit/reports/`. |
+| `audit init` | Bootstrap `~/.config/audit/` (extractors + queries) from a local source tree. |
+| `audit version` | Print binary version. |
+
+Per-command flags follow the long-form GNU convention (`--root`, `--queries-dir`, `--catalog`, etc.); run any subcommand with `--help` for the full list.
+
+## How discovery works
+
+Both queries and extractors are resolved via a lookup-order chain ([ADR-0006](docs/adr/0006-bundling-and-discovery.md)):
+
+1. Explicit `--queries-dir` / `--extractors-dir` flag.
+2. `pipeline/queries/` and `extractors/` rooted at the audit cwd (when present).
+3. `$AUDIT_HOME` if set.
+4. **Fallback:** embedded queries (always present); `~/.config/audit/extractors/` (populated by `audit init`).
+
+`audit status` always prints the resolved source for both. The cwd-relative path makes contributor edits live without rebuilding the binary; the embedded fallback means a brewed binary works against any pre-existing catalog with no install steps.
 
 ## What the catalog contains
 
@@ -98,51 +93,87 @@ Top-level JSON is `{schema_version: "1.1", extractor: {...}, entries: [...]}` �
 | `references` | sorted array of `{name, kind: "type-ref"}` — names referenced in the declaration body, type-parameter-scoped, deny-listed against built-ins |
 | `references_count` | `references \| length` — derived; emitted explicitly so queries don't pay the inline length call |
 
-Pass `--emit-references-graph <path>` to additionally write a sibling `references.json` with an inverted edge list (`from`/`to` keyed by `(package, name)`, with same-package-then-shared resolution).
-
-Pass `--emit-files <path>` to write a sibling `files.json` with per-file import edges (`{path, package, imports: [{package, path, type_only, kind, line}]}`). Imports are resolved against `--root`/`--shared` and tagged `main` / `shared` / `extern`. Consumed by `cross-package-backward-imports.jq` (and the future cycle-detection / unused-imports / dependency-mass queries).
+Sibling artifacts: `references.json` (inverted edge list, `--emit-references-graph`), `files.json` (per-file import edges, `--emit-files`), `function-catalog.json` (signature + body data, separate extractor), `file-hashes.json` (raw + normalized content hashes).
 
 ## Cluster queries
 
-All operate on the JSON catalog and emit human-readable output. Drop into a chat or report.
+All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FORMAT=jsonl` for the report path. Each `.jq` file carries a `#! shape: cluster|pair|metric` front-matter line per [ADR-0003](docs/adr/0003-canonical-cluster-envelope.md); `audit report` dispatches every JSONL row through one of three shape renderers.
 
 | Query | What it finds | Catalog |
 |---|---|---|
 | `exact-duplicates.jq` | Same `shape_sig` across ≥2 declarations | type |
-| `name-collisions.jq` | Same `name` across multiple files (often signals shadowing or naming-by-accident) | type |
-| `cross-package-shadows.jq` | Type in `main` whose name exists in `shared` — likely should be an import | type |
+| `name-collisions.jq` | Same `name` across multiple files | type |
+| `cross-package-shadows.jq` | Type in `main` whose name exists in `shared` | type |
 | `near-duplicates.jq` | Pairs with Jaccard ≥ threshold on field-name sets (default `0.7`) | type |
-| `subset-pairs.jq` | Pairs (A, B) where A's field-name set is a strict subset of B's. Surfaces unrealized `extends` / `Pick<…>` relationships | type |
-| `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold on field-name sets — re-typed contracts | type |
+| `subset-pairs.jq` | Pairs (A, B) where A's field-name set is a strict subset of B's | type |
+| `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold | type |
 | `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
 | `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |
-| `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language). Verdict per cluster: `FIELD_NAMES_MATCH` / `FIELD_NAMES_DIVERGE` / `COMPARISON_UNAVAILABLE` | type, two-catalog |
-| `migration-progress.jq` | Counts decls on old vs new `shape_sig`, computes % migrated, lists touched-in-window stragglers still on the old shape. Takes `--arg old_sig --arg new_sig --arg label`; optional `PACKAGE` / `KIND_PREFIX` / `INCLUDE_GENERATED` env filters | type |
-| `shape-sig-frequency.jq` | Lists `shape_sig` values by count desc with sample names. Discovery helper for picking `old_sig` / `new_sig` inputs to `migration-progress.jq` | type |
-| `generic-arity-drift.jq` | Declarations sharing a name but differing in type-parameter arity (`Repository<T>` vs `Repository<T, K>`). Deterministic; scoped to `interface` and `type-alias-*` kinds | type |
-| `generic-convention-bound.jq` | Declarations whose field types reference a type-parameter-shaped identifier (`T`, `K`, `TStats`, `TInput`, …) that the declaration's own `generics` does not bind. Heuristic — built-in TS allowlist plus opt-in `EXTRA_BUILTINS` env knob. Upgrade path to a structured `type_refs` cut tracked in issue #146 (the earlier #131 design folded into the schema v1.1 work) | type |
-| `touched-window-debt-summary.jq` | PR-time meta-query: for each of the four original cluster types (`exact-duplicates`, `name-collisions`, `cross-package-shadows`, `near-duplicates`), reports the fraction of clusters with ≥1 touched-in-window member and lists those touched clusters. Optional `THRESHOLD` / `ONLY_TOUCHED` env knobs. One page; the four source queries become drill-downs | type |
-| `orphan-infer-model.jq` | Drizzle tables nothing in the catalog derives a TS type from via `InferSelectModel` / `InferInsertModel` / `$inferSelect` / `$inferInsert`. Splits "no either" (dead-or-archive) from "no InferSelect" / "no InferInsert" half-orphans (hand-rolled mirror types). Optional `INCLUDE_GENERATED=true` env knob | type |
-| `test-prod-drift.jq` | Near-duplicate type pairs where exactly one side is in a test path (XOR on `is_test`). Surfaces manually-maintained fixture shapes that have drifted from the prod model they mirror. Default threshold 0.5 (looser than `near-duplicates`' 0.7, since fixtures legitimately drop optional fields). Prod side rendered first in text output | type |
-| `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references. Joins the catalog against the sibling `references.json` artifact via `--slurpfile refs`. Self-references (`type Tree = { children: Tree[] }`) and unresolved external edges don't anchor a decl. Known v1 false-positive class: types kept alive only through barrel re-exports | type |
-| `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type — likely silent ABI breaks for downstream importers. Joins function-catalog primary with `--slurpfile types type-catalog.json`. V1 skips `kind: "method"` rows (re-enables when class-kind work lands) | function, type |
-| `cross-package-backward-imports.jq` | `shared/*` files that import from `main/*` — the layering violation that motivates the `--shared` split. No equivalent in `madge`/ESLint (those are file-level and language-locked; this query operates on the project's package cut). Consumes the sibling `files.json` artifact (`--emit-files`). V1 resolves relative paths only; documented limits include `tsconfig` aliases and CommonJS `require()` | files |
+| `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language) | type, two-catalog |
+| `migration-progress.jq` | Counts decls on old vs new `shape_sig`, computes % migrated, lists touched-in-window stragglers | type |
+| `shape-sig-frequency.jq` | Lists `shape_sig` values by count desc with sample names | type |
+| `generic-arity-drift.jq` | Declarations sharing a name but differing in type-parameter arity | type |
+| `generic-convention-bound.jq` | Declarations whose field types reference a type-parameter-shaped identifier not bound by `generics` | type |
+| `touched-window-debt-summary.jq` | PR-time meta-query: for each cluster type, fraction with ≥1 touched-in-window member | type |
+| `orphan-infer-model.jq` | Drizzle tables nothing in the catalog derives a TS type from | type |
+| `test-prod-drift.jq` | Near-duplicate pairs where exactly one side is in a test path | type |
+| `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references | type + references |
+| `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type | function + type |
+| `cross-package-backward-imports.jq` | `shared/*` files importing from `main/*` — layering violation | files |
 
 ## Adding a new extractor
 
 Any language with an AST library works. Each extractor must:
 
-1. Accept `--root <path>`, optional `--shared <path>`, optional `--touched <json-file>`, optional `--output <path>` (default stdout)
+1. Accept `--root <path>`, optional `--shared <path>`, optional `--touched <json-file>`, optional `--output <path>`.
 2. Walk source files under each root, skipping `node_modules`/`dist`/`.git`/etc.
-3. For each type-equivalent declaration, emit one JSON record matching the contract
-4. Print summary stats to stderr; the JSON catalog to stdout (or `--output`)
+3. For each type-equivalent declaration, emit one JSON record matching the contract.
+4. Print summary stats to stderr; the JSON catalog to stdout (or `--output`).
 
-The contract doc has the minimum schema. The TypeScript extractor (~280 lines, uses `typescript`) is the reference. Suggested next:
+Drop a `manifest.toml` in the extractor directory ([ADR-0002](docs/adr/0002-hybrid-registration.md)) so `audit extract <name>` knows the invocation. The contract doc has the full schema. The TypeScript extractor (~280 lines, uses `typescript`) is the reference. Suggested next:
 
-- **Python** — `ast` (stdlib): `ClassDef`, `AnnAssign`, Pydantic `BaseModel` subclasses, SQLAlchemy declarative bases, FastAPI route handlers. The walked-from-real-codebase feasibility study is in [`docs/python-extractor-design-notes.md`](docs/python-extractor-design-notes.md); it converges with the Swift notes on a "parse + recognize contracts" middle ground for both languages.
-- **Rust** — `syn` crate, or treesitter-rust
-- **Go** — `go/ast` + `go/parser` (stdlib): `*ast.StructType`, `*ast.InterfaceType`
-- **Swift** — `SwiftSyntax`. The walked-from-real-codebase feasibility study is in [`docs/swift-extractor-design-notes.md`](docs/swift-extractor-design-notes.md); it covers what an AST-only extractor faithfully captures vs. where macros, property wrappers, and result builders force fidelity-loss markers.
+- **Python** — `ast` (stdlib). Feasibility study: [`docs/python-extractor-design-notes.md`](docs/python-extractor-design-notes.md).
+- **Rust** — `syn` crate, or treesitter-rust.
+- **Go** — `go/ast` + `go/parser` (stdlib).
+- **Swift** — `SwiftSyntax`. Feasibility study: [`docs/swift-extractor-design-notes.md`](docs/swift-extractor-design-notes.md).
+
+## Hand-run mode
+
+The binary delegates to the same extractors and queries that have always lived under `extractors/` and `pipeline/queries/`. For development work, one-off audits without installing the binary, or pipelines that need bespoke composition, the bash recipe still works end-to-end:
+
+```bash
+# 1. Manifest — every PR merged in the last 5 weeks
+gh pr list --state merged --search "merged:>=$(date -v-5w +%Y-%m-%d)" --limit 300 \
+  --json number,title,mergedAt,author,headRefName,files,closingIssuesReferences,labels \
+  > prs.json
+
+# 2. Classify PRs by file-path signal (adapt path patterns to your repo)
+jq -f pipeline/classify.jq prs.json > prs-classified.json
+
+# 3. Enumerate candidate .ts files touched by code-touching PRs
+jq -s '
+  .[0] as $cls | .[1] as $prs
+  | ($cls | map(select(.primary == "code-touching" or .primary == "code")) | map(.number)) as $nums
+  | $prs | map(select(.number as $n | $nums | index($n)))
+  | map(.files[].path) | unique
+  | map(select(test("\\.(ts|mts|cts)$")))
+  | map(select(test("\\.(test|spec)\\.ts$") | not))
+' prs-classified.json prs.json > candidates.json
+
+# 4. Run the catalog (npm install inside extractors/typescript first)
+cd extractors/typescript && npm install
+node type-catalog.mjs \
+  --root /path/to/your/repo \
+  --shared /path/to/sibling/shared-package \
+  --touched ../../candidates.json \
+  --output ../../catalog.json
+
+# 5. Cluster (queries emit multi-line strings — use -r for readable output)
+jq -L pipeline/queries -rf pipeline/queries/exact-duplicates.jq catalog.json
+jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates.jq catalog.json
+```
+
+The binary path produces the same artifacts under `.audit/catalogs/` and accepts JSONL on every query (`OUTPUT_FORMAT=jsonl` for the bash recipe, `--format jsonl` for `audit query`).
 
 ## Provenance
 
@@ -150,18 +181,30 @@ Extracted from a 5-week type-duplication audit of a TypeScript monorepo (179 sou
 
 ## Experiment series
 
-The project's validation track. Each experiment doc records its setup, plant set, results, and what changed about the methodology. The series starts with the V1 dj-site experiment ([`docs/dj-site-divergence-experiment.md`](docs/dj-site-divergence-experiment.md)) — a second TypeScript data point comparing pipeline-aware agent interpretation against cold-agent direct analysis, which surfaced five contract additions (`.tsx` indexing, default-on `--shared` warning, reference counts, subset detector, inline-literal expansion) the TypeScript substrate needed before a second-language extractor was worth building. The V2 protocol designed to address V1's confounds is in [`docs/dj-site-divergence-experiment-v2-methodology.md`](docs/dj-site-divergence-experiment-v2-methodology.md). Read in order for the full development arc:
+The project's validation track. Each experiment doc records its setup, plant set, results, and what changed about the methodology.
 
 | Experiment | Layer | Question | Doc |
 |---|---|---|---|
 | V2 | input | Does broader substrate (function bodies, file hashes, cross-package shapes) catch what V1 missed? | [V2 results](docs/dj-site-divergence-experiment-v2-results.md) |
-| V3 | input | Does plant-recall hold up under synthetic ground-truth methodology? | [V3 plant manifest](docs/dj-site-divergence-experiment-v3-plant-manifest.md), [V3 results](docs/dj-site-divergence-experiment-v3-results.md) |
-| V4 | input | Does V3's recall hold up after contamination vectors (plant comments, git history) are removed? | [V4 results](docs/dj-site-divergence-experiment-v4-results.md) |
-| V5 | input | Do the four V4-flagged substrate gaps close — function bodies, file hashes, cross-package shape near-duplicates, intersection-type resolution? | [V5 results](docs/dj-site-divergence-experiment-v5-results.md) |
-| V6 | input | Does the substrate transfer to Swift (wxyc-ios-64, 350 files, 22 packages)? | [V6 plant manifest](docs/wxyc-ios-64-experiment-plant-manifest.md), [V6 results](docs/wxyc-ios-64-experiment-results.md) |
-| V7 | **output** | Does the substrate's cluster output feed actionable refactor recommendations, by category? | [V7 methodology](docs/refactor-recommendation-experiment-methodology.md), [V7 plan](plans/v7-refactor-recommendation-implementation-plan.md) |
+| V3 | input | Does plant-recall hold up under synthetic ground-truth methodology? | [V3 results](docs/dj-site-divergence-experiment-v3-results.md) |
+| V4 | input | Does V3's recall hold up after contamination vectors are removed? | [V4 results](docs/dj-site-divergence-experiment-v4-results.md) |
+| V5 | input | Do the four V4-flagged substrate gaps close? | [V5 results](docs/dj-site-divergence-experiment-v5-results.md) |
+| V6 | input | Does the substrate transfer to Swift (wxyc-ios-64, 350 files, 22 packages)? | [V6 results](docs/wxyc-ios-64-experiment-results.md) |
+| V7 | **output** | Does the substrate's cluster output feed actionable refactor recommendations, by category? | [V7 methodology](docs/refactor-recommendation-experiment-methodology.md) |
 
 V2–V6 validate the input layer. V7 is the first experiment on the output layer.
+
+## Architecture decisions
+
+The binary's design is captured in seven ADRs under [`docs/adr/`](docs/adr/):
+
+1. [`.audit/`](docs/adr/0001-audit-cache-directory.md) — per-repo cached state directory.
+2. [Hybrid registration](docs/adr/0002-hybrid-registration.md) — front-matter for queries, `manifest.toml` for extractors.
+3. [Cluster envelope](docs/adr/0003-canonical-cluster-envelope.md) — three shape renderers (cluster, pair, metric).
+4. [Router architecture](docs/adr/0004-router-architecture.md) — subcommand dispatch.
+5. [Go binary + gojq engine](docs/adr/0005-go-binary-gojq-engine.md) — embedded jq vs. system shell-out.
+6. [Bundling + discovery](docs/adr/0006-bundling-and-discovery.md) — bundle queries, leave extractors external, lookup-order chain.
+7. [Reconciliation with snapshot family](docs/adr/0007-reconciliation-with-snapshot-family.md) — catalog envelope vs. cluster envelope.
 
 ## Future directions
 
