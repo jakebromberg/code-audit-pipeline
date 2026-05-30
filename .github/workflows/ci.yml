@@ -20,6 +20,10 @@ jobs:
             pipeline/queries/_tests/test_queries_integration.sh \
             pipeline/queries/_tests/test_gojq_parity.sh \
             pipeline/queries/_tests/smoke_test_real_catalog.sh \
+            pipeline/fetch-catalogs.sh \
+            pipeline/publish-catalog.sh \
+            pipeline/verify-index.sh \
+            pipeline/_tests/test_substrate.sh \
             extractors/swift/tests/test_package_graph.sh
 
   pipeline:
@@ -76,6 +80,9 @@ jobs:
 
       - name: gojq / jq parity tests
         run: pipeline/queries/_tests/test_gojq_parity.sh
+
+      - name: cross-repo substrate tests (hermetic, file:// backend)
+        run: pipeline/_tests/test_substrate.sh
 
   swift:
     name: swift extractor
