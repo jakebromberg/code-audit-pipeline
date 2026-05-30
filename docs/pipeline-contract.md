@@ -207,6 +207,7 @@ When invoked with `--emit-references-graph <path>`, the extractor writes an inve
 ```jsonc
 {
   "schema_version": "1.1",
+  "extractor": { "language": "typescript", "name": "type-catalog", "version": "0.5.0" },
   "edges": [
     {
       "from": { "package": "main", "name": "FlowsheetView" },
@@ -225,6 +226,8 @@ When invoked with `--emit-references-graph <path>`, the extractor writes an inve
 ```
 
 Each `references[]` entry on a declaration produces one edge. Resolution prefers a same-package target; failing that, a `shared`-package target; failing that, marks the edge `resolved: false` with `to.package == from.package` (fallback for unresolved external names). Edges are deduplicated by `(from.package, from.name, to.package, to.name)` and sorted by the same key, so two runs over the same input produce byte-identical files.
+
+The `extractor` block matches the wrapper used by every other sibling artifact (catalog, files); consumers that already read `.edges` keep working unchanged.
 
 The artifact is the right home for inverted ("what depends on X?") queries:
 
