@@ -69,103 +69,11 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		if len(queryFilter) > 0 && !queryFilter[name] {
 			continue
 		}
-		body, queryFile, cleanup, err := readQuery(qsrc, name)
-		if err != nil {
-			results = append(results, sectionResult{name: name, skipped: "could not read: " + err.Error()})
+		res, skip := runReportQuery(ctx, qsrc, absRoot, name, shapeFilter, argFlags, argJSONFlags, envFlags, *skipMissingArgs)
+		if skip {
 			continue
 		}
-		header, err := frontmatter.Parse(strings.NewReader(body))
-		if err != nil {
-			cleanup()
-			// _canonical.jq has no front-matter; skip silently. Real
-			// queries are required to carry it, so a parse failure on
-			// any other file IS a finding.
-			if name == "_canonical" {
-				continue
-			}
-			results = append(results, sectionResult{name: name, skipped: "front-matter parse: " + err.Error()})
-			continue
-		}
-		if len(shapeFilter) > 0 && !shapeIntersects(header.Shape, shapeFilter) {
-			cleanup()
-			continue
-		}
-		if !supportsFormat(header.Formats, "jsonl") {
-			cleanup()
-			results = append(results, sectionResult{name: name, skipped: "no jsonl format"})
-			continue
-		}
-		bindings, err := buildBindings(header, argFlags, argJSONFlags)
-		if err != nil {
-			cleanup()
-			if *skipMissingArgs && strings.Contains(err.Error(), "requires --arg") {
-				results = append(results, sectionResult{name: name, skipped: err.Error()})
-				continue
-			}
-			results = append(results, sectionResult{name: name, err: err})
-			continue
-		}
-		inputPath, slurpfiles, err := wireCatalogs(absRoot, header, nil)
-		if err != nil {
-			cleanup()
-			if strings.Contains(err.Error(), "not cached") {
-				results = append(results, sectionResult{name: name, skipped: err.Error()})
-				continue
-			}
-			results = append(results, sectionResult{name: name, err: err})
-			continue
-		}
-
-		env := map[string]string{}
-		for _, e := range header.Envs {
-			env[e.Name] = e.Default
-		}
-		for _, kv := range envFlags {
-			k, v, ok := splitKV(kv)
-			if !ok {
-				cleanup()
-				results = append(results, sectionResult{name: name, err: fmt.Errorf("--env expects NAME=VALUE, got %q", kv)})
-				continue
-			}
-			env[k] = v
-		}
-		env["OUTPUT_FORMAT"] = "jsonl"
-
-		buf := &bytes.Buffer{}
-		opts := engine.Opts{
-			QuerySource: body,
-			InputPath:   inputPath,
-			Bindings:    bindings,
-			Slurpfiles:  slurpfiles,
-			Env:         env,
-			Out:         buf,
-			Raw:         true,
-			UseSystemJQ: header.Engine == "jq",
-			QueryFile:   queryFile,
-		}
-		if qsrc.Path != "" {
-			opts.LibDir = qsrc.Path
-		} else {
-			opts.LibFS = qsrc.FS
-		}
-
-		if err := engine.Run(ctx, opts); err != nil {
-			cleanup()
-			results = append(results, sectionResult{name: name, header: header, err: fmt.Errorf("engine: %w", err)})
-			continue
-		}
-		cleanup()
-
-		blocks, err := renderJSONL(buf.Bytes())
-		if err != nil {
-			results = append(results, sectionResult{name: name, header: header, err: err})
-			continue
-		}
-		if len(blocks) == 0 {
-			results = append(results, sectionResult{name: name, skipped: "no rows"})
-			continue
-		}
-		results = append(results, sectionResult{name: name, header: header, blocks: blocks})
+		results = append(results, res)
 	}
 
 	report, failed := composeReport(absRoot, results)
@@ -184,6 +92,103 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	}
 	fmt.Fprintf(stdout, "audit: wrote %s\n", dest)
 	return 0
+}
+
+// runReportQuery executes a single query for the report run and returns its
+// sectionResult. The second return is true when the caller should drop the
+// query entirely (e.g. _canonical, shape-filtered out) rather than record a
+// skipped/error entry. The per-query temp-file cleanup is deferred inside,
+// so every exit path — including engine errors — releases resources without
+// the call site having to remember.
+func runReportQuery(
+	ctx context.Context,
+	qsrc discovery.Source,
+	absRoot string,
+	name string,
+	shapeFilter map[string]bool,
+	argFlags, argJSONFlags, envFlags stringList,
+	skipMissingArgs bool,
+) (sectionResult, bool) {
+	body, queryFile, cleanup, err := readQuery(qsrc, name)
+	if err != nil {
+		return sectionResult{name: name, skipped: "could not read: " + err.Error()}, false
+	}
+	defer cleanup()
+
+	header, err := frontmatter.Parse(strings.NewReader(body))
+	if err != nil {
+		// _canonical.jq has no front-matter; skip silently. Real
+		// queries are required to carry it, so a parse failure on
+		// any other file IS a finding.
+		if name == "_canonical" {
+			return sectionResult{}, true
+		}
+		return sectionResult{name: name, skipped: "front-matter parse: " + err.Error()}, false
+	}
+	if len(shapeFilter) > 0 && !shapeIntersects(header.Shape, shapeFilter) {
+		return sectionResult{}, true
+	}
+	if !supportsFormat(header.Formats, "jsonl") {
+		return sectionResult{name: name, skipped: "no jsonl format"}, false
+	}
+	bindings, err := buildBindings(header, argFlags, argJSONFlags)
+	if err != nil {
+		if skipMissingArgs && strings.Contains(err.Error(), "requires --arg") {
+			return sectionResult{name: name, skipped: err.Error()}, false
+		}
+		return sectionResult{name: name, err: err}, false
+	}
+	inputPath, slurpfiles, err := wireCatalogs(absRoot, header, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "not cached") {
+			return sectionResult{name: name, skipped: err.Error()}, false
+		}
+		return sectionResult{name: name, err: err}, false
+	}
+
+	env := map[string]string{}
+	for _, e := range header.Envs {
+		env[e.Name] = e.Default
+	}
+	for _, kv := range envFlags {
+		k, v, ok := splitKV(kv)
+		if !ok {
+			return sectionResult{name: name, err: fmt.Errorf("--env expects NAME=VALUE, got %q", kv)}, false
+		}
+		env[k] = v
+	}
+	env["OUTPUT_FORMAT"] = "jsonl"
+
+	buf := &bytes.Buffer{}
+	opts := engine.Opts{
+		QuerySource: body,
+		InputPath:   inputPath,
+		Bindings:    bindings,
+		Slurpfiles:  slurpfiles,
+		Env:         env,
+		Out:         buf,
+		Raw:         true,
+		UseSystemJQ: header.Engine == "jq",
+		QueryFile:   queryFile,
+	}
+	if qsrc.Path != "" {
+		opts.LibDir = qsrc.Path
+	} else {
+		opts.LibFS = qsrc.FS
+	}
+
+	if err := engine.Run(ctx, opts); err != nil {
+		return sectionResult{name: name, header: header, err: fmt.Errorf("engine: %w", err)}, false
+	}
+
+	blocks, err := renderJSONL(buf.Bytes())
+	if err != nil {
+		return sectionResult{name: name, header: header, err: err}, false
+	}
+	if len(blocks) == 0 {
+		return sectionResult{name: name, skipped: "no rows"}, false
+	}
+	return sectionResult{name: name, header: header, blocks: blocks}, false
 }
 
 // renderJSONL parses each non-blank line as a JSON object and dispatches it

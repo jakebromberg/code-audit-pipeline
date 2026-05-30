@@ -121,7 +121,10 @@ func pairCompanionBlock(r Row) string {
 // spaced replaces underscores with spaces for human-readable labels.
 func spaced(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-// pad right-pads s with spaces to width n.
+// pad right-pads s with spaces so the returned string is at least one
+// character wider than n: if len(s) < n, the result is exactly n+1 long;
+// if len(s) >= n, a single trailing space is appended. Call sites pass
+// widest+1 as n to leave a one-space gutter beyond the widest label.
 func pad(s string, n int) string {
 	if len(s) >= n {
 		return s + " "
