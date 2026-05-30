@@ -1147,6 +1147,22 @@ DEAD_CODE_REFS_FIXTURE="$FIXTURES_DIR/dead-code-references.input.json"
 assert_jsonl_has_prefix dead-code.jq "$DEAD_CODE_CATALOG_FIXTURE" "dead-code:" \
   --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
 
+# Envelope: each row is shape:"cluster" with one decl wrapped into members[0].
+assert_dead_code_envelope_shape() {
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile refs "$DEAD_CODE_REFS_FIXTURE" \
+    -f "$QUERIES_DIR/dead-code.jq" "$DEAD_CODE_CATALOG_FIXTURE" 2>&1 \
+    | jq -s 'all(.shape == "cluster" and (.members | length == 1))')"
+  if [[ "$result" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ dead-code (envelope): every row has shape:cluster and members of length 1\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (envelope): expected uniform shape:cluster, members[0]; got %s\n" "$result"
+  fi
+}
+assert_dead_code_envelope_shape
+
 # Semantic correctness. Fixture (dead-code-catalog.input.json + edges):
 #   ZombieType (main, exported, 0 refs in)            → flag dead
 #   LiveType (main, exported, 1 ref from SomeConsumer) → not flagged
@@ -1172,7 +1188,7 @@ assert_dead_code_baseline() {
     printf "  ✗ dead-code (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
     return
   fi
-  actual_set="$(echo "$result" | jq -r '"\(.package):\(.name)"' | sort | tr '\n' ',' | sed 's/,$//')"
+  actual_set="$(echo "$result" | jq -r '"\(.members[0].package):\(.members[0].name)"' | sort | tr '\n' ',' | sed 's/,$//')"
   expected_set="main:Tree,main:UnresolvedOnly,main:ZombieType,shared:LonelyShared"
   if [[ "$actual_set" == "$expected_set" ]]; then
     PASS=$((PASS + 1))
@@ -1228,6 +1244,22 @@ echo "=== public-api-leaks query (function-catalog + type-catalog join) ==="
 LEAKS_FUNCTIONS_FIXTURE="$FIXTURES_DIR/public-api-leaks-functions.input.json"
 LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
 
+# Envelope: each row is shape:"cluster" with one function wrapped into members[0].
+assert_public_api_leaks_envelope_shape() {
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$LEAKS_TYPES_FIXTURE" \
+    -f "$QUERIES_DIR/public-api-leaks.jq" "$LEAKS_FUNCTIONS_FIXTURE" 2>&1 \
+    | jq -s 'all(.shape == "cluster" and (.members | length == 1))')"
+  if [[ "$result" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ public-api-leaks (envelope): every row has shape:cluster and members of length 1\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ public-api-leaks (envelope): expected uniform shape:cluster, members[0]; got %s\n" "$result"
+  fi
+}
+assert_public_api_leaks_envelope_shape
+
 assert_jsonl_has_prefix public-api-leaks.jq "$LEAKS_FUNCTIONS_FIXTURE" "public-api-leaks:" \
   --slurpfile types "$LEAKS_TYPES_FIXTURE"
 
@@ -1257,7 +1289,7 @@ assert_public_api_leaks_baseline() {
     printf "  ✗ public-api-leaks (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
     return
   fi
-  actual_set="$(echo "$result" | jq -r '"\(.package):\(.name)"' | sort | tr '\n' ',' | sed 's/,$//')"
+  actual_set="$(echo "$result" | jq -r '"\(.members[0].package):\(.members[0].name)"' | sort | tr '\n' ',' | sed 's/,$//')"
   expected_set="main:leakyBoth,main:leakyFunctionVerifies,main:leakyParam,main:leakyReturn"
   if [[ "$actual_set" == "$expected_set" ]]; then
     PASS=$((PASS + 1))
@@ -1274,7 +1306,7 @@ assert_public_api_leaks_leakyboth_has_two_entries() {
   local count
   count="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$LEAKS_TYPES_FIXTURE" \
     -f "$QUERIES_DIR/public-api-leaks.jq" "$LEAKS_FUNCTIONS_FIXTURE" 2>&1 \
-    | jq -r 'select(.name == "leakyBoth") | .leaks | length')"
+    | jq -r 'select(.members[0].name == "leakyBoth") | .leaks | length')"
   if [[ "$count" == "2" ]]; then
     PASS=$((PASS + 1))
     printf "  ✓ public-api-leaks (leakyBoth): reports 2 leak entries (param + return)\n"
@@ -1315,7 +1347,7 @@ assert_public_api_leaks_e2e_extractor() {
     printf "  ✗ public-api-leaks (e2e): query crashed:\n%s\n" "$result"
     return
   fi
-  if [[ -z "$result" ]] || ! echo "$result" | jq -e -s 'any(.name == "leakyHandler")' >/dev/null 2>&1; then
+  if [[ -z "$result" ]] || ! echo "$result" | jq -e -s 'any(.members[0].name == "leakyHandler")' >/dev/null 2>&1; then
     FAIL=$((FAIL + 1))
     printf "  ✗ public-api-leaks (e2e): expected leakyHandler in output, got:\n%s\n" "$result"
     return
@@ -1405,6 +1437,125 @@ assert_cross_catalog_verdict() {
 }
 
 assert_cross_catalog_verdict cross-catalog-name-collisions.jq ShadowedName FIELD_NAMES_DIVERGE
+
+# ─── Front-matter well-formedness (PR 2) ─────────────────────────────────
+# Each runnable query (every `.jq` under pipeline/queries/ except _canonical.jq)
+# must carry a complete `#!`-prefixed front-matter block. See plans/pr2-front-
+# matter.md and ADR-0002 for the grammar. PR 3's binary parser will run these
+# same checks at registration time.
+echo ""
+echo "=== Front-matter well-formedness ==="
+
+assert_front_matter_well_formed() {
+  local errors=0
+  local seen_query_values=()
+  for f in "$QUERIES_DIR"/*.jq; do
+    local base
+    base="$(basename "$f")"
+    [[ "$base" == "_canonical.jq" ]] && continue
+
+    # Required keys: query, shape, catalog, formats, desc.
+    for key in query shape catalog formats desc; do
+      if ! grep -q "^#! ${key}:" "$f"; then
+        printf "  ✗ %s: missing `#! %s:` line\n" "$base" "$key"
+        errors=$((errors + 1))
+      fi
+    done
+
+    # `query:` value must be unique.
+    local qval
+    qval="$(awk '/^#! query:/ { sub(/^#! query:[[:space:]]*/, ""); print; exit }' "$f")"
+    for prior in "${seen_query_values[@]}"; do
+      if [[ "$prior" == "$qval" ]]; then
+        printf "  ✗ %s: duplicate `#! query: %s` (seen earlier)\n" "$base" "$qval"
+        errors=$((errors + 1))
+      fi
+    done
+    seen_query_values+=("$qval")
+
+    # `shape:` value must be one of cluster / pair / metric (or comma combos).
+    local svals
+    svals="$(awk '/^#! shape:/ { sub(/^#! shape:[[:space:]]*/, ""); print; exit }' "$f")"
+    local IFS=,
+    for s in $svals; do
+      s="$(echo "$s" | awk '{ gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print }')"
+      case "$s" in
+        cluster|pair|metric) ;;
+        *)
+          printf "  ✗ %s: `#! shape:` contains unknown token %s (expected cluster/pair/metric)\n" "$base" "$s"
+          errors=$((errors + 1))
+          ;;
+      esac
+    done
+    unset IFS
+
+    # Every `arg: <name>` must appear as --argjson <name> or --arg <name>
+    # somewhere in the file (the prose `Run:` block, the body, or both).
+    while IFS= read -r argline; do
+      local argname
+      argname="$(echo "$argline" | awk '{ print $3 }')"
+      [[ -z "$argname" ]] && continue
+      if ! grep -qE "(--argjson|--arg) ${argname}([[:space:]]|$)" "$f"; then
+        printf "  ✗ %s: `arg: %s` declared but no `--argjson %s` or `--arg %s` found in file\n" "$base" "$argname" "$argname" "$argname"
+        errors=$((errors + 1))
+      fi
+    done < <(grep '^#! arg:' "$f")
+
+    # Every `env: <NAME>` must be referenced as $ENV.NAME or env.NAME (or
+    # documented in prose) — uppercase identifier guards against false positives.
+    while IFS= read -r envline; do
+      local envname
+      envname="$(echo "$envline" | awk '{ print $3 }')"
+      [[ -z "$envname" ]] && continue
+      if ! grep -qE "(\\\$ENV\\.${envname}|env\\.${envname}|${envname}=)" "$f"; then
+        printf "  ✗ %s: `env: %s` declared but no \$ENV.%s reference found\n" "$base" "$envname" "$envname"
+        errors=$((errors + 1))
+      fi
+    done < <(grep '^#! env:' "$f")
+  done
+
+  if [[ "$errors" -eq 0 ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ front-matter: all queries pass shape, uniqueness, arg and env cross-checks\n"
+  else
+    FAIL=$((FAIL + errors))
+  fi
+}
+assert_front_matter_well_formed
+
+# ─── Extractor manifest.toml well-formedness (PR 2) ─────────────────────
+# Each extractor directory now carries a manifest.toml (per ADR-0002). PR 3's
+# binary parser will read these to discover invocations. Until then, this check
+# ensures the files at least parse as valid TOML.
+echo ""
+echo "=== Extractor manifest.toml well-formedness ==="
+
+assert_manifests_parse() {
+  local manifests=(
+    "$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)/manifest.toml"
+    "$(cd "$SCRIPT_DIR/../../../extractors/swift" && pwd)/manifest.toml"
+    "$(cd "$SCRIPT_DIR/../../../extractors/file-hashes" && pwd)/manifest.toml"
+  )
+  if ! command -v python3 >/dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    printf "  ✓ manifest.toml: skipped (python3 not available)\n"
+    return
+  fi
+  local errors=0
+  for m in "${manifests[@]}"; do
+    if ! python3 -c "import tomllib; tomllib.load(open('$m', 'rb'))" 2>/dev/null; then
+      printf "  ✗ %s: failed to parse as TOML\n" "$m"
+      errors=$((errors + 1))
+    fi
+  done
+  if [[ "$errors" -eq 0 ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ manifest.toml: all three extractor manifests parse cleanly\n"
+  else
+    FAIL=$((FAIL + errors))
+  fi
+}
+assert_manifests_parse
 
 echo ""
 echo "=== Results ==="
