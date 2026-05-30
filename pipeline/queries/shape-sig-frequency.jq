@@ -26,7 +26,16 @@
 # Colons and pipes are preserved (existing queries like subset-pairs already
 # embed `:` in cluster_ids), so the slug stays human-readable.
 #
+#! query: shape-sig-frequency
 #! shape: metric
+#! catalog: type-catalog
+#! env: PACKAGE string ""
+#! env: KIND_PREFIX string ""
+#! env: INCLUDE_GENERATED string ""
+#! env: MIN_COUNT string "2"
+#! env: SAMPLE_SIZE string "3"
+#! formats: text, jsonl
+#! desc: shape_sig values by frequency — discovery helper for migration-progress.
 
 include "_canonical";
 

@@ -35,7 +35,13 @@
 #   the source query's cluster_id prefix, so the four meta-rows index neatly
 #   alongside the source clusters they summarize.
 #
+#! query: touched-window-debt-summary
 #! shape: metric
+#! catalog: type-catalog
+#! env: THRESHOLD string "0.7"
+#! env: ONLY_TOUCHED string ""
+#! formats: text, jsonl
+#! desc: PR-time meta-summary: clusters intersecting the touched-in-window set.
 
 include "_canonical";
 

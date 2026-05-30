@@ -33,7 +33,17 @@
 # the slug strips runs of non-identifier chars from the label so the id is a
 # single whitespace-free token. The verbatim label stays in the `label` field.)
 #
+#! query: migration-progress
 #! shape: metric
+#! catalog: type-catalog
+#! arg: old_sig string required
+#! arg: new_sig string required
+#! arg: label string required
+#! env: PACKAGE string ""
+#! env: KIND_PREFIX string ""
+#! env: INCLUDE_GENERATED string ""
+#! formats: text, jsonl
+#! desc: Percent migrated from one shape to another; list stragglers touched in window.
 
 include "_canonical";
 
