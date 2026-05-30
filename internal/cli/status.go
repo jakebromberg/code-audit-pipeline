@@ -47,9 +47,13 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 
 	auditHome := os.Getenv("AUDIT_HOME")
 	homeDir, _ := os.UserHomeDir()
+	// Discovery cwd is the binary's actual cwd — the audit-root is where
+	// the user's catalogs live, but the extractors/queries directories
+	// sit next to the audit-pipeline source tree, not next to user data.
+	cwd, _ := os.Getwd()
 
-	qsrc, qerr := discovery.ResolveQueriesDir(discovery.QueryOpts{Flag: *queriesDir, AuditHome: auditHome, CWD: absRoot}, queriesFS)
-	xpath, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{Flag: *extractorsDir, AuditHome: auditHome, CWD: absRoot, HomeDir: homeDir})
+	qsrc, qerr := discovery.ResolveQueriesDir(discovery.QueryOpts{Flag: *queriesDir, AuditHome: auditHome, CWD: cwd}, queriesFS)
+	xpath, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{Flag: *extractorsDir, AuditHome: auditHome, CWD: cwd, HomeDir: homeDir})
 
 	fmt.Fprintf(out, "Audit root:        %s\n", absRoot)
 	fmt.Fprintf(out, "Cache:             %s  (audit-version %s)\n", c.Dir, Version)

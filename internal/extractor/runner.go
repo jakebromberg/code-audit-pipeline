@@ -92,7 +92,6 @@ func Run(ctx context.Context, extractorDir string, cmd manifest.Command, args Ar
 	subprocess.Dir = extractorDir
 	subprocess.Stderr = os.Stderr
 	subprocess.Stdout = os.Stderr // diagnostic output; --output writes the catalog file directly
-	subprocess.Env = append(os.Environ(), "AUDIT_VERSION=skeleton")
 	if err := subprocess.Run(); err != nil {
 		return nil, fmt.Errorf("extractor: subprocess (%s): %w", strings.Join(argv, " "), err)
 	}
