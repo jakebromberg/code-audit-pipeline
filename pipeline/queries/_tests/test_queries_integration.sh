@@ -1496,7 +1496,7 @@ assert_front_matter_well_formed() {
       argname="$(echo "$argline" | awk '{ print $3 }')"
       [[ -z "$argname" ]] && continue
       if ! grep -qE "(--argjson|--arg) ${argname}([[:space:]]|$)" "$f"; then
-        printf "  ✗ %s: `arg: %s` declared but no `--argjson %s` or `--arg %s` found in file\n" "$base" "$argname" "$argname" "$argname"
+        printf "  ✗ %s: 'arg: %s' declared but no '--argjson %s' or '--arg %s' found in file\n" "$base" "$argname" "$argname" "$argname"
         errors=$((errors + 1))
       fi
     done < <(grep '^#! arg:' "$f")
@@ -1508,7 +1508,7 @@ assert_front_matter_well_formed() {
       envname="$(echo "$envline" | awk '{ print $3 }')"
       [[ -z "$envname" ]] && continue
       if ! grep -qE "(\\\$ENV\\.${envname}|env\\.${envname}|${envname}=)" "$f"; then
-        printf "  ✗ %s: `env: %s` declared but no \$ENV.%s reference found\n" "$base" "$envname" "$envname"
+        printf "  ✗ %s: 'env: %s' declared but no \$ENV.%s reference found\n" "$base" "$envname" "$envname"
         errors=$((errors + 1))
       fi
     done < <(grep '^#! env:' "$f")
