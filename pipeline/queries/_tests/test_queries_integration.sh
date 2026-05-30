@@ -1135,6 +1135,92 @@ assert_test_prod_drift_baseline
 assert_text_has_cid test-prod-drift.jq "$TEST_PROD_DRIFT_FIXTURE" --argjson threshold 0.5
 
 echo ""
+echo "=== dead-code query (catalog + references.json join) ==="
+# Two-file fixture: dead-code.jq takes the wrapped catalog as its primary input
+# and pulls the resolved-edges from references.json via --slurpfile refs <path>.
+# The existing assert_jsonl_has_prefix / assert_text_has_cid helpers pass any
+# trailing args through to jq verbatim, so the --slurpfile flag rides through
+# cleanly with no helper-signature changes.
+DEAD_CODE_CATALOG_FIXTURE="$FIXTURES_DIR/dead-code-catalog.input.json"
+DEAD_CODE_REFS_FIXTURE="$FIXTURES_DIR/dead-code-references.input.json"
+
+assert_jsonl_has_prefix dead-code.jq "$DEAD_CODE_CATALOG_FIXTURE" "dead-code:" \
+  --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
+
+# Semantic correctness. Fixture (dead-code-catalog.input.json + edges):
+#   ZombieType (main, exported, 0 refs in)            → flag dead
+#   LiveType (main, exported, 1 ref from SomeConsumer) → not flagged
+#   Tree (main, exported, self-ref only)              → flag dead (self-ref filter)
+#   InternalType (main, NOT exported, 0 refs in)      → not flagged (non-exported)
+#   GeneratedType (main, exported, generated=true)    → not flagged (generated filter)
+#   CommonType (shared, exported, 1 ref from main)    → not flagged (cross-pkg consumer)
+#   UnresolvedOnly (main, exported, 1 unresolved in)  → flag dead (resolved=false filter)
+#   LonelyShared (shared, exported, 0 refs in)        → flag dead
+#   SyntheticInline (main, synthetic=true)            → not flagged (synthetic filter)
+# Expected flagged set: {(main, ZombieType), (main, Tree), (main, UnresolvedOnly), (shared, LonelyShared)}
+assert_dead_code_baseline() {
+  local result rows actual_set expected_set
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile refs "$DEAD_CODE_REFS_FIXTURE" \
+    -f "$QUERIES_DIR/dead-code.jq" "$DEAD_CODE_CATALOG_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (baseline): crashed: %s\n" "$result"
+    return
+  }
+  rows="$(echo "$result" | grep -c .)"
+  if [[ "$rows" != "4" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (baseline): expected 4 rows, got %s:\n%s\n" "$rows" "$result"
+    return
+  fi
+  actual_set="$(echo "$result" | jq -r '"\(.package):\(.name)"' | sort | tr '\n' ',' | sed 's/,$//')"
+  expected_set="main:Tree,main:UnresolvedOnly,main:ZombieType,shared:LonelyShared"
+  if [[ "$actual_set" == "$expected_set" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ dead-code (baseline): emits exactly {ZombieType, Tree, UnresolvedOnly, LonelyShared}\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (baseline): row set mismatch\n      expected: %s\n      actual:   %s\n" "$expected_set" "$actual_set"
+  fi
+}
+assert_dead_code_baseline
+
+assert_text_has_cid dead-code.jq "$DEAD_CODE_CATALOG_FIXTURE" --slurpfile refs "$DEAD_CODE_REFS_FIXTURE"
+
+# End-to-end smoke: run the actual TS extractor over a real fixture, emit both
+# catalog and references.json, then run dead-code.jq on the pair. Proves the
+# query interops with the live extractor's output shape (not just hand-edited
+# fixtures). If #146's emitted JSON shape ever drifts from the hand-edited
+# fixture, this catches it before the unit tests start lying.
+assert_dead_code_e2e_extractor() {
+  local extractor_dir tmp_root tmp_catalog tmp_refs result
+  extractor_dir="$(cd "$SCRIPT_DIR/../../../extractors/typescript" && pwd)"
+  tmp_root="$(mktemp -d)"
+  trap 'rm -rf "$tmp_root"' RETURN
+  tmp_catalog="$tmp_root/catalog.json"
+  tmp_refs="$tmp_root/refs.json"
+  cp "$extractor_dir/fixtures/02-interface-extends.ts" "$tmp_root/02-interface-extends.ts"
+  if ! node "$extractor_dir/type-catalog.mjs" --root "$tmp_root" --output "$tmp_catalog" --emit-references-graph "$tmp_refs" 2>/dev/null; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (e2e): extractor crashed\n"
+    return
+  fi
+  if ! result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile refs "$tmp_refs" \
+    -f "$QUERIES_DIR/dead-code.jq" "$tmp_catalog" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (e2e): query crashed against real extractor output:\n%s\n" "$result"
+    return
+  fi
+  if [[ -n "$result" ]] && ! echo "$result" | jq -e -s 'all(type == "object")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ dead-code (e2e): non-object JSONL emitted:\n%s\n" "$result"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ dead-code (e2e): query runs cleanly against real extractor output\n"
+}
+assert_dead_code_e2e_extractor
+
+echo ""
 echo "=== Cross-catalog queries ==="
 # cross-catalog queries take two slurped catalogs rather than a single input,
 # so the assert_jsonl_has_prefix helper doesn't fit — inline the assertion.
