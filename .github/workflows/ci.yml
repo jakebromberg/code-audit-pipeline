@@ -24,7 +24,8 @@ jobs:
             pipeline/publish-catalog.sh \
             pipeline/verify-index.sh \
             pipeline/_tests/test_substrate.sh \
-            extractors/swift/tests/test_package_graph.sh
+            extractors/swift/tests/test_package_graph.sh \
+            extractors/typescript/tests/test_smoke.sh
 
   pipeline:
     name: pipeline + typescript extractor
@@ -71,6 +72,9 @@ jobs:
           node --check extractors/typescript/type-catalog.mjs
           node --check extractors/typescript/function-catalog.mjs
           node --check extractors/file-hashes/file-hashes.mjs
+
+      - name: Smoke-test TypeScript extractor
+        run: extractors/typescript/tests/test_smoke.sh
 
       - name: jq canonical helper tests
         run: pipeline/queries/_tests/test_canonical.sh
