@@ -11,7 +11,7 @@ jobs:
     name: shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Run shellcheck
         run: |
           shellcheck --version
@@ -30,9 +30,9 @@ jobs:
     name: pipeline + typescript extractor
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -43,7 +43,7 @@ jobs:
         # test below verifies every query produces semantically equivalent
         # output under gojq and system jq, so the binary is safe to ship.
         id: cache-gojq
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: /usr/local/bin/gojq
           key: gojq-${{ runner.os }}-0.12.19
@@ -84,6 +84,29 @@ jobs:
       - name: cross-repo substrate tests (hermetic, file:// backend)
         run: pipeline/_tests/test_substrate.sh
 
+  go:
+    name: go binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Generate embedded queries
+        run: go generate ./...
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go test
+        run: go test ./...
+
+      - name: Go build
+        run: go build -o /tmp/audit ./cmd/audit
+
   swift:
     name: swift extractor
     runs-on: macos-latest
@@ -91,7 +114,7 @@ jobs:
       run:
         working-directory: extractors/swift
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
@@ -102,7 +125,7 @@ jobs:
           jq --version
 
       - name: Cache SwiftPM build
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             extractors/swift/.build
