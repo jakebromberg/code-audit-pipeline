@@ -19,8 +19,16 @@
 
 include "_canonical";
 
+# Positive kind filter — mirrors cross-package-shadows.jq's pattern. Robust to
+# future kind additions: only known shape-of-named-members kinds participate in
+# the name-collision grouping. Excludes `kind: "import"` rows (introduced by
+# --include-imports) which would otherwise inflate clusters with consumer-edge
+# references to the same exported name.
 # V2 substrate: filter generated codegen entries (see exact-duplicates.jq for rationale).
-[ entries[] | select((.generated // false) != true) ]
+[ entries[]
+  | select((.generated // false) != true)
+  | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object" or . == "drizzle-table")
+]
 | group_by(.name)
 | map(select(length > 1))
 | map(select((map(.file) | unique | length) > 1))

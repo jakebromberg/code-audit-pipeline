@@ -74,8 +74,11 @@ def render_cluster:
 
 # 2. name-collisions — group by name, ≥2 decls, in ≥2 distinct files.
 # Sort by (-size, name) to match name-collisions.jq's
-# `sort_by(-(.members | length), .name)`.
-| ([ $all[] | select((.generated // false) != true) ]
+# `sort_by(-(.members | length), .name)`. Positive kind filter mirrors
+# name-collisions.jq's guard against import rows.
+| ([ $all[]
+     | select((.generated // false) != true)
+     | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object" or . == "drizzle-table") ]
    | group_by(.name)
    | map(select(length > 1))
    | map(select((map(.file) | unique | length) > 1))

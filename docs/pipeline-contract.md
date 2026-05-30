@@ -125,8 +125,84 @@ The flat `fields[]` form is preserved unchanged for V6-era queries; new queries 
 | `type-alias-other` | other utility types | mapped/conditional types |
 | `zod-object` | `const X = z.object({ … })` | Python: Pydantic `BaseModel`; Go: validator tags |
 | `drizzle-table` | `pgTable("…", { … })` or `wxyc_schema.table(…)` | Python: SQLAlchemy `Table(…)`; Go: GORM struct |
+| `import` | `import { X } from "pkg"` (consumer-edge row, see "Import rows" below) | Python: `ast.Import`/`ast.ImportFrom`; Swift: `ImportDeclSyntax` |
 
 Languages without an exact analog can extend with their own kind values — keep prefix conventions (`type-alias-*`, etc.) so queries can pattern-match.
+
+## Import rows (`kind: "import"`)
+
+Opt-in via the `--include-imports` CLI flag. When enabled, the extractor emits one row per imported symbol (consumer-edge data: "this file consumes this name from that published package"). Off by default so legacy queries see byte-stable output; existing queries already filter on `.kind` and naturally exclude import rows, with two defensive guards added in the same PR (`name-collisions.jq`, `touched-window-debt-summary.jq` — positive-kind whitelist).
+
+The data is intended for cross-repo queries (`consumers-of.jq` — #156; `renamed-consumers.jq` — #158) that need to map "exported symbol from package A" to "every file across every repo that imports it."
+
+### Schema
+
+```jsonc
+{
+  "name": "DiscogsTrack",              // origin-package side spelling (queryable against declarations)
+  "kind": "import",
+  "package": "main",                    // existing field — which root the FILE belongs to
+  "file": "src/services/lookup.ts",
+  "line": 3,                            // 1-indexed line of the import statement
+  "exported": false,                    // always false; emitted for shape uniformity
+  "generated": false,
+  "is_test": false,
+  "touched_in_window": false,
+
+  "import_form": "named",               // see table below
+  "imported_as": "DiscogsTrack",        // local alias (== name if no `as` clause); null for side-effect
+  "origin_specifier": "@wxyc/shared",   // raw text as written in source
+  "origin_package": "@wxyc/shared",     // bare-specifier strip; null for relative/computed
+  "origin_resolution": "bare-specifier", // bare-specifier | relative | computed
+  "type_only": false,                   // true for `import type {…}` or per-binding `{ type X }`
+
+  "extends": [],                        // always; required-on-every-row
+  "references": [],                     // always; required-on-every-row
+  "references_count": 0                 // always; required-on-every-row
+}
+```
+
+### `import_form` mapping
+
+| Source statement | Rows emitted |
+|---|---|
+| `import { A, B as C } from "pkg"` | 2 rows: `{name: "A", imported_as: "A"}`, `{name: "B", imported_as: "C"}`, both `import_form: "named"` |
+| `import { type T } from "pkg"` | 1 row, `import_form: "named"`, `type_only: true` |
+| `import type { T } from "pkg"` | 1 row, `import_form: "named"`, `type_only: true` (declaration-level) |
+| `import D from "pkg"` | 1 row, `name: "default"`, `imported_as: "D"`, `import_form: "default"` |
+| `import * as ns from "pkg"` | 1 row, `name: "*"`, `imported_as: "ns"`, `import_form: "namespace"` |
+| `import "pkg/polyfills"` | 1 row, `name: null`, `imported_as: null`, `import_form: "side-effect"` |
+| `export { A } from "pkg"` | 1 row, `import_form: "re-export"` |
+| `export * from "pkg"` | 1 row, `name: "*"`, `imported_as: "*"`, `import_form: "re-export"` |
+| `export * as ns from "pkg"` | 1 row, `name: "*"`, `imported_as: "ns"`, `import_form: "re-export"` |
+| `await import("pkg")` (string-literal arg) | 1 row, `name: "*"`, `imported_as: null`, `import_form: "dynamic"` |
+| `import(\`./x/${y}\`)` (templated arg) | 1 row, `origin_specifier: "<computed>"`, `origin_resolution: "computed"`, `origin_package: null` |
+| `const x = require("pkg")` | 1 row, `name: "*"`, `imported_as: "x"`, `import_form: "require"` |
+| `const { a, b: c } = require("pkg")` | 2 rows, `import_form: "require"`, `name: "a"`/`"b"`, `imported_as: "a"`/`"c"` |
+| `require("pkg")` (call-statement) | 1 row, `name: "*"`, `imported_as: null`, `import_form: "require"` |
+
+`name: null` for side-effect imports is the one exception to the otherwise-invariant non-null `name` field. Queries that group by `.name` need a `select(.name != null)` guard. The defensive kind filter on `name-collisions.jq` already excludes these.
+
+### `origin_package` resolution (v1: bare-specifier only)
+
+Pure text rule, no filesystem reads:
+
+- Specifier starts with `.` or `/` → `origin_package: null`, `origin_resolution: "relative"`.
+- Bare specifier starts with `@` → take the first two `/`-separated segments (e.g., `@wxyc/shared/dtos/lookup` → `@wxyc/shared`).
+- Bare unscoped specifier → take the first segment (e.g., `lodash/fp` → `lodash`).
+- Computed/templated `import()` argument → `origin_specifier: "<computed>"`, `origin_resolution: "computed"`, `origin_package: null`.
+
+Tier 2 (parse `tsconfig.json` `compilerOptions.paths`; walk `package.json` `name` from the resolved target) is intentionally deferred until a real query demands it. The bare-specifier rule already covers the cross-repo case `consumers-of.jq` targets (30 sibling repos importing from `@wxyc/shared` all have bare specifiers).
+
+### v1 limitations (documented)
+
+- Non-trivial `require()` patterns (computed arguments, conditional/nested requires, non-`VariableDeclaration` parents besides bare call-statements) are skipped silently. Recall on real TS codebases is unaffected.
+- Templated dynamic-import specifiers are emitted with the `<computed>` marker — missing-data is worse than partial-data for audit reports, but the row's `origin_package` is `null` so it won't join against any declaration.
+- File-level (not per-specifier) `type_only` is recorded on `import type { X, Y }` — both bindings record `type_only: true`. The per-binding form `import { type X, Y }` correctly records `type_only` per-binding.
+
+### Effect on existing queries
+
+Every cluster query in `pipeline/queries/*.jq` either: (a) filters on `.kind` against a positive whitelist (most queries — `cross-package-shadows.jq:16`, `exact-duplicates.jq`, `near-duplicates.jq`, etc., do this already); (b) filters on `.shape_sig` or `.fields` which import rows don't carry; or (c) is `name-collisions.jq` / `touched-window-debt-summary.jq`'s name-collision section, both of which gain a positive kind whitelist in the same PR. Net effect: enabling `--include-imports` does not change the output of any existing query.
 
 ## Required fields
 
@@ -578,10 +654,10 @@ The diff machinery (see #117) refuses to compare catalogs with different `schema
 Every extractor:
 
 ```
-extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>]
+extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>] [--include-imports]
 ```
 
-Defaults: `--output` writes to stdout. `--emit-references-graph` and `--emit-files` are off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
+Defaults: `--output` writes to stdout. `--emit-references-graph`, `--emit-files`, and `--include-imports` are off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
 
 Exit code: `0` if at least one file was successfully indexed, `1` if no files could be parsed.
 
