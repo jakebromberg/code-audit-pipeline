@@ -33,6 +33,8 @@ func main() {
 		os.Exit(cli.Query(ctx, args, stdout, queriesFS))
 	case "status":
 		os.Exit(cli.Status(args, stdout, queriesFS))
+	case "report":
+		os.Exit(cli.Report(ctx, args, stdout, queriesFS))
 	case "version", "--version", "-v":
 		fmt.Fprintln(stdout, cli.Version)
 	case "help", "--help", "-h":
@@ -53,8 +55,10 @@ Subcommands:
   extract  <name>   Run an extractor (typescript, swift, file-hashes) and cache its output in .audit/.
   query    <name>   Evaluate a query against cached catalogs (embedded gojq).
   status            Show .audit/ state, resolved query/extractor sources, and staleness.
+  report            Run every runnable query and write .audit/reports/findings-<date>.md.
   version           Print binary version.
 
-See plans/pr3-binary-skeleton.md for the full design.
+See docs/adr/0001..0007.md for the design; plans/pr3-binary-skeleton.md and
+plans/pr4-renderers-report-init.md document the implementation arc.
 `, cli.Version)
 }
