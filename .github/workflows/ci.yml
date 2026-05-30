@@ -111,6 +111,28 @@ jobs:
       - name: Go build
         run: go build -o /tmp/audit ./cmd/audit
 
+      - name: Verify ldflags Version override is wired
+        # The release pipeline injects the tag via `-ldflags -X cli.Version=...`.
+        # `-X` only works against `var` symbols — a `const` target is silently
+        # ignored at link time. Catch the regression here rather than at the
+        # first tag push, where it would ship a binary stamped with the
+        # build-time default.
+        run: |
+          go build -ldflags="-X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version=ci-verify" -o /tmp/audit-version ./cmd/audit
+          got=$(/tmp/audit-version version | tr -d '[:space:]')
+          if [ "$got" != "ci-verify" ]; then
+            echo "ldflags -X cli.Version was ignored (got=$got). Is Version a const? It must be a var." >&2
+            exit 1
+          fi
+
+      - name: Goreleaser config check
+        # Catches schema errors and build misconfig without needing a tag or
+        # touching publish credentials. Skips publish/sign so it's safe on PRs.
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: check
+
   swift:
     name: swift extractor
     runs-on: macos-latest

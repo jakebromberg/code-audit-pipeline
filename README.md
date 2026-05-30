@@ -168,7 +168,9 @@ node type-catalog.mjs \
   --touched ../../candidates.json \
   --output ../../catalog.json
 
-# 5. Cluster (queries emit multi-line strings — use -r for readable output)
+# 5. Cluster (queries emit multi-line strings — use -r for readable output).
+# Queries `import "_canonical" as canonical;` for the shared cluster helper,
+# so `-L pipeline/queries` is required so jq can resolve the import path.
 jq -L pipeline/queries -rf pipeline/queries/exact-duplicates.jq catalog.json
 jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates.jq catalog.json
 ```
