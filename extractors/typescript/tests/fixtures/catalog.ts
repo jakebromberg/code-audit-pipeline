@@ -3,7 +3,7 @@
 // determinism guard exercises inter-file ordering, not just a single file.
 //
 // Covered shapes (this file):
-//   - plain interface w/ self-reference -> FlowsheetEntry     (kind: interface, references: ["FlowsheetEntry"])
+//   - plain interface w/ self-reference -> FlowsheetEntry     (kind: interface, references: [{name: "FlowsheetEntry", kind: "type-ref"}])
 //   - Zod schema                        -> ListenerSchema     (kind: zod-object, fields populated)
 //   - Drizzle table                     -> stations           (kind: drizzle-table, db_table_name: "stations")
 //   - generic type alias                -> PageEnvelope       (kind: type-alias-object, generics)
