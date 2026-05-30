@@ -14,12 +14,6 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
 )
 
-// stringList implements flag.Value for repeated --catalog filters.
-type stringList []string
-
-func (s *stringList) String() string     { return fmt.Sprint([]string(*s)) }
-func (s *stringList) Set(v string) error { *s = append(*s, v); return nil }
-
 // Extract implements `audit extract <name> ...`.
 func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	if len(argv) < 1 {
