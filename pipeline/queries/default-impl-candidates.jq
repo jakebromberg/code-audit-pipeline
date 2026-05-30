@@ -44,7 +44,12 @@
 # cluster_id format:  default-impl-candidates:LocA+LocB+...
 #                     (sorted location keys — package:file:line:name)
 #
+#! query: default-impl-candidates
 #! shape: cluster
+#! catalog: function-catalog
+#! arg: min_conformers number required
+#! formats: text, jsonl
+#! desc: Function-body clusters across >= N types — protocol-extension default candidates.
 
 include "_canonical";
 

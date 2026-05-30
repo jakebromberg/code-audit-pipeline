@@ -43,7 +43,12 @@
 # wrap into the cluster envelope so the renderer stays shape-aware; the
 # `missing` field at the top level carries the finding category.
 #
+#! query: orphan-infer-model
 #! shape: cluster
+#! catalog: type-catalog
+#! env: INCLUDE_GENERATED string ""
+#! formats: text, jsonl
+#! desc: Drizzle tables with no InferSelect/InferInsert consumer in the catalog.
 
 include "_canonical";
 

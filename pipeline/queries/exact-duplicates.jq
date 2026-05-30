@@ -11,7 +11,11 @@
 #
 # cluster_id format:  exact-duplicates:NameA+NameB+...  (sorted, '+' separator)
 #
+#! query: exact-duplicates
 #! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Cluster types whose shape_sig is identical (byte-equal field+type set).
 
 include "_canonical";
 

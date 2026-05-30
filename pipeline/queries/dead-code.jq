@@ -25,6 +25,16 @@
 # re-exports (`export { Foo } from './x'`). The extractor's reference walker
 # doesn't currently emit a synthetic edge for re-exports. Carried as a
 # follow-up; documented in docs/pipeline-contract.md.
+#
+# Envelope: shape: "cluster", members of length 1. Per-decl findings wrap
+# into the cluster envelope so the renderer stays shape-aware; each row is
+# one dead decl in members[0].
+#
+#! query: dead-code
+#! shape: cluster
+#! catalog: type-catalog, references-graph
+#! formats: text, jsonl
+#! desc: Exported, non-generated decls with zero resolved incoming references.
 
 include "_canonical";
 
@@ -44,18 +54,22 @@ include "_canonical";
     | {
         cluster_id: cluster_id_single_name("dead-code"; loc_key(.)),
         query: "dead-code",
-        name: .name,
-        kind: .kind,
-        package: .package,
-        file: .file,
-        line: .line,
-        touched_in_window: (.touched_in_window // false)
+        shape: "cluster",
+        members: [{
+          name: .name,
+          kind: .kind,
+          package: .package,
+          file: .file,
+          line: .line,
+          touched_in_window: (.touched_in_window // false)
+        }]
       }
   ]
-| sort_by(.package, .file, .line, .name)
+| sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "  \(if .touched_in_window then "*" else " " end) \(.name) [\(.kind)] -- \(.package):\(.file):\(.line) cid=\(.cluster_id)"
+    (.members[0]) as $m
+    | "  \(if $m.touched_in_window then "*" else " " end) \($m.name) [\($m.kind)] -- \($m.package):\($m.file):\($m.line) cid=\(.cluster_id)"
   end

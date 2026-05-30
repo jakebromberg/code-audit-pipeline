@@ -76,7 +76,13 @@
 #   Type-name comparison and same-name-different-DTO false positives are
 #   forecasts, not observed. Add variants if either becomes load-bearing.
 #
+#! query: cross-catalog-name-collisions
 #! shape: cluster
+#! catalog: type-catalog, type-catalog
+#! env: LEFT_LABEL string "left"
+#! env: RIGHT_LABEL string "right"
+#! formats: text, jsonl
+#! desc: Type names that appear in BOTH a left- and a right-catalog.
 
 include "_canonical";
 

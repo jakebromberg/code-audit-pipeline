@@ -14,7 +14,11 @@
 # cluster_id format:  cross-package-shadows:Name  (per shadowed name; ONE row per
 # shadowed name even if multiple main-package decls share it — see members[]).
 #
+#! query: cross-package-shadows
 #! shape: cluster
+#! catalog: type-catalog
+#! formats: text, jsonl
+#! desc: Main-package names that also exist in shared — likely should be imports.
 
 include "_canonical";
 

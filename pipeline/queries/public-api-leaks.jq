@@ -34,6 +34,16 @@
 # (.package, .file, .line, .name) for stable diffs.
 #
 # cluster_id format:  public-api-leaks:<package>:<file>:<line>:<name>
+#
+# Envelope: shape: "cluster", members of length 1. Per-function findings wrap
+# into the cluster envelope so the renderer stays shape-aware; the per-row
+# `leaks` array lives alongside members[].
+#
+#! query: public-api-leaks
+#! shape: cluster
+#! catalog: function-catalog, type-catalog
+#! formats: text, jsonl
+#! desc: Exported functions whose param/return types reference a non-exported same-package type.
 
 include "_canonical";
 
@@ -70,20 +80,24 @@ include "_canonical";
     | {
         cluster_id: cluster_id_single_name("public-api-leaks"; loc_key(.)),
         query: "public-api-leaks",
-        name: .name,
-        package: .package,
-        file: .file,
-        line: .line,
-        touched_in_window: (.touched_in_window // false),
+        shape: "cluster",
+        members: [{
+          name: .name,
+          package: .package,
+          file: .file,
+          line: .line,
+          touched_in_window: (.touched_in_window // false)
+        }],
         leaks: $leaks
       }
   ]
-| sort_by(.package, .file, .line, .name)
+| sort_by(.members[0].package, .members[0].file, .members[0].line, .members[0].name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "LEAK \(.name) (\(.package):\(.file):\(.line)) -- exported"
+    (.members[0]) as $m
+    | "LEAK \($m.name) (\($m.package):\($m.file):\($m.line)) -- exported"
     + (.leaks | map(
         "\n  \(if .kind == "return" then "return" else "param `\(.param_name)`" end): \(.ref_name)"
         + " -- declared at \(.decl_package):\(.decl_file):\(.decl_line) (not exported)"
