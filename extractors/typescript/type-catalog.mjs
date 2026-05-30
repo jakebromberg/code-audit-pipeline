@@ -24,6 +24,7 @@ import {
 import { isTestPath } from './_lib/paths.mjs';
 import { compareBy } from './_lib/sort.mjs';
 import { writeSiblingArtifact } from './_lib/artifacts.mjs';
+import { resolveOriginPackage } from './_lib/origin-package.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
@@ -37,12 +38,13 @@ const { values } = parseArgs({
     output:                  { type: 'string' },
     'emit-references-graph': { type: 'string' },
     'emit-files':            { type: 'string' },
+    'include-imports':       { type: 'boolean', default: false },
     help:                    { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>]
+  process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>] [--include-imports]
 
   --root           Required. Root of the codebase to scan.
   --shared         Optional. A secondary package root (canonical types you compare
@@ -65,6 +67,11 @@ if (values.help || !values.root) {
                    cross-package-backward-imports.jq query (and the future
                    cycle-detection, unused-imports, dependency-mass-per-file
                    queries).
+  --include-imports
+                   Optional. Emit one \`kind: "import"\` row in the catalog per
+                   imported symbol — consumer-edge data for cross-repo queries
+                   like consumers-of (#156). Off by default so legacy queries
+                   stay byte-stable. See docs/pipeline-contract.md §"Import rows".
 
 Output: {"schema_version": "${SCHEMA_VERSION}", "extractor": {...}, "entries": [...]}.
 Queries that consume the catalog must read from .entries (see _canonical.jq's
@@ -368,7 +375,7 @@ function resolveImportSpec(spec, fromFilePath) {
   return { package: 'extern', path: spec };
 }
 
-function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
+function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeImports }) {
   const text = readFileSync(filePath, 'utf8');
   countIdentifiers(text);
   const isTsx = filePath.endsWith('.tsx');
@@ -393,24 +400,160 @@ function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
   // null when --emit-files is off — short-circuits the dynamic-import branch
   // inside visit() below.
   const rawImports = collectImports ? [] : null;
-  if (collectImports) {
+
+  // Per-symbol `kind: "import"` rows for the type-catalog (gated on
+  // --include-imports). One row per imported binding; pushed in walk order
+  // so they interleave with declaration rows by line — keeps the catalog's
+  // existing "walk order = output order" determinism contract intact.
+  function emitImportRowsForDecl(stmt, specifier, importForm) {
+    const declTypeOnly = importForm === 're-export'
+      ? stmt.isTypeOnly === true
+      : stmt.importClause?.isTypeOnly === true;
+    const { origin_package, origin_resolution } = resolveOriginPackage(specifier);
+    const pushImport = (extra) => {
+      pushBase(stmt, {
+        kind: 'import',
+        exported: false,
+        origin_specifier: specifier,
+        origin_package,
+        origin_resolution,
+        ...extra,
+      });
+    };
+
+    if (importForm === 're-export') {
+      const ec = stmt.exportClause;
+      if (!ec) {
+        pushImport({ name: '*', imported_as: '*', import_form: 're-export', type_only: declTypeOnly });
+      } else if (ts.isNamespaceExport(ec)) {
+        pushImport({ name: '*', imported_as: ec.name.text, import_form: 're-export', type_only: declTypeOnly });
+      } else if (ts.isNamedExports(ec)) {
+        for (const spec of ec.elements) {
+          const localName = spec.name.text;
+          const originName = spec.propertyName ? spec.propertyName.text : localName;
+          pushImport({
+            name: originName,
+            imported_as: localName,
+            import_form: 're-export',
+            type_only: declTypeOnly || spec.isTypeOnly === true,
+          });
+        }
+      }
+      return;
+    }
+
+    const clause = stmt.importClause;
+    if (!clause) {
+      pushImport({ name: null, imported_as: null, import_form: 'side-effect', type_only: false });
+      return;
+    }
+    if (clause.name) {
+      pushImport({ name: 'default', imported_as: clause.name.text, import_form: 'default', type_only: declTypeOnly });
+    }
+    const nb = clause.namedBindings;
+    if (nb && ts.isNamespaceImport(nb)) {
+      pushImport({ name: '*', imported_as: nb.name.text, import_form: 'namespace', type_only: declTypeOnly });
+    } else if (nb && ts.isNamedImports(nb)) {
+      for (const spec of nb.elements) {
+        const localName = spec.name.text;
+        const originName = spec.propertyName ? spec.propertyName.text : localName;
+        pushImport({
+          name: originName,
+          imported_as: localName,
+          import_form: 'named',
+          type_only: declTypeOnly || spec.isTypeOnly === true,
+        });
+      }
+    }
+  }
+
+  // Dynamic `import(spec)` and `require(spec)` rows. Both live inside visit()
+  // because they can appear anywhere in the tree.
+  function emitDynamicImportRow(callNode, specifierOrNull) {
+    const specifier = specifierOrNull ?? '<computed>';
+    const { origin_package, origin_resolution } = specifierOrNull
+      ? resolveOriginPackage(specifierOrNull)
+      : { origin_package: null, origin_resolution: 'computed' };
+    pushBase(callNode, {
+      name: '*',
+      imported_as: null,
+      kind: 'import',
+      exported: false,
+      import_form: 'dynamic',
+      origin_specifier: specifier,
+      origin_package,
+      origin_resolution,
+      type_only: false,
+    });
+  }
+
+  function emitRequireRows(callNode, specifier) {
+    const { origin_package, origin_resolution } = resolveOriginPackage(specifier);
+    const pushRequire = (extra) => {
+      pushBase(callNode, {
+        kind: 'import',
+        exported: false,
+        import_form: 'require',
+        origin_specifier: specifier,
+        origin_package,
+        origin_resolution,
+        type_only: false,
+        ...extra,
+      });
+    };
+    const parent = callNode.parent;
+    if (parent && ts.isVariableDeclaration(parent)) {
+      if (ts.isObjectBindingPattern(parent.name)) {
+        for (const el of parent.name.elements) {
+          if (!ts.isIdentifier(el.name)) continue; // skip nested binding patterns in v1
+          const localName = el.name.text;
+          const originName = el.propertyName && ts.isIdentifier(el.propertyName)
+            ? el.propertyName.text
+            : localName;
+          pushRequire({ name: originName, imported_as: localName });
+        }
+        return;
+      }
+      if (ts.isIdentifier(parent.name)) {
+        pushRequire({ name: '*', imported_as: parent.name.text });
+        return;
+      }
+    }
+    // Bare-call require() or unsupported binding pattern: record as namespace
+    // form with no local alias.
+    pushRequire({ name: '*', imported_as: null });
+  }
+
+  if (collectImports || includeImports) {
     for (const stmt of sf.statements) {
       if (ts.isImportDeclaration(stmt) && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)) {
         const { line } = sf.getLineAndCharacterOfPosition(stmt.getStart(sf));
-        rawImports.push({
-          kind: 'import',
-          spec: stmt.moduleSpecifier.text,
-          type_only: stmt.importClause?.isTypeOnly === true,
-          line: line + 1,
-        });
+        const spec = stmt.moduleSpecifier.text;
+        if (collectImports) {
+          rawImports.push({
+            kind: 'import',
+            spec,
+            type_only: stmt.importClause?.isTypeOnly === true,
+            line: line + 1,
+          });
+        }
+        if (includeImports) {
+          emitImportRowsForDecl(stmt, spec, 'static');
+        }
       } else if (ts.isExportDeclaration(stmt) && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)) {
         const { line } = sf.getLineAndCharacterOfPosition(stmt.getStart(sf));
-        rawImports.push({
-          kind: 're-export',
-          spec: stmt.moduleSpecifier.text,
-          type_only: stmt.isTypeOnly === true,
-          line: line + 1,
-        });
+        const spec = stmt.moduleSpecifier.text;
+        if (collectImports) {
+          rawImports.push({
+            kind: 're-export',
+            spec,
+            type_only: stmt.isTypeOnly === true,
+            line: line + 1,
+          });
+        }
+        if (includeImports) {
+          emitImportRowsForDecl(stmt, spec, 're-export');
+        }
       }
     }
   }
@@ -555,21 +698,36 @@ function extractFromFile(filePath, pkgName, pkgRoot, collectImports) {
       }
     }
 
-    // Dynamic imports can appear anywhere; piggyback on the type-extraction
-    // recursion so we don't pay for a second tree walk. Templated forms
-    // (`import(\`./${x}\`)`) are skipped — the spec isn't statically known.
-    if (collectImports
-        && ts.isCallExpression(node)
-        && node.expression.kind === ts.SyntaxKind.ImportKeyword
-        && node.arguments.length > 0
-        && ts.isStringLiteral(node.arguments[0])) {
-      const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
-      rawImports.push({
-        kind: 'dynamic-import',
-        spec: node.arguments[0].text,
-        type_only: false,
-        line: line + 1,
-      });
+    // Dynamic imports and CommonJS require() can appear anywhere; piggyback on
+    // the type-extraction recursion so we don't pay for a second tree walk.
+    if (ts.isCallExpression(node) && node.arguments.length > 0) {
+      // Dynamic `import(spec)`: files.json captures string-literal specs only
+      // (templated forms aren't statically resolvable for path joins). Catalog
+      // import rows record templated forms with origin_resolution: "computed"
+      // so they're still visible to consumer-edge queries.
+      if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+        const arg = node.arguments[0];
+        const isLiteral = ts.isStringLiteral(arg);
+        if (collectImports && isLiteral) {
+          const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+          rawImports.push({
+            kind: 'dynamic-import',
+            spec: arg.text,
+            type_only: false,
+            line: line + 1,
+          });
+        }
+        if (includeImports) {
+          emitDynamicImportRow(node, isLiteral ? arg.text : null);
+        }
+      } else if (
+        includeImports
+        && ts.isIdentifier(node.expression)
+        && node.expression.text === 'require'
+        && ts.isStringLiteral(node.arguments[0])
+      ) {
+        emitRequireRows(node, node.arguments[0].text);
+      }
     }
 
     ts.forEachChild(node, visit);
@@ -603,11 +761,15 @@ process.stderr.write(`main: ${mainFiles.length} files\n`);
 if (SHARED) process.stderr.write(`shared: ${sharedFiles.length} files\n`);
 
 const EMIT_FILES = !!values['emit-files'];
+const INCLUDE_IMPORTS = !!values['include-imports'];
 const all = [];
 const fileEntries = [];
 let errors = 0;
 function indexOne(f, pkg, pkgRoot) {
-  const { entries, fileRow } = extractFromFile(f, pkg, pkgRoot, EMIT_FILES);
+  const { entries, fileRow } = extractFromFile(f, pkg, pkgRoot, {
+    collectImports: EMIT_FILES,
+    includeImports: INCLUDE_IMPORTS,
+  });
   all.push(...entries);
   if (fileRow) fileEntries.push(fileRow);
 }

@@ -50,6 +50,14 @@ node type-catalog.mjs \
   --shared /path/to/shared \
   --output catalog.json \
   --emit-files files.json
+
+# Also emit per-symbol `kind: "import"` rows (consumer-edge data for
+# cross-repo `consumers-of.jq`). Off by default so legacy queries stay
+# byte-stable. See docs/pipeline-contract.md §"Import rows".
+node type-catalog.mjs \
+  --root /path/to/repo \
+  --include-imports \
+  --output catalog.json
 ```
 
 Stats land on stderr; the catalog JSON lands on stdout (or `--output`).
@@ -66,6 +74,7 @@ Stats land on stderr; the catalog JSON lands on stdout (or `--output`).
 | other type aliases | `type-alias-other` |
 | `const X = z.object({ … })` | `zod-object` |
 | `const X = pgTable("…", { … })` or `someSchema.table("…", { … })` | `drizzle-table` |
+| `import { X } from "pkg"` (consumer-edge row) | `import` (only with `--include-imports`) |
 
 For each, the script extracts a sorted `name:type` field list and computes `shape_sig` for clustering. See [`../../docs/pipeline-contract.md`](../../docs/pipeline-contract.md) for the full record schema.
 
