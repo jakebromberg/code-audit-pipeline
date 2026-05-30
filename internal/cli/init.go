@@ -102,14 +102,22 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 
 	prior, _ := loadState(destAbs) // missing-OK: every file then classifies NEW
 
-	plan, err := buildCopyPlan(src, destAbs)
+	plan, err := buildCopyPlan(ctx, src, destAbs)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			fmt.Fprintln(stdout, "audit init: cancelled")
+			return 130
+		}
 		fmt.Fprintf(stdout, "audit init: build plan: %v\n", err)
 		return 2
 	}
 
-	classified, err := classifyFiles(plan, destAbs, prior)
+	classified, err := classifyFiles(ctx, plan, destAbs, prior)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			fmt.Fprintln(stdout, "audit init: cancelled")
+			return 130
+		}
 		fmt.Fprintf(stdout, "audit init: classify: %v\n", err)
 		return 2
 	}
@@ -129,6 +137,10 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	)
 
 	for _, c := range classified {
+		if err := ctx.Err(); err != nil {
+			fmt.Fprintln(stdout, "audit init: cancelled")
+			return 130
+		}
 		switch c.state {
 		case stateNew:
 			if !*dryRun {
@@ -249,35 +261,83 @@ func defaultDest() string {
 	return filepath.Join(home, ".config", "audit")
 }
 
-// refuseSymlinkLoop guards the developer setup where the dest already
-// symlinks at the source — copying into self would loop or corrupt.
+// refuseSymlinkLoop guards two shapes of "copy into self":
+//
+//  1. dest is a symlink whose target is (or resolves into) src — the
+//     developer setup where ~/.config/audit already points at a checkout.
+//  2. src and dest, after symlink resolution, share a containment
+//     relationship — either resolves inside the other. In that case walking
+//     src and writing under dest will either produce file-onto-itself races
+//     or pollute the source tree.
+//
+// Returns nil when neither condition holds, including when dest doesn't
+// exist yet (the common fresh-install case).
 func refuseSymlinkLoop(src, dst string) error {
+	// (1) Direct symlink-loop: dest is a symlink at src.
 	info, err := os.Lstat(dst)
 	if err == nil && info.Mode()&os.ModeSymlink != 0 {
-		target, _ := os.Readlink(dst)
-		abs := target
-		if !filepath.IsAbs(abs) {
-			abs = filepath.Join(filepath.Dir(dst), target)
+		target, readErr := os.Readlink(dst)
+		if readErr == nil {
+			abs := target
+			if !filepath.IsAbs(abs) {
+				abs = filepath.Join(filepath.Dir(dst), target)
+			}
+			if absClean, err := filepath.Abs(abs); err == nil && absClean == src {
+				return fmt.Errorf("dest %s symlinks to source %s; refusing to copy into self", dst, src)
+			}
 		}
-		if absClean, err := filepath.Abs(abs); err == nil && absClean == src {
-			return fmt.Errorf("dest %s symlinks to source %s; refusing to copy into self", dst, src)
-		}
+	}
+
+	// (2) Containment after symlink eval. EvalSymlinks fails on missing
+	// paths, so silently skip when dest doesn't exist yet.
+	srcReal, err := filepath.EvalSymlinks(src)
+	if err != nil {
+		return nil
+	}
+	dstReal, err := filepath.EvalSymlinks(dst)
+	if err != nil {
+		// dest missing (or partly missing): nothing to compare against.
+		return nil
+	}
+	if srcReal == dstReal {
+		return fmt.Errorf("dest %s and source %s resolve to the same path; refusing to copy into self", dst, src)
+	}
+	if pathContains(srcReal, dstReal) {
+		return fmt.Errorf("dest %s resolves inside source %s; refusing to copy into self", dst, src)
+	}
+	if pathContains(dstReal, srcReal) {
+		return fmt.Errorf("source %s resolves inside dest %s; refusing to copy into self", src, dst)
 	}
 	return nil
 }
 
+// pathContains reports whether child is the same path as parent or sits
+// strictly inside it, after both have been cleaned. Uses filepath.Separator
+// so it works on every platform.
+func pathContains(parent, child string) bool {
+	if parent == child {
+		return false
+	}
+	p := filepath.Clean(parent) + string(filepath.Separator)
+	return strings.HasPrefix(filepath.Clean(child)+string(filepath.Separator), p)
+}
+
 // buildCopyPlan walks the source subtrees and produces the list of files to
-// consider. Skip patterns mirror initSkipDirs.
-func buildCopyPlan(src, dst string) ([]fileClassification, error) {
+// consider. Skip patterns mirror initSkipDirs. Honors ctx cancellation so
+// Ctrl-C breaks out of a deep walk on a slow filesystem.
+func buildCopyPlan(ctx context.Context, src, dst string) ([]fileClassification, error) {
 	var plan []fileClassification
 	for _, sub := range initSubdirs {
 		srcSub := filepath.Join(src, sub)
 		err := filepath.WalkDir(srcSub, func(path string, d fs.DirEntry, walkErr error) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			if walkErr != nil {
 				return walkErr
 			}
 			if d.IsDir() {
-				if initSkipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") && path != srcSub {
+				if initSkipDirs[d.Name()] || (strings.HasPrefix(d.Name(), ".") && path != srcSub) {
 					return fs.SkipDir
 				}
 				return nil
@@ -302,10 +362,14 @@ func buildCopyPlan(src, dst string) ([]fileClassification, error) {
 	return plan, nil
 }
 
-// classifyFiles pre-computes each plan entry's state + source sha.
-func classifyFiles(plan []fileClassification, dst string, prior *InitState) ([]fileClassification, error) {
+// classifyFiles pre-computes each plan entry's state + source sha. Honors
+// ctx cancellation so a SHA pass over many files can be aborted promptly.
+func classifyFiles(ctx context.Context, plan []fileClassification, dst string, prior *InitState) ([]fileClassification, error) {
 	out := make([]fileClassification, 0, len(plan))
 	for _, c := range plan {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		srcSHA, err := sha256File(c.srcAbs)
 		if err != nil {
 			return nil, fmt.Errorf("sha %s: %w", c.srcAbs, err)
