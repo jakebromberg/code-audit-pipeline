@@ -151,13 +151,20 @@ func wireCatalogs(absRoot string, h *frontmatter.Header, overrides stringList) (
 		}, nil
 	}
 
+	// Open the .audit/ cache at most once per call. Each query may declare
+	// multiple catalog inputs; report runs invoke wireCatalogs per query,
+	// so amortising the open here saves N opens per query × M queries.
+	var cache *auditdir.Cache
 	resolvePath := func(idx int, kind string) (string, error) {
 		if idx < len(overrides) {
 			return overrides[idx], nil
 		}
-		cache, err := auditdir.Open(absRoot, Version)
-		if err != nil {
-			return "", err
+		if cache == nil {
+			c, err := auditdir.Open(absRoot, Version)
+			if err != nil {
+				return "", err
+			}
+			cache = c
 		}
 		p, ok := cache.CatalogPath(kind)
 		if !ok {
