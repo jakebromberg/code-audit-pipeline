@@ -26,6 +26,14 @@ type Args struct {
 	EmitReferences bool
 	EmitFiles      bool
 	IncludeImports bool
+	// SetupHint, if non-empty, is appended to any subprocess failure as
+	// `hint: <SetupHint>`. Sourced from the manifest's [runtime].setup_hint
+	// so that errors like "node_modules missing" point users at the exact
+	// remediation command rather than a cryptic exec error. The heuristic
+	// is intentionally broad: any non-zero exit shows the hint when one is
+	// declared. Better to over-show than to silently swallow it on a
+	// genuine missing-dependency case (see issue #215).
+	SetupHint string
 }
 
 // Result records what the runner produced. CLIArgs is the subset of Args that
@@ -86,14 +94,14 @@ func Run(ctx context.Context, extractorDir string, cmd manifest.Command, args Ar
 
 	exe, err := exec.LookPath(argv[0])
 	if err != nil {
-		return nil, fmt.Errorf("extractor: %s not found on PATH: %w", argv[0], err)
+		return nil, withHint(fmt.Errorf("extractor: %s not found on PATH: %w", argv[0], err), args.SetupHint)
 	}
 	subprocess := exec.CommandContext(ctx, exe, argv[1:]...)
 	subprocess.Dir = extractorDir
 	subprocess.Stderr = os.Stderr
 	subprocess.Stdout = os.Stderr // diagnostic output; --output writes the catalog file directly
 	if err := subprocess.Run(); err != nil {
-		return nil, fmt.Errorf("extractor: subprocess (%s): %w", strings.Join(argv, " "), err)
+		return nil, withHint(fmt.Errorf("extractor: subprocess (%s): %w", strings.Join(argv, " "), err), args.SetupHint)
 	}
 	if _, err := os.Stat(primary); err != nil {
 		return nil, fmt.Errorf("extractor: %s did not produce %s: %w", argv[0], primary, err)
@@ -111,6 +119,16 @@ func Run(ctx context.Context, extractorDir string, cmd manifest.Command, args Ar
 		results = append(results, Result{Catalog: sib.Catalog, OutputPath: sibPath, CLIArgs: cli})
 	}
 	return results, nil
+}
+
+// withHint appends `\n  hint: <hint>` to err when hint is non-empty. The
+// indented "hint:" line mirrors the `audit: ` prefix style used in
+// internal/cli/extract.go's error printing (see issue #215).
+func withHint(err error, hint string) error {
+	if hint == "" {
+		return err
+	}
+	return fmt.Errorf("%w\n  hint: %s", err, hint)
 }
 
 func substitute(token string, repl map[string]string) string {
