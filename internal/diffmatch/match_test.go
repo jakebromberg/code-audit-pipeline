@@ -73,6 +73,43 @@ func TestFunctionBodyMatchesExcludesSelfLocation(t *testing.T) {
 	}
 }
 
+func TestFunctionBodyMatchesSkipsGeneratedAndTest(t *testing.T) {
+	base := FunctionRow{
+		Name: "candidate", Package: "P", File: "x.swift", Line: 1,
+		BodyHash:  ptrString("h"),
+		BodyLines: []string{"a", "b"},
+	}
+	gen := base
+	gen.File = "gen.swift"
+	gen.Generated = true
+	tst := base
+	tst.File = "tests/x.swift"
+	tst.IsTest = true
+	rows := []FunctionRow{gen, tst, base}
+	got := FunctionBodyMatches(rows, []string{"a", "b"}, 2, 0.1, "", 0)
+	if len(got) != 1 {
+		t.Fatalf("want 1 (only non-generated, non-test), got %d (%+v)", len(got), got)
+	}
+	if got[0].Row.Name != "candidate" || got[0].Row.File != "x.swift" {
+		t.Errorf("wrong row matched: %+v", got[0].Row)
+	}
+}
+
+func TestTypeShapeMatchesSkipsGeneratedAndTest(t *testing.T) {
+	rows := []TypeRow{
+		{Name: "Gen", Package: "P", File: "gen.ts", Line: 1, Generated: true,
+			FieldsStructured: []FieldStructured{{Name: "id"}}},
+		{Name: "Test", Package: "P", File: "test/x.ts", Line: 1, IsTest: true,
+			FieldsStructured: []FieldStructured{{Name: "id"}}},
+		{Name: "Real", Package: "P", File: "x.ts", Line: 1,
+			FieldsStructured: []FieldStructured{{Name: "id"}}},
+	}
+	got := TypeShapeMatches(rows, []string{"id"}, 1, 0.0, "", 0)
+	if len(got) != 1 || got[0].Row.Name != "Real" {
+		t.Errorf("want only Real, got %+v", got)
+	}
+}
+
 func TestFunctionBodyMatchesRespectsMinJaccard(t *testing.T) {
 	rows := []FunctionRow{
 		{

@@ -3,33 +3,39 @@ package diffmatch
 import "sort"
 
 // FunctionRow is the subset of function-catalog fields find-next-instance
-// joins against. Decoded from the catalog's `entries[]`.
+// joins against. Decoded from the catalog's `entries[]`. Fields beyond the
+// matcher's own needs (Async, ParamCount, TouchedInWindow) are decoded so
+// they can ride along in the output's member objects — `internal/render/
+// cluster.go`'s renderMember reads them for inline annotations.
 type FunctionRow struct {
-	Name          string   `json:"name"`
-	Kind          string   `json:"kind"`
-	Package       string   `json:"package"`
-	File          string   `json:"file"`
-	Line          int      `json:"line"`
-	BodyHash      *string  `json:"body_hash"`
-	BodyLines     []string `json:"body_lines"`
-	BodyLineCount *int     `json:"body_line_count"`
-	Generated     bool     `json:"generated"`
-	IsTest        bool     `json:"is_test"`
+	Name            string   `json:"name"`
+	Kind            string   `json:"kind"`
+	Package         string   `json:"package"`
+	File            string   `json:"file"`
+	Line            int      `json:"line"`
+	BodyHash        *string  `json:"body_hash"`
+	BodyLines       []string `json:"body_lines"`
+	BodyLineCount   *int     `json:"body_line_count"`
+	Generated       bool     `json:"generated"`
+	IsTest          bool     `json:"is_test"`
+	Async           bool     `json:"async"`
+	ParamCount      int      `json:"param_count"`
+	TouchedInWindow bool     `json:"touched_in_window"`
 }
 
 // TypeRow is the subset of type-catalog fields find-next-instance joins
 // against.
 type TypeRow struct {
-	Name             string                 `json:"name"`
-	Kind             string                 `json:"kind"`
-	Package          string                 `json:"package"`
-	File             string                 `json:"file"`
-	Line             int                    `json:"line"`
-	Fields           []string               `json:"fields"`
-	FieldsStructured []FieldStructured      `json:"fields_structured"`
-	Generated        bool                   `json:"generated"`
-	IsTest           bool                   `json:"is_test"`
-	Extra            map[string]interface{} `json:"-"`
+	Name             string            `json:"name"`
+	Kind             string            `json:"kind"`
+	Package          string            `json:"package"`
+	File             string            `json:"file"`
+	Line             int               `json:"line"`
+	Fields           []string          `json:"fields"`
+	FieldsStructured []FieldStructured `json:"fields_structured"`
+	Generated        bool              `json:"generated"`
+	IsTest           bool              `json:"is_test"`
+	TouchedInWindow  bool              `json:"touched_in_window"`
 }
 
 // FieldStructured mirrors the V7 §6.1 sub-row shape.
@@ -66,6 +72,11 @@ func FunctionBodyMatches(rows []FunctionRow, removedNorm []string, minIntersecti
 	var out []FunctionMatch
 	for _, r := range rows {
 		if r.BodyHash == nil || len(r.BodyLines) == 0 {
+			continue
+		}
+		if r.Generated || r.IsTest {
+			// Same filter every other cluster query applies. Generated rows
+			// and test fixtures are not actionable refactor targets.
 			continue
 		}
 		if r.File == skipFile && r.Line == skipLine {
@@ -129,6 +140,9 @@ func TypeShapeMatches(rows []TypeRow, removedFields []string, minIntersection in
 	rset := indexLines(removedFields)
 	var out []TypeShapeMatch
 	for _, r := range rows {
+		if r.Generated || r.IsTest {
+			continue
+		}
 		if r.File == skipFile && r.Line == skipLine {
 			continue
 		}

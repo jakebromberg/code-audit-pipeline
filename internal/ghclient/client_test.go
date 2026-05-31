@@ -9,21 +9,26 @@ import (
 
 func TestPRDiffPassesRepoAndNumber(t *testing.T) {
 	var calledArgs []string
+	var calledDir string
 	c := &Client{
-		Exec: func(ctx context.Context, name string, args ...string) ([]byte, []byte, error) {
+		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
 			if name != "gh" {
 				t.Fatalf("want gh, got %s", name)
 			}
+			calledDir = dir
 			calledArgs = args
 			return []byte("DIFF"), nil, nil
 		},
 	}
-	got, err := c.PRDiff(context.Background(), "owner/repo", 42)
+	got, err := c.PRDiff(context.Background(), "/repos/foo", "owner/repo", 42)
 	if err != nil {
 		t.Fatalf("PRDiff: %v", err)
 	}
 	if got != "DIFF" {
 		t.Errorf("got %q", got)
+	}
+	if calledDir != "/repos/foo" {
+		t.Errorf("dir=%q want /repos/foo", calledDir)
 	}
 	want := []string{"pr", "diff", "42", "--repo", "owner/repo"}
 	if strings.Join(calledArgs, " ") != strings.Join(want, " ") {
@@ -33,11 +38,11 @@ func TestPRDiffPassesRepoAndNumber(t *testing.T) {
 
 func TestPRDiffSurfacesStderrOnFailure(t *testing.T) {
 	c := &Client{
-		Exec: func(ctx context.Context, name string, args ...string) ([]byte, []byte, error) {
+		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
 			return nil, []byte("HTTP 404: Not Found"), errors.New("exit status 1")
 		},
 	}
-	_, err := c.PRDiff(context.Background(), "owner/repo", 999)
+	_, err := c.PRDiff(context.Background(), "", "owner/repo", 999)
 	if err == nil {
 		t.Fatal("want error")
 	}
@@ -48,27 +53,32 @@ func TestPRDiffSurfacesStderrOnFailure(t *testing.T) {
 
 func TestPRDiffSurfacesNotInstalled(t *testing.T) {
 	c := &Client{
-		Exec: func(ctx context.Context, name string, args ...string) ([]byte, []byte, error) {
+		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
 			return nil, nil, ErrGHNotInstalled
 		},
 	}
-	_, err := c.PRDiff(context.Background(), "owner/repo", 1)
+	_, err := c.PRDiff(context.Background(), "", "owner/repo", 1)
 	if !errors.Is(err, ErrGHNotInstalled) {
 		t.Errorf("want ErrGHNotInstalled, got %v", err)
 	}
 }
 
-func TestRepoNameWithOwner(t *testing.T) {
+func TestRepoNameWithOwnerForwardsDir(t *testing.T) {
+	var calledDir string
 	c := &Client{
-		Exec: func(ctx context.Context, name string, args ...string) ([]byte, []byte, error) {
+		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
+			calledDir = dir
 			return []byte("owner/repo\n"), nil, nil
 		},
 	}
-	got, err := c.RepoNameWithOwner(context.Background(), ".")
+	got, err := c.RepoNameWithOwner(context.Background(), "/repos/foo")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got != "owner/repo" {
 		t.Errorf("got %q", got)
+	}
+	if calledDir != "/repos/foo" {
+		t.Errorf("dir=%q want /repos/foo (the dir argument must reach Exec so gh runs in the right repo)", calledDir)
 	}
 }
