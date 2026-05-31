@@ -76,15 +76,74 @@ func Parse(r io.Reader) ([]FileDiff, error) {
 	var files []FileDiff
 	var cur *FileDiff
 	var hunk *Hunk
+	// oldSeen/newSeen count consumed old-side (context + removed) and
+	// new-side (context + added) lines inside the current hunk. When both
+	// reach the header's declared range, the hunk is closed — necessary so
+	// the next `--- ` is reliably classified as a file header rather than
+	// content. Without this, an in-hunk removed line whose source starts
+	// with `-- ` would shadow the file header (case at line `"--- "`
+	// matches before the in-hunk `-` case in switch order).
+	var oldSeen, newSeen int
+
+	closeHunkIfFull := func() {
+		if hunk == nil {
+			return
+		}
+		if oldSeen >= hunk.OldLines && newSeen >= hunk.NewLines {
+			hunk = nil
+			oldSeen, newSeen = 0, 0
+		}
+	}
 
 	for sc.Scan() {
 		line := sc.Text()
+		// In-hunk content classification has priority over `---`/`+++`
+		// file-header dispatch so a removed/added content line starting
+		// with `-- ` / `++ ` (Lua/SQL/Haskell `--` comment, TOML `+++`
+		// delimiter, etc.) is not misread as a header. The hunk closes
+		// itself via closeHunkIfFull when its declared range is consumed.
+		if hunk != nil {
+			switch {
+			case strings.HasPrefix(line, "-"):
+				hunk.Removed = append(hunk.Removed, strings.TrimPrefix(line, "-"))
+				oldSeen++
+				closeHunkIfFull()
+				continue
+			case strings.HasPrefix(line, "+"):
+				hunk.Added = append(hunk.Added, strings.TrimPrefix(line, "+"))
+				newSeen++
+				closeHunkIfFull()
+				continue
+			case strings.HasPrefix(line, " "):
+				hunk.Context = append(hunk.Context, strings.TrimPrefix(line, " "))
+				oldSeen++
+				newSeen++
+				closeHunkIfFull()
+				continue
+			case strings.HasPrefix(line, `\ `):
+				// "\ No newline at end of file" — ignore.
+				continue
+			}
+			// In-hunk but not a content line — fall through to dispatch
+			// (e.g., a new `@@` header before the previous hunk was
+			// fully consumed; handled by the @@ case below).
+		}
 		switch {
 		case strings.HasPrefix(line, "diff --git "):
 			files = appendCurrent(files, cur)
 			cur = &FileDiff{}
 			hunk = nil
+			oldSeen, newSeen = 0, 0
 		case strings.HasPrefix(line, "--- "):
+			// File-header transition. Flush the previous FileDiff when this
+			// `--- ` arrives after we've already collected a complete pair
+			// (OldPath + NewPath) — handles non-`diff --git` formats (raw
+			// `diff -u file1 file2`, BSD/POSIX diff) that don't emit a
+			// separator.
+			if cur != nil && cur.OldPath != "" && cur.NewPath != "" {
+				files = appendCurrent(files, cur)
+				cur = nil
+			}
 			if cur == nil {
 				cur = &FileDiff{}
 			}
@@ -106,14 +165,9 @@ func Parse(r io.Reader) ([]FileDiff, error) {
 			}
 			cur.Hunks = append(cur.Hunks, h)
 			hunk = &cur.Hunks[len(cur.Hunks)-1]
-		case hunk != nil && strings.HasPrefix(line, "-"):
-			hunk.Removed = append(hunk.Removed, strings.TrimPrefix(line, "-"))
-		case hunk != nil && strings.HasPrefix(line, "+"):
-			hunk.Added = append(hunk.Added, strings.TrimPrefix(line, "+"))
-		case hunk != nil && strings.HasPrefix(line, " "):
-			hunk.Context = append(hunk.Context, strings.TrimPrefix(line, " "))
+			oldSeen, newSeen = 0, 0
 		case strings.HasPrefix(line, `\ `):
-			// "\ No newline at end of file" — ignore.
+			// "\ No newline at end of file" outside a hunk — ignore.
 		default:
 			// "diff --git" preamble noise (index lines, mode changes, etc.)
 			// or stray text between hunks. Safe to skip — we don't reconstruct

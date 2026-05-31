@@ -37,15 +37,27 @@ func TestExtractRemovedFieldNamesIgnoresNonFieldLines(t *testing.T) {
 		"}",
 		"let x = 1 // an assignment, not a field decl",
 	}
+	// `let x = 1` lacks the `: TYPE` clause; the tightened regex rejects it
+	// so the false-positive single-name match against any catalog type
+	// with field `x` (e.g., CGPoint) doesn't fire.
 	got := ExtractRemovedFieldNames(in)
-	// `let x = 1` matches the Swift regex; the post-`:` shorthand path won't
-	// fire because there's no `:`. The Swift regex requires a type clause
-	// (`: TYPE`)? Let me check — the regex doesn't require it. So `let x =
-	// 1` matches with name=x. That's still useful as a removed-name signal,
-	// and TypeShapeMatches' subset filter saves us from false matches.
-	want := []string{"x"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v want %v", got, want)
+	if len(got) != 0 {
+		t.Errorf("got %v, want []", got)
+	}
+}
+
+func TestExtractRemovedFieldNamesIgnoresSwitchAndLabelSyntax(t *testing.T) {
+	in := []string{
+		"default:",
+		"case foo:",
+		"loopLabel:",
+		"URL:",
+	}
+	// All four are colon-bearing but lack a `: TYPE` clause; the tightened
+	// regex rejects all so the false-positive single-name path is closed.
+	got := ExtractRemovedFieldNames(in)
+	if len(got) != 0 {
+		t.Errorf("got %v, want []", got)
 	}
 }
 

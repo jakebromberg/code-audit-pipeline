@@ -210,6 +210,87 @@ func TestParseIgnoresNoNewlineMarker(t *testing.T) {
 	}
 }
 
+func TestParsePreservesDashDashContentInsideHunk(t *testing.T) {
+	// Removed line whose source content is `-- old comment` (Lua/SQL/Haskell
+	// `--` comment, YAML frontmatter `--- `) appears in the diff as
+	// `--- old comment`. Must be treated as in-hunk removed content, not as
+	// a `--- a/file` header.
+	diff := "diff --git a/x.lua b/x.lua\n" +
+		"--- a/x.lua\n" +
+		"+++ b/x.lua\n" +
+		"@@ -1,3 +1,3 @@\n" +
+		"-- old comment\n" +
+		"++ new counter\n" +
+		" keep\n"
+	files, err := Parse(strings.NewReader(diff))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("want 1 file, got %d", len(files))
+	}
+	f := files[0]
+	if f.OldPath != "x.lua" || f.NewPath != "x.lua" {
+		t.Errorf("paths corrupted: old=%q new=%q", f.OldPath, f.NewPath)
+	}
+	if len(f.Hunks) != 1 {
+		t.Fatalf("want 1 hunk, got %d", len(f.Hunks))
+	}
+	h := f.Hunks[0]
+	if !equalSlice(h.Removed, []string{"- old comment"}) {
+		t.Errorf("removed: %v (want [\"- old comment\"])", h.Removed)
+	}
+	if !equalSlice(h.Added, []string{"+ new counter"}) {
+		t.Errorf("added: %v (want [\"+ new counter\"])", h.Added)
+	}
+	if !equalSlice(h.Context, []string{"keep"}) {
+		t.Errorf("context: %v (want [\"keep\"])", h.Context)
+	}
+}
+
+func TestParseFlushesOnNewFileHeaderWithoutDiffGit(t *testing.T) {
+	// Raw `diff -u file1 file2` output has no `diff --git` separators —
+	// the `--- ` line is the only transition signal. Each file's hunks
+	// must land in its own FileDiff, not merge into the last file.
+	diff := "--- a/file1.go\n" +
+		"+++ b/file1.go\n" +
+		"@@ -1 +1 @@\n" +
+		"-old1\n" +
+		"+new1\n" +
+		"--- a/file2.go\n" +
+		"+++ b/file2.go\n" +
+		"@@ -1 +1 @@\n" +
+		"-old2\n" +
+		"+new2\n"
+	files, err := Parse(strings.NewReader(diff))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("want 2 files, got %d (paths: %v)", len(files), pathsOf(files))
+	}
+	if files[0].Path() != "file1.go" {
+		t.Errorf("file 0 path=%q want file1.go", files[0].Path())
+	}
+	if files[1].Path() != "file2.go" {
+		t.Errorf("file 1 path=%q want file2.go", files[1].Path())
+	}
+	if !equalSlice(files[0].Hunks[0].Removed, []string{"old1"}) {
+		t.Errorf("file 0 removed: %v", files[0].Hunks[0].Removed)
+	}
+	if !equalSlice(files[1].Hunks[0].Removed, []string{"old2"}) {
+		t.Errorf("file 1 removed: %v", files[1].Hunks[0].Removed)
+	}
+}
+
+func pathsOf(fs []FileDiff) []string {
+	out := make([]string, len(fs))
+	for i, f := range fs {
+		out[i] = f.Path()
+	}
+	return out
+}
+
 func equalSlice(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

@@ -18,8 +18,10 @@ var ErrGHNotInstalled = errors.New("`gh` not found on PATH — install from http
 // Client is a mockable wrapper. Production callers construct via New().
 // Tests construct directly with stub Exec.
 type Client struct {
-	// Exec runs an external command. nil means use exec.CommandContext.
-	Exec func(ctx context.Context, name string, args ...string) ([]byte, []byte, error)
+	// Exec runs an external command in the given working directory.
+	// Empty dir means "inherit the parent process's cwd" (Go's os/exec
+	// default). nil Exec means use the real exec.CommandContext.
+	Exec func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error)
 }
 
 // New returns a Client wired to exec.CommandContext.
@@ -27,7 +29,7 @@ func New() *Client {
 	return &Client{Exec: realExec}
 }
 
-func realExec(ctx context.Context, name string, args ...string) ([]byte, []byte, error) {
+func realExec(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
 	if _, err := exec.LookPath(name); err != nil {
 		if name == "gh" {
 			return nil, nil, ErrGHNotInstalled
@@ -35,6 +37,7 @@ func realExec(ctx context.Context, name string, args ...string) ([]byte, []byte,
 		return nil, nil, fmt.Errorf("lookup %q: %w", name, err)
 	}
 	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -43,13 +46,14 @@ func realExec(ctx context.Context, name string, args ...string) ([]byte, []byte,
 }
 
 // PRDiff invokes `gh pr diff <pr> --repo <repo>` and returns the diff text.
-// On failure, surfaces `gh`'s stderr verbatim in the returned error.
-func (c *Client) PRDiff(ctx context.Context, repo string, pr int) (string, error) {
+// Runs in `dir` so that, when --repo is omitted, gh can resolve the active
+// repo from the directory. On failure, surfaces gh's stderr verbatim.
+func (c *Client) PRDiff(ctx context.Context, dir, repo string, pr int) (string, error) {
 	args := []string{"pr", "diff", strconv.Itoa(pr)}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
-	stdout, stderr, err := c.Exec(ctx, "gh", args...)
+	stdout, stderr, err := c.Exec(ctx, dir, "gh", args...)
 	if err != nil {
 		if errors.Is(err, ErrGHNotInstalled) {
 			return "", err
@@ -61,14 +65,13 @@ func (c *Client) PRDiff(ctx context.Context, repo string, pr int) (string, error
 }
 
 // RepoNameWithOwner returns the active repo's `owner/name`, derived from
-// `gh repo view --json nameWithOwner -q .nameWithOwner` in the given dir.
-// Empty when `gh` isn't installed; the caller surfaces the original
-// ErrGHNotInstalled if it cares.
+// `gh repo view --json nameWithOwner -q .nameWithOwner` in `dir`. Empty
+// `dir` means "inherit cwd". Returns ErrGHNotInstalled if gh isn't on PATH.
 func (c *Client) RepoNameWithOwner(ctx context.Context, dir string) (string, error) {
 	if c.Exec == nil {
 		return "", fmt.Errorf("ghclient: nil Exec")
 	}
-	stdout, stderr, err := c.Exec(ctx, "gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
+	stdout, stderr, err := c.Exec(ctx, dir, "gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
 	if err != nil {
 		if errors.Is(err, ErrGHNotInstalled) {
 			return "", err
