@@ -85,10 +85,42 @@ func TestArchaeologyOfflineEndToEnd(t *testing.T) {
 		t.Errorf("todo text=%v", td["text"])
 	}
 
-	// Diff-spill directory exists.
+	// Diff-spill directory is NOT created in --no-prs mode (no PRs will
+	// be fetched, so the empty subdir would be pointless). This is the
+	// regression pin for the review finding that the dir was mkdir'd
+	// unconditionally.
 	diffDir := filepath.Join(root, ".audit", "archaeology", "prs")
-	if _, err := os.Stat(diffDir); err != nil {
-		t.Errorf("diff dir not created: %v", err)
+	if _, err := os.Stat(diffDir); err == nil {
+		t.Errorf("diff dir should NOT exist in --no-prs mode: %s", diffDir)
+	}
+}
+
+// TestArchaeologyCustomOutputSkipsAuditdirSideEffect pins the review
+// finding that auditdir.Open mutates <absRoot>/.gitignore and creates
+// <absRoot>/.audit/catalogs/ as a side effect, even when --output points
+// outside the audit root. With the fix, that side effect is gated on
+// the output landing under <absRoot>/.audit/.
+func TestArchaeologyCustomOutputSkipsAuditdirSideEffect(t *testing.T) {
+	root := t.TempDir()
+	mustWrite(t, filepath.Join(root, "CLAUDE.md"), "rules")
+	outPath := filepath.Join(t.TempDir(), "bundle.json")
+
+	var stdout bytes.Buffer
+	rc := Archaeology(context.Background(), []string{
+		"--root", root,
+		"--output", outPath,
+		"--no-issues", "--no-prs", "--no-todos", "--no-deprecations", "--no-adrs",
+	}, &stdout)
+	if rc != 0 {
+		t.Fatalf("exit=%d", rc)
+	}
+	// The repo's .gitignore must not have been mutated.
+	if _, err := os.Stat(filepath.Join(root, ".gitignore")); err == nil {
+		t.Errorf(".gitignore should not exist (auditdir.Open's side effect should not have run)")
+	}
+	// The repo's .audit/catalogs/ should not have been created.
+	if _, err := os.Stat(filepath.Join(root, ".audit", "catalogs")); err == nil {
+		t.Errorf(".audit/catalogs/ should not exist when --output is outside the audit root")
 	}
 }
 

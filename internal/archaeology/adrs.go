@@ -19,24 +19,24 @@ var ErrADRDirMissing = errors.New("archaeology: docs/adr/ directory not found")
 // ADR row. Returns ErrADRDirMissing when the directory does not exist —
 // callers should treat that as "no ADRs" rather than a failure.
 func ReadADRs(root string) ([]ADR, error) {
+	out := []ADR{}
 	adrDir := filepath.Join(root, "docs", "adr")
 	st, err := os.Stat(adrDir)
 	if errors.Is(err, fs.ErrNotExist) {
-		return nil, ErrADRDirMissing
+		return out, ErrADRDirMissing
 	}
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 	if !st.IsDir() {
-		return nil, ErrADRDirMissing
+		return out, ErrADRDirMissing
 	}
 
 	entries, err := os.ReadDir(adrDir)
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 
-	var out []ADR
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
 			continue
@@ -72,42 +72,61 @@ func parseADRTitle(text, filename string) string {
 }
 
 var (
-	adrStatusFrontMatter = regexp.MustCompile(`(?im)^status:\s*(\S+)`)
-	adrStatusLine        = regexp.MustCompile(`(?im)^status:\s*(\S+)`)
-	adrStatusBold        = regexp.MustCompile(`(?im)^\*\*status:?\*\*\s*(\S+)`)
-	validStatuses        = map[string]bool{
+	// Plain `Status: <v>` declaration, either inside YAML front-matter or
+	// in body prose. Same regex; applied to different substrings.
+	adrStatusPlain = regexp.MustCompile(`(?im)^status:\s*(\S+)`)
+	// Bold inline `**Status:** <v>` — the legacy template form.
+	adrStatusBold  = regexp.MustCompile(`(?im)^\*\*status:?\*\*\s*(\S+)`)
+	validStatuses = map[string]bool{
 		"accepted": true, "proposed": true, "superseded": true, "deprecated": true,
 	}
 )
 
 // parseADRStatus walks the first 50 lines looking for a status declaration.
-// Order: front-matter (delimited by ---), then plain "Status: …", then
-// "**Status:** …". Returns "unknown" when no recognized status is found.
+//
+// Priority order (first match wins):
+//  1. YAML front-matter `status:` between `---` delimiters
+//  2. Plain `Status: <value>` line in body prose
+//  3. Bold `**Status:** <value>` legacy form
+//
+// Plain beats Bold because Bold is the legacy template — when both are
+// present, the more recently-added plain line carries the updated status.
+//
+// Returns "unknown" when no recognized status is found.
 func parseADRStatus(text string) string {
-	lines := strings.SplitN(text, "\n", 100)
-	if len(lines) > 50 {
-		lines = lines[:50]
+	lines := strings.Split(text, "\n")
+	headLines := lines
+	if len(headLines) > 50 {
+		headLines = headLines[:50]
 	}
-	head := strings.Join(lines, "\n")
+	head := strings.Join(headLines, "\n")
 
-	if strings.HasPrefix(strings.TrimSpace(text), "---") {
-		// Front-matter form: scan only inside the --- ... --- delimiters.
-		end := strings.Index(strings.TrimSpace(text)[3:], "---")
-		if end > 0 {
-			fm := strings.TrimSpace(text)[3 : 3+end]
-			if m := adrStatusFrontMatter.FindStringSubmatch(fm); m != nil {
+	if len(headLines) > 0 && strings.TrimSpace(headLines[0]) == "---" {
+		// Line-anchored front-matter close: scan for the next line that
+		// is exactly `---`. A `---` appearing inside a YAML value (e.g.,
+		// inside a description string) does not match here.
+		end := -1
+		for i := 1; i < len(headLines); i++ {
+			if strings.TrimSpace(headLines[i]) == "---" {
+				end = i
+				break
+			}
+		}
+		if end > 1 {
+			fm := strings.Join(headLines[1:end], "\n")
+			if m := adrStatusPlain.FindStringSubmatch(fm); m != nil {
 				if s := normalizeStatus(m[1]); s != "" {
 					return s
 				}
 			}
 		}
 	}
-	if m := adrStatusBold.FindStringSubmatch(head); m != nil {
+	if m := adrStatusPlain.FindStringSubmatch(head); m != nil {
 		if s := normalizeStatus(m[1]); s != "" {
 			return s
 		}
 	}
-	if m := adrStatusLine.FindStringSubmatch(head); m != nil {
+	if m := adrStatusBold.FindStringSubmatch(head); m != nil {
 		if s := normalizeStatus(m[1]); s != "" {
 			return s
 		}

@@ -33,11 +33,11 @@ type ghLabel struct {
 func OpenIssues(ctx context.Context, list IssueLister, dir, repo string, since time.Time, limit int) ([]Issue, error) {
 	raw, err := list(ctx, dir, repo, limit)
 	if err != nil {
-		return nil, err
+		return []Issue{}, err
 	}
 	var decoded []ghIssueRaw
 	if err := json.Unmarshal(raw, &decoded); err != nil {
-		return nil, fmt.Errorf("decode gh issue list: %w", err)
+		return []Issue{}, fmt.Errorf("decode gh issue list: %w", err)
 	}
 	out := make([]Issue, 0, len(decoded))
 	for _, r := range decoded {

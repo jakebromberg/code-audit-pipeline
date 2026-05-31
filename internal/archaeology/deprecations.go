@@ -2,6 +2,7 @@ package archaeology
 
 import (
 	"bufio"
+	"context"
 	"io/fs"
 	"os"
 	"regexp"
@@ -9,10 +10,15 @@ import (
 	"strings"
 )
 
+// Annotation regexes are anchored to the start of the line (optionally
+// preceded by whitespace) so a string literal containing `@Deprecated` or
+// `[Obsolete]` does not match. Real annotations always sit at the head of
+// a declaration line; the heuristic trades the rarer indented-block case
+// for far fewer false positives.
 var (
-	swiftAvailableRe  = regexp.MustCompile(`@available\s*\(\s*\*\s*,\s*deprecated\b`)
-	kotlinJavaAnnotRe = regexp.MustCompile(`@Deprecated\b`)
-	csharpObsoleteRe  = regexp.MustCompile(`\[\s*Obsolete\b`)
+	swiftAvailableRe  = regexp.MustCompile(`^\s*@available\s*\(\s*\*\s*,\s*deprecated\b`)
+	kotlinJavaAnnotRe = regexp.MustCompile(`^\s*@Deprecated\b`)
+	csharpObsoleteRe  = regexp.MustCompile(`^\s*\[\s*Obsolete\b`)
 	pythonDecoratorRe = regexp.MustCompile(`^\s*@deprecated\b`)
 
 	// Comment-form deprecation markers. Matched against the post-comment-intro
@@ -30,15 +36,32 @@ var (
 
 // ScanDeprecations walks `root` and returns one Deprecation row per
 // recognized deprecation marker. Heuristic — v1 favors recall over
-// precision. Sort order: (file asc, line asc).
-func ScanDeprecations(root string) ([]Deprecation, error) {
-	var out []Deprecation
-	err := walkSource(root, func(absPath, relPath string, _ fs.DirEntry) error {
-		if isBinaryFile(absPath) {
+// precision. Skips files matching the substrate's `is_test` convention
+// and Markdown files. Sort order: (file asc, line asc).
+func ScanDeprecations(ctx context.Context, root string) ([]Deprecation, WalkStats, error) {
+	out := []Deprecation{}
+	var stats WalkStats
+	err := walkSource(ctx, root, &stats, func(absPath, relPath string, _ fs.DirEntry) error {
+		if isTestPath(relPath) || isMarkdownFile(relPath) {
 			return nil
 		}
-		f, err := os.Open(absPath)
-		if err != nil {
+		bin, berr := isBinaryFile(absPath)
+		if berr != nil {
+			stats.EntriesSkipped++
+			if stats.FirstSkippedPath == "" {
+				stats.FirstSkippedPath = absPath
+			}
+			return nil
+		}
+		if bin {
+			return nil
+		}
+		f, ferr := os.Open(absPath)
+		if ferr != nil {
+			stats.EntriesSkipped++
+			if stats.FirstSkippedPath == "" {
+				stats.FirstSkippedPath = absPath
+			}
 			return nil
 		}
 		defer f.Close()
@@ -48,6 +71,9 @@ func ScanDeprecations(root string) ([]Deprecation, error) {
 		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 		for scanner.Scan() {
 			lines = append(lines, scanner.Text())
+		}
+		if serr := scanner.Err(); serr != nil {
+			stats.LinesTruncated++
 		}
 
 		for i, line := range lines {
@@ -66,7 +92,7 @@ func ScanDeprecations(root string) ([]Deprecation, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return out, stats, err
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].File != out[j].File {
@@ -74,7 +100,7 @@ func ScanDeprecations(root string) ([]Deprecation, error) {
 		}
 		return out[i].Line < out[j].Line
 	})
-	return out, nil
+	return out, stats, nil
 }
 
 type deprecationMatch struct {
@@ -85,10 +111,12 @@ type deprecationMatch struct {
 // matchDeprecation returns a non-nil match when `line` carries a
 // recognized deprecation marker, or nil otherwise.
 func matchDeprecation(line string) *deprecationMatch {
-	// Annotation forms first — they are unambiguous and need only one
-	// regex hit. Message extraction reads the first quoted string on
-	// the line, which works for both Swift `message: "..."` and the
-	// argument-only forms `@Deprecated("...")` / `[Obsolete("...")]`.
+	// Annotation forms — each regex is anchored to start-of-line (with
+	// optional leading whitespace) so a mid-line occurrence inside a
+	// string literal is not treated as an annotation. Message extraction
+	// reads the first quoted string on the line, which works for both
+	// Swift `message: "..."` and argument-only `@Deprecated("...")` /
+	// `[Obsolete("...")]`.
 	if swiftAvailableRe.MatchString(line) ||
 		kotlinJavaAnnotRe.MatchString(line) ||
 		csharpObsoleteRe.MatchString(line) ||

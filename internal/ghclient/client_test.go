@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPRDiffPassesRepoAndNumber(t *testing.T) {
@@ -91,7 +92,35 @@ func TestOpenIssuesPassesRepoAndLimit(t *testing.T) {
 	}
 }
 
-func TestMergedPRsPassesRepoAndLimit(t *testing.T) {
+func TestMergedPRsPassesRepoLimitDirAndSearch(t *testing.T) {
+	var calledArgs []string
+	var calledDir string
+	c := &Client{
+		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
+			calledDir = dir
+			calledArgs = args
+			return []byte(`[]`), nil, nil
+		},
+	}
+	since := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	_, err := c.MergedPRs(context.Background(), "/repos/foo", "owner/repo", 50, since)
+	if err != nil {
+		t.Fatalf("MergedPRs: %v", err)
+	}
+	if calledDir != "/repos/foo" {
+		t.Errorf("dir=%q want /repos/foo (the dir argument must reach Exec so gh runs in the right repo)", calledDir)
+	}
+	joined := strings.Join(calledArgs, " ")
+	for _, want := range []string{"pr", "list", "--state", "merged", "--limit", "50", "--repo", "owner/repo", "--search", "merged:>=2026-03-01"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("args missing %q: %v", want, calledArgs)
+		}
+	}
+}
+
+// TestMergedPRsOmitsSearchWhenSinceZero confirms a zero `since` skips
+// the gh-side filter, leaving the limit cap as the only narrowing.
+func TestMergedPRsOmitsSearchWhenSinceZero(t *testing.T) {
 	var calledArgs []string
 	c := &Client{
 		Exec: func(ctx context.Context, dir, name string, args ...string) ([]byte, []byte, error) {
@@ -99,15 +128,12 @@ func TestMergedPRsPassesRepoAndLimit(t *testing.T) {
 			return []byte(`[]`), nil, nil
 		},
 	}
-	_, err := c.MergedPRs(context.Background(), "", "owner/repo", 50)
+	_, err := c.MergedPRs(context.Background(), "", "owner/repo", 10, time.Time{})
 	if err != nil {
-		t.Fatalf("MergedPRs: %v", err)
+		t.Fatal(err)
 	}
-	joined := strings.Join(calledArgs, " ")
-	for _, want := range []string{"pr", "list", "--state", "merged", "--limit", "50"} {
-		if !strings.Contains(joined, want) {
-			t.Errorf("args missing %q: %v", want, calledArgs)
-		}
+	if strings.Contains(strings.Join(calledArgs, " "), "--search") {
+		t.Errorf("zero since should not produce --search: %v", calledArgs)
 	}
 }
 

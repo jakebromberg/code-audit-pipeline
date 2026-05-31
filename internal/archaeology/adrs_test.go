@@ -109,6 +109,43 @@ func TestReadADRsFallsBackToFilenameStemTitle(t *testing.T) {
 	}
 }
 
+// TestReadADRsPlainBeatsBold pins the review finding that the
+// docstring's documented priority (front-matter, plain Status:, bold
+// **Status:**) didn't match the code, which checked bold before plain.
+// When both bold and plain are present, the more recently-added plain
+// line carries the updated status — so plain wins.
+func TestReadADRsPlainBeatsBold(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "docs", "adr", "0010-mixed.md"),
+		"# ADR 0010: Mixed\n\n**Status:** proposed\n\nStatus: accepted\n")
+
+	got, err := ReadADRs(root)
+	if err != nil {
+		t.Fatalf("ReadADRs: %v", err)
+	}
+	if got[0].Status != "accepted" {
+		t.Errorf("status=%q want accepted (plain beats bold)", got[0].Status)
+	}
+}
+
+// TestReadADRsFrontMatterCloseIsLineAnchored pins the review finding
+// that `strings.Index(..., "---")` would truncate the front-matter
+// scope whenever a `---` appeared inside a YAML value, causing the
+// status to silently fall through to `unknown`.
+func TestReadADRsFrontMatterCloseIsLineAnchored(t *testing.T) {
+	root := t.TempDir()
+	body := "---\ndescription: handles --- inline separators in values\nstatus: accepted\n---\n\n# ADR with embedded dashes\n"
+	writeFile(t, filepath.Join(root, "docs", "adr", "0011-dashes.md"), body)
+
+	got, err := ReadADRs(root)
+	if err != nil {
+		t.Fatalf("ReadADRs: %v", err)
+	}
+	if got[0].Status != "accepted" {
+		t.Errorf("status=%q want accepted (front-matter close must be line-anchored)", got[0].Status)
+	}
+}
+
 func TestReadADRsSortsByFile(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "docs", "adr", "0002-b.md"), "# B\n")

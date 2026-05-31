@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ErrGHNotInstalled is returned when the `gh` binary is not on PATH.
@@ -92,7 +93,14 @@ func (c *Client) OpenIssues(ctx context.Context, dir, repo string, limit int) ([
 
 // MergedPRs runs `gh pr list --state merged --repo <repo> --limit <limit>`
 // in `dir` and returns the raw JSON payload. Caller decodes.
-func (c *Client) MergedPRs(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
+//
+// gh's default sort is by createdAt DESC, which would let recently-CREATED
+// PRs consume the limit ahead of recently-MERGED ones. We can't change
+// gh's sort (GitHub search has no `sort:merged`), so we filter server-side
+// via `--search "merged:>=<date>"` to keep only PRs merged on or after
+// `since`. The caller still client-side-sorts the surviving rows by
+// mergedAt DESC. Pass `since == zero` to disable the search filter.
+func (c *Client) MergedPRs(ctx context.Context, dir, repo string, limit int, since time.Time) ([]byte, error) {
 	if c.Exec == nil {
 		return nil, fmt.Errorf("ghclient: nil Exec")
 	}
@@ -100,6 +108,9 @@ func (c *Client) MergedPRs(ctx context.Context, dir, repo string, limit int) ([]
 		"pr", "list", "--state", "merged",
 		"--limit", strconv.Itoa(limit),
 		"--json", "number,title,mergedAt,files,body",
+	}
+	if !since.IsZero() {
+		args = append(args, "--search", "merged:>="+since.UTC().Format("2006-01-02"))
 	}
 	if repo != "" {
 		args = append(args, "--repo", repo)
