@@ -114,6 +114,7 @@ All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FOR
 | `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language) | type, two-catalog |
 | `migration-progress.jq` | Counts decls on old vs new `shape_sig`, computes % migrated, lists touched-in-window stragglers | type |
 | `shape-sig-frequency.jq` | Lists `shape_sig` values by count desc with sample names | type |
+| `versioned-type-pairs.jq` | Groups declarations sharing a base name after stripping `(?i)V?<n>` suffix — stalled-migration signal (`Track`/`TrackV2`, `Episode`/`EpisodeV2`/`EpisodeV3`) | type |
 | `generic-arity-drift.jq` | Declarations sharing a name but differing in type-parameter arity | type |
 | `generic-convention-bound.jq` | Declarations whose field types reference a type-parameter-shaped identifier not bound by `generics` | type |
 | `touched-window-debt-summary.jq` | PR-time meta-query: for each cluster type, fraction with ≥1 touched-in-window member | type |

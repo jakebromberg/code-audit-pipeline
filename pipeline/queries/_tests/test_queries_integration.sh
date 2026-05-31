@@ -424,27 +424,73 @@ echo "=== Versioned-type-pairs query ==="
 assert_jsonl_has_prefix versioned-type-pairs.jq "$VERSIONED_TYPE_PAIRS_FIXTURE" "versioned-type-pairs:"
 assert_text_has_cid     versioned-type-pairs.jq "$VERSIONED_TYPE_PAIRS_FIXTURE"
 
+# Envelope conformance: every JSONL row must carry the cluster-trio
+# (cluster_id, query, shape) per ADR-0003 plus the query-specific
+# fields downstream consumers (renderer, scorers) read by name.
+assert_versioned_type_pairs_envelope() {
+  local result conforms
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (envelope): crashed: %s\n" "$result"
+    return
+  }
+  conforms="$(echo "$result" | jq -s '
+    all(
+      .cluster_id != null
+      and .query == "versioned-type-pairs"
+      and .shape == "cluster"
+      and (.base_name | type == "string")
+      and (.package | type == "string")
+      and (.shapes_observed | type == "boolean")
+      and (.shapes_match | type == "boolean")
+      and (.members | type == "array")
+      and (.members | length >= 2)
+    )')"
+  if [[ "$conforms" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (envelope): every row carries the cluster trio + payload\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (envelope): non-conforming rows present. output:\n%s\n" "$result"
+  fi
+}
+assert_versioned_type_pairs_envelope
+
 # Semantic correctness for versioned-type-pairs. The fixture is hand-tuned:
-#   Track / TrackV2          (main, shapes match)         → cluster, shapes_match=true,  versions 0,2
-#   Episode / EpV2 / EpV3    (main, shapes diverge)       → cluster, shapes_match=false, versions 0,2,3
-#   Listener                 (main, no sibling)           → not emitted
-#   IPv4 / IPv6              (main, protocol-suffix FP)   → cluster, shapes_match=true,  versions 4,6
-#   OldZ / OldZV2            (shared, shapes diverge)     → cluster in shared
-#   GenZ / GenZV2            (main, generated)            → excluded by default; surfaced under INCLUDE_GENERATED
-#   ZodFoo / ZodFooV2        (main, zod-object)           → cluster; dropped under KIND_PREFIX=interface
-# Baseline (no env): 5 clusters; INCLUDE_GENERATED=true: 6; PACKAGE=main: 4; KIND_PREFIX=interface: 4.
+#   Track / TrackV2                (main, shapes match)         → cluster, shapes_match=true,  versions 0,2
+#   Episode / EpV2 / EpV3          (main, shapes diverge)       → cluster, shapes_match=false, versions 0,2,3
+#   Listener                       (main, no sibling)           → not emitted
+#   IPv4 / IPv6                    (main, protocol-suffix FP)   → cluster, shapes_match=true,  versions 4,6
+#   OldZ / OldZV2                  (shared, shapes diverge)     → cluster in shared
+#   GenZ / GenZV2                  (main, generated)            → excluded by default; surfaced under INCLUDE_GENERATED
+#   ZodFoo / ZodFooV2              (main, zod-object)           → cluster; dropped under KIND_PREFIX=interface
+#   Theme / Themev2                (main, lowercase-v positive) → cluster, shapes_match=true
+#   Schema / SchemaV0              (main, V0 baseline anchor)   → cluster, shapes_match=false (intentional V0 differs)
+#   EmptyShape / EmptyShapeV2      (main, empty shape_sig)      → cluster, shapes_observed=false, shapes_match=false
+#   NullSig / NullSigV2            (main, null shape_sig)       → cluster, shapes_observed=false, shapes_match=false
+#   NoKind / NoKindV2              (main, kind missing)         → not emitted (positive whitelist drops null-kind safely)
+#   V2 / V3                        (main, empty base after strip) → not emitted (empty base_name dropped)
+#   Snapshot / SnapshotV2          (Shared/Generated package)   → cluster with `/`-containing package, cluster_id splits on `__`
+# Baseline (no env): 10 clusters; INCLUDE_GENERATED=true: 11; PACKAGE=main: 8 (drops OldZ + Snapshot); KIND_PREFIX=interface: 8 (drops ZodFoo + NullSig).
+#
+# Arg shape: label expected_count [ENV=val ...] -- [--arg key val ...]
+# Tokens before "--" become the env-var prefix; tokens after are jq args.
+# Matches the convention used by assert_migration_progress_semantic (via _parse_env_and_jq_args, defined later in this file but reused via late binding).
 assert_versioned_type_pairs_count() {
   local label="$1"; shift
   local expected_count="$1"; shift
   local env_prefix=()
-  while (( $# > 0 )); do
+  while (( $# > 0 )) && [[ "$1" != "--" ]]; do
     env_prefix+=("$1")
     shift
   done
+  [[ "${1:-}" == "--" ]] && shift
+  local jq_args=("$@")
 
   local result count
-  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
-    jq -L "$QUERIES_DIR" -r \
+  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]+"${env_prefix[@]}"}" \
+    jq -L "$QUERIES_DIR" -r "${jq_args[@]+"${jq_args[@]}"}" \
     -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
     FAIL=$((FAIL + 1))
     printf "  ✗ versioned-type-pairs (%s): crashed: %s\n" "$label" "$result"
@@ -461,19 +507,20 @@ assert_versioned_type_pairs_count() {
   fi
 }
 
-assert_versioned_type_pairs_count "baseline"             5
-assert_versioned_type_pairs_count "INCLUDE_GENERATED"    6 INCLUDE_GENERATED=true
-assert_versioned_type_pairs_count "PACKAGE=main"         4 PACKAGE=main
-assert_versioned_type_pairs_count "KIND_PREFIX=interface" 4 KIND_PREFIX=interface
+assert_versioned_type_pairs_count "baseline"              10
+assert_versioned_type_pairs_count "INCLUDE_GENERATED"     11 INCLUDE_GENERATED=true
+assert_versioned_type_pairs_count "PACKAGE=main"           8 PACKAGE=main
+assert_versioned_type_pairs_count "KIND_PREFIX=interface"  8 KIND_PREFIX=interface
 
 # Specific-cluster semantic checks: shapes_match flag and version-sorted members.
 assert_versioned_type_pairs_cluster() {
   local label="$1"; shift
   local target_cid="$1"; shift
-  local expected_shapes_match="$1"; shift   # "true" | "false"
-  local expected_versions_csv="$1"; shift   # e.g. "0,2"
+  local expected_shapes_match="$1"; shift     # "true" | "false"
+  local expected_shapes_observed="$1"; shift  # "true" | "false"
+  local expected_versions_csv="$1"; shift     # e.g. "0,2"
 
-  local result actual_shapes actual_versions
+  local result actual_shapes actual_observed actual_versions
   result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
     -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
     FAIL=$((FAIL + 1))
@@ -482,31 +529,64 @@ assert_versioned_type_pairs_cluster() {
   }
   actual_shapes="$(echo "$result" | jq -rs --arg c "$target_cid" \
     '.[] | select(.cluster_id == $c) | .shapes_match')"
+  actual_observed="$(echo "$result" | jq -rs --arg c "$target_cid" \
+    '.[] | select(.cluster_id == $c) | .shapes_observed')"
   actual_versions="$(echo "$result" | jq -rs --arg c "$target_cid" \
     '.[] | select(.cluster_id == $c) | (.members | map(.version | tostring) | join(","))')"
 
-  if [[ "$actual_shapes" == "$expected_shapes_match" && "$actual_versions" == "$expected_versions_csv" ]]; then
+  if [[ "$actual_shapes"   == "$expected_shapes_match" \
+     && "$actual_observed" == "$expected_shapes_observed" \
+     && "$actual_versions" == "$expected_versions_csv" ]]; then
     PASS=$((PASS + 1))
-    printf "  ✓ versioned-type-pairs (%s): cid=%s shapes_match=%s versions=[%s]\n" \
-      "$label" "$target_cid" "$actual_shapes" "$actual_versions"
+    printf "  ✓ versioned-type-pairs (%s): cid=%s shapes_match=%s shapes_observed=%s versions=[%s]\n" \
+      "$label" "$target_cid" "$actual_shapes" "$actual_observed" "$actual_versions"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ versioned-type-pairs (%s): cid=%s expected shapes_match=%s versions=[%s], got shapes_match=%s versions=[%s]\n" \
-      "$label" "$target_cid" "$expected_shapes_match" "$expected_versions_csv" "$actual_shapes" "$actual_versions"
+    printf "  ✗ versioned-type-pairs (%s): cid=%s expected shapes_match=%s shapes_observed=%s versions=[%s], got shapes_match=%s shapes_observed=%s versions=[%s]\n" \
+      "$label" "$target_cid" \
+      "$expected_shapes_match" "$expected_shapes_observed" "$expected_versions_csv" \
+      "$actual_shapes" "$actual_observed" "$actual_versions"
   fi
 }
 
-assert_versioned_type_pairs_cluster "Track same-shape pair"     "versioned-type-pairs:main/Track"   "true"  "0,2"
-assert_versioned_type_pairs_cluster "Episode diverged triple"   "versioned-type-pairs:main/Episode" "false" "0,2,3"
-assert_versioned_type_pairs_cluster "IPv4/IPv6 false positive"  "versioned-type-pairs:main/IP"      "true"  "4,6"
-assert_versioned_type_pairs_cluster "OldZ in shared package"    "versioned-type-pairs:shared/OldZ"  "false" "0,2"
+assert_versioned_type_pairs_cluster "Track same-shape pair"     "versioned-type-pairs:main__Track"    "true"  "true"  "0,2"
+assert_versioned_type_pairs_cluster "Episode diverged triple"   "versioned-type-pairs:main__Episode"  "false" "true"  "0,2,3"
+assert_versioned_type_pairs_cluster "IPv4/IPv6 false positive"  "versioned-type-pairs:main__IP"       "true"  "true"  "4,6"
+assert_versioned_type_pairs_cluster "OldZ in shared package"    "versioned-type-pairs:shared__OldZ"   "false" "true"  "0,2"
+assert_versioned_type_pairs_cluster "Theme/Themev2 lowercase-v" "versioned-type-pairs:main__Theme"    "true"  "true"  "0,2"
+assert_versioned_type_pairs_cluster "Schema/SchemaV0 baseline"  "versioned-type-pairs:main__Schema"   "false" "true"  "0,0"
+assert_versioned_type_pairs_cluster "EmptyShape empty sentinel" "versioned-type-pairs:main__EmptyShape" "false" "false" "0,2"
+assert_versioned_type_pairs_cluster "NullSig null shape_sig"    "versioned-type-pairs:main__NullSig"  "false" "false" "0,2"
 
-# Confirm the single-decl case (Listener) and cross-package-no-pair case
-# (no LegacyShow + Show pair in this fixture, by base-name divergence) both
+# `/`-containing package round-trip: cluster_id uses `__` between package and
+# base_name precisely so a downstream parser can split on `__` and recover
+# both components verbatim, even when the package contains `/`.
+assert_versioned_type_pairs_scoped_package() {
+  local result cid package base_name
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)"
+  cid="$(echo "$result" | jq -rs '.[] | select(.base_name == "Snapshot") | .cluster_id')"
+  package="$(echo "$result" | jq -rs '.[] | select(.base_name == "Snapshot") | .package')"
+  base_name="$(echo "$result" | jq -rs '.[] | select(.base_name == "Snapshot") | .base_name')"
+  if [[ "$cid" == "versioned-type-pairs:Shared/Generated__Snapshot" \
+     && "$package" == "Shared/Generated" \
+     && "$base_name" == "Snapshot" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (scoped-package): cid=%s preserves '/'-bearing package via __ separator\n" "$cid"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (scoped-package): expected cid='versioned-type-pairs:Shared/Generated__Snapshot' package='Shared/Generated' base_name='Snapshot', got cid='%s' package='%s' base_name='%s'\n" \
+      "$cid" "$package" "$base_name"
+  fi
+}
+assert_versioned_type_pairs_scoped_package
+
+# Confirm the single-decl case (Listener), the no-kind-no-crash case, the
+# generated-excluded case, and the empty-base-after-strip case (V2/V3) all
 # emit zero rows under any filter.
-assert_versioned_type_pairs_absent_cid() {
+assert_versioned_type_pairs_absent_base() {
   local label="$1"; shift
-  local target_cid="$1"; shift
+  local target_base="$1"; shift
 
   local result count
   result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
@@ -515,19 +595,41 @@ assert_versioned_type_pairs_absent_cid() {
     printf "  ✗ versioned-type-pairs (%s): crashed: %s\n" "$label" "$result"
     return
   }
-  count="$(echo "$result" | jq -rs --arg c "$target_cid" '[.[] | select(.cluster_id == $c)] | length')"
+  count="$(echo "$result" | jq -rs --arg b "$target_base" '[.[] | select(.base_name == $b)] | length')"
   if [[ "$count" == "0" ]]; then
     PASS=$((PASS + 1))
-    printf "  ✓ versioned-type-pairs (%s): cid=%s absent\n" "$label" "$target_cid"
+    printf "  ✓ versioned-type-pairs (%s): base_name=%s absent\n" "$label" "$target_base"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ versioned-type-pairs (%s): cid=%s should be absent, but %s row(s) match\n" \
-      "$label" "$target_cid" "$count"
+    printf "  ✗ versioned-type-pairs (%s): base_name=%s should be absent, but %s row(s) match\n" \
+      "$label" "$target_base" "$count"
   fi
 }
 
-assert_versioned_type_pairs_absent_cid "Listener has no sibling" "versioned-type-pairs:main/Listener"
-assert_versioned_type_pairs_absent_cid "GenZ excluded by default" "versioned-type-pairs:main/GenZ"
+assert_versioned_type_pairs_absent_base "Listener has no sibling"       "Listener"
+assert_versioned_type_pairs_absent_base "GenZ excluded by default"      "GenZ"
+assert_versioned_type_pairs_absent_base "NoKind dropped by whitelist"   "NoKind"
+assert_versioned_type_pairs_absent_base "V2/V3 empty-base dropped"      ""
+
+# A `has_suffix:false`-only group must be dropped — but a `Foo`+`FooV0` group
+# (both parse to version 0; FooV0 carries has_suffix:true) must NOT be dropped.
+# The Schema/SchemaV0 cluster covers this; double-check via the has_suffix flag
+# on the SchemaV0 member.
+assert_versioned_type_pairs_schema_v0_has_suffix() {
+  local result has_suffix
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)"
+  has_suffix="$(echo "$result" | jq -rs \
+    '.[] | select(.base_name == "Schema") | .members[] | select(.name == "SchemaV0") | .has_suffix')"
+  if [[ "$has_suffix" == "true" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (V0 baseline): SchemaV0 carries has_suffix=true, anchors the group\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (V0 baseline): expected SchemaV0.has_suffix=true, got '%s'\n" "$has_suffix"
+  fi
+}
+assert_versioned_type_pairs_schema_v0_has_suffix
 
 echo ""
 echo "=== Generic-parameter queries ==="

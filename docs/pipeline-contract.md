@@ -773,6 +773,7 @@ Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonica
 | `function-duplicates` (near section) | `function-duplicates-near:Loc+Loc` | sorted location keys |
 | `file-duplicates` (exact section) | `file-duplicates-exact:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
 | `file-duplicates` (norm section) | `file-duplicates-norm:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
+| `versioned-type-pairs` | `versioned-type-pairs:Pkg__BaseName` | directed (package then base); uses `__` because the package field can carry `/` (e.g. `Shared/Generated`) so `/` is unsafe as an in-slot separator |
 
 **Why every pair-based query uses location keys instead of bare names:** Swift and TypeScript both allow the same `name` to appear on multiple records — `enum Foo` plus `extension Foo` adding computed properties is two records, both named `Foo`. The substrate emits one record per declaration, so pair-based queries that compare records can produce multiple pairs whose endpoints share names. A name-only id like `near-duplicates-any:PlayerState+PlaybackState` would collide whenever both `PlayerState` (enum + extension) and `PlaybackState` (enum + extension) participate in distinct pairs. Location keys (`package:file:line:name`, the same convention `function-duplicates` already used) make each endpoint unambiguous and the cluster_id unique. Real example surfaced on wxyc-ios-64: `PlayerState`/`PlaybackState` collisions on both `near-duplicates-any` (enum-pair plus extension-pair) and `subset-pairs`.
 
