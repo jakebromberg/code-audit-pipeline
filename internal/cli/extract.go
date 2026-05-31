@@ -89,6 +89,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		EmitReferences: *emitRefs,
 		EmitFiles:      *emitFiles,
 		IncludeImports: *includeImports,
+		SetupHint:      m.Runtime.SetupHint,
 	}
 
 	catalogsDir := filepath.Join(cache.Dir, "catalogs")

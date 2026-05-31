@@ -2,9 +2,12 @@ package extractor
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
@@ -50,6 +53,113 @@ func TestCheckUnresolved(t *testing.T) {
 	}
 	if err := checkUnresolved([]string{"node", "x.mjs", "--shared", "{shared}"}); err == nil {
 		t.Error("unresolved {shared} not flagged")
+	}
+}
+
+// TestWithHint verifies that withHint appends the manifest's setup_hint
+// when one is declared, and is a no-op when the hint is empty. Errors must
+// still unwrap to the original cause (errors.Is must hold) so callers can
+// inspect them.
+func TestWithHint(t *testing.T) {
+	base := errors.New("boom")
+
+	if got := withHint(base, ""); got != base {
+		t.Errorf("withHint with empty hint should be a no-op; got %v", got)
+	}
+
+	wrapped := withHint(base, "Run npm install foo")
+	if !strings.Contains(wrapped.Error(), "Run npm install foo") {
+		t.Errorf("withHint did not include hint; got %q", wrapped.Error())
+	}
+	if !strings.Contains(wrapped.Error(), "hint:") {
+		t.Errorf("withHint did not include 'hint:' prefix; got %q", wrapped.Error())
+	}
+	if !errors.Is(wrapped, base) {
+		t.Errorf("withHint broke errors.Is unwrap chain")
+	}
+}
+
+// TestRunSurfacesSetupHintOnSubprocessFailure builds a fake manifest whose
+// only [[command]] invokes a script that exits 1, then asserts Run returns
+// an error containing the manifest's [runtime].setup_hint. This locks the
+// fix for issue #215.
+func TestRunSurfacesSetupHintOnSubprocessFailure(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell script fixture is POSIX-only")
+	}
+	if _, err := exec.LookPath("sh"); err != nil {
+		t.Skip("sh not on PATH")
+	}
+
+	tmp := t.TempDir()
+	scriptDir := filepath.Join(tmp, "extractor")
+	if err := os.MkdirAll(scriptDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// A script that always exits 1 — stand-in for "node_modules missing".
+	script := filepath.Join(scriptDir, "fail.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := manifest.Command{
+		Catalog:    "type-catalog",
+		OutputFile: "type-catalog.json",
+		Invocation: []string{"sh", script, "--output", "{output}"},
+	}
+	args := Args{
+		Root:      tmp,
+		SetupHint: "Run npm install foo",
+	}
+	catalogs := filepath.Join(tmp, ".audit", "catalogs")
+
+	_, err := Run(context.Background(), scriptDir, cmd, args, catalogs)
+	if err == nil {
+		t.Fatal("expected Run to fail when subprocess exits 1; got nil")
+	}
+	if !strings.Contains(err.Error(), "Run npm install foo") {
+		t.Errorf("error did not surface setup_hint; got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "hint:") {
+		t.Errorf("error did not include 'hint:' prefix; got %q", err.Error())
+	}
+}
+
+// TestRunOmitsHintWhenEmpty confirms that a failing subprocess without a
+// SetupHint produces only the bare subprocess error — no trailing "hint:"
+// line — so manifests that don't declare a hint are unaffected.
+func TestRunOmitsHintWhenEmpty(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell script fixture is POSIX-only")
+	}
+	if _, err := exec.LookPath("sh"); err != nil {
+		t.Skip("sh not on PATH")
+	}
+
+	tmp := t.TempDir()
+	scriptDir := filepath.Join(tmp, "extractor")
+	if err := os.MkdirAll(scriptDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := filepath.Join(scriptDir, "fail.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := manifest.Command{
+		Catalog:    "type-catalog",
+		OutputFile: "type-catalog.json",
+		Invocation: []string{"sh", script, "--output", "{output}"},
+	}
+	args := Args{Root: tmp} // no SetupHint
+	catalogs := filepath.Join(tmp, ".audit", "catalogs")
+
+	_, err := Run(context.Background(), scriptDir, cmd, args, catalogs)
+	if err == nil {
+		t.Fatal("expected Run to fail when subprocess exits 1; got nil")
+	}
+	if strings.Contains(err.Error(), "hint:") {
+		t.Errorf("error should not include 'hint:' when SetupHint empty; got %q", err.Error())
 	}
 }
 
