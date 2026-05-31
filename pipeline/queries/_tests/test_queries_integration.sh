@@ -27,6 +27,7 @@ TYPE_CATALOG_BIN="$SCRIPT_DIR/../../../extractors/typescript/type-catalog.mjs"
 ORPHAN_INFER_MODEL_FIXTURE="$FIXTURES_DIR/orphan-infer-model.input.json"
 IS_TEST_TREE="$FIXTURES_DIR/is-test-tree"
 TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
+VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 
 PASS=0
 FAIL=0
@@ -417,6 +418,116 @@ EOF
   fi
 }
 assert_shape_sig_frequency_cluster_id_slug
+
+echo ""
+echo "=== Versioned-type-pairs query ==="
+assert_jsonl_has_prefix versioned-type-pairs.jq "$VERSIONED_TYPE_PAIRS_FIXTURE" "versioned-type-pairs:"
+assert_text_has_cid     versioned-type-pairs.jq "$VERSIONED_TYPE_PAIRS_FIXTURE"
+
+# Semantic correctness for versioned-type-pairs. The fixture is hand-tuned:
+#   Track / TrackV2          (main, shapes match)         → cluster, shapes_match=true,  versions 0,2
+#   Episode / EpV2 / EpV3    (main, shapes diverge)       → cluster, shapes_match=false, versions 0,2,3
+#   Listener                 (main, no sibling)           → not emitted
+#   IPv4 / IPv6              (main, protocol-suffix FP)   → cluster, shapes_match=true,  versions 4,6
+#   OldZ / OldZV2            (shared, shapes diverge)     → cluster in shared
+#   GenZ / GenZV2            (main, generated)            → excluded by default; surfaced under INCLUDE_GENERATED
+#   ZodFoo / ZodFooV2        (main, zod-object)           → cluster; dropped under KIND_PREFIX=interface
+# Baseline (no env): 5 clusters; INCLUDE_GENERATED=true: 6; PACKAGE=main: 4; KIND_PREFIX=interface: 4.
+assert_versioned_type_pairs_count() {
+  local label="$1"; shift
+  local expected_count="$1"; shift
+  local env_prefix=()
+  while (( $# > 0 )); do
+    env_prefix+=("$1")
+    shift
+  done
+
+  local result count
+  result="$(env OUTPUT_FORMAT=jsonl "${env_prefix[@]}" \
+    jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  count="$(echo "$result" | grep -c .)"
+  if [[ "$count" == "$expected_count" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (%s): %s clusters\n" "$label" "$count"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): expected %s clusters, got %s. output:\n%s\n" \
+      "$label" "$expected_count" "$count" "$result"
+  fi
+}
+
+assert_versioned_type_pairs_count "baseline"             5
+assert_versioned_type_pairs_count "INCLUDE_GENERATED"    6 INCLUDE_GENERATED=true
+assert_versioned_type_pairs_count "PACKAGE=main"         4 PACKAGE=main
+assert_versioned_type_pairs_count "KIND_PREFIX=interface" 4 KIND_PREFIX=interface
+
+# Specific-cluster semantic checks: shapes_match flag and version-sorted members.
+assert_versioned_type_pairs_cluster() {
+  local label="$1"; shift
+  local target_cid="$1"; shift
+  local expected_shapes_match="$1"; shift   # "true" | "false"
+  local expected_versions_csv="$1"; shift   # e.g. "0,2"
+
+  local result actual_shapes actual_versions
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  actual_shapes="$(echo "$result" | jq -rs --arg c "$target_cid" \
+    '.[] | select(.cluster_id == $c) | .shapes_match')"
+  actual_versions="$(echo "$result" | jq -rs --arg c "$target_cid" \
+    '.[] | select(.cluster_id == $c) | (.members | map(.version | tostring) | join(","))')"
+
+  if [[ "$actual_shapes" == "$expected_shapes_match" && "$actual_versions" == "$expected_versions_csv" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (%s): cid=%s shapes_match=%s versions=[%s]\n" \
+      "$label" "$target_cid" "$actual_shapes" "$actual_versions"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): cid=%s expected shapes_match=%s versions=[%s], got shapes_match=%s versions=[%s]\n" \
+      "$label" "$target_cid" "$expected_shapes_match" "$expected_versions_csv" "$actual_shapes" "$actual_versions"
+  fi
+}
+
+assert_versioned_type_pairs_cluster "Track same-shape pair"     "versioned-type-pairs:main/Track"   "true"  "0,2"
+assert_versioned_type_pairs_cluster "Episode diverged triple"   "versioned-type-pairs:main/Episode" "false" "0,2,3"
+assert_versioned_type_pairs_cluster "IPv4/IPv6 false positive"  "versioned-type-pairs:main/IP"      "true"  "4,6"
+assert_versioned_type_pairs_cluster "OldZ in shared package"    "versioned-type-pairs:shared/OldZ"  "false" "0,2"
+
+# Confirm the single-decl case (Listener) and cross-package-no-pair case
+# (no LegacyShow + Show pair in this fixture, by base-name divergence) both
+# emit zero rows under any filter.
+assert_versioned_type_pairs_absent_cid() {
+  local label="$1"; shift
+  local target_cid="$1"; shift
+
+  local result count
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/versioned-type-pairs.jq" "$VERSIONED_TYPE_PAIRS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): crashed: %s\n" "$label" "$result"
+    return
+  }
+  count="$(echo "$result" | jq -rs --arg c "$target_cid" '[.[] | select(.cluster_id == $c)] | length')"
+  if [[ "$count" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ versioned-type-pairs (%s): cid=%s absent\n" "$label" "$target_cid"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ versioned-type-pairs (%s): cid=%s should be absent, but %s row(s) match\n" \
+      "$label" "$target_cid" "$count"
+  fi
+}
+
+assert_versioned_type_pairs_absent_cid "Listener has no sibling" "versioned-type-pairs:main/Listener"
+assert_versioned_type_pairs_absent_cid "GenZ excluded by default" "versioned-type-pairs:main/GenZ"
 
 echo ""
 echo "=== Generic-parameter queries ==="
