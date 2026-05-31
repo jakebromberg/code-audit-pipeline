@@ -1,0 +1,21 @@
+diff --git a/Shared/Analytics/Sources/Analytics/Bootstrap.swift b/Shared/Analytics/Sources/Analytics/Bootstrap.swift
+--- a/Shared/Analytics/Sources/Analytics/Bootstrap.swift
++++ b/Shared/Analytics/Sources/Analytics/Bootstrap.swift
+@@ -14,9 +14,5 @@ public class Bootstrap {
+     public func setUpAnalytics() {
+-        let provider = AnalyticsProvider.shared
+-        provider.start()
+-        provider.identify(user: User.current)
+-        provider.flush()
++        AnalyticsHelper.bootstrap()
+     }
+ }
+diff --git a/Shared/AppServices/Sources/AppServices/PlaybackSession.swift b/Shared/AppServices/Sources/AppServices/PlaybackSession.swift
+--- a/Shared/AppServices/Sources/AppServices/PlaybackSession.swift
++++ b/Shared/AppServices/Sources/AppServices/PlaybackSession.swift
+@@ -8,8 +8,6 @@ public struct PlaybackSession {
+     public let id: UUID
+-    public let playlist: Playlist
+-    public let currentIndex: Int
+     public let startedAt: Date
+ }

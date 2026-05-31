@@ -37,6 +37,8 @@ func main() {
 		os.Exit(cli.Report(ctx, args, stdout, queriesFS))
 	case "init":
 		os.Exit(cli.Init(ctx, args, stdout))
+	case "find-next-instance":
+		os.Exit(cli.FindNextInstance(ctx, args, stdout))
 	case "version", "--version", "-v":
 		fmt.Fprintln(stdout, cli.Version)
 	case "help", "--help", "-h":
@@ -59,6 +61,7 @@ Subcommands:
   status            Show .audit/ state, resolved query/extractor sources, and staleness.
   report            Run every runnable query and write .audit/reports/findings-<date>.md.
   init              Bootstrap ~/.config/audit/ (extractors + queries) from a local source tree.
+  find-next-instance  Given a closed PR, surface other catalog members matching its before-shape.
   version           Print binary version.
 
 See docs/adr/0001..0007.md for the design; plans/pr3-binary-skeleton.md and
