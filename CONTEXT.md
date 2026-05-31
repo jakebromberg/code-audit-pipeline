@@ -54,16 +54,16 @@ A PR-derived span — typically "merged in the last N weeks" — used to mark re
 ### Binary
 
 **`.audit/`**:
-The local cached state directory the binary writes into the user's repo. Contains `meta.json`, `catalogs/<kind>.json`, `reports/findings-<date>.md`. Auto-created on first `audit extract`; auto-added to the user's `.gitignore`.
+The local cached state directory the binary writes into the user's repo. Contains `meta.json`, `catalogs/<kind>.json`, `reports/findings-<date>.md`. Auto-created on first `code-audit extract`; auto-added to the user's `.gitignore`.
 
 **Provenance**:
-The metadata recorded in `.audit/meta.json` about how each catalog was produced — the absolute root path, the extraction timestamp, the extractor version. Used by `audit status` to warn when the cwd no longer matches the catalog's origin (the "wrong repo" silent-wrong guard).
+The metadata recorded in `.audit/meta.json` about how each catalog was produced — the absolute root path, the extraction timestamp, the extractor version. Used by `code-audit status` to warn when the cwd no longer matches the catalog's origin (the "wrong repo" silent-wrong guard).
 
 **`AUDIT_HOME`**:
-Environment variable pointing at a queries-and-extractors source tree for installed (non-in-repo) use. Set by `audit init`. Second in the lookup-order chain.
+Environment variable pointing at a queries-and-extractors source tree for installed (non-in-repo) use. Set by `code-audit init`. Second in the lookup-order chain.
 
 **Lookup-order discovery**:
-The precedence chain the binary uses to find queries and extractors: explicit flag → cwd-relative → `$AUDIT_HOME` → bundled (queries) or `~/.config/audit/` (extractors). First match wins. Surfaced by `audit status` so it's never invisible.
+The precedence chain the binary uses to find queries and extractors: explicit flag → cwd-relative → `$AUDIT_HOME` → bundled (queries) or `~/.config/audit/` (extractors). First match wins. Surfaced by `code-audit status` so it's never invisible.
 
 **Engine**:
 The jq implementation used to evaluate a query. Default is `gojq`, embedded in the audit binary. A query may opt out via `#! engine: jq`, causing the binary to shell out to system `jq` for that query only.
@@ -72,19 +72,19 @@ The jq implementation used to evaluate a query. Default is `gojq`, embedded in t
 
 - **"Type"** is overloaded across three meanings: a TypeScript/Swift type declaration (a kind of catalog record), the `type` catalog kind (the categorical), and a flag's declared type in `manifest.toml` (`path`/`string`/`bool`). Disambiguate by context. When clarity matters, prefer "type record" / "catalog kind" / "flag type" respectively.
 
-- **"Run"** was avoided as a verb on the binary. The verb is `audit report` (extract + every relevant query → findings.md), not `audit run`. The latter is too generic and would collide with future verbs (`audit ci`, `audit diff`).
+- **"Run"** was avoided as a verb on the binary. The verb is `code-audit report` (extract + every relevant query → findings.md), not `code-audit run`. The latter is too generic and would collide with future verbs (`code-audit ci`, `code-audit diff`).
 
 ## Example dialogue
 
-> **Dev:** I'm getting weird output from `audit query near-duplicates`.
+> **Dev:** I'm getting weird output from `code-audit query near-duplicates`.
 > **Maintainer:** What catalog kind do you have cached?
-> **Dev:** I ran `audit extract ts-function`, so I have a function catalog.
+> **Dev:** I ran `code-audit extract ts-function`, so I have a function catalog.
 > **Maintainer:** Right — `near-duplicates` is a type-catalog query. `function-duplicates` is the function-catalog one. Different catalog kinds, different shapes.
 > **Dev:** How would I have known?
-> **Maintainer:** `audit query --help` lists each query with its catalog kind. Or `audit status` — it shows which catalog kinds you have cached and which queries depend on each.
+> **Maintainer:** `code-audit query --help` lists each query with its catalog kind. Or `code-audit status` — it shows which catalog kinds you have cached and which queries depend on each.
 > **Dev:** What if I want both?
-> **Maintainer:** Run `audit extract ts` and `audit extract ts-function` separately. They walk the source tree for different things.
+> **Maintainer:** Run `code-audit extract ts` and `code-audit extract ts-function` separately. They walk the source tree for different things.
 > **Dev:** And `report`?
-> **Maintainer:** `audit report` runs every query whose catalog kind is cached and whose required args are satisfied. Anything it skips shows up in the summary table with the reason. That's the audit window's main artifact.
+> **Maintainer:** `code-audit report` runs every query whose catalog kind is cached and whose required args are satisfied. Anything it skips shows up in the summary table with the reason. That's the audit window's main artifact.
 > **Dev:** Why was the function-catalog query skipped in my report yesterday?
-> **Maintainer:** Probably touched-in-window was empty — no PRs in the audit window touched any files. Or the function catalog wasn't extracted yet. `audit status` will tell you which.
+> **Maintainer:** Probably touched-in-window was empty — no PRs in the audit window touched any files. Or the function catalog wasn't extracted yet. `code-audit status` will tell you which.
