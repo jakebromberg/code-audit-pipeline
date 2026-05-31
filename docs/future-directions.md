@@ -65,7 +65,32 @@ Today, agents are absent from cataloging and optionally present at synthesis. Th
 
 The constant across all of these: agents always come *after* the deterministic catalog. The catalog is the contract. This bounds agent cost (small inputs, focused questions) and keeps outputs auditable (anyone can re-run the catalog and verify the cluster). The anti-pattern is letting agents back upstream into the extraction step; the pipeline's identity is the line drawn there.
 
-## 5. The pipeline as a polemic
+## 5. Discovering what the substrate should learn to find
+
+Each new technique the pipeline gains — every new extractor field, every new cluster query, every new validator heuristic — has to come from somewhere. The case studies (#6) are one source. The codebase under audit is another. But once a target codebase has been worked over for any length of time, the obvious shape-duplication candidates dry up, and the next round of techniques has to come from somewhere outside the source itself. Mining what the maintainer already knows, and surfacing what the maintainer does not yet know, become distinct disciplines.
+
+**Mining what already exists.** A maintainer's GitHub history, code comments, deprecation markers, ADRs, and project-level rules carry information the substrate has no direct view of. Each closed refactor pull request is a template — the diff captures both the wrong shape and the chosen fix, and the rest of the codebase can be searched for other sites matching the same before-shape. Each `TODO` / `FIXME` / `HACK` comment older than some threshold is a refactor candidate the maintainer has already partially acknowledged. Each `@available(*, deprecated)` marker with active callers in the workspace is a stalled migration. These mine cheaply, run deterministically, and surface candidates the pure-structural queries cannot.
+
+**Lens agents grounded in archaeology.** When a codebase is well-factored, the remaining issues live in lens-specific blind spots: concurrency drift, half-rolled-out platform migrations, accepted but undocumented coupling, testability gaps the maintainer has worked around rather than addressed. Each lens has its own technique vocabulary. A lens-focused agent pass *grounded in the project's own archaeology* — open issues, recent commit messages, deprecation map — produces dramatically more targeted findings than open-ended "find refactors" prompts. The agent gains a basis on which to distinguish the things the maintainer has not yet noticed from the things the maintainer has already documented as accepted.
+
+**Skeptic with evidence base.** The substrate's failure mode at this layer is precision: false positives on already-abstracted clusters, on intentional design splits, on deliberate concurrency-discipline asymmetries. The countermove is a second agent pass armed with the same archaeology corpus, whose only job is to ground each candidate finding in existing maintainer intent. A finding the skeptic can tie to a CLAUDE.md rule, an ADR, or a doc comment gets downranked. A finding without such grounding survives. The skeptic is not generating rebuttals from intuition; it is doing evidence lookup against a curated corpus. This makes the skeptic cheaper and more reliable, and the precision filters it produces are anchored in real maintainer decisions rather than agent guesses.
+
+**Plant injection closes the measurement loop.** Every new technique should carry measured precision and recall. The V6 plant-recall methodology established this discipline at the substrate level (19/20 plants on a 350-file Swift codebase); the same framework extends to validators, lens agents, and skeptic passes. Without it, every new technique above is unmeasured, and the pipeline's quality claims revert to anecdote.
+
+The composed workflow these techniques add up to:
+
+1. **Substrate** runs deterministically — produces duplication clusters plus stalled-migration markers plus an archaeology bundle (open issues, TODO inventory, deprecation map, recent PR diffs).
+2. **Archaeology-loaded lens agents** read the substrate output plus the archaeology, and run targeted searches per lens.
+3. **Skeptic pass** reviews lens findings against the archaeology corpus, downranking anything explained by existing maintainer decisions.
+4. **Human** reads the survivors.
+
+Each layer's job is to make the next layer's input smaller and higher-signal. The substrate's role in this composition is no longer just "find duplicates" but "find duplicates plus the context that lets cheaper validators make precision calls." The agent layer in #4 above does not move; what moves is the substrate's surface area, which grows to include archaeology and the maintainer's prior decisions as first-class inputs.
+
+This direction overlaps with #4 (the agent layer) but is distinct in scope: #4 is about what agents do given catalog data; this section is about what the catalog itself should learn to contain so that agents and humans operating on it can navigate well-factored codebases without burning the maintainer's attention on already-settled questions.
+
+The rolling tracker for this agenda is #226; the first granular sub-item is #225 (find-next-instance).
+
+## 6. The pipeline as a polemic
 
 This is the speculative-but-foundational direction.
 
@@ -101,8 +126,10 @@ The directions above are listed roughly in priority order, with the highest-leve
 
 **(4) The agent layer** becomes valuable once there is enough catalog data and enough cluster output to justify the heavier infrastructure investment. It remains downstream of the temporal layer regardless of commit velocity.
 
-**(5) The polemic and case-study library** is the doc-and-content track that should run in parallel with everything else. Every audit done in anger should land as a case study, because that is what makes the argument concrete to readers who do not already accept it.
+**(5) Discovering what the substrate should learn to find** runs in parallel with the other directions and feeds into all of them. It is the methodology by which the pipeline keeps growing techniques rather than going stale on a fixed query set. The first concrete sub-items — the find-next-instance feature, the archaeology bundler, and stalled-migration substrate queries — are deterministic substrate features with low cost and high immediate yield; the lens-and-skeptic infrastructure follows once the archaeology bundle exists. The rolling tracker is #226.
+
+**(6) The polemic and case-study library** is the doc-and-content track that should run in parallel with everything else. Every audit done in anger should land as a case study, because that is what makes the argument concrete to readers who do not already accept it.
 
 ## Active decompositions
 
-The V8 strategic expansion lives in GitHub as direction trackers, each with its own decomposition. Direction-tracker map: #115 (language extractors, direction #2) → #135–#140; #116 (depth queries) → #125–#129, #131–#134; #117 (time, direction #1) → #141, #142, #148–#150; #118 (cross-repo) → #152–#159; #119 (interface / usability layer) → #143–#147; #120 (dev-flow integration) → #123, #124, #130. #114 (agent-as-filter, direction #4) is undecomposed. The rolling per-triage tracker supersedes from #98 → #107 → #160; the latest issue carries the current open-count and P0 sequencing. GitHub is authoritative for structural state; this doc remains the strategic narrative.
+The V8 strategic expansion lives in GitHub as direction trackers, each with its own decomposition. Direction-tracker map: #115 (language extractors, direction #2) → #135–#140; #116 (depth queries) → #125–#129, #131–#134; #117 (time, direction #1) → #141, #142, #148–#150; #118 (cross-repo) → #152–#159; #119 (interface / usability layer) → #143–#147; #120 (dev-flow integration) → #123, #124, #130; #226 (discovery agenda, direction #5) → #225. #114 (agent-as-filter, direction #4) is undecomposed. The rolling per-triage tracker supersedes from #98 → #107 → #160; the latest issue carries the current open-count and P0 sequencing. GitHub is authoritative for structural state; this doc remains the strategic narrative.
