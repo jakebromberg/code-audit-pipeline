@@ -49,6 +49,7 @@ DEAD_CODE_REFS_FIXTURE="$FIXTURES_DIR/dead-code-references.input.json"
 LEAKS_FUNCTIONS_FIXTURE="$FIXTURES_DIR/public-api-leaks-functions.input.json"
 LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
 BACKWARD_IMPORTS_FIXTURE="$FIXTURES_DIR/cross-package-backward-imports-files.input.json"
+VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -175,6 +176,7 @@ echo ""
 echo "=== Migration-progress queries ==="
 both_modes migration-progress                        "$QUERIES_DIR/migration-progress.jq"                        "$MIGRATION_FIXTURE" --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 both_modes shape-sig-frequency                       "$QUERIES_DIR/shape-sig-frequency.jq"                       "$MIGRATION_FIXTURE"
+both_modes versioned-type-pairs                      "$QUERIES_DIR/versioned-type-pairs.jq"                      "$VERSIONED_TYPE_PAIRS_FIXTURE"
 
 echo ""
 echo "=== Generic-drift queries ==="
