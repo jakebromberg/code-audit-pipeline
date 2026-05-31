@@ -63,6 +63,19 @@ func buildBindings(h *frontmatter.Header, args, argjsons stringList) ([]engine.B
 		if err := typecheckBinding(decl, b); err != nil {
 			return nil, err
 		}
+		// Coerce string-form --arg values to JSON numbers when the decl is
+		// number-typed. Without this, gojq treats `$x` as a jq string and
+		// `$x >= 0.7` silently false-misses. See #216.
+		if decl.Type == "number" && !b.IsJSON {
+			s, _ := b.Value.(string)
+			f, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				// typecheckBinding already validated this; defensive only.
+				return nil, fmt.Errorf("arg %s declared number, got %q", decl.Name, s)
+			}
+			b.Value = f
+			b.IsJSON = true
+		}
 		out = append(out, b)
 	}
 	for k := range given {
