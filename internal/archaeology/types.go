@@ -46,16 +46,20 @@ type Window struct {
 //   - skipped=true, ok=true               — user passed --no-<source>; the skip
 //     itself succeeded. Count is 0.
 //   - skipped=false, ok=true              — source ran. Count is the row count
-//     (may be 0 when no rows exist).
-//   - skipped=false, ok=false             — source ran and failed. Error carries
-//     the underlying message; the bundle's section array is empty.
+//     (may be 0 when no rows exist). When `partial > 0`, some entries were
+//     dropped due to walk errors, scanner failures, or per-row fetch failures;
+//     `notes` carries a human-readable summary.
+//   - skipped=false, ok=false             — source ran and failed catastrophically.
+//     Error carries the underlying message; the bundle's section array is empty.
 //
-// Consumers should check skipped first, then ok.
+// Consumers should check skipped first, then ok, then partial.
 type SourceProvenance struct {
 	Tool    string `json:"tool"`
 	OK      bool   `json:"ok"`
 	Count   int    `json:"count"`
 	Skipped bool   `json:"skipped"`
+	Partial int    `json:"partial,omitempty"`
+	Notes   string `json:"notes,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
 

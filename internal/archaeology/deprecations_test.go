@@ -1,6 +1,7 @@
 package archaeology
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,7 +14,7 @@ func TestScanDeprecationsSwift(t *testing.T) {
 		`public func oldFoo() {}`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -39,7 +40,7 @@ func TestScanDeprecationsKotlinJava(t *testing.T) {
 		`class OldBar {}`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestScanDeprecationsCSharp(t *testing.T) {
 		`public class OldBaz {}`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestScanDeprecationsTSCommentForm(t *testing.T) {
 		`export function oldQuux() {}`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -95,7 +96,7 @@ func TestScanDeprecationsGenericCommentForm(t *testing.T) {
 		`func oldLegacy() {}`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -110,9 +111,15 @@ func TestScanDeprecationsIgnoresStringLiterals(t *testing.T) {
 		`package z`,
 		`var msg = "Deprecated: not really"`,
 		`var msg2 = "@deprecated nope"`,
+		// Case-sensitive annotation forms inside string literals must also
+		// not match — pins the review finding that the annotation regexes
+		// ran against the whole line before the comment-start check.
+		`var msg3 = "@Deprecated migration"`,
+		`var msg4 = "[Obsolete: use NewThing]"`,
+		`var msg5 = "@available(*, deprecated, message: foo)"`,
 	}, "\n"))
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}
@@ -126,7 +133,7 @@ func TestScanDeprecationsSortByFileLine(t *testing.T) {
 	writeFile(t, filepath.Join(root, "b.swift"), "@available(*, deprecated)\nfunc b() {}\n")
 	writeFile(t, filepath.Join(root, "a.swift"), "@available(*, deprecated)\nfunc a() {}\n")
 
-	got, err := ScanDeprecations(root)
+	got, _, err := ScanDeprecations(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ScanDeprecations: %v", err)
 	}

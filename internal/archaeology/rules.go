@@ -1,6 +1,7 @@
 package archaeology
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path"
@@ -12,9 +13,10 @@ import (
 // The scope is "repo" for the root-level file and "package:<last-segment>"
 // otherwise (mirroring the package-naming convention the rest of the
 // substrate uses). Output is sorted by file path.
-func ReadRuleText(root string) ([]RuleText, error) {
-	var out []RuleText
-	err := walkSource(root, func(absPath, relPath string, d fs.DirEntry) error {
+func ReadRuleText(ctx context.Context, root string) ([]RuleText, WalkStats, error) {
+	out := []RuleText{}
+	var stats WalkStats
+	err := walkSource(ctx, root, &stats, func(absPath, relPath string, d fs.DirEntry) error {
 		if d.Name() != "CLAUDE.md" {
 			return nil
 		}
@@ -30,10 +32,10 @@ func ReadRuleText(root string) ([]RuleText, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return out, stats, err
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].File < out[j].File })
-	return out, nil
+	return out, stats, nil
 }
 
 // scopeForRulePath returns "repo" for the root-level CLAUDE.md and

@@ -28,14 +28,22 @@ var markerRegex = regexp.MustCompile(`\b(TODO|FIXME|HACK|XXX)\b`)
 // is treated as code (markers in code are ignored). v1 accepts modest
 // false-positive risk for `#` and `--` appearing inside string literals
 // (e.g., `s = "#TODO"`) — recall over precision.
+//
+// `#` is treated as a comment intro for code files (Python, shell, Ruby,
+// YAML, TOML). Markdown files are filtered out at the walk layer so a
+// `# TODO Tracker` heading is not counted.
 var commentIntros = []string{"//", "/*", "<!--", "#", "--"}
 
 // ScanTODOs walks `root` and returns one TODO row per standalone marker
-// found in a comment. `mtimes`, when non-nil, supplies per-file age; nil
-// (or a function returning ok=false) yields age_days=-1. `now` is used for
-// the age computation so tests get deterministic output; pass time.Now()
-// in production.
-func ScanTODOs(root string, mtimes MTimeFunc, now time.Time) ([]TODO, error) {
+// found in a comment. Files matching the substrate's `is_test` convention
+// and Markdown files (where `#` is a heading, not a comment) are skipped
+// — TODO inventory targets code maintenance debt, not fixture or doc text.
+//
+// `mtimes`, when non-nil, supplies per-file age; nil (or a function
+// returning ok=false) yields age_days=-1. `now` is used for the age
+// computation so tests get deterministic output; pass time.Now() in
+// production.
+func ScanTODOs(ctx context.Context, root string, mtimes MTimeFunc, now time.Time) ([]TODO, WalkStats, error) {
 	if mtimes == nil {
 		mtimes = func(string) (time.Time, bool) { return time.Time{}, false }
 	}
@@ -55,13 +63,29 @@ func ScanTODOs(root string, mtimes MTimeFunc, now time.Time) ([]TODO, error) {
 		return v
 	}
 
-	var out []TODO
-	err := walkSource(root, func(absPath, relPath string, _ fs.DirEntry) error {
-		if isBinaryFile(absPath) {
+	out := []TODO{}
+	var stats WalkStats
+	err := walkSource(ctx, root, &stats, func(absPath, relPath string, _ fs.DirEntry) error {
+		if isTestPath(relPath) || isMarkdownFile(relPath) {
 			return nil
 		}
-		f, err := os.Open(absPath)
-		if err != nil {
+		bin, berr := isBinaryFile(absPath)
+		if berr != nil {
+			stats.EntriesSkipped++
+			if stats.FirstSkippedPath == "" {
+				stats.FirstSkippedPath = absPath
+			}
+			return nil
+		}
+		if bin {
+			return nil
+		}
+		f, ferr := os.Open(absPath)
+		if ferr != nil {
+			stats.EntriesSkipped++
+			if stats.FirstSkippedPath == "" {
+				stats.FirstSkippedPath = absPath
+			}
 			return nil
 		}
 		defer f.Close()
@@ -90,10 +114,13 @@ func ScanTODOs(root string, mtimes MTimeFunc, now time.Time) ([]TODO, error) {
 				AgeDays: ageDays(absPath),
 			})
 		}
+		if serr := scanner.Err(); serr != nil {
+			stats.LinesTruncated++
+		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return out, stats, err
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].AgeDays != out[j].AgeDays {
@@ -104,7 +131,7 @@ func ScanTODOs(root string, mtimes MTimeFunc, now time.Time) ([]TODO, error) {
 		}
 		return out[i].Line < out[j].Line
 	})
-	return out, nil
+	return out, stats, nil
 }
 
 // findCommentStart returns the byte offset of the first character INSIDE
@@ -178,4 +205,3 @@ func GitMTimes(ctx context.Context, gitRoot string) MTimeFunc {
 		return time.Unix(secs, 0), true
 	}
 }
-

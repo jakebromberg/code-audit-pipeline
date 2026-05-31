@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/archaeology"
@@ -70,18 +71,33 @@ func Archaeology(ctx context.Context, argv []string, stdout io.Writer) int {
 		return 1
 	}
 
-	// Wire auditdir so .audit/ gets appended to the repo's .gitignore on
-	// first use. We don't need the cache handle; only the side effect.
-	if _, err := auditdir.Open(absRoot, Version); err != nil {
-		fmt.Fprintf(os.Stderr, "audit: open .audit/: %v\n", err)
-		return 1
+	// Only call auditdir.Open (which appends ".audit/" to <absRoot>/.gitignore
+	// and creates <absRoot>/.audit/catalogs/) when the bundle actually lands
+	// inside the audit root's .audit/ directory. With a custom --output
+	// pointing elsewhere, mutating the repo's gitignore would be a surprising
+	// side effect — the user explicitly asked for the artifact to live
+	// outside .audit/.
+	defaultAuditDir := filepath.Join(absRoot, ".audit") + string(os.PathSeparator)
+	if strings.HasPrefix(absOutput, defaultAuditDir) {
+		if _, err := auditdir.Open(absRoot, Version); err != nil {
+			fmt.Fprintf(os.Stderr, "audit: open .audit/: %v\n", err)
+			return 1
+		}
 	}
 
+	// The diff-spill directory is only needed when we will actually fetch
+	// per-PR diffs. --no-prs disables PR fetching entirely; --no-pr-diffs
+	// keeps PR metadata but skips diff bodies. Creating the dir
+	// unconditionally would leave an empty `archaeology/prs/` next to the
+	// bundle in both cases.
 	outDir := filepath.Dir(absOutput)
 	diffDir := filepath.Join(outDir, "archaeology", "prs")
-	if err := os.MkdirAll(diffDir, 0o755); err != nil {
-		fmt.Fprintf(os.Stderr, "audit: create diff dir: %v\n", err)
-		return 1
+	willFetchDiffs := !*noPRsFlag && !*noPRDiffsFlag
+	if willFetchDiffs {
+		if err := os.MkdirAll(diffDir, 0o755); err != nil {
+			fmt.Fprintf(os.Stderr, "audit: create diff dir: %v\n", err)
+			return 1
+		}
 	}
 
 	gh := ghclient.New()
@@ -162,6 +178,8 @@ func emitSummary(w io.Writer, b *archaeology.Bundle, outputPath string) {
 			fmt.Fprintf(w, "audit archaeology: %-13s = skipped\n", kind)
 		case !p.OK:
 			fmt.Fprintf(w, "audit archaeology: %-13s = FAILED (%s)\n", kind, p.Error)
+		case p.Partial > 0:
+			fmt.Fprintf(w, "audit archaeology: %-13s = %d (%s, partial: %s)\n", kind, p.Count, p.Tool, p.Notes)
 		default:
 			fmt.Fprintf(w, "audit archaeology: %-13s = %d (%s)\n", kind, p.Count, p.Tool)
 		}

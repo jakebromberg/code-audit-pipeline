@@ -1,6 +1,7 @@
 package archaeology
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,7 +11,7 @@ func TestReadRuleTextRootOnly(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "CLAUDE.md"), "# Repo rules\n")
 
-	got, err := ReadRuleText(root)
+	got, _, err := ReadRuleText(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ReadRuleText: %v", err)
 	}
@@ -34,7 +35,7 @@ func TestReadRuleTextNestedPackageScope(t *testing.T) {
 	writeFile(t, filepath.Join(root, "Shared", "Core", "CLAUDE.md"), "core package rules")
 	writeFile(t, filepath.Join(root, "Shared", "Networking", "CLAUDE.md"), "net rules")
 
-	got, err := ReadRuleText(root)
+	got, _, err := ReadRuleText(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ReadRuleText: %v", err)
 	}
@@ -64,7 +65,7 @@ func TestReadRuleTextSkipsDotdirsAndVendor(t *testing.T) {
 	writeFile(t, filepath.Join(root, "node_modules", "lib", "CLAUDE.md"), "vendor")
 	writeFile(t, filepath.Join(root, ".git", "CLAUDE.md"), "git internal")
 
-	got, err := ReadRuleText(root)
+	got, _, err := ReadRuleText(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ReadRuleText: %v", err)
 	}
@@ -78,7 +79,7 @@ func TestReadRuleTextSkipsDotdirsAndVendor(t *testing.T) {
 
 func TestReadRuleTextNoFilesIsEmpty(t *testing.T) {
 	root := t.TempDir()
-	got, err := ReadRuleText(root)
+	got, _, err := ReadRuleText(context.Background(), root)
 	if err != nil {
 		t.Fatalf("ReadRuleText: %v", err)
 	}

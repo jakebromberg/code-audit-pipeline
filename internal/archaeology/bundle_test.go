@@ -2,10 +2,12 @@ package archaeology
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,6 +60,98 @@ func TestAssembleOfflineMode(t *testing.T) {
 	}
 }
 
+// TestAssembleEmitsEmptyArraysNotNull pins the review finding that
+// nil-slice returns from source gatherers marshal as JSON `null`,
+// breaking the schema's promise that every section is an array.
+func TestAssembleEmitsEmptyArraysNotNull(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{Root: root, WindowDays: 90, NoIssues: true, NoPRs: true}
+	bundle := Assemble(context.Background(), opts, GHFunctions{}, nil, time.Now(), io.Discard)
+
+	data, err := json.Marshal(bundle)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	str := string(data)
+	for _, field := range []string{`"open_issues":null`, `"recent_prs":null`, `"todos":null`, `"deprecations":null`, `"adrs":null`, `"rule_text":null`} {
+		if strings.Contains(str, field) {
+			t.Errorf("bundle contains %q; arrays must marshal as [] when empty", field)
+		}
+	}
+	for _, field := range []string{`"open_issues":[]`, `"recent_prs":[]`, `"todos":[]`, `"deprecations":[]`, `"adrs":[]`, `"rule_text":[]`} {
+		if !strings.Contains(str, field) {
+			t.Errorf("bundle missing %q", field)
+		}
+	}
+}
+
+// TestAssemblePRDiffFetcherNilCheck pins the review finding that a
+// half-wired GHFunctions (PRDiffFetcher left nil while NoPRDiffs is
+// false) silently emitted PRs without diffs. The bundler now treats
+// it as a wiring failure with a clear error.
+func TestAssemblePRDiffFetcherNilCheck(t *testing.T) {
+	root := t.TempDir()
+	gh := GHFunctions{
+		IssueLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) { return []byte(`[]`), nil },
+		PRLister: func(ctx context.Context, dir, repo string, limit int, since time.Time) ([]byte, error) {
+			return []byte(`[]`), nil
+		},
+		// PRDiffFetcher intentionally nil.
+	}
+	opts := Options{Root: root, Repo: "owner/repo", WindowDays: 90, NoTODOs: true, NoDeprecations: true, NoADRs: true, NoRuleText: true}
+	bundle := Assemble(context.Background(), opts, gh, nil, time.Now(), io.Discard)
+	p := bundle.Sources["recent_prs"]
+	if p.OK {
+		t.Errorf("want ok=false for nil PRDiffFetcher, got %+v", p)
+	}
+	if !strings.Contains(p.Error, "PRDiffFetcher") {
+		t.Errorf("error should name the missing wiring: %q", p.Error)
+	}
+}
+
+// TestAssemblePropagatesPRPartialFailures pins the review finding that
+// a per-PR diff failure used to abort the whole source. PerPRErrors
+// from MergedPRs now flow into SourceProvenance.Partial / Notes while
+// surviving PR rows are still emitted.
+func TestAssemblePropagatesPRPartialFailures(t *testing.T) {
+	root := t.TempDir()
+	diffDir := filepath.Join(root, ".audit", "archaeology", "prs")
+	if err := os.MkdirAll(diffDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gh := GHFunctions{
+		IssueLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) { return []byte(`[]`), nil },
+		PRLister: func(ctx context.Context, dir, repo string, limit int, since time.Time) ([]byte, error) {
+			return []byte(`[
+                {"number":1,"title":"a","mergedAt":"2026-05-10T00:00:00Z","files":[],"body":""},
+                {"number":2,"title":"b","mergedAt":"2026-05-15T00:00:00Z","files":[],"body":""}
+            ]`), nil
+		},
+		PRDiffFetcher: func(ctx context.Context, dir, repo string, pr int) (string, error) {
+			if pr == 2 {
+				return "", errors.New("flaky gh")
+			}
+			return "DIFF", nil
+		},
+	}
+	opts := Options{Root: root, Repo: "owner/repo", WindowDays: 90, DiffDir: diffDir, DiffPathPrefix: "archaeology/prs",
+		NoTODOs: true, NoDeprecations: true, NoADRs: true, NoRuleText: true}
+	bundle := Assemble(context.Background(), opts, gh, nil, time.Now(), io.Discard)
+	p := bundle.Sources["recent_prs"]
+	if !p.OK {
+		t.Errorf("partial failure should keep ok=true, got %+v", p)
+	}
+	if p.Partial != 1 {
+		t.Errorf("Partial=%d want 1", p.Partial)
+	}
+	if !strings.Contains(p.Notes, "#2") {
+		t.Errorf("Notes should name the failed PR: %q", p.Notes)
+	}
+	if len(bundle.RecentPRs) != 1 || bundle.RecentPRs[0].Number != 1 {
+		t.Errorf("surviving PR should still be emitted, got %+v", bundle.RecentPRs)
+	}
+}
+
 func TestAssembleSurfacesIssueListerError(t *testing.T) {
 	root := t.TempDir()
 	want := errors.New("auth required")
@@ -65,7 +159,7 @@ func TestAssembleSurfacesIssueListerError(t *testing.T) {
 		IssueLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
 			return nil, want
 		},
-		PRLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
+		PRLister: func(ctx context.Context, dir, repo string, limit int, since time.Time) ([]byte, error) {
 			return []byte(`[]`), nil
 		},
 		PRDiffFetcher: func(ctx context.Context, dir, repo string, pr int) (string, error) { return "", nil },
@@ -106,7 +200,7 @@ func TestAssembleWritesDiffsWhenEnabled(t *testing.T) {
 	}
 	gh := GHFunctions{
 		IssueLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) { return []byte(`[]`), nil },
-		PRLister: func(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
+		PRLister: func(ctx context.Context, dir, repo string, limit int, since time.Time) ([]byte, error) {
 			return []byte(`[{"number":42,"title":"x","mergedAt":"2026-05-20T00:00:00Z","files":[],"body":""}]`), nil
 		},
 		PRDiffFetcher: func(ctx context.Context, dir, repo string, pr int) (string, error) { return "DIFF42", nil },

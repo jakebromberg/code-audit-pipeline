@@ -1,6 +1,7 @@
 package archaeology
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,7 +22,7 @@ func TestScanTODOsMatchesInComments(t *testing.T) {
 		"}",
 	}, "\n"))
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -62,7 +63,7 @@ func TestScanTODOsIgnoresCodeStringLiterals(t *testing.T) {
 		"var t = 'TODO char literal'",
 	}, "\n"))
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -82,7 +83,7 @@ func TestScanTODOsRejectsNonStandaloneTokens(t *testing.T) {
 		"// real TODO match",
 	}, "\n"))
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -98,7 +99,7 @@ func TestScanTODOsStripsAssigneeAnnotation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "a.go"), "// TODO(alice): wire this up\n")
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -111,10 +112,10 @@ func TestScanTODOsHandlesMultipleCommentSyntaxes(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "py.py"), "# TODO python-style\n")
 	writeFile(t, filepath.Join(root, "sql.sql"), "-- TODO sql-style\n")
-	writeFile(t, filepath.Join(root, "md.md"), "<!-- TODO html-style -->\n")
+	writeFile(t, filepath.Join(root, "html.html"), "<!-- TODO html-style -->\n")
 	writeFile(t, filepath.Join(root, "block.c"), " * TODO block-cont\n")
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -122,10 +123,10 @@ func TestScanTODOsHandlesMultipleCommentSyntaxes(t *testing.T) {
 		t.Fatalf("want 4 rows, got %d: %+v", len(got), got)
 	}
 	wantTexts := map[string]string{
-		"block.c": "block-cont",
-		"md.md":   "html-style",
-		"py.py":   "python-style",
-		"sql.sql": "sql-style",
+		"block.c":  "block-cont",
+		"html.html": "html-style",
+		"py.py":    "python-style",
+		"sql.sql":  "sql-style",
 	}
 	for _, r := range got {
 		if want, ok := wantTexts[r.File]; ok {
@@ -133,6 +134,50 @@ func TestScanTODOsHandlesMultipleCommentSyntaxes(t *testing.T) {
 				t.Errorf("%s text=%q want %q", r.File, r.Text, want)
 			}
 		}
+	}
+}
+
+// TestScanTODOsSkipsMarkdownFiles pins the review finding that `#` was
+// matching every Markdown heading. `.md` files are now filtered at the
+// walk layer so a `# TODO Tracker` README heading does not pollute the
+// TODO inventory. Rule-text + ADR sources handle Markdown separately.
+func TestScanTODOsSkipsMarkdownFiles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "# TODO Tracker\n## XXX Roadmap\n")
+	writeFile(t, filepath.Join(root, "CLAUDE.md"), "# TODO: remember rules\n")
+	writeFile(t, filepath.Join(root, "real.go"), "// TODO real match\n")
+
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
+	if err != nil {
+		t.Fatalf("ScanTODOs: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("want 1 row (markdown filtered), got %d: %+v", len(got), got)
+	}
+	if got[0].File != "real.go" {
+		t.Errorf("file=%q want real.go", got[0].File)
+	}
+}
+
+// TestScanTODOsSkipsTestPaths pins the review finding that fixture and
+// test TODOs were contaminating the maintenance inventory. The
+// substrate-wide `is_test` convention is now honored.
+func TestScanTODOsSkipsTestPaths(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "fixtures", "broken.go"), "// TODO fixture should be skipped\n")
+	writeFile(t, filepath.Join(root, "internal", "foo_test.go"), "// TODO test file should be skipped\n")
+	writeFile(t, filepath.Join(root, "tests", "harness.py"), "# TODO test dir skipped\n")
+	writeFile(t, filepath.Join(root, "src", "real.go"), "// TODO real match\n")
+
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
+	if err != nil {
+		t.Fatalf("ScanTODOs: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("want 1 row (test paths filtered), got %d: %+v", len(got), got)
+	}
+	if got[0].File != "src/real.go" {
+		t.Errorf("file=%q want src/real.go", got[0].File)
 	}
 }
 
@@ -148,7 +193,7 @@ func TestScanTODOsSortsByAgeDesc(t *testing.T) {
 		return now.Add(-10 * 24 * time.Hour), true
 	}
 
-	got, err := ScanTODOs(root, mtimes, now)
+	got, _, err := ScanTODOs(context.Background(), root, mtimes, now)
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
@@ -173,7 +218,7 @@ func TestScanTODOsSkipsBinaryFiles(t *testing.T) {
 	binaryContent := "// TODO should-not-match\n\x00\x01\x02"
 	writeFile(t, filepath.Join(root, "fake.bin"), binaryContent)
 
-	got, err := ScanTODOs(root, nil, time.Now())
+	got, _, err := ScanTODOs(context.Background(), root, nil, time.Now())
 	if err != nil {
 		t.Fatalf("ScanTODOs: %v", err)
 	}
