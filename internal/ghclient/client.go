@@ -64,6 +64,57 @@ func (c *Client) PRDiff(ctx context.Context, dir, repo string, pr int) (string, 
 	return string(stdout), nil
 }
 
+// OpenIssues runs `gh issue list --state open --repo <repo> --limit <limit>`
+// in `dir` and returns the raw JSON payload. Caller decodes. Matches the
+// signature of PRDiff so test stubs are uniform.
+func (c *Client) OpenIssues(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
+	if c.Exec == nil {
+		return nil, fmt.Errorf("ghclient: nil Exec")
+	}
+	args := []string{
+		"issue", "list", "--state", "open",
+		"--limit", strconv.Itoa(limit),
+		"--json", "number,title,labels,createdAt,updatedAt,body",
+	}
+	if repo != "" {
+		args = append(args, "--repo", repo)
+	}
+	stdout, stderr, err := c.Exec(ctx, dir, "gh", args...)
+	if err != nil {
+		if errors.Is(err, ErrGHNotInstalled) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("gh issue list (repo=%q): %w; stderr: %s",
+			repo, err, strings.TrimSpace(string(stderr)))
+	}
+	return stdout, nil
+}
+
+// MergedPRs runs `gh pr list --state merged --repo <repo> --limit <limit>`
+// in `dir` and returns the raw JSON payload. Caller decodes.
+func (c *Client) MergedPRs(ctx context.Context, dir, repo string, limit int) ([]byte, error) {
+	if c.Exec == nil {
+		return nil, fmt.Errorf("ghclient: nil Exec")
+	}
+	args := []string{
+		"pr", "list", "--state", "merged",
+		"--limit", strconv.Itoa(limit),
+		"--json", "number,title,mergedAt,files,body",
+	}
+	if repo != "" {
+		args = append(args, "--repo", repo)
+	}
+	stdout, stderr, err := c.Exec(ctx, dir, "gh", args...)
+	if err != nil {
+		if errors.Is(err, ErrGHNotInstalled) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("gh pr list (repo=%q): %w; stderr: %s",
+			repo, err, strings.TrimSpace(string(stderr)))
+	}
+	return stdout, nil
+}
+
 // RepoNameWithOwner returns the active repo's `owner/name`, derived from
 // `gh repo view --json nameWithOwner -q .nameWithOwner` in `dir`. Empty
 // `dir` means "inherit cwd". Returns ErrGHNotInstalled if gh isn't on PATH.
