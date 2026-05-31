@@ -688,7 +688,7 @@ Every JSONL row is one self-contained cluster as a JSON object, with at minimum:
 
 **On `cluster_id` uniqueness:** within a single query's run, every emitted row has a unique `cluster_id`. This invariant is what lets the V7 trial harness join agent recommendations back to clusters without canonicalization heuristics. The integration tests in `pipeline/queries/_tests/test_queries_integration.sh` assert it per-query; downstream tooling can assume it.
 
-**On the `shape` field:** every row also carries `shape: "cluster"|"pair"|"metric"` per [ADR-0003](adr/0003-canonical-cluster-envelope.md). The shape names which envelope the row conforms to; the audit binary's renderer dispatches purely on `shape` (no per-query lookup table). The shape mirrors the `#! shape:` front-matter line at the top of each `.jq` file (single-shape queries) or one of its comma-separated values (dual-section queries like `function-duplicates.jq`). See "Cluster envelope" below.
+**On the `shape` field:** every row also carries `shape: "cluster"|"pair"|"metric"` per [ADR-0003](adr/0003-canonical-cluster-envelope.md). The shape names which envelope the row conforms to; the code-audit binary's renderer dispatches purely on `shape` (no per-query lookup table). The shape mirrors the `#! shape:` front-matter line at the top of each `.jq` file (single-shape queries) or one of its comma-separated values (dual-section queries like `function-duplicates.jq`). See "Cluster envelope" below.
 
 Query-specific payload fields (`jaccard`, `intersection`, `union`, `shape_sig`, `field_count`, `body_hash`, `swap_tokens`, `slot_diff_count`, etc.) are emitted as the query computes them. Envelope-level fields (`members`, `left`, `right`) are reserved per the shape contract below. Downstream consumers should treat the row as a structured snapshot — query-specific payload is appended to the envelope, never overrides it.
 
@@ -710,19 +710,19 @@ Every JSONL row conforms to one of three shape envelopes. The `shape:` field on 
 
 ### Front-matter grammar (post-PR-2, [ADR-0002](adr/0002-hybrid-registration.md))
 
-Each `.jq` query under `pipeline/queries/` carries a header block of single-line `#! key: value` directives that the future `audit` binary parses to register the query. The lines are jq comments — naked `jq` invocations are unaffected. `_canonical.jq` (library, never run standalone) does not carry front-matter.
+Each `.jq` query under `pipeline/queries/` carries a header block of single-line `#! key: value` directives that the future `code-audit` binary parses to register the query. The lines are jq comments — naked `jq` invocations are unaffected. `_canonical.jq` (library, never run standalone) does not carry front-matter.
 
 Recognized keys (PR 2 set; future versions may extend):
 
 | Key | Cardinality | Purpose |
 |---|---|---|
-| `query` | 1 | Stable identifier matching the `query:` field emitted on JSONL rows. Used as the `audit query <name>` selector. Must be unique across files. |
+| `query` | 1 | Stable identifier matching the `query:` field emitted on JSONL rows. Used as the `code-audit query <name>` selector. Must be unique across files. |
 | `shape` | 1 or 2 (comma-sep) | Cluster envelope shape — `cluster`, `pair`, or `metric`. Dual-section queries (`function-duplicates`) list both. The shape mirrors what each emitted row's `shape:` field carries. |
 | `catalog` | 1 or N (comma-sep) | Catalog kind(s) the query consumes. First entry is the positional input (jq sees it via `.entries[]`); trailing entries are `--slurpfile` mounts. |
 | `arg` | 0..N | `--argjson` / `--arg` flags the query requires. Triplet form: `arg: <name> <type> <default-or-required>`. `<type>` ∈ `number`/`string`/`json`. |
 | `env` | 0..N | Environment-variable knobs. Triplet form: `env: <NAME> <type> <default-or-empty>`. |
 | `formats` | 1 | Comma-separated `OUTPUT_FORMAT` values supported. Always `text, jsonl` for queries that emit JSONL; `text` only for ones that don't. |
-| `desc` | 1 | One-line description (≤ 100 chars). Surfaces in `audit query --help`. |
+| `desc` | 1 | One-line description (≤ 100 chars). Surfaces in `code-audit query --help`. |
 | `version` | 0..1 | Front-matter grammar version (default 1 when absent). |
 
 **Worked example** — `exact-duplicates.jq`:
@@ -744,7 +744,7 @@ The PR-2 integration suite ([`pipeline/queries/_tests/test_queries_integration.s
 
 ### Extractor `manifest.toml` (post-PR-2, [ADR-0002](adr/0002-hybrid-registration.md))
 
-Each extractor directory (`extractors/typescript/`, `extractors/swift/`, `extractors/file-hashes/`) carries a `manifest.toml` declaring extractor identity, runtime prerequisites, and per-catalog invocation contract. Read by the future `audit` binary; the extractor scripts themselves are unchanged.
+Each extractor directory (`extractors/typescript/`, `extractors/swift/`, `extractors/file-hashes/`) carries a `manifest.toml` declaring extractor identity, runtime prerequisites, and per-catalog invocation contract. Read by the future `code-audit` binary; the extractor scripts themselves are unchanged.
 
 Schema (versioned via `schema_version`):
 

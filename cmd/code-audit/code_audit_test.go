@@ -126,7 +126,7 @@ func TestE2EFileHashes(t *testing.T) {
 	}
 }
 
-// TestE2EReport runs `audit report` end-to-end against a manually-seeded
+// TestE2EReport runs `code-audit report` end-to-end against a manually-seeded
 // .audit/ cache: catalog file on disk + meta.json index. Asserts the output
 // is created, contains the targeted section, and lists skipped queries.
 func TestE2EReport(t *testing.T) {
@@ -213,7 +213,7 @@ func TestE2EReport(t *testing.T) {
 // declare the same catalog kind twice (e.g. cross-catalog-name-collisions)
 // land in the "Skipped queries" section instead of failing the report. The
 // report driver doesn't synthesize the two --catalog overrides those queries
-// need; users wanting that query run it via `audit query --catalog A
+// need; users wanting that query run it via `code-audit query --catalog A
 // --catalog B` directly.
 func TestReportSkipsTwoOfSameKindQueries(t *testing.T) {
 	tmp := t.TempDir()
@@ -320,7 +320,7 @@ func TestReportSkipsQueriesWithUnsatisfiedArgs(t *testing.T) {
 	}
 }
 
-// TestQueryWithExplicitCatalog confirms `audit query --catalog <path>` works
+// TestQueryWithExplicitCatalog confirms `code-audit query --catalog <path>` works
 // without any cached .audit/ catalog.
 func TestQueryWithExplicitCatalog(t *testing.T) {
 	tmp := t.TempDir()

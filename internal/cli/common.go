@@ -197,7 +197,7 @@ func wireCatalogs(absRoot string, h *frontmatter.Header, overrides stringList) (
 		}
 		p, ok := cache.CatalogPath(kind)
 		if !ok {
-			return "", fmt.Errorf("catalog %q not cached under .audit/ — run `audit extract` or pass --catalog <path>", kind)
+			return "", fmt.Errorf("catalog %q not cached under .audit/ — run `code-audit extract` or pass --catalog <path>", kind)
 		}
 		return p, nil
 	}

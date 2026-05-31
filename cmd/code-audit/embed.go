@@ -17,7 +17,7 @@ var embeddedQueriesRoot embed.FS
 func embeddedQueries() fs.FS {
 	sub, err := fs.Sub(embeddedQueriesRoot, "queries")
 	if err != nil {
-		panic("audit: embedded queries subroot: " + err.Error())
+		panic("code-audit: embedded queries subroot: " + err.Error())
 	}
 	return sub
 }

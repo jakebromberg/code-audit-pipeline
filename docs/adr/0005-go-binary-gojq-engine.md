@@ -6,7 +6,7 @@ The audit binary is written in Go, distributed as a single static executable per
 
 - **Node binary, host-language extractors.** Minimizes marginal effort: Node is already a hard dependency for TS extraction, so the binary in Node adds no new runtime. The "fewer languages in the repo" argument that initially favored this option does not survive scrutiny — the repo is already polyglot (Node + Swift + jq + Bash + planned Python = 5 languages). Adding Go is +1 language, not a categorical crossing from uniform to polyglot.
 - **Full Go via tree-sitter for AST.** Would replace `typescript` package and `SwiftSyntax` with tree-sitter grammars. Real recall regression on generics, intersection types, macros, property wrappers — exactly the gaps the V2–V6 experiment series surfaced and closed. Conflicts with the project's foundational principle of using each language's native compiler API for extraction.
-- **Go binary, host-language extractors, embedded gojq** (chosen). Best distribution story (`brew install jakebromberg/tap/audit`, single binary), embedded jq removes one runtime dependency, native AST per extractor preserves the substrate principle.
+- **Go binary, host-language extractors, embedded gojq** (chosen). Best distribution story (`brew install jakebromberg/tap/code-audit`, single binary), embedded jq removes one runtime dependency, native AST per extractor preserves the substrate principle.
 
 ## Consequences
 
@@ -15,3 +15,5 @@ The audit binary is written in Go, distributed as a single static executable per
 - `gojq` compatibility must be verified against every existing query before PR 3 (the binary skeleton) commits to the engine. If any query diverges from system `jq` output, that query gets `#! engine: jq` in front-matter and the binary shells out to system `jq` for that case only.
 - `jq` is no longer a runtime dependency of the binary's default path. The `.jq` files remain hand-runnable with system `jq` for users who prefer that — the project does not abandon its naked-jq invariant.
 - The contributor-cognitive-load argument that initially favored Node was wrong-framed: query authors and extractor authors don't touch the binary's language, so the choice is paid by one maintainer rather than amortized across contributors.
+
+**Naming note (post-#214):** the binary's command-line name is `code-audit`; this document was authored when the working name was `audit`. The substantive decisions are unchanged.

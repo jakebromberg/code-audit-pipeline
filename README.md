@@ -1,6 +1,6 @@
 # code-audit-pipeline
 
-A recipe for converting a codebase into **actionable refactor recommendations**. AST extractors emit a canonical type/function catalog; `jq` queries cluster the rhymes — duplicate types, parallel protocols, name-without-shape collisions, missed abstractions; an agent reads each cluster and proposes a concrete refactor with grounded rationale. The `audit` binary glues these stages into one command line.
+A recipe for converting a codebase into **actionable refactor recommendations**. AST extractors emit a canonical type/function catalog; `jq` queries cluster the rhymes — duplicate types, parallel protocols, name-without-shape collisions, missed abstractions; an agent reads each cluster and proposes a concrete refactor with grounded rationale. The `code-audit` binary glues these stages into one command line.
 
 ## The principle
 
@@ -20,32 +20,32 @@ Both layers are necessary; neither is sufficient on its own.
 ## Install
 
 ```bash
-brew install jakebromberg/tap/audit            # macOS / Linux
-go install github.com/jakebromberg/code-audit-pipeline/cmd/audit@latest
+brew install jakebromberg/tap/code-audit       # macOS / Linux
+go install github.com/jakebromberg/code-audit-pipeline/cmd/code-audit@latest
 ```
 
 Or download a tarball from [Releases](https://github.com/jakebromberg/code-audit-pipeline/releases).
 
-The binary embeds the full `pipeline/queries/*.jq` set, so cluster queries work immediately against any catalog you already have. Extractors live external (each has its own runtime — Node, Swift toolchain, future Python) and are bootstrapped via `audit init`.
+The binary embeds the full `pipeline/queries/*.jq` set, so cluster queries work immediately against any catalog you already have. Extractors live external (each has its own runtime — Node, Swift toolchain, future Python) and are bootstrapped via `code-audit init`.
 
 ## Quick start
 
 ```bash
 # One-time: copy queries + extractors into ~/.config/audit/ from a local checkout.
-audit init --from /path/to/code-audit-pipeline
+code-audit init --from /path/to/code-audit-pipeline
 
 # Run the TypeScript extractor against your repo; output is cached under .audit/.
-audit extract typescript --root /path/to/your/repo
+code-audit extract typescript --root /path/to/your/repo
 
 # Inspect cached state and the resolved query/extractor sources.
-audit status
+code-audit status
 
 # Run an individual query interactively (text-mode output, ergonomic for humans).
-audit query exact-duplicates
-audit query near-duplicates --arg threshold=0.7
+code-audit query exact-duplicates
+code-audit query near-duplicates --arg threshold=0.7
 
 # Run every applicable query and write a single markdown report.
-audit report
+code-audit report
 # → .audit/reports/findings-2026-05-30.md
 ```
 
@@ -53,12 +53,12 @@ The full subcommand surface:
 
 | Subcommand | Purpose |
 |---|---|
-| `audit extract <name>` | Run an extractor; caches its catalog under `.audit/catalogs/`. |
-| `audit query <name>` | Evaluate a query against cached catalogs (or `--catalog <path>` override). |
-| `audit status` | Show `.audit/` state, resolved query/extractor sources, and staleness. |
-| `audit report` | Run every runnable query and write a markdown report to `.audit/reports/`. |
-| `audit init` | Bootstrap `~/.config/audit/` (extractors + queries) from a local source tree. |
-| `audit version` | Print binary version. |
+| `code-audit extract <name>` | Run an extractor; caches its catalog under `.audit/catalogs/`. |
+| `code-audit query <name>` | Evaluate a query against cached catalogs (or `--catalog <path>` override). |
+| `code-audit status` | Show `.audit/` state, resolved query/extractor sources, and staleness. |
+| `code-audit report` | Run every runnable query and write a markdown report to `.audit/reports/`. |
+| `code-audit init` | Bootstrap `~/.config/audit/` (extractors + queries) from a local source tree. |
+| `code-audit version` | Print binary version. |
 
 Per-command flags follow the long-form GNU convention (`--root`, `--queries-dir`, `--catalog`, etc.); run any subcommand with `--help` for the full list.
 
@@ -69,11 +69,11 @@ Both queries and extractors are resolved via a lookup-order chain ([ADR-0006](do
 1. Explicit `--queries-dir` / `--extractors-dir` flag.
 2. `pipeline/queries/` and `extractors/` rooted at the audit cwd (when present).
 3. `$AUDIT_HOME` if set.
-4. **Fallback:** embedded queries (always present); `~/.config/audit/extractors/` (populated by `audit init`).
+4. **Fallback:** embedded queries (always present); `~/.config/audit/extractors/` (populated by `code-audit init`).
 
-`audit status` always prints the resolved source for both. The cwd-relative path makes contributor edits live without rebuilding the binary; the embedded fallback means a brewed binary works against any pre-existing catalog with no install steps.
+`code-audit status` always prints the resolved source for both. The cwd-relative path makes contributor edits live without rebuilding the binary; the embedded fallback means a brewed binary works against any pre-existing catalog with no install steps.
 
-To point the binary at the tree `audit init` lays down (instead of the embedded set), set `AUDIT_HOME=$XDG_CONFIG_HOME/audit` (or `~/.config/audit`). Without `AUDIT_HOME` set and outside a checkout, queries resolve to the embedded copy — which is the intended default for the brewed binary.
+To point the binary at the tree `code-audit init` lays down (instead of the embedded set), set `AUDIT_HOME=$XDG_CONFIG_HOME/audit` (or `~/.config/audit`). Without `AUDIT_HOME` set and outside a checkout, queries resolve to the embedded copy — which is the intended default for the brewed binary.
 
 ## What the catalog contains
 
@@ -99,7 +99,7 @@ Sibling artifacts: `references.json` (inverted edge list, `--emit-references-gra
 
 ## Cluster queries
 
-All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FORMAT=jsonl` for the report path. Each `.jq` file carries a `#! shape: cluster|pair|metric` front-matter line per [ADR-0003](docs/adr/0003-canonical-cluster-envelope.md); `audit report` dispatches every JSONL row through one of three shape renderers.
+All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FORMAT=jsonl` for the report path. Each `.jq` file carries a `#! shape: cluster|pair|metric` front-matter line per [ADR-0003](docs/adr/0003-canonical-cluster-envelope.md); `code-audit report` dispatches every JSONL row through one of three shape renderers.
 
 | Query | What it finds | Catalog |
 |---|---|---|
@@ -132,7 +132,7 @@ Any language with an AST library works. Each extractor must:
 3. For each type-equivalent declaration, emit one JSON record matching the contract.
 4. Print summary stats to stderr; the JSON catalog to stdout (or `--output`).
 
-Drop a `manifest.toml` in the extractor directory ([ADR-0002](docs/adr/0002-hybrid-registration.md)) so `audit extract <name>` knows the invocation. The contract doc has the full schema. The TypeScript extractor (~280 lines, uses `typescript`) is the reference. Suggested next:
+Drop a `manifest.toml` in the extractor directory ([ADR-0002](docs/adr/0002-hybrid-registration.md)) so `code-audit extract <name>` knows the invocation. The contract doc has the full schema. The TypeScript extractor (~280 lines, uses `typescript`) is the reference. Suggested next:
 
 - **Python** — `ast` (stdlib). Feasibility study: [`docs/python-extractor-design-notes.md`](docs/python-extractor-design-notes.md).
 - **Rust** — `syn` crate, or treesitter-rust.
@@ -177,7 +177,7 @@ jq -L pipeline/queries -rf pipeline/queries/exact-duplicates.jq catalog.json
 jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/near-duplicates.jq catalog.json
 ```
 
-The binary path produces the same artifacts under `.audit/catalogs/` and accepts JSONL on every query (`OUTPUT_FORMAT=jsonl` for the bash recipe, `--format jsonl` for `audit query`).
+The binary path produces the same artifacts under `.audit/catalogs/` and accepts JSONL on every query (`OUTPUT_FORMAT=jsonl` for the bash recipe, `--format jsonl` for `code-audit query`).
 
 ## Provenance
 

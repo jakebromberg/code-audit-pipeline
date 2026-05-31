@@ -7,9 +7,9 @@
 //
 // cwd-relative wins over $AUDIT_HOME so a contributor working in a repo
 // clone picks up their local edits even when $AUDIT_HOME is set (e.g., by
-// `audit init` writing to a shell profile). Resolution stops at the first
+// `code-audit init` writing to a shell profile). Resolution stops at the first
 // hit. The chosen source is returned with a human-readable label so
-// `audit status` can surface it.
+// `code-audit status` can surface it.
 package discovery
 
 import (
@@ -128,7 +128,7 @@ func ResolveExtractorsDir(opts ExtractorOpts) (string, string, error) {
 			return abs, c.label, nil
 		}
 	}
-	return "", "", fmt.Errorf("discovery: no extractors directory found (run `audit init` to populate ~/.config/audit/)")
+	return "", "", fmt.Errorf("discovery: no extractors directory found (run `code-audit init` to populate ~/.config/audit/)")
 }
 
 func hasCanonical(dir string) bool {

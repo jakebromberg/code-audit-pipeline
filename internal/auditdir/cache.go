@@ -174,7 +174,7 @@ func (c *Cache) RefreshEnvelopes() (int, error) {
 	return refreshed, nil
 }
 
-// CatalogStatus is one row in `audit status` output.
+// CatalogStatus is one row in `code-audit status` output.
 type CatalogStatus struct {
 	Kind             string
 	Path             string

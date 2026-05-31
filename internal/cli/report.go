@@ -20,7 +20,7 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/render"
 )
 
-// Report implements `audit report` — runs every runnable query in JSONL mode,
+// Report implements `code-audit report` — runs every runnable query in JSONL mode,
 // dispatches each row to the shape renderer, and writes the result to
 // .audit/reports/findings-<date>.md.
 func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS) int {
@@ -50,13 +50,13 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		Flag: *queriesDir, AuditHome: os.Getenv("AUDIT_HOME"), CWD: absRoot,
 	}, queriesFS)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 3
 	}
 
 	queryNames, err := listQueries(qsrc)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: list queries: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: list queries: %v\n", err)
 		return 3
 	}
 
@@ -87,10 +87,10 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		dest = filepath.Join(absRoot, ".audit", "reports", "findings-"+time.Now().UTC().Format("2006-01-02")+".md")
 	}
 	if err := writeAtomic(dest, []byte(report)); err != nil {
-		fmt.Fprintf(stdout, "audit: write report: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: write report: %v\n", err)
 		return 1
 	}
-	fmt.Fprintf(stdout, "audit: wrote %s\n", dest)
+	fmt.Fprintf(stdout, "code-audit: wrote %s\n", dest)
 	return 0
 }
 
@@ -238,7 +238,7 @@ func composeReport(absRoot string, results []sectionResult) (string, bool) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Audit findings\n\n")
-	fmt.Fprintf(&b, "_Generated %s by audit %s. Root: %s._\n\n", now, Version, absRoot)
+	fmt.Fprintf(&b, "_Generated %s by code-audit %s. Root: %s._\n\n", now, Version, absRoot)
 
 	var sections []string
 	var skipped []string

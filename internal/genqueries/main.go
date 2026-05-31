@@ -1,6 +1,6 @@
-// genqueries copies pipeline/queries/*.jq into cmd/audit/queries/ so the
-// audit binary can embed them via //go:embed. Invoked by `go generate` in
-// cmd/audit/embed.go. Refuses to operate if -src is missing or empty.
+// genqueries copies pipeline/queries/*.jq into cmd/code-audit/queries/ so the
+// code-audit binary can embed them via //go:embed. Invoked by `go generate` in
+// cmd/code-audit/embed.go. Refuses to operate if -src is missing or empty.
 package main
 
 import (

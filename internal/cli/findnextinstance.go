@@ -1,4 +1,4 @@
-// findnextinstance.go implements `audit find-next-instance`: given a closed
+// findnextinstance.go implements `code-audit find-next-instance`: given a closed
 // PR, surface other catalog members whose before-shape matches the PR diff's
 // removed lines.
 //
@@ -32,14 +32,14 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/ghclient"
 )
 
-// FindNextInstance implements `audit find-next-instance`.
+// FindNextInstance implements `code-audit find-next-instance`.
 //
-// Flags mirror the issue-225 plan. Returns standard audit exit codes:
+// Flags mirror the issue-225 plan. Returns standard code-audit exit codes:
 //
 //	0  success (including "no matches")
 //	1  runtime failure (diff fetch / catalog read / serialization)
 //	2  usage error
-//	3  catalog / discovery error (mirrors audit query)
+//	3  catalog / discovery error (mirrors code-audit query)
 func FindNextInstance(ctx context.Context, argv []string, stdout io.Writer) int {
 	fset := flag.NewFlagSet("find-next-instance", flag.ContinueOnError)
 	prFlag := fset.Int("pr", 0, "PR number to fetch via gh pr diff")
@@ -58,15 +58,15 @@ func FindNextInstance(ctx context.Context, argv []string, stdout io.Writer) int 
 	}
 
 	if *format != "text" && *format != "jsonl" {
-		fmt.Fprintf(stdout, "audit: --format must be text or jsonl, got %q\n", *format)
+		fmt.Fprintf(stdout, "code-audit: --format must be text or jsonl, got %q\n", *format)
 		return 2
 	}
 	if *kindFlag != "all" && *kindFlag != "function-body" && *kindFlag != "type-shape" {
-		fmt.Fprintf(stdout, "audit: --kind must be one of all|function-body|type-shape, got %q\n", *kindFlag)
+		fmt.Fprintf(stdout, "code-audit: --kind must be one of all|function-body|type-shape, got %q\n", *kindFlag)
 		return 2
 	}
 	if *prFlag == 0 && *diffPath == "" {
-		fmt.Fprintln(stdout, "audit: --pr or --diff is required")
+		fmt.Fprintln(stdout, "code-audit: --pr or --diff is required")
 		return 2
 	}
 
@@ -80,13 +80,13 @@ func FindNextInstance(ctx context.Context, argv []string, stdout io.Writer) int 
 	// Acquire diff.
 	diffText, repo, prNum, err := acquireDiff(ctx, *diffPath, *prFlag, *repoFlag, absRoot)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 1
 	}
 
 	files, err := diffparse.Parse(strings.NewReader(diffText))
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: parse diff: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: parse diff: %v\n", err)
 		return 1
 	}
 
@@ -96,14 +96,14 @@ func FindNextInstance(ctx context.Context, argv []string, stdout io.Writer) int 
 	if *kindFlag == "all" || *kindFlag == "function-body" {
 		fnRows, err = loadFunctionCatalog(absRoot, *fnCatalogPath)
 		if err != nil {
-			fmt.Fprintf(stdout, "audit: %v\n", err)
+			fmt.Fprintf(stdout, "code-audit: %v\n", err)
 			return 3
 		}
 	}
 	if *kindFlag == "all" || *kindFlag == "type-shape" {
 		tyRows, err = loadTypeCatalog(absRoot, *tyCatalogPath)
 		if err != nil {
-			fmt.Fprintf(stdout, "audit: %v\n", err)
+			fmt.Fprintf(stdout, "code-audit: %v\n", err)
 			return 3
 		}
 	}
@@ -157,7 +157,7 @@ func loadFunctionCatalog(absRoot, override string) ([]diffmatch.FunctionRow, err
 		}
 		p, ok := cache.CatalogPath("function-catalog")
 		if !ok {
-			return nil, fmt.Errorf("catalog %q not cached under .audit/ — run `audit extract` or pass --function-catalog <path>", "function-catalog")
+			return nil, fmt.Errorf("catalog %q not cached under .audit/ — run `code-audit extract` or pass --function-catalog <path>", "function-catalog")
 		}
 		path = p
 	}
@@ -173,7 +173,7 @@ func loadTypeCatalog(absRoot, override string) ([]diffmatch.TypeRow, error) {
 		}
 		p, ok := cache.CatalogPath("type-catalog")
 		if !ok {
-			return nil, fmt.Errorf("catalog %q not cached under .audit/ — run `audit extract` or pass --type-catalog <path>", "type-catalog")
+			return nil, fmt.Errorf("catalog %q not cached under .audit/ — run `code-audit extract` or pass --type-catalog <path>", "type-catalog")
 		}
 		path = p
 	}
@@ -606,12 +606,12 @@ func emit(out io.Writer, format string, rows []outRow, pr int, repo string) int 
 		enc.SetEscapeHTML(false)
 		for _, r := range rows {
 			if err := enc.Encode(r); err != nil {
-				fmt.Fprintf(os.Stderr, "audit: encode row %q: %v\n", r.ClusterID, err)
+				fmt.Fprintf(os.Stderr, "code-audit: encode row %q: %v\n", r.ClusterID, err)
 				return 1
 			}
 		}
 		if _, err := io.Copy(out, &buf); err != nil {
-			fmt.Fprintf(os.Stderr, "audit: write jsonl: %v\n", err)
+			fmt.Fprintf(os.Stderr, "code-audit: write jsonl: %v\n", err)
 			return 1
 		}
 		return 0

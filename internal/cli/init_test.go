@@ -158,7 +158,7 @@ func TestInitReconcilesAfterStateLoss(t *testing.T) {
 
 // TestInitUpgradePullsNewSrc verifies --upgrade refreshes a CLEAN destination
 // when the source file has changed. Without this test, the central
-// `audit init --upgrade` happy path was only exercised indirectly via the
+// `code-audit init --upgrade` happy path was only exercised indirectly via the
 // dirty / state-loss reconciliation tests.
 func TestInitUpgradePullsNewSrc(t *testing.T) {
 	src := setupSource(t)

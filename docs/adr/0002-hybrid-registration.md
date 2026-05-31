@@ -13,5 +13,7 @@ Queries register themselves to the binary via single-line `#! key: value` front-
 
 - Two parsers in the binary: a ~30-line `#!`-prefixed line parser, and a TOML parser (stdlib in Go).
 - The `.jq` files remain hand-runnable with naked `jq`. The `#!` lines are comments to jq.
-- A contributor adding both a Node extractor and a new query learns two grammars. The asymmetry is documented in `docs/pipeline-contract.md` and surfaced in `audit extract --help` / `audit query --help`.
+- A contributor adding both a Node extractor and a new query learns two grammars. The asymmetry is documented in `docs/pipeline-contract.md` and surfaced in `code-audit extract --help` / `code-audit query --help`.
 - Front-matter is versioned (`#! version: 1`, default 1 when absent) so the grammar can evolve without breaking older `.jq` files. Catalog manifests carry their own version field for the same reason.
+
+**Naming note (post-#214):** the binary's command-line name is `code-audit`; this document was authored when the working name was `audit`. The substantive decisions are unchanged.

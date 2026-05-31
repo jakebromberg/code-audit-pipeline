@@ -2,7 +2,7 @@
 # Parity test: every runnable query must produce identical normalized output
 # under gojq and system jq.
 #
-# Why: per docs/adr/0005-go-binary-gojq-engine.md, the audit binary embeds
+# Why: per docs/adr/0005-go-binary-gojq-engine.md, the code-audit binary embeds
 # `itchyny/gojq` to evaluate queries without shelling out to system jq. That
 # only works if gojq's output is byte-equivalent to jq's for our queries. Any
 # query that diverges must declare `#! engine: jq` so the binary shells out

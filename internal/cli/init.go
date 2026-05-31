@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// initSubdirs is the list of source subdirectories `audit init` copies into
+// initSubdirs is the list of source subdirectories `code-audit init` copies into
 // the destination. Per ADR-0006, queries get bundled into the binary too, but
 // init still lays them down on disk so contributors can edit and re-run
 // without rebuilding.
@@ -53,7 +53,7 @@ type InitStateFile struct {
 	SHA256 string `json:"sha256"`
 }
 
-// Init implements `audit init`.
+// Init implements `code-audit init`.
 func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	fset := flag.NewFlagSet("init", flag.ContinueOnError)
 	destFlag := fset.String("dest", "", "destination (default: $XDG_CONFIG_HOME/audit or ~/.config/audit)")
@@ -65,7 +65,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		return 2
 	}
 	if *fromFlag == "" {
-		fmt.Fprintln(stdout, "audit init: --from <path> is required in v1 (point at a local checkout of code-audit-pipeline)")
+		fmt.Fprintln(stdout, "code-audit init: --from <path> is required in v1 (point at a local checkout of code-audit-pipeline)")
 		return 2
 	}
 	if *force {
@@ -74,11 +74,11 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 
 	src, err := filepath.Abs(*fromFlag)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit init: --from path: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: --from path: %v\n", err)
 		return 2
 	}
 	if err := validateSource(src); err != nil {
-		fmt.Fprintf(stdout, "audit init: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: %v\n", err)
 		return 2
 	}
 
@@ -86,17 +86,17 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	if dest == "" {
 		dest = defaultDest()
 		if dest == "" {
-			fmt.Fprintln(stdout, "audit init: cannot resolve default destination; pass --dest")
+			fmt.Fprintln(stdout, "code-audit init: cannot resolve default destination; pass --dest")
 			return 2
 		}
 	}
 	destAbs, err := filepath.Abs(dest)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit init: dest path: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: dest path: %v\n", err)
 		return 2
 	}
 	if err := refuseSymlinkLoop(src, destAbs); err != nil {
-		fmt.Fprintf(stdout, "audit init: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: %v\n", err)
 		return 2
 	}
 
@@ -105,20 +105,20 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	plan, err := buildCopyPlan(ctx, src, destAbs)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			fmt.Fprintln(stdout, "audit init: cancelled")
+			fmt.Fprintln(stdout, "code-audit init: cancelled")
 			return 130
 		}
-		fmt.Fprintf(stdout, "audit init: build plan: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: build plan: %v\n", err)
 		return 2
 	}
 
 	classified, err := classifyFiles(ctx, plan, destAbs, prior)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			fmt.Fprintln(stdout, "audit init: cancelled")
+			fmt.Fprintln(stdout, "code-audit init: cancelled")
 			return 130
 		}
-		fmt.Fprintf(stdout, "audit init: classify: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit init: classify: %v\n", err)
 		return 2
 	}
 
@@ -138,14 +138,14 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 
 	for _, c := range classified {
 		if err := ctx.Err(); err != nil {
-			fmt.Fprintln(stdout, "audit init: cancelled")
+			fmt.Fprintln(stdout, "code-audit init: cancelled")
 			return 130
 		}
 		switch c.state {
 		case stateNew:
 			if !*dryRun {
 				if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
-					fmt.Fprintf(stdout, "audit init: copy %s: %v\n", c.relDest, err)
+					fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 					return 1
 				}
 			}
@@ -158,7 +158,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 			if *upgrade {
 				if !*dryRun {
 					if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
-						fmt.Fprintf(stdout, "audit init: copy %s: %v\n", c.relDest, err)
+						fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 						return 1
 					}
 				}
@@ -172,7 +172,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 			if *force {
 				if !*dryRun {
 					if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
-						fmt.Fprintf(stdout, "audit init: copy %s: %v\n", c.relDest, err)
+						fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 						return 1
 					}
 				}
@@ -200,7 +200,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 
 	if !*dryRun {
 		if err := saveState(destAbs, &newState); err != nil {
-			fmt.Fprintf(stdout, "audit init: save state: %v\n", err)
+			fmt.Fprintf(stdout, "code-audit init: save state: %v\n", err)
 			return 1
 		}
 	}
