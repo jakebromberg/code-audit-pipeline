@@ -59,6 +59,9 @@ var clusterHeaderKeys = []string{
 	"body_line_count",
 	"shape_sig",
 	"body_hash",
+	"base_name",
+	"shapes_match",
+	"shapes_observed",
 }
 
 // formatHeaderValue renders one payload field for the header line. body_hash
@@ -80,6 +83,21 @@ func formatHeaderValue(key string, v any) string {
 			return ""
 		}
 		return "shape_sig=" + s
+	case "base_name":
+		s, _ := v.(string)
+		if s == "" {
+			return ""
+		}
+		return "base_name=" + s
+	case "shapes_match", "shapes_observed":
+		b, ok := v.(bool)
+		if !ok {
+			return ""
+		}
+		if b {
+			return key + "=true"
+		}
+		return key + "=false"
 	default:
 		if n, ok := numericInt(v); ok {
 			return fmt.Sprintf("%s=%d", key, n)
@@ -143,6 +161,7 @@ func renderMember(m map[string]any) string {
 var memberInlineKeys = []string{
 	"async",
 	"param_count",
+	"version",
 }
 
 func formatMemberInline(key string, v any) string {
@@ -155,6 +174,14 @@ func formatMemberInline(key string, v any) string {
 	case "param_count":
 		if n, ok := numericInt(v); ok {
 			return fmt.Sprintf("arity=%d", n)
+		}
+		return ""
+	case "version":
+		// versioned-type-pairs members carry version >= 0. Omit when zero
+		// (the unversioned baseline) to keep the line short; a `v=N` annotation
+		// only surfaces when the member is an explicit version.
+		if n, ok := numericInt(v); ok && n > 0 {
+			return fmt.Sprintf("v=%d", n)
 		}
 		return ""
 	}

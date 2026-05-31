@@ -76,6 +76,12 @@
 #   function-duplicates-near:Loc+Loc              sorted
 #   file-duplicates-exact:pathA+pathB+...         sorted, repo-relative paths
 #   file-duplicates-norm:pathA+pathB+...          sorted, repo-relative paths
+#   versioned-type-pairs:Pkg__BaseName             directed: package then base
+#                                                 name; uses '__' (the
+#                                                 directed-pair separator)
+#                                                 because the package field
+#                                                 can legitimately contain
+#                                                 '/' (e.g., 'Shared/Generated')
 #
 # Pair-based queries (near-duplicates, subset-pairs, etc.) use *location keys*
 # (`package:file:line:name`) on each endpoint rather than bare names because
