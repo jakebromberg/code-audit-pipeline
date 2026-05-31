@@ -1,17 +1,17 @@
-# goreleaser config for the `audit` binary. Driven by tag push on the
+# goreleaser config for the `code-audit` binary. Driven by tag push on the
 # release workflow (.github/workflows/release.yml). See plans/pr4-renderers-report-init.md.
 version: 2
 
-project_name: audit
+project_name: code-audit
 
 before:
   hooks:
     - go generate ./...
 
 builds:
-  - id: audit
-    main: ./cmd/audit
-    binary: audit
+  - id: code-audit
+    main: ./cmd/code-audit
+    binary: code-audit
     env:
       - CGO_ENABLED=0
     goos: [darwin, linux]
@@ -21,10 +21,10 @@ builds:
       - -X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version={{.Version}}
 
 archives:
-  - id: audit
+  - id: code-audit
     formats: [tar.gz]
     name_template: >-
-      audit_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+      code-audit_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     files:
       - LICENSE
       - README.md
@@ -36,14 +36,14 @@ checksum:
 # path ships pre-compiled binaries from the GitHub release rather than building
 # from source, which matches the artifacts the binary already produces.
 homebrew_casks:
-  - name: audit
+  - name: code-audit
     repository:
       owner: jakebromberg
       name: homebrew-tap
     homepage: https://github.com/jakebromberg/code-audit-pipeline
     description: Cross-cutting structural analysis of codebases.
     binaries:
-      - audit
+      - code-audit
 
 release:
   github:

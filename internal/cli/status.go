@@ -13,7 +13,7 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/discovery"
 )
 
-// Status implements `audit status`. Returns the process exit code: 0 if all
+// Status implements `code-audit status`. Returns the process exit code: 0 if all
 // catalogs are fresh and the cwd matches meta.json.root; 1 otherwise.
 func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 	fs := flag.NewFlagSet("status", flag.ContinueOnError)
@@ -28,7 +28,7 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			fmt.Fprintf(out, "audit: getwd: %v\n", err)
+			fmt.Fprintf(out, "code-audit: getwd: %v\n", err)
 			return 2
 		}
 		root = cwd
@@ -37,11 +37,11 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 
 	c, err := auditdir.Open(absRoot, Version)
 	if err != nil {
-		fmt.Fprintf(out, "audit: open .audit: %v\n", err)
+		fmt.Fprintf(out, "code-audit: open .audit: %v\n", err)
 		return 2
 	}
 	if _, err := c.RefreshEnvelopes(); err != nil {
-		fmt.Fprintf(out, "audit: refresh envelopes: %v\n", err)
+		fmt.Fprintf(out, "code-audit: refresh envelopes: %v\n", err)
 		return 2
 	}
 
@@ -72,14 +72,14 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 
 	rows, err := c.Status()
 	if err != nil {
-		fmt.Fprintf(out, "audit: status walk: %v\n", err)
+		fmt.Fprintf(out, "code-audit: status walk: %v\n", err)
 		return 2
 	}
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Kind < rows[j].Kind })
 
 	fmt.Fprintln(out, "\nCatalogs cached:")
 	if len(rows) == 0 {
-		fmt.Fprintln(out, "  (none — run `audit extract <name>` to populate)")
+		fmt.Fprintln(out, "  (none — run `code-audit extract <name>` to populate)")
 	}
 	staleAny := false
 	for _, r := range rows {

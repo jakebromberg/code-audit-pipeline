@@ -1,4 +1,4 @@
-// audit is the binary entry point. Subcommands: extract, query, status.
+// code-audit is the binary entry point. Subcommands: extract, query, status.
 // See plans/pr3-binary-skeleton.md.
 package main
 
@@ -44,16 +44,16 @@ func main() {
 	case "help", "--help", "-h":
 		usage()
 	default:
-		fmt.Fprintf(os.Stderr, "audit: unknown subcommand %q\n", cmd)
+		fmt.Fprintf(os.Stderr, "code-audit: unknown subcommand %q\n", cmd)
 		usage()
 		os.Exit(2)
 	}
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `audit %s — cross-cutting structural analysis
+	fmt.Fprintf(os.Stderr, `code-audit %s — cross-cutting structural analysis
 
-Usage: audit <subcommand> [flags]
+Usage: code-audit <subcommand> [flags]
 
 Subcommands:
   extract  <name>   Run an extractor (typescript, swift, file-hashes) and cache its output in .audit/.

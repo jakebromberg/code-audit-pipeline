@@ -42,7 +42,7 @@ func TestQueriesFlagWins(t *testing.T) {
 func TestQueriesCwdBeatsAuditHome(t *testing.T) {
 	// ADR-0006 prescribes cwd-relative before $AUDIT_HOME — a contributor
 	// working in a repo clone must pick up local edits even when AUDIT_HOME
-	// is set (e.g., by `audit init` in a shell profile).
+	// is set (e.g., by `code-audit init` in a shell profile).
 	cwdRoot := newQueriesDir(t)
 	homeRoot := newQueriesDir(t)
 	embedded := fstest.MapFS{"_canonical.jq": &fstest.MapFile{Data: []byte("# emb")}}

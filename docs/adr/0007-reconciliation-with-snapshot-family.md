@@ -16,7 +16,7 @@ Three areas of overlap surfaced between the audit-binary redesign and the snapsh
 
 - **Keep both copies authoritative.** Drift between catalog file and `meta.json` becomes a maintenance burden with no offsetting benefit.
 - **Drop the #141 envelope in favor of `meta.json`.** Catalog files become opaque when moved off the original machine — breaks #117's diff use case which assumes catalogs are self-describing across snapshot times and machines.
-- **Adopt #141's envelope as authoritative; `meta.json` becomes a local-state index** (chosen). Catalog files remain self-describing. `meta.json` caches an `envelope_summary` per kind so `audit status` doesn't have to read every catalog to report state.
+- **Adopt #141's envelope as authoritative; `meta.json` becomes a local-state index** (chosen). Catalog files remain self-describing. `meta.json` caches an `envelope_summary` per kind so `code-audit status` doesn't have to read every catalog to report state.
 
 ### Envelope terminology
 
@@ -40,7 +40,7 @@ Three areas of overlap surfaced between the audit-binary redesign and the snapsh
                                               schema_version, extractor, fingerprint_v,
                                               generated_at — authority remains the catalog)
                         cli_args             (object recording how this catalog was
-                                              extracted; consumed by audit status' suggestions)
+                                              extracted; consumed by code-audit status' suggestions)
   ```
 
   Fields removed from `meta.json`: `catalog_format` (now in the catalog envelope as `schema_version`), per-extractor `version` (now in the catalog envelope as `extractor.version`).
@@ -49,7 +49,7 @@ Three areas of overlap surfaced between the audit-binary redesign and the snapsh
 
 ### Authority and cache invalidation
 
-The catalog envelope is authoritative. `meta.json`'s `envelope_summary` is a derived cache. On every `audit status` or `audit query`, the binary reads each catalog file's envelope head (the top JSON object, before `entries`) and updates the cache if it differs. If a user hand-edits or replaces a catalog file, the next invocation catches up.
+The catalog envelope is authoritative. `meta.json`'s `envelope_summary` is a derived cache. On every `code-audit status` or `code-audit query`, the binary reads each catalog file's envelope head (the top JSON object, before `entries`) and updates the cache if it differs. If a user hand-edits or replaces a catalog file, the next invocation catches up.
 
 ### What this asks of the existing trackers
 
@@ -61,4 +61,6 @@ The catalog envelope is authoritative. `meta.json`'s `envelope_summary` is a der
 
 ### Future integration (out of scope)
 
-Once the audit binary exists, #142's `pipeline/snapshot.mjs` is a natural candidate to fold in as `audit snapshot capture` (same router, same `manifest.toml` discovery, same lookup-order chain). #117's planned `pipeline/diff.mjs` → `audit diff`. Not required for reconciliation; recorded here so a reader in two years understands why two CLIs may have shipped side by side transiently.
+Once the audit binary exists, #142's `pipeline/snapshot.mjs` is a natural candidate to fold in as `code-audit snapshot capture` (same router, same `manifest.toml` discovery, same lookup-order chain). #117's planned `pipeline/diff.mjs` → `code-audit diff`. Not required for reconciliation; recorded here so a reader in two years understands why two CLIs may have shipped side by side transiently.
+
+**Naming note (post-#214):** the binary's command-line name is `code-audit`; this document was authored when the working name was `audit`. The substantive decisions are unchanged.

@@ -15,10 +15,10 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/frontmatter"
 )
 
-// Query implements `audit query <name> ...`.
+// Query implements `code-audit query <name> ...`.
 func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS) int {
 	if len(argv) < 1 {
-		fmt.Fprintln(stdout, "usage: audit query <name> [flags]")
+		fmt.Fprintln(stdout, "usage: code-audit query <name> [flags]")
 		return 2
 	}
 	name := argv[0]
@@ -35,7 +35,7 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 		return 2
 	}
 	if *format != "text" && *format != "jsonl" {
-		fmt.Fprintf(stdout, "audit: --format must be text or jsonl, got %q\n", *format)
+		fmt.Fprintf(stdout, "code-audit: --format must be text or jsonl, got %q\n", *format)
 		return 2
 	}
 
@@ -50,35 +50,35 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 		Flag: *queriesDir, AuditHome: os.Getenv("AUDIT_HOME"), CWD: absRoot,
 	}, queriesFS)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 3
 	}
 	queryBody, queryFile, cleanup, err := readQuery(qsrc, name)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 3
 	}
 	defer cleanup()
 	header, err := frontmatter.Parse(strings.NewReader(queryBody))
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: front-matter %s: %v\n", name, err)
+		fmt.Fprintf(stdout, "code-audit: front-matter %s: %v\n", name, err)
 		return 2
 	}
 	if !supportsFormat(header.Formats, *format) {
-		fmt.Fprintf(stdout, "audit: query %s does not support format %q (supports: %s)\n",
+		fmt.Fprintf(stdout, "code-audit: query %s does not support format %q (supports: %s)\n",
 			name, *format, strings.Join(header.Formats, ", "))
 		return 2
 	}
 
 	bindings, err := buildBindings(header, argFlags, argJSONFlags)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 2
 	}
 
 	inputPath, slurpfiles, err := wireCatalogs(absRoot, header, catalogPaths)
 	if err != nil {
-		fmt.Fprintf(stdout, "audit: %v\n", err)
+		fmt.Fprintf(stdout, "code-audit: %v\n", err)
 		return 3
 	}
 
@@ -89,7 +89,7 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 	for _, kv := range envFlags {
 		k, v, ok := splitKV(kv)
 		if !ok {
-			fmt.Fprintf(stdout, "audit: --env expects NAME=VALUE, got %q\n", kv)
+			fmt.Fprintf(stdout, "code-audit: --env expects NAME=VALUE, got %q\n", kv)
 			return 2
 		}
 		env[k] = v
@@ -114,7 +114,7 @@ func Query(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS
 	}
 
 	if err := engine.Run(ctx, opts); err != nil {
-		fmt.Fprintf(stdout, "audit: query %s: %v\n", name, err)
+		fmt.Fprintf(stdout, "code-audit: query %s: %v\n", name, err)
 		return 1
 	}
 	return 0

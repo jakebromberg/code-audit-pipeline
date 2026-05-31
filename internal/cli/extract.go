@@ -14,10 +14,10 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
 )
 
-// Extract implements `audit extract <name> ...`.
+// Extract implements `code-audit extract <name> ...`.
 func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	if len(argv) < 1 {
-		fmt.Fprintln(out, "usage: audit extract <name> [flags]")
+		fmt.Fprintln(out, "usage: code-audit extract <name> [flags]")
 		return 2
 	}
 	name := argv[0]
@@ -39,12 +39,12 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		return 2
 	}
 	if *rootFlag == "" {
-		fmt.Fprintln(out, "audit: --root is required")
+		fmt.Fprintln(out, "code-audit: --root is required")
 		return 2
 	}
 	absRoot, err := filepath.Abs(*rootFlag)
 	if err != nil {
-		fmt.Fprintf(out, "audit: abs root: %v\n", err)
+		fmt.Fprintf(out, "code-audit: abs root: %v\n", err)
 		return 2
 	}
 
@@ -62,20 +62,20 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		HomeDir:   homeDirOrEmpty(),
 	})
 	if err != nil {
-		fmt.Fprintf(out, "audit: %v\n", err)
+		fmt.Fprintf(out, "code-audit: %v\n", err)
 		return 3
 	}
 
 	manifestPath := filepath.Join(xdir, name, "manifest.toml")
 	m, err := manifest.Parse(manifestPath)
 	if err != nil {
-		fmt.Fprintf(out, "audit: %v\n", err)
+		fmt.Fprintf(out, "code-audit: %v\n", err)
 		return 2
 	}
 
 	cache, err := auditdir.Open(auditRootAbs, Version)
 	if err != nil {
-		fmt.Fprintf(out, "audit: open cache: %v\n", err)
+		fmt.Fprintf(out, "code-audit: open cache: %v\n", err)
 		return 2
 	}
 
@@ -103,14 +103,14 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		}
 		results, err := extractor.Run(ctx, extractorDir, cmd, args, catalogsDir)
 		if err != nil {
-			fmt.Fprintf(out, "audit: extract %s/%s: %v\n", name, cmd.Catalog, err)
+			fmt.Fprintf(out, "code-audit: extract %s/%s: %v\n", name, cmd.Catalog, err)
 			firstErr = err
 			break
 		}
 		for _, r := range results {
 			outBase := filepath.Base(r.OutputPath)
 			if err := cache.PutCatalog(r.Catalog, outBase, r.CLIArgs); err != nil {
-				fmt.Fprintf(out, "audit: cache put %s: %v\n", r.Catalog, err)
+				fmt.Fprintf(out, "code-audit: cache put %s: %v\n", r.Catalog, err)
 				firstErr = err
 				break
 			}
@@ -121,21 +121,21 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 		ran++
 	}
 	if ran == 0 && firstErr == nil {
-		fmt.Fprintf(out, "audit: no [[command]] blocks matched (manifest has %d, filter selected 0)\n", len(m.Commands))
+		fmt.Fprintf(out, "code-audit: no [[command]] blocks matched (manifest has %d, filter selected 0)\n", len(m.Commands))
 		return 2
 	}
 	// Save what we have even on partial failure — catalog files for completed
 	// commands are already on disk, so meta.json must record them too.
 	if ran > 0 {
 		if err := cache.Save(); err != nil {
-			fmt.Fprintf(out, "audit: save cache: %v\n", err)
+			fmt.Fprintf(out, "code-audit: save cache: %v\n", err)
 			return 1
 		}
 	}
 	if firstErr != nil {
 		return 1
 	}
-	fmt.Fprintf(out, "audit: extract %s ran %d command(s)\n", name, ran)
+	fmt.Fprintf(out, "code-audit: extract %s ran %d command(s)\n", name, ran)
 	return 0
 }
 

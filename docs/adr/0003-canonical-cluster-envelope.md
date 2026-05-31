@@ -15,5 +15,7 @@ Every query declares a `shape` in its front-matter — `cluster`, `pair`, or `me
 
 - The JSONL envelope is a stable contract. Existing queries undergo a one-time field normalization (`decls` → `members`, `a`/`b` → `left`/`right`, etc.) under PR 1 of the migration plan. After that, field names are pinned and any future change requires a `catalog_format` bump.
 - Both the markdown report and the V7 agent layer consume the same JSONL. The schema work pays double — agents that consume cluster output get a uniform contract regardless of which query produced the row.
-- Interactive text mode (`audit query exact-duplicates` on a TTY) is unaffected. The text rendering remains inside each `.jq` file's branch on `output_format`. Only the report path routes through JSONL.
-- Genuinely novel query output shapes require either a new dispatcher (one Go function plus a `shape:` value addition) or an explicit text-only opt-out where the query is excluded from `audit report`.
+- Interactive text mode (`code-audit query exact-duplicates` on a TTY) is unaffected. The text rendering remains inside each `.jq` file's branch on `output_format`. Only the report path routes through JSONL.
+- Genuinely novel query output shapes require either a new dispatcher (one Go function plus a `shape:` value addition) or an explicit text-only opt-out where the query is excluded from `code-audit report`.
+
+**Naming note (post-#214):** the binary's command-line name is `code-audit`; this document was authored when the working name was `audit`. The substantive decisions are unchanged.

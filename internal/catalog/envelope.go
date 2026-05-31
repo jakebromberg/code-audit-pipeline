@@ -2,7 +2,7 @@
 // object on each catalog file holding schema_version, extractor metadata,
 // and entries. ADR-0007 amends ADR-0001: the catalog file is authoritative,
 // `.audit/meta.json` caches a derived `envelope_summary`. Refresh on every
-// `audit status` / `audit query` to catch hand-edits.
+// `code-audit status` / `code-audit query` to catch hand-edits.
 package catalog
 
 import (
@@ -17,7 +17,7 @@ import (
 // EnvelopeSummary mirrors what `meta.json.catalogs[<kind>].envelope_summary`
 // caches. Field set follows ADR-0007. Forward-compatible: unknown top-level
 // keys are preserved in Extra so a future #141 schema bump (e.g., a
-// fingerprint_v field) shows up under audit status without a binary change.
+// fingerprint_v field) shows up under code-audit status without a binary change.
 type EnvelopeSummary struct {
 	SchemaVersion string          `json:"schema_version,omitempty"`
 	Extractor     json.RawMessage `json:"extractor,omitempty"`

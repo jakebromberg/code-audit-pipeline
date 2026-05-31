@@ -113,7 +113,7 @@ jobs:
         run: go test ./...
 
       - name: Go build
-        run: go build -o /tmp/audit ./cmd/audit
+        run: go build -o /tmp/code-audit ./cmd/code-audit
 
       - name: Verify ldflags Version override is wired
         # The release pipeline injects the tag via `-ldflags -X cli.Version=...`.
@@ -122,8 +122,8 @@ jobs:
         # first tag push, where it would ship a binary stamped with the
         # build-time default.
         run: |
-          go build -ldflags="-X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version=ci-verify" -o /tmp/audit-version ./cmd/audit
-          got=$(/tmp/audit-version version | tr -d '[:space:]')
+          go build -ldflags="-X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version=ci-verify" -o /tmp/code-audit-version ./cmd/code-audit
+          got=$(/tmp/code-audit-version version | tr -d '[:space:]')
           if [ "$got" != "ci-verify" ]; then
             echo "ldflags -X cli.Version was ignored (got=$got). Is Version a const? It must be a var." >&2
             exit 1
