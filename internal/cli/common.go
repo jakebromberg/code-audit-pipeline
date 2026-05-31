@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -68,10 +69,10 @@ func buildBindings(h *frontmatter.Header, args, argjsons stringList) ([]engine.B
 		// `$x >= 0.7` silently false-misses. See #216.
 		if decl.Type == "number" && !b.IsJSON {
 			s, _ := b.Value.(string)
-			f, err := strconv.ParseFloat(s, 64)
+			f, err := parseFiniteFloat(s)
 			if err != nil {
 				// typecheckBinding already validated this; defensive only.
-				return nil, fmt.Errorf("arg %s declared number, got %q", decl.Name, s)
+				return nil, fmt.Errorf("arg %s declared number, got %q: %w", decl.Name, s, err)
 			}
 			b.Value = f
 			b.IsJSON = true
@@ -112,7 +113,7 @@ func parseDefault(typ, def string) any {
 	}
 	switch typ {
 	case "number":
-		f, err := strconv.ParseFloat(def, 64)
+		f, err := parseFiniteFloat(def)
 		if err == nil {
 			return f
 		}
@@ -130,8 +131,8 @@ func typecheckBinding(decl frontmatter.ArgDecl, b engine.Binding) error {
 	case "number":
 		if !b.IsJSON {
 			s, _ := b.Value.(string)
-			if _, err := strconv.ParseFloat(s, 64); err != nil {
-				return fmt.Errorf("arg %s declared number, got %q", decl.Name, s)
+			if _, err := parseFiniteFloat(s); err != nil {
+				return fmt.Errorf("arg %s declared number, got %q: %w", decl.Name, s, err)
 			}
 		}
 	case "string":
@@ -141,6 +142,21 @@ func typecheckBinding(decl frontmatter.ArgDecl, b engine.Binding) error {
 		}
 	}
 	return nil
+}
+
+// parseFiniteFloat wraps strconv.ParseFloat and additionally rejects NaN and
+// ±Inf, which ParseFloat happily accepts for the literal strings "NaN",
+// "Inf", "+Inf", "-Inf". Non-finite values pass typecheck but blow up later
+// in engine.Run at json.Marshal with a cryptic "unsupported value" error.
+func parseFiniteFloat(s string) (float64, error) {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return 0, fmt.Errorf("non-finite numeric value not allowed")
+	}
+	return f, nil
 }
 
 // wireCatalogs resolves the positional catalog input and the slurpfile

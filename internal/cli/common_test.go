@@ -144,6 +144,67 @@ func TestBuildBindings_NumberArgAndArgjsonEquivalent(t *testing.T) {
 	}
 }
 
+// TestBuildBindings_NumberArgRejectsNonFinite locks in the post-review fix:
+// strconv.ParseFloat accepts "NaN", "Inf", "+Inf", "-Inf" — these must be
+// rejected at the CLI layer rather than blowing up later in engine.Run at
+// json.Marshal with a cryptic "unsupported value" error.
+func TestBuildBindings_NumberArgRejectsNonFinite(t *testing.T) {
+	for _, s := range []string{"NaN", "Inf", "+Inf", "-Inf"} {
+		t.Run(s, func(t *testing.T) {
+			h := &frontmatter.Header{
+				Args: []frontmatter.ArgDecl{
+					{Name: "threshold", Type: "number", Required: true},
+				},
+			}
+			_, err := buildBindings(h, stringList{"threshold=" + s}, nil)
+			if err == nil {
+				t.Fatalf("expected error for --arg threshold=%s, got nil", s)
+			}
+			if !strings.Contains(err.Error(), "threshold") {
+				t.Errorf("error %q should mention arg name", err.Error())
+			}
+			if !strings.Contains(err.Error(), "non-finite") {
+				t.Errorf("error %q should mention non-finite to distinguish from generic parse error", err.Error())
+			}
+		})
+	}
+}
+
+// TestBuildBindings_NumberArgjsonRejectsNonFinite confirms --argjson also
+// rejects non-finite literals. (Strict JSON forbids NaN/Inf, so encoding/json
+// already rejects bare `NaN`; this test pins the behavior.)
+func TestBuildBindings_NumberArgjsonRejectsNonFinite(t *testing.T) {
+	h := &frontmatter.Header{
+		Args: []frontmatter.ArgDecl{
+			{Name: "threshold", Type: "number", Required: true},
+		},
+	}
+	_, err := buildBindings(h, nil, stringList{"threshold=NaN"})
+	if err == nil {
+		t.Fatal("expected --argjson threshold=NaN to be rejected, got nil")
+	}
+}
+
+// TestBuildBindings_NumberArgDefaultRejectsNonFinite confirms a front-matter
+// default like `arg: threshold number NaN` does not silently slip a NaN
+// through to engine.Run.
+func TestBuildBindings_NumberArgDefaultRejectsNonFinite(t *testing.T) {
+	h := &frontmatter.Header{
+		Args: []frontmatter.ArgDecl{
+			{Name: "threshold", Type: "number", Default: "NaN", Required: false},
+		},
+	}
+	bs, err := buildBindings(h, nil, nil)
+	if err != nil {
+		t.Fatalf("buildBindings: %v", err)
+	}
+	// parseFiniteFloat fails on "NaN" → parseDefault falls back to the raw
+	// string. The Value should therefore NOT be a NaN float64.
+	if f, ok := bs[0].Value.(float64); ok {
+		t.Errorf("Value: got float64(%v), want fallback string (parseFiniteFloat must reject NaN)", f)
+	}
+}
+
 // TestBuildBindings_NumberArgDefaultIsJSON confirms the default-value
 // path also produces a JSON number when the decl is number-typed.
 func TestBuildBindings_NumberArgDefaultIsJSON(t *testing.T) {
