@@ -127,7 +127,7 @@ runs:
       shell: bash
       run: |
         set -Eeuo pipefail
-        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
         cd "$pipeline_root/extractors/typescript"
         npm ci
 
@@ -143,9 +143,9 @@ runs:
 
         if [ "$version" = "build-from-source" ]; then
           # Caller is exercising the action against its own source checkout.
-          # Build the binary from ${{ github.action_path }}/../.. (the
+          # Build the binary from ${{ github.action_path }}/../../.. (the
           # composite's owning repo) and put it on PATH.
-          pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+          pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
           echo "Building code-audit from source at $pipeline_root" >&2
           (cd "$pipeline_root" && go generate ./... && go build -o /tmp/code-audit ./cmd/code-audit)
           install -m 0755 /tmp/code-audit /usr/local/bin/code-audit
@@ -209,7 +209,7 @@ runs:
         set -Eeuo pipefail
         # Resolve to absolute paths so the bash flags array is stable
         # regardless of which directory `code-audit` ends up running from.
-        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
         extractors_dir="$pipeline_root/extractors"
         root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
         audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
@@ -240,7 +240,7 @@ runs:
         AUDIT_CORE_INCLUDE_TESTS: ${{ inputs.include-tests }}
       run: |
         set -Eeuo pipefail
-        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
         extractors_dir="$pipeline_root/extractors"
         root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
         audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
