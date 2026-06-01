@@ -1,0 +1,266 @@
+name: Publish catalog (reusable)
+
+# Reusable workflow that any sibling repo can call to publish a code-audit
+# catalog to the cross-repo R2 substrate. Wraps the `audit-core` composite
+# (PR 1 / #239) and `pipeline/publish-catalog.sh` (#153) into a one-screen
+# consumer interface. The reusable + composite split is intentional: lower-
+# level callers (e.g. #123's PR-comment Action) consume the composite
+# directly; this workflow is the convenience entry for the publish path.
+
+on:
+  workflow_call:
+    inputs:
+      bucket-name:
+        description: >-
+          S3-API bucket name where catalogs land (e.g. "wxyc-code-audit").
+          Forwarded to publish-catalog.sh --bucket-name.
+        type: string
+        required: true
+      bucket-endpoint:
+        description: >-
+          S3-API endpoint URL. For Cloudflare R2 this is
+          https://<account-id>.r2.cloudflarestorage.com.
+          Forwarded to publish-catalog.sh --bucket-endpoint.
+        type: string
+        required: true
+      bucket-region:
+        description: >-
+          AWS region tag passed to aws-actions/configure-aws-credentials.
+          R2 ignores region routing but the AWS SDK requires a non-empty
+          value; the default "auto" is correct for R2. Override only when
+          publishing to a non-R2 S3 backend that pins a real region.
+        type: string
+        required: false
+        default: auto
+      role-to-assume:
+        description: >-
+          OIDC role ARN whose trust policy permits this repo's
+          GitHub Actions to assume it. When set, used in preference to
+          static R2 access-key secrets (the recommended path). When empty,
+          the workflow falls back to the r2-access-key-id / r2-secret-
+          access-key secrets — see docs/audit-publish-setup.md for the
+          tradeoff.
+        type: string
+        required: false
+        default: ''
+      audit-binary-version:
+        description: >-
+          code-audit release tag to install. See the audit-core composite
+          for the resolution rules. Default "v1" tracks the v1 major
+          series; consumers in operational-critical contexts may want to
+          pin a fully-qualified "v1.2.3".
+        type: string
+        required: false
+        default: v1
+      languages:
+        description: >-
+          Optional comma-separated language override forwarded to the
+          composite (e.g. "typescript,swift"). Empty means auto-detect
+          from repo-root markers.
+        type: string
+        required: false
+        default: ''
+      root:
+        description: Repo root to scan. Defaults to the caller's checkout root.
+        type: string
+        required: false
+        default: '.'
+      include-tests:
+        description: Pass --include-tests to every extractor.
+        type: boolean
+        required: false
+        default: false
+      include-file-hashes:
+        description: >-
+          Include the polyglot file-hashes catalog. **Default false.** The
+          file-hashes extractor still emits a bare JSON array on disk;
+          publish-catalog.sh enforces the v1.1 wrapper schema and would
+          reject the run. Flip to true once #141 (file-hashes wrapper
+          migration) lands. See docs/audit-publish-setup.md for status.
+        type: boolean
+        required: false
+        default: false
+      runner:
+        description: >-
+          Runner label for the publish job. Default ubuntu-latest. Repos
+          containing Swift sources must override to macos-latest (the
+          Swift toolchain is unavailable on the Ubuntu runner image).
+          A future iteration may split detection into a lightweight pre-
+          job that picks the runner automatically; for v1 the choice is
+          the caller's.
+        type: string
+        required: false
+        default: ubuntu-latest
+    secrets:
+      r2-access-key-id:
+        description: >-
+          R2 / S3 access key. Required when role-to-assume is empty.
+          Ignored when role-to-assume is set (OIDC takes precedence).
+        required: false
+      r2-secret-access-key:
+        description: R2 / S3 secret access key. Required when role-to-assume is empty.
+        required: false
+    outputs:
+      published-prefix:
+        description: >-
+          The "by-repo/<flat-repo>/<iso>_<short-sha>/" prefix the run
+          uploaded under. Useful for downstream notification steps.
+        value: ${{ jobs.publish.outputs.published-prefix }}
+      catalogs-published:
+        description: Number of catalog files uploaded.
+        value: ${{ jobs.publish.outputs.catalogs-published }}
+
+# OIDC needs `id-token: write`; static-key callers can drop that down to
+# `id-token: none` but the default permits both auth paths.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      published-prefix: ${{ steps.publish.outputs.published-prefix }}
+      catalogs-published: ${{ steps.publish.outputs.catalogs-published }}
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Resolve audit-core ref
+        # The composite lives in this repo's `.github/actions/audit-core`.
+        # We pin to the same tag as the binary so a single version input
+        # advances both the catalog format and the extractor surface in
+        # lockstep.
+        id: ref
+        shell: bash
+        env:
+          BINARY_VERSION: ${{ inputs.audit-binary-version }}
+        run: |
+          set -Eeuo pipefail
+          # build-from-source isn't a valid choice for sibling-repo
+          # callers — it would require the caller to have this repo's
+          # source on disk. Refuse with an actionable error.
+          if [ "$BINARY_VERSION" = "build-from-source" ]; then
+            echo "publish-catalog-reusable: audit-binary-version=build-from-source is only valid for this repo's own CI, not for sibling consumers." >&2
+            exit 1
+          fi
+          echo "ref=$BINARY_VERSION" >> "$GITHUB_OUTPUT"
+
+      # Checkout the audit pipeline so we have publish-catalog.sh + the
+      # composite + extractors available at a known path. The composite
+      # itself can be invoked via `uses:` (which would auto-checkout) but
+      # we need publish-catalog.sh on the filesystem regardless, so a
+      # single checkout under a fixed path simplifies pathing.
+      - name: Checkout code-audit-pipeline
+        uses: actions/checkout@v6
+        with:
+          repository: jakebromberg/code-audit-pipeline
+          ref: ${{ steps.ref.outputs.ref }}
+          path: .code-audit-pipeline
+          fetch-depth: 1
+
+      - name: Run audit-core
+        id: audit
+        uses: ./.code-audit-pipeline/.github/actions/audit-core
+        with:
+          root: ${{ inputs.root }}
+          languages: ${{ inputs.languages }}
+          binary-version: ${{ inputs.audit-binary-version }}
+          include-tests: ${{ inputs.include-tests }}
+          include-file-hashes: ${{ inputs.include-file-hashes }}
+          # Put .audit/ under the runner temp dir, not the caller's
+          # checkout, so a misconfigured caller can't accidentally commit
+          # catalog files back to their own repo.
+          audit-root: ${{ runner.temp }}/audit
+          github-token: ${{ github.token }}
+
+      - name: Configure R2 credentials (OIDC)
+        if: inputs.role-to-assume != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role-to-assume }}
+          aws-region: ${{ inputs.bucket-region }}
+
+      - name: Configure R2 credentials (static keys)
+        if: inputs.role-to-assume == ''
+        shell: bash
+        env:
+          ACCESS_KEY_ID: ${{ secrets.r2-access-key-id }}
+          SECRET_ACCESS_KEY: ${{ secrets.r2-secret-access-key }}
+          AWS_REGION: ${{ inputs.bucket-region }}
+        run: |
+          set -Eeuo pipefail
+          if [ -z "$ACCESS_KEY_ID" ] || [ -z "$SECRET_ACCESS_KEY" ]; then
+            echo "publish-catalog-reusable: role-to-assume is empty and r2-access-key-id / r2-secret-access-key secrets are not set. Configure either OIDC (recommended — see docs/audit-publish-setup.md) or static keys." >&2
+            exit 1
+          fi
+          {
+            echo "AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID"
+            echo "AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY"
+            echo "AWS_REGION=$AWS_REGION"
+            echo "AWS_DEFAULT_REGION=$AWS_REGION"
+          } >> "$GITHUB_ENV"
+
+      - name: Publish catalog to R2
+        id: publish
+        shell: bash
+        env:
+          CATALOGS_DIR: ${{ steps.audit.outputs.catalogs-dir }}
+          BUCKET_NAME: ${{ inputs.bucket-name }}
+          BUCKET_ENDPOINT: ${{ inputs.bucket-endpoint }}
+        run: |
+          set -Eeuo pipefail
+          if [ -z "$CATALOGS_DIR" ]; then
+            echo "publish-catalog-reusable: audit-core emitted an empty catalogs-dir output. No language extractors ran and include-file-hashes was off; there is nothing to publish." >&2
+            exit 1
+          fi
+          if [ ! -d "$CATALOGS_DIR" ]; then
+            echo "publish-catalog-reusable: catalogs-dir does not exist on disk: $CATALOGS_DIR" >&2
+            exit 1
+          fi
+
+          # Capture publish-catalog.sh's output prefix from its [2/4] log
+          # line so we can surface it as a workflow output. The script
+          # logs to stderr; we tee a copy through a fifo to scrape it
+          # while still letting the original stderr flow to the job log.
+          log="$(mktemp)"
+          bash "$GITHUB_WORKSPACE/.code-audit-pipeline/pipeline/publish-catalog.sh" \
+            --repo "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --catalogs-dir "$CATALOGS_DIR" \
+            --bucket-name "$BUCKET_NAME" \
+            --bucket-endpoint "$BUCKET_ENDPOINT" \
+            2> >(tee "$log" >&2)
+
+          # The published prefix lands in the trailing "Published … to …/"
+          # line; the count is the number of "uploaded by-repo/.../<file>"
+          # lines. Both grep against the captured stderr.
+          prefix="$(grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' "$log" | head -1 | sed 's:/$::')"
+          count="$(grep -cE '^  uploaded by-repo/' "$log" || true)"
+          echo "published-prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "catalogs-published=$count" >> "$GITHUB_OUTPUT"
+          rm -f "$log"
+
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          PREFIX: ${{ steps.publish.outputs.published-prefix }}
+          COUNT: ${{ steps.publish.outputs.catalogs-published }}
+          LANGS: ${{ steps.audit.outputs.languages-detected }}
+          BIN_VERSION: ${{ steps.audit.outputs.binary-version-used }}
+        run: |
+          {
+            echo "## code-audit publication"
+            echo ""
+            echo "| key | value |"
+            echo "| --- | --- |"
+            echo "| Repo | \`$GITHUB_REPOSITORY\` |"
+            echo "| Commit | \`$GITHUB_SHA\` |"
+            echo "| Languages | \`${LANGS:-<none>}\` |"
+            echo "| Binary | \`${BIN_VERSION:-<unknown>}\` |"
+            echo "| Prefix | \`${PREFIX:-<not published>}\` |"
+            echo "| Catalogs uploaded | \`${COUNT:-0}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
