@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,10 +12,14 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jakebromberg/code-audit-pipeline/internal/initstate"
+	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
 )
 
 // initSubdirs is the list of source subdirectories `code-audit init` copies into
@@ -23,18 +28,10 @@ import (
 // without rebuilding.
 var initSubdirs = []string{"extractors", "pipeline/queries"}
 
-// initSkipDirs is the per-extractor scratch / vendor directories that must
-// never be copied. They balloon the destination and break repeat-init.
-var initSkipDirs = map[string]bool{
-	"node_modules": true,
-	".build":       true,
-	".swiftpm":     true,
-	"DerivedData":  true,
-	"Pods":         true,
-	"dist":         true,
-	"build":        true,
-	"coverage":     true,
-}
+// initSkipDirs delegates to initstate.SkipDirs so the genembed generator and
+// the init walk prune the same directory set. A drift guard test in
+// internal/genembed asserts the //go:generate -skip CSV matches this map.
+var initSkipDirs = initstate.SkipDirs
 
 // stateFile records each copied file's pristine sha256 so subsequent
 // invocations can distinguish locally-modified files from clean upgrades.
@@ -42,16 +39,49 @@ const stateFile = ".audit-init/state.json"
 
 // InitState is the on-disk shape of stateFile.
 type InitState struct {
-	AuditVersion    string                     `json:"audit_version"`
-	SourceRepoRoot  string                     `json:"source_repo_root"`
-	SourceCommitSHA string                     `json:"source_commit_sha,omitempty"`
-	AppliedAt       string                     `json:"applied_at"`
-	Files           map[string]InitStateFile   `json:"files"`
+	AuditVersion    string                   `json:"audit_version"`
+	SourceRepoRoot  string                   `json:"source_repo_root"`
+	SourceCommitSHA string                   `json:"source_commit_sha,omitempty"`
+	AppliedAt       string                   `json:"applied_at"`
+	Files           map[string]InitStateFile `json:"files"`
+	// Extractors is the per-extractor bootstrap-tracking map. May be nil
+	// when state.json was written by a binary older than the per-extractor
+	// tracking change; use EnsureExtractorsMap on any write path.
+	Extractors map[string]ExtractorState `json:"extractors,omitempty"`
 }
 
 type InitStateFile struct {
 	SHA256 string `json:"sha256"`
 }
+
+// ExtractorState is the per-extractor record in state.json. BootstrapStatus
+// transitions: pending → ok | failed | n-a. The Extract command treats nil
+// or absent entries as pending.
+type ExtractorState struct {
+	BootstrapStatus string    `json:"bootstrap_status"` // ok|failed|pending|n-a
+	BootstrappedAt  time.Time `json:"bootstrapped_at,omitempty"`
+	SourceSHA       string    `json:"source_sha,omitempty"` // combined SHA of source files at last successful bootstrap
+	LastError       string    `json:"last_error,omitempty"` // captured stderr summary when status==failed
+}
+
+// EnsureExtractorsMap returns the Extractors map, initialising it if nil.
+// All write paths must go through this helper to avoid nil-map panics on
+// state loaded from older binaries that omitted the field.
+func (s *InitState) EnsureExtractorsMap() map[string]ExtractorState {
+	if s.Extractors == nil {
+		s.Extractors = map[string]ExtractorState{}
+	}
+	return s.Extractors
+}
+
+// Bootstrap status constants. Values stored in state.json; do not change
+// without a migration plan.
+const (
+	BootstrapPending = "pending"
+	BootstrapOK      = "ok"
+	BootstrapFailed  = "failed"
+	BootstrapNA      = "n-a"
+)
 
 // Init implements `code-audit init`.
 func Init(ctx context.Context, argv []string, stdout io.Writer) int {
@@ -123,18 +153,27 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	}
 
 	var (
-		copiedNew  int
-		upgraded   int
+		copiedNew    int
+		upgraded     int
 		skippedDirty int
-		newState   = InitState{
+		newState     = InitState{
 			AuditVersion:    Version,
 			SourceRepoRoot:  src,
 			SourceCommitSHA: gitHeadSHA(src),
 			AppliedAt:       time.Now().UTC().Format(time.RFC3339),
 			Files:           map[string]InitStateFile{},
 		}
-		dirtyExit bool
+		dirtyExit        bool
+		extractorTouched = map[string]bool{}
 	)
+
+	// Carry over prior per-extractor state; the bootstrap pass below
+	// overwrites entries for touched extractors only.
+	if prior != nil && prior.Extractors != nil {
+		for name, st := range prior.Extractors {
+			newState.EnsureExtractorsMap()[name] = st
+		}
+	}
 
 	for _, c := range classified {
 		if err := ctx.Err(); err != nil {
@@ -151,6 +190,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 			}
 			newState.Files[c.relDest] = InitStateFile{SHA256: c.srcSHA}
 			copiedNew++
+			noteExtractorTouched(c.relDest, extractorTouched)
 			if *dryRun {
 				fmt.Fprintf(stdout, "would copy NEW %s\n", c.relDest)
 			}
@@ -163,6 +203,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 					}
 				}
 				upgraded++
+				noteExtractorTouched(c.relDest, extractorTouched)
 				if *dryRun {
 					fmt.Fprintf(stdout, "would upgrade CLEAN %s\n", c.relDest)
 				}
@@ -177,6 +218,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 					}
 				}
 				upgraded++
+				noteExtractorTouched(c.relDest, extractorTouched)
 				if *dryRun {
 					fmt.Fprintf(stdout, "would overwrite DIRTY %s\n", c.relDest)
 				}
@@ -199,6 +241,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 	}
 
 	if !*dryRun {
+		bootstrapTouchedExtractors(ctx, destAbs, extractorTouched, &newState, stdout)
 		if err := saveState(destAbs, &newState); err != nil {
 			fmt.Fprintf(stdout, "code-audit init: save state: %v\n", err)
 			return 1
@@ -522,4 +565,160 @@ func gitHeadSHA(src string) string {
 		return ""
 	}
 	return headRef
+}
+
+// noteExtractorTouched records that the file at relDest (forward-slash) lies
+// under extractors/<name>/. When it does, the named extractor is added to
+// the touched set so the bootstrap pass knows to re-run for it.
+func noteExtractorTouched(relDest string, touched map[string]bool) {
+	const prefix = "extractors/"
+	if !strings.HasPrefix(relDest, prefix) {
+		return
+	}
+	tail := relDest[len(prefix):]
+	idx := strings.IndexByte(tail, '/')
+	if idx <= 0 {
+		return
+	}
+	touched[tail[:idx]] = true
+}
+
+// bootstrapTouchedExtractors parses each touched extractor's manifest and
+// runs its declared [runtime].bootstrap argv. Outcomes (ok | failed | n-a)
+// are recorded in state.Extractors. Failures do not abort the init —
+// state.json carries the failed status so `extract` can retry next call.
+func bootstrapTouchedExtractors(ctx context.Context, destAbs string, touched map[string]bool, state *InitState, stdout io.Writer) {
+	if len(touched) == 0 {
+		return
+	}
+	names := make([]string, 0, len(touched))
+	for n := range touched {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	extractorsRoot := filepath.Join(destAbs, "extractors")
+	for _, name := range names {
+		extractorDir := filepath.Join(extractorsRoot, name)
+		manifestPath := filepath.Join(extractorDir, "manifest.toml")
+		now := time.Now().UTC()
+
+		m, err := manifest.Parse(manifestPath)
+		if err != nil {
+			fmt.Fprintf(stdout, "init: bootstrap %s: parse manifest: %v\n", name, err)
+			state.EnsureExtractorsMap()[name] = ExtractorState{
+				BootstrapStatus: BootstrapFailed,
+				BootstrappedAt:  now,
+				LastError:       err.Error(),
+			}
+			continue
+		}
+
+		if len(m.Runtime.Bootstrap) == 0 {
+			state.EnsureExtractorsMap()[name] = ExtractorState{
+				BootstrapStatus: BootstrapNA,
+				BootstrappedAt:  now,
+			}
+			continue
+		}
+
+		if err := runBootstrap(ctx, extractorDir, m); err != nil {
+			fmt.Fprintf(stdout, "init: bootstrap %s: %v\n", name, err)
+			if hint := strings.TrimSpace(m.Runtime.SetupHint); hint != "" {
+				fmt.Fprintf(stdout, "init: bootstrap %s hint: %s\n", name, hint)
+			}
+			state.EnsureExtractorsMap()[name] = ExtractorState{
+				BootstrapStatus: BootstrapFailed,
+				BootstrappedAt:  now,
+				LastError:       err.Error(),
+			}
+			continue
+		}
+
+		state.EnsureExtractorsMap()[name] = ExtractorState{
+			BootstrapStatus: BootstrapOK,
+			BootstrappedAt:  now,
+		}
+	}
+}
+
+// bootstrapStderrCap bounds captured stdout/stderr per stream so a noisy
+// installer (npm spamming progress bars) can't OOM the binary.
+const bootstrapStderrCap = 64 * 1024
+
+// BootstrapError wraps a bootstrap-command failure. Stderr is truncated at
+// bootstrapStderrCap; LastError summaries persisted in state.json come from
+// String().
+type BootstrapError struct {
+	Command []string
+	Stderr  []byte
+	Stdout  []byte
+	Exit    int
+	Cause   error
+}
+
+func (e *BootstrapError) Error() string {
+	cmd := strings.Join(e.Command, " ")
+	if len(e.Stderr) == 0 {
+		return fmt.Sprintf("bootstrap %q failed (exit %d): %v", cmd, e.Exit, e.Cause)
+	}
+	return fmt.Sprintf("bootstrap %q failed (exit %d): %v\nstderr: %s",
+		cmd, e.Exit, e.Cause, strings.TrimSpace(string(e.Stderr)))
+}
+
+func (e *BootstrapError) Unwrap() error { return e.Cause }
+
+// cappedWriter is an io.Writer that silently drops bytes once `cap` total
+// bytes have been buffered. Writes after the cap still report full
+// success (to keep the spawned process happy) but discard the payload.
+type cappedWriter struct {
+	buf *bytes.Buffer
+	cap int
+}
+
+func (c *cappedWriter) Write(p []byte) (int, error) {
+	remaining := c.cap - c.buf.Len()
+	if remaining <= 0 {
+		return len(p), nil
+	}
+	if len(p) > remaining {
+		c.buf.Write(p[:remaining])
+		return len(p), nil
+	}
+	c.buf.Write(p)
+	return len(p), nil
+}
+
+// runBootstrap runs m.Runtime.Bootstrap as argv with cwd set to extractorDir.
+// Returns nil immediately when Bootstrap is empty (the "n-a" path's
+// responsibility lies with the caller, which inspects len(Bootstrap)).
+// Returns *BootstrapError on non-zero exit; the same error wraps ctx.Err()
+// when the context is canceled mid-run.
+func runBootstrap(ctx context.Context, extractorDir string, m *manifest.Manifest) error {
+	argv := m.Runtime.Bootstrap
+	if len(argv) == 0 {
+		return nil
+	}
+	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
+	cmd.Dir = extractorDir
+	var stderrBuf, stdoutBuf bytes.Buffer
+	cmd.Stderr = &cappedWriter{buf: &stderrBuf, cap: bootstrapStderrCap}
+	cmd.Stdout = &cappedWriter{buf: &stdoutBuf, cap: bootstrapStderrCap}
+	runErr := cmd.Run()
+	if runErr == nil {
+		return nil
+	}
+	be := &BootstrapError{
+		Command: argv,
+		Stderr:  stderrBuf.Bytes(),
+		Stdout:  stdoutBuf.Bytes(),
+		Cause:   runErr,
+	}
+	if ee, ok := runErr.(*exec.ExitError); ok {
+		be.Exit = ee.ExitCode()
+	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		be.Cause = ctxErr
+	}
+	return be
 }

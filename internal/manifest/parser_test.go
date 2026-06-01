@@ -3,6 +3,7 @@ package manifest
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -83,7 +84,7 @@ catalog = "c"
 output_file = "c.json"
 invocation = ["x", "--output", "{output}"]
 `,
-		"wrong schema_version": `schema_version = 2
+		"out-of-range schema_version": `schema_version = 99
 [extractor]
 name = "x"
 version = "0.0.1"
@@ -132,5 +133,147 @@ optional_args = [{ flag = "--y", placeholder = "{y}", when = "bogus" }]
 				t.Errorf("expected error for %s, got nil", name)
 			}
 		})
+	}
+}
+
+// Test 5a — schema 1 without [runtime].bootstrap parses; Bootstrap is nil.
+func TestParseSchema1WithoutBootstrap(t *testing.T) {
+	p := writeManifest(t, `schema_version = 1
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+
+[runtime]
+requires = ["node >= 18"]
+setup_hint = "run npm install"
+`)
+	m, err := Parse(p)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if m.SchemaVersion != SchemaVersion1 {
+		t.Errorf("SchemaVersion = %d, want %d", m.SchemaVersion, SchemaVersion1)
+	}
+	if m.Runtime.Bootstrap != nil {
+		t.Errorf("Bootstrap = %v, want nil", m.Runtime.Bootstrap)
+	}
+}
+
+// Test 5b — schema 1 WITH [runtime].bootstrap is rejected at parse time.
+func TestParseSchema1WithBootstrapRejected(t *testing.T) {
+	p := writeManifest(t, `schema_version = 1
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+
+[runtime]
+bootstrap = ["npm", "install"]
+`)
+	_, err := Parse(p)
+	if err == nil {
+		t.Fatal("expected error for schema 1 + bootstrap, got nil")
+	}
+	if !strings.Contains(err.Error(), "schema_version") {
+		t.Errorf("error should mention schema_version requirement: %v", err)
+	}
+}
+
+// Test 6 — schema 2 with bootstrap parses; Bootstrap is the right slice.
+func TestParseSchema2WithBootstrap(t *testing.T) {
+	p := writeManifest(t, `schema_version = 2
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+
+[runtime]
+requires = ["node >= 18"]
+bootstrap = ["npm", "install"]
+setup_hint = "manual install fallback"
+`)
+	m, err := Parse(p)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if m.SchemaVersion != SchemaVersion2 {
+		t.Errorf("SchemaVersion = %d, want %d", m.SchemaVersion, SchemaVersion2)
+	}
+	want := []string{"npm", "install"}
+	if len(m.Runtime.Bootstrap) != len(want) ||
+		m.Runtime.Bootstrap[0] != want[0] ||
+		m.Runtime.Bootstrap[1] != want[1] {
+		t.Errorf("Bootstrap = %v, want %v", m.Runtime.Bootstrap, want)
+	}
+}
+
+// Test 7a — schema 2 WITHOUT bootstrap parses; Bootstrap is nil. Status will
+// later show n-a for this extractor.
+func TestParseSchema2WithoutBootstrap(t *testing.T) {
+	p := writeManifest(t, `schema_version = 2
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+
+[runtime]
+requires = ["python >= 3.11"]
+`)
+	m, err := Parse(p)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if m.Runtime.Bootstrap != nil {
+		t.Errorf("Bootstrap = %v, want nil", m.Runtime.Bootstrap)
+	}
+}
+
+// Test 7b — schema 0 rejected.
+func TestParseSchema0Rejected(t *testing.T) {
+	p := writeManifest(t, `schema_version = 0
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+`)
+	_, err := Parse(p)
+	if err == nil {
+		t.Fatal("expected error for schema 0")
+	}
+}
+
+// Test 7c — schema 3 rejected with clear range error.
+func TestParseSchema3Rejected(t *testing.T) {
+	p := writeManifest(t, `schema_version = 3
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+`)
+	_, err := Parse(p)
+	if err == nil {
+		t.Fatal("expected error for schema 3")
+	}
+	if !strings.Contains(err.Error(), "schema_version") {
+		t.Errorf("error should mention schema_version: %v", err)
 	}
 }

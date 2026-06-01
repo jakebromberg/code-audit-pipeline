@@ -9,6 +9,16 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// Schema version constants. Exported within the internal/manifest package so
+// tests and downstream consumers can reference them without hard-coding
+// literals. Range check at validate() uses MinSchemaVersion..MaxSchemaVersion.
+const (
+	SchemaVersion1   = 1
+	SchemaVersion2   = 2
+	MinSchemaVersion = SchemaVersion1
+	MaxSchemaVersion = SchemaVersion2
+)
+
 type Manifest struct {
 	SchemaVersion int            `toml:"schema_version"`
 	Extractor     Extractor      `toml:"extractor"`
@@ -46,6 +56,11 @@ type SiblingOutput struct {
 type Runtime struct {
 	Requires  []string `toml:"requires"`
 	SetupHint string   `toml:"setup_hint"`
+	// Bootstrap, when non-empty, is the argv the binary runs once per
+	// extractor source layout (after `code-audit init`, after `code-audit
+	// init --upgrade`, and on the first `code-audit extract` of a freshly
+	// auto-extracted brew install). Requires schema_version >= 2.
+	Bootstrap []string `toml:"bootstrap"`
 }
 
 var validWhen = map[string]bool{
@@ -76,8 +91,13 @@ func Parse(path string) (*Manifest, error) {
 }
 
 func (m *Manifest) validate(path string) error {
-	if m.SchemaVersion != 1 {
-		return fmt.Errorf("manifest: %s: schema_version must be 1, got %d", path, m.SchemaVersion)
+	if m.SchemaVersion < MinSchemaVersion || m.SchemaVersion > MaxSchemaVersion {
+		return fmt.Errorf("manifest: %s: schema_version must be %d-%d, got %d",
+			path, MinSchemaVersion, MaxSchemaVersion, m.SchemaVersion)
+	}
+	if m.SchemaVersion == SchemaVersion1 && len(m.Runtime.Bootstrap) > 0 {
+		return fmt.Errorf("manifest: %s: [runtime].bootstrap requires schema_version >= %d",
+			path, SchemaVersion2)
 	}
 	if m.Extractor.Name == "" {
 		return fmt.Errorf("manifest: %s: extractor.name required", path)
