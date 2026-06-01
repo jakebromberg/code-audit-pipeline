@@ -585,14 +585,30 @@ func TestFailQuietBody(t *testing.T) {
 }
 
 func TestFailQuietBody_RespectsCap(t *testing.T) {
-	// A cap close to the minimum (but >= sizeCapMin via flag validation
-	// at the Report() boundary) with many languages should truncate the
-	// language list with a "(+N more)" suffix.
-	langs := []string{"typescript", "swift", "go", "python", "rust", "kotlin", "java", "csharp"}
-	cap := sizeCapMin
+	// Cap-honoring contract: at a cap that's tight enough to force
+	// truncation of the language list, failQuietBody must trail the kept
+	// names with "(+N more)" and keep the body under cap.
+	//
+	// We use cap=200 here — well below sizeCapMin so the unit test exercises
+	// the truncation branch. Production callers go through Report() which
+	// rejects --size-cap-bytes < sizeCapMin at the flag boundary; this
+	// internal contract still matters because future internal callers
+	// might re-use failQuietBody.
+	// Many entries with realistic-length language names to ensure the
+	// language list overflows the cap budget and the truncation branch
+	// kicks in.
+	langs := []string{
+		"typescript", "swift", "go", "python", "rust", "kotlin", "java", "csharp",
+		"scala", "elixir", "erlang", "haskell", "ocaml", "clojure", "lua", "ruby",
+		"javascript", "fsharp", "dart", "objective-c",
+	}
+	cap := 200
 	got := failQuietBody("m", langs, cap)
 	if len(got) > cap {
 		t.Errorf("body length %d exceeds cap %d for many-languages truncation:\n%s", len(got), cap, got)
+	}
+	if !strings.Contains(got, "more") {
+		t.Errorf("expected '(+N more)' truncation suffix at cap %d with %d languages; got: %s", cap, len(langs), got)
 	}
 }
 
@@ -631,23 +647,33 @@ func TestTruncateRunes(t *testing.T) {
 }
 
 func TestParseCSV_RejectsControlChars(t *testing.T) {
-	// Embedded newlines/tabs in a single entry corrupt downstream emit; drop them.
-	got := parseCSV("typescript,foo\nbar,swift")
-	want := []string{"typescript", "swift"}
-	if !equalStrings(got, want) {
-		t.Errorf("parseCSV with embedded newline: got %v, want %v", got, want)
+	// Embedded control characters in a single entry corrupt downstream
+	// emit; drop the offending entry while preserving siblings.
+	cases := []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{"newline", "typescript,foo\nbar,swift", []string{"typescript", "swift"}},
+		{"tab", "alpha,beta\tgamma,delta", []string{"alpha", "delta"}},
+		{"carriage return", "a,b\rc,d", []string{"a", "d"}},
+		{"NUL byte", "a,b\x00c,d", []string{"a", "d"}},
+		{"DEL", "a,b\x7fc,d", []string{"a", "d"}},
+		{"ESC", "a,b\x1bc,d", []string{"a", "d"}},
+		{"vertical tab", "a,b\vc,d", []string{"a", "d"}},
+		{"form feed", "a,b\fc,d", []string{"a", "d"}},
+		{"unicode line sep U+2028", "a,b\u2028c,d", []string{"a", "d"}},
+		{"unicode para sep U+2029", "a,b\u2029c,d", []string{"a", "d"}},
+		{"clean entries preserved", "typescript, swift , go", []string{"typescript", "swift", "go"}},
 	}
-	// Tab inside entry also rejected.
-	got = parseCSV("alpha,beta\tgamma,delta")
-	want = []string{"alpha", "delta"}
-	if !equalStrings(got, want) {
-		t.Errorf("parseCSV with embedded tab: got %v, want %v", got, want)
-	}
-	// Carriage return inside entry rejected.
-	got = parseCSV("a,b\rc,d")
-	want = []string{"a", "d"}
-	if !equalStrings(got, want) {
-		t.Errorf("parseCSV with embedded CR: got %v, want %v", got, want)
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			got := parseCSV(c.in)
+			if !equalStrings(got, c.want) {
+				t.Errorf("parseCSV(%q) = %v, want %v", c.in, got, c.want)
+			}
+		})
 	}
 }
 
