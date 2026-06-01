@@ -49,7 +49,7 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	touchedFlag := fset.String("touched", "", "path to JSON array of repo-relative paths; in --mode pr-comment, filters rows to ones whose members include a touched file. Requires --mode pr-comment.")
 	modeFlag := fset.String("mode", "text", "output mode: text | pr-comment")
 	failureFlag := fset.String("on-extraction-failure", "", "loud | quiet (default: loud for text, quiet for pr-comment)")
-	sizeCapFlag := fset.Int("size-cap-bytes", 60000, "max comment body size in pr-comment mode (default 60000, ~4KB headroom under GitHub's 65,536-byte cap). Pr-comment mode only.")
+	sizeCapFlag := fset.Int("size-cap-bytes", 60000, "max comment body size in pr-comment mode (default 60000, ~4KB headroom under GitHub's 65,536-byte cap). Minimum 1024 bytes. Pr-comment mode only.")
 	markerFlag := fset.String("marker", "code-audit-pipeline-v1", "sticky-comment marker for --mode pr-comment; emitted as <!-- <marker> --> on line 1. Pr-comment mode only.")
 	detectedLangsFlag := fset.String("detected-languages", "", "comma-separated language list used in the fail-quiet body; the composite forwards audit-core's languages-detected output here. Pr-comment mode only.")
 	var queryFilters, shapeFilters, argFlags, argJSONFlags, envFlags stringList
@@ -107,6 +107,16 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	// Validate the marker only in pr-comment mode — text mode doesn't emit it.
 	if *modeFlag == "pr-comment" && !validateMarker(*markerFlag) {
 		fmt.Fprintf(os.Stderr, "code-audit: --marker must match [A-Za-z0-9][A-Za-z0-9_.:/-]* (no '--' substring, max %d chars), got %q\n", markerMaxLen, *markerFlag)
+		return 2
+	}
+
+	// Validate --size-cap-bytes is at least sizeCapMin in pr-comment mode.
+	// Below that, the fallback paths (truncationFooter, failQuietBody) can't
+	// honor the documented body ≤ cap contract — the minimal-diagnostic
+	// notice itself runs ~100-200 bytes. Reject loud rather than silently
+	// produce over-cap bodies.
+	if *modeFlag == "pr-comment" && *sizeCapFlag < sizeCapMin {
+		fmt.Fprintf(os.Stderr, "code-audit: --size-cap-bytes must be >= %d (header + minimal diagnostic envelope), got %d\n", sizeCapMin, *sizeCapFlag)
 		return 2
 	}
 
@@ -276,6 +286,10 @@ func emitPRComment(
 
 // parseCSV splits a comma-separated string; empty input returns nil.
 // Whitespace around each entry is trimmed; empty entries are dropped.
+// Entries containing control characters (after trimming) are dropped
+// silently — a value like `typescript\nfoo` from a misconfigured shell
+// substitution would otherwise corrupt the failQuietBody markdown line
+// or the marocchino sticky-comment line-1 scan.
 func parseCSV(s string) []string {
 	if s == "" {
 		return nil
@@ -284,9 +298,10 @@ func parseCSV(s string) []string {
 	out := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
-		if p != "" {
-			out = append(out, p)
+		if p == "" || strings.ContainsAny(p, "\n\r\t\v\f") {
+			continue
 		}
+		out = append(out, p)
 	}
 	return out
 }
