@@ -22,6 +22,7 @@ import {
   refsForDecl,
 } from './_lib/references.mjs';
 import { isTestPath } from './_lib/paths.mjs';
+import { EXT_RE, SKIP_DIRS, streamRelevantPaths } from './_lib/walk-predicate.mjs';
 import { compareBy } from './_lib/sort.mjs';
 import { writeSiblingArtifact } from './_lib/artifacts.mjs';
 import { resolveOriginPackage } from './_lib/origin-package.mjs';
@@ -39,9 +40,23 @@ const { values } = parseArgs({
     'emit-references-graph': { type: 'string' },
     'emit-files':            { type: 'string' },
     'include-imports':       { type: 'boolean', default: false },
+    'list-relevant':         { type: 'boolean', default: false },
+    'include-tests':         { type: 'boolean', default: false },
+    'null':                  { type: 'boolean', short: '0', default: false },
     help:                    { type: 'boolean', default: false },
   },
 });
+
+// --list-relevant: pure-query mode. Reads candidate paths from stdin, applies
+// the walk predicate, prints kept paths to stdout. No --root required, no file
+// parsing. See docs/plans/159-implementation.md.
+if (values['list-relevant']) {
+  await streamRelevantPaths(process.stdin, process.stdout, {
+    includeTests: values['include-tests'],
+    nullSeparated: values.null,
+  });
+  process.exit(0);
+}
 
 if (values.help || !values.root) {
   process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>] [--include-imports]
@@ -72,6 +87,19 @@ if (values.help || !values.root) {
                    imported symbol — consumer-edge data for cross-repo queries
                    like consumers-of (#156). Off by default so legacy queries
                    stay byte-stable. See docs/pipeline-contract.md §"Import rows".
+  --list-relevant  Optional. Pure-query mode: read candidate paths from stdin,
+                   print the subset the walker would visit. No --root required,
+                   no file parsing. Use \`--include-tests\` to keep test/spec
+                   paths; \`--null\`/\`-0\` for NUL-separated I/O.
+                   Consumed by the PR-comment Action (#123) and the pre-commit
+                   hook (#124). Example:
+                     git diff --name-only main...HEAD \\
+                       | node extractors/typescript/type-catalog.mjs --list-relevant
+  --include-tests  Optional. With --list-relevant, keep test/spec/fixture/mock
+                   paths in the output. (The extraction walker indexes tests
+                   regardless; this flag only affects --list-relevant queries.)
+  --null, -0       Optional. With --list-relevant, use NUL ('\\0') as the input
+                   and output separator instead of newline.
 
 Output: {"schema_version": "${SCHEMA_VERSION}", "extractor": {...}, "entries": [...]}.
 Queries that consume the catalog must read from .entries (see _canonical.jq's
@@ -90,7 +118,8 @@ const TOUCHED = values.touched
   ? new Set(JSON.parse(readFileSync(values.touched, 'utf8')))
   : new Set();
 
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
+// SKIP_DIRS and the walk predicate are imported from _lib/walk-predicate.mjs
+// so the in-extractor walk and the --list-relevant CLI query stay in lock-step.
 
 // BUILTIN_TYPE_DENYLIST, extractReferences, pushNamedRef, refsForDecl,
 // getLeftmostIdentifierText, genericsList are imported from _lib/references.mjs
@@ -157,7 +186,7 @@ function walkDir(root) {
         if (SKIP_DIRS.has(e.name)) continue;
         walk(full);
       } else if (e.isFile()) {
-        if (!/\.(tsx|ts|mts|cts)$/.test(e.name)) continue;
+        if (!EXT_RE.test(e.name)) continue;
         out.push(full);
       }
     }

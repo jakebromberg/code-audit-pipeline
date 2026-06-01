@@ -60,6 +60,25 @@ node type-catalog.mjs \
   --output catalog.json
 ```
 
+### `--list-relevant`: predicate-only query
+
+Pure query mode: given candidate paths on stdin, prints the subset the walker would visit. No `--root` required, no file parsing. Used by the PR-comment Action (#123) and the pre-commit hook (#124) to filter `git diff` / `gh pr view` output to the subset worth feeding to `--touched`.
+
+```bash
+# Filter a PR's changed files to those the extractor would index
+gh pr view 42 --json files --jq '.files[].path' \
+  | node type-catalog.mjs --list-relevant
+
+# NUL-separated I/O (composes with `find -print0`, `xargs -0`)
+git diff -z --name-only main...HEAD \
+  | node type-catalog.mjs --list-relevant --null
+
+# Keep test/spec/fixture paths in the output
+node type-catalog.mjs --list-relevant --include-tests < paths.txt
+```
+
+The predicate matches the walker's `.ts/.tsx/.mts/.cts` extension set and skip-dir rules (`node_modules`, `dist`, `build`, `coverage`, any dotdir). Test/spec/fixture/mock paths are dropped by default and kept with `--include-tests`. See `_lib/walk-predicate.mjs` for the canonical definition.
+
 Stats land on stderr; the catalog JSON lands on stdout (or `--output`).
 
 ## What it picks up
