@@ -249,6 +249,104 @@ func TestEnsureExtractor_ConcurrentSingleBootstrap(t *testing.T) {
 	}
 }
 
+// Test 17b — concurrent EnsureExtractor calls for DIFFERENT extractors
+// preserve each other's state.Extractors entries. Without the audit-home
+// state.json lock, the slower writer clobbers the faster writer's entry
+// (per-extractor flock alone doesn't serialise the shared state.json).
+func TestEnsureExtractor_ConcurrentDifferentExtractorsNoClobber(t *testing.T) {
+	tmp := t.TempDir()
+	auditDest := filepath.Join(tmp, "audit-home")
+	extractorsRoot := filepath.Join(auditDest, "extractors")
+	if err := os.MkdirAll(extractorsRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	embA := embeddedExtractor(t, "alpha", `bootstrap = ["sh", "-c", "sleep 0.05"]
+`)
+	embB := embeddedExtractor(t, "bravo", `bootstrap = ["sh", "-c", "sleep 0.05"]
+`)
+
+	var (
+		wg    sync.WaitGroup
+		errs  [2]error
+		start = make(chan struct{})
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		<-start
+		var out bytes.Buffer
+		errs[0] = EnsureExtractor(context.Background(), "alpha", extractorsRoot, auditDest, embA, &out)
+	}()
+	go func() {
+		defer wg.Done()
+		<-start
+		var out bytes.Buffer
+		errs[1] = EnsureExtractor(context.Background(), "bravo", extractorsRoot, auditDest, embB, &out)
+	}()
+	close(start)
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("goroutine %d: %v", i, err)
+		}
+	}
+
+	state, err := loadState(auditDest)
+	if err != nil || state == nil {
+		t.Fatalf("loadState: %v (state=%v)", err, state)
+	}
+	for _, name := range []string{"alpha", "bravo"} {
+		es, ok := state.Extractors[name]
+		if !ok {
+			t.Errorf("state.Extractors[%q] missing — lost-update clobber", name)
+			continue
+		}
+		if es.BootstrapStatus != BootstrapOK {
+			t.Errorf("state.Extractors[%q] = %q, want %q", name, es.BootstrapStatus, BootstrapOK)
+		}
+	}
+}
+
+// Test 17c — ctx canceled mid-bootstrap MUST NOT persist a
+// BootstrapFailed entry. The cancellation is the user's intent, not a
+// real bootstrap failure; persisting "failed: context canceled" would
+// pollute state.json and surface as a misleading status afterwards.
+func TestEnsureExtractor_CtxCancelDoesNotPersistFailed(t *testing.T) {
+	tmp := t.TempDir()
+	auditDest := filepath.Join(tmp, "audit-home")
+	extractorsRoot := filepath.Join(auditDest, "extractors")
+	if err := os.MkdirAll(extractorsRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	emb := embeddedExtractor(t, "typescript", `bootstrap = ["sh", "-c", "sleep 30"]
+`)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	var out bytes.Buffer
+	err := EnsureExtractor(ctx, "typescript", extractorsRoot, auditDest, emb, &out)
+	if err == nil {
+		t.Fatal("expected ctx-canceled error, got nil")
+	}
+
+	state, _ := loadState(auditDest)
+	if state == nil {
+		// loadState may return nil if state.json never got written —
+		// that's also acceptable (no clobber happened).
+		return
+	}
+	if es, ok := state.Extractors["typescript"]; ok {
+		if es.BootstrapStatus == BootstrapFailed && strings.Contains(es.LastError, "context") {
+			t.Errorf("ctx-canceled bootstrap persisted as failed with ctx in LastError: %+v", es)
+		}
+	}
+}
+
 // Test 17a — first EnsureExtractor's bootstrap fails: state.json records
 // failed before lock release; second call sees failed and retries.
 func TestEnsureExtractor_RetriesAfterFailure(t *testing.T) {

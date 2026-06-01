@@ -80,11 +80,21 @@ func Parse(path string) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("manifest: %w", err)
 	}
+	return ParseBytes(path, data)
+}
+
+// ParseBytes validates a manifest.toml provided as bytes. The pathHint
+// is used in error messages only — it does not have to refer to an actual
+// filesystem path. Use this when reading the manifest from an embedded
+// fs.FS instead of disk, so the parse step runs before any on-disk
+// mutations (avoids leaving lay-down state with no manifest-validated
+// counterpart in state.json).
+func ParseBytes(pathHint string, data []byte) (*Manifest, error) {
 	var m Manifest
 	if err := toml.Unmarshal(data, &m); err != nil {
-		return nil, fmt.Errorf("manifest: %s: %w", path, err)
+		return nil, fmt.Errorf("manifest: %s: %w", pathHint, err)
 	}
-	if err := m.validate(path); err != nil {
+	if err := m.validate(pathHint); err != nil {
 		return nil, err
 	}
 	return &m, nil

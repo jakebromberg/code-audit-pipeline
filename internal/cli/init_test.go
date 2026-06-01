@@ -246,18 +246,22 @@ func TestInitRefusesSymlinkLoop(t *testing.T) {
 	}
 }
 
-// TestInitMissingFromFlag exercises the --from-required validation path. The
-// init contract is "v1 requires --from"; this nails the error message and
-// exit code down so a regression to "default to cwd" doesn't slip through.
-func TestInitMissingFromFlag(t *testing.T) {
+// TestInitMissingFromAndEmbedded pins the "no-source" fallback contract:
+// when neither --from is given NOR an embedded slice is provided, Init
+// exits 2 with a message that suggests --from. The production binary
+// always passes a non-nil embedded slice (cmd/code-audit/main.go), so
+// this path is reachable mainly from tests, but the error message is
+// still the user-facing fallback for any caller that forgets to wire
+// embedded source.
+func TestInitMissingFromAndEmbedded(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "audit-home")
 	var out bytes.Buffer
 	exit := Init(context.Background(), []string{"--dest", dest}, &out, nil)
 	if exit != 2 {
-		t.Fatalf("missing --from Init exit=%d (want 2), out=%s", exit, out.String())
+		t.Fatalf("Init exit=%d (want 2 for no-source), out=%s", exit, out.String())
 	}
 	if !strings.Contains(out.String(), "--from") {
-		t.Errorf("expected --from in error, got: %s", out.String())
+		t.Errorf("expected --from in error (the fallback hint), got: %s", out.String())
 	}
 }
 

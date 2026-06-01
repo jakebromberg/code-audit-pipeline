@@ -85,6 +85,12 @@ type ExtractorOpts struct {
 	AuditHome string
 	CWD       string
 	HomeDir   string // typically os.UserHomeDir(); empty disables the ~/.config fallback.
+	// XDGConfigHome, when non-empty, overrides the default "~/.config"
+	// base for the TierConfigDir candidate so the discovery chain agrees
+	// with internal/cli.defaultDest()'s XDG_CONFIG_HOME handling.
+	// Callers should pass os.Getenv("XDG_CONFIG_HOME"). Empty value
+	// means: fall back to filepath.Join(HomeDir, ".config", ...).
+	XDGConfigHome string
 }
 
 // Tier names the discovery layer that resolved. The typed value drives the
@@ -142,11 +148,19 @@ func ResolveExtractorsDir(opts ExtractorOpts) (string, Tier, string, error) {
 			label: "$AUDIT_HOME (" + opts.AuditHome + ")",
 		})
 	}
-	if opts.HomeDir != "" {
+	if opts.HomeDir != "" || opts.XDGConfigHome != "" {
+		// Honor XDG_CONFIG_HOME (matches internal/cli.defaultDest's
+		// path computation); fall back to ~/.config when unset.
+		base := opts.XDGConfigHome
+		label := "$XDG_CONFIG_HOME/audit/extractors"
+		if base == "" {
+			base = filepath.Join(opts.HomeDir, ".config")
+			label = "~/.config/audit/extractors"
+		}
 		candidates = append(candidates, candidate{
-			path:  filepath.Join(opts.HomeDir, ".config", "audit", "extractors"),
+			path:  filepath.Join(base, "audit", "extractors"),
 			tier:  TierConfigDir,
-			label: "~/.config/audit/extractors",
+			label: label,
 		})
 	}
 
