@@ -96,6 +96,32 @@ func TestRun_TreeModePreservesTree(t *testing.T) {
 	}
 }
 
+// genembed must skip dot-prefixed directories (.git, .idea, .vscode,
+// .claude, etc.) at every depth so a contributor's IDE / worktree state
+// does not bake into the embedded extractor tree shipped in the binary.
+// Mirrors the rule in internal/cli/init.go's filesystem walker.
+func TestRun_DotPrefixedDirsSkipped(t *testing.T) {
+	src := t.TempDir()
+	dst := filepath.Join(t.TempDir(), "out")
+	mkTree(t, src, map[string]string{
+		"keep.txt":                "k",
+		".git/HEAD":               "ref: refs/heads/main",
+		".vscode/settings.json":   "{}",
+		"extractors/ts/.idea/x":   "ide",
+		"extractors/ts/src/y.mjs": "y",
+	})
+
+	if _, err := Run(Options{Src: src, Dst: dst}); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	got := listFiles(t, dst)
+	want := []string{"extractors/ts/src/y.mjs", "keep.txt"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("dotdir skip: got %v, want %v", got, want)
+	}
+}
+
 func TestRun_SkipPrunesAtEveryDepth(t *testing.T) {
 	src := t.TempDir()
 	dst := filepath.Join(t.TempDir(), "out")
@@ -293,9 +319,10 @@ func TestSkipDrift_AgainstEmbedDirectives(t *testing.T) {
 			}
 		}
 
-		if !reflect.DeepEqual(got, initstate.SkipDirs) {
-			t.Fatalf("//go:generate skip set %v does not match initstate.SkipDirs %v",
-				got, initstate.SkipDirs)
+		canonical := initstate.SkipDirs()
+		if !reflect.DeepEqual(got, canonical) {
+			t.Fatalf("//go:generate skip set %v does not match initstate.SkipDirs() %v",
+				got, canonical)
 		}
 		checked++
 	}

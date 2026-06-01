@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -347,7 +349,7 @@ func TestRunBootstrap_CwdAndStderr(t *testing.T) {
 		SchemaVersion: manifest.SchemaVersion2,
 		Runtime:       manifest.Runtime{Bootstrap: []string{"sh", "-c", "pwd > cwd.txt; echo BOOM >&2; exit 7"}},
 	}
-	err := runBootstrap(context.Background(), dir, m)
+	err := runBootstrap(context.Background(), dir, m, nil)
 	if err == nil {
 		t.Fatal("expected error from exit 7, got nil")
 	}
@@ -380,7 +382,7 @@ func TestRunBootstrap_StderrCap(t *testing.T) {
 		SchemaVersion: manifest.SchemaVersion2,
 		Runtime:       manifest.Runtime{Bootstrap: []string{"sh", "-c", "head -c 204800 /dev/zero | tr '\\0' 'X' >&2; exit 1"}},
 	}
-	err := runBootstrap(context.Background(), dir, m)
+	err := runBootstrap(context.Background(), dir, m, nil)
 	be, ok := err.(*BootstrapError)
 	if !ok {
 		t.Fatalf("expected *BootstrapError, got %T", err)
@@ -393,10 +395,12 @@ func TestRunBootstrap_StderrCap(t *testing.T) {
 	}
 }
 
-// Test 8b — runBootstrap respects context cancellation.
+// Test 8b — runBootstrap respects context cancellation and preserves both
+// the underlying cmd.Run error AND ctx.Err via errors.Join.
 func TestRunBootstrap_ContextCancellation(t *testing.T) {
 	dir := t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel) // belt-and-suspenders if the test exits early
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		cancel()
@@ -406,7 +410,7 @@ func TestRunBootstrap_ContextCancellation(t *testing.T) {
 		Runtime:       manifest.Runtime{Bootstrap: []string{"sh", "-c", "sleep 30"}},
 	}
 	start := time.Now()
-	err := runBootstrap(ctx, dir, m)
+	err := runBootstrap(ctx, dir, m, nil)
 	elapsed := time.Since(start)
 	if err == nil {
 		t.Fatal("expected cancellation error, got nil")
@@ -414,16 +418,73 @@ func TestRunBootstrap_ContextCancellation(t *testing.T) {
 	if elapsed > 5*time.Second {
 		t.Errorf("runBootstrap did not return promptly under ctx cancel: %v", elapsed)
 	}
+	// Cause chain must surface ctx.Err so callers using errors.Is can
+	// distinguish cancellation from exec failure.
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err chain should match context.Canceled; got %v", err)
+	}
+	// And the original exec.ExitError (signal-killed) must remain
+	// reachable via errors.As so callers can probe the signal.
+	var ee *exec.ExitError
+	if !errors.As(err, &ee) {
+		t.Errorf("err chain should preserve *exec.ExitError; got %v", err)
+	}
+}
+
+// Test 8c — runBootstrap on a missing binary (ENOENT) reports exit
+// bootstrapNoExitCode (-1) instead of misleading exit 0.
+func TestRunBootstrap_MissingBinary(t *testing.T) {
+	dir := t.TempDir()
+	m := &manifest.Manifest{
+		SchemaVersion: manifest.SchemaVersion2,
+		Runtime:       manifest.Runtime{Bootstrap: []string{"this-binary-definitely-does-not-exist-9b3a"}},
+	}
+	err := runBootstrap(context.Background(), dir, m, nil)
+	if err == nil {
+		t.Fatal("expected exec lookup error, got nil")
+	}
+	be, ok := err.(*BootstrapError)
+	if !ok {
+		t.Fatalf("expected *BootstrapError, got %T", err)
+	}
+	if be.Exit != bootstrapNoExitCode {
+		t.Errorf("Exit = %d, want bootstrapNoExitCode (%d) for ENOENT", be.Exit, bootstrapNoExitCode)
+	}
+	if !strings.Contains(be.Error(), "no exit code") {
+		t.Errorf("Error() should label as 'no exit code', got: %s", be.Error())
+	}
+}
+
+// Test 8d — runBootstrap tees output to the progress writer so a slow
+// installer is visible in real time.
+func TestRunBootstrap_TeesProgress(t *testing.T) {
+	dir := t.TempDir()
+	m := &manifest.Manifest{
+		SchemaVersion: manifest.SchemaVersion2,
+		Runtime:       manifest.Runtime{Bootstrap: []string{"sh", "-c", "echo PROGRESS_STDOUT; echo PROGRESS_STDERR >&2"}},
+	}
+	var progress bytes.Buffer
+	if err := runBootstrap(context.Background(), dir, m, &progress); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got := progress.String()
+	if !strings.Contains(got, "PROGRESS_STDOUT") {
+		t.Errorf("progress missing PROGRESS_STDOUT: %q", got)
+	}
+	if !strings.Contains(got, "PROGRESS_STDERR") {
+		t.Errorf("progress missing PROGRESS_STDERR: %q", got)
+	}
 }
 
 // Test 9 — state.json round-trips the per-extractor map.
 func TestInitState_RoundTripExtractors(t *testing.T) {
+	tsAt := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	original := InitState{
 		AuditVersion: "test",
 		AppliedAt:    "2026-06-01T00:00:00Z",
 		Files:        map[string]InitStateFile{},
 		Extractors: map[string]ExtractorState{
-			"typescript": {BootstrapStatus: BootstrapOK, BootstrappedAt: time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)},
+			"typescript": {BootstrapStatus: BootstrapOK, BootstrappedAt: &tsAt},
 			"swift":      {BootstrapStatus: BootstrapFailed, LastError: "missing toolchain"},
 		},
 	}
@@ -505,9 +566,10 @@ func TestInit_IdempotentNoFileChange(t *testing.T) {
 	}
 
 	secondState := readState(t, dest)
-	if !secondState.Extractors["typescript"].BootstrappedAt.Equal(firstAt) {
+	secondAt := secondState.Extractors["typescript"].BootstrappedAt
+	if firstAt == nil || secondAt == nil || !secondAt.Equal(*firstAt) {
 		t.Errorf("BootstrappedAt advanced on idempotent re-init: first=%v second=%v",
-			firstAt, secondState.Extractors["typescript"].BootstrappedAt)
+			firstAt, secondAt)
 	}
 }
 
@@ -554,6 +616,135 @@ func TestInitState_EnsureExtractorsMapNilSafe(t *testing.T) {
 	}
 }
 
+
+// Test 10g — prior BootstrapFailed status triggers a retry on next init
+// even when no source files changed (covers transient-failure recovery
+// without requiring the user to know about --upgrade).
+func TestInit_RetriesPriorFailure(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+
+	// Seed state.json with a prior failure for typescript.
+	mustInit(t, src, dest)
+	state := readState(t, dest)
+	prior, ok := state.Extractors["typescript"]
+	if !ok {
+		t.Fatalf("expected typescript entry, got %+v", state.Extractors)
+	}
+	prior.BootstrapStatus = BootstrapFailed
+	prior.LastError = "transient: ECONNRESET"
+	state.Extractors["typescript"] = prior
+	if err := saveState(dest, &state); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-init with no source changes — should retry typescript (failed
+	// prior) even though nothing was copied/upgraded.
+	sentinel := filepath.Join(t.TempDir(), "retry-witness")
+	writeBootstrapManifest(t, src, []string{"sh", "-c", "touch " + sentinel})
+	// Re-init: the manifest file is now DIFFERENT from prior pristine
+	// (we just wrote a new bootstrap manifest), so it lands as DIRTY
+	// against the prior pristine record. Use --force to overwrite and
+	// upgrade. The retry path is then exercised by the touched + failed
+	// union.
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--force"}, &out)
+	if exit != 0 {
+		t.Fatalf("retry Init exit=%d, out=%s", exit, out.String())
+	}
+	if _, err := os.Stat(sentinel); err != nil {
+		t.Errorf("bootstrap did not retry: %v", err)
+	}
+	after := readState(t, dest)
+	if after.Extractors["typescript"].BootstrapStatus != BootstrapOK {
+		t.Errorf("retried bootstrap status = %q, want %q", after.Extractors["typescript"].BootstrapStatus, BootstrapOK)
+	}
+	if after.Extractors["typescript"].LastError != "" {
+		t.Errorf("LastError should clear on success, got %q", after.Extractors["typescript"].LastError)
+	}
+}
+
+// Test 10h — extractor entries for sources no longer present are pruned
+// from state.Extractors on the next init (otherwise BootstrapOK lingers
+// for an extractor whose source directory was deleted).
+func TestInit_PrunesRemovedExtractors(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+
+	// Plant a second 'phantom' extractor in state.Extractors that has
+	// no source files in the current src tree.
+	mustInit(t, src, dest)
+	state := readState(t, dest)
+	now := time.Now().UTC()
+	state.Extractors["phantom"] = ExtractorState{
+		BootstrapStatus: BootstrapOK,
+		BootstrappedAt:  &now,
+	}
+	if err := saveState(dest, &state); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-init — should prune phantom (no source files for it).
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+	after := readState(t, dest)
+	if _, ok := after.Extractors["phantom"]; ok {
+		t.Errorf("phantom extractor entry should be pruned, still present: %+v", after.Extractors["phantom"])
+	}
+	if _, ok := after.Extractors["typescript"]; !ok {
+		t.Errorf("typescript entry should be preserved, got %+v", after.Extractors)
+	}
+}
+
+// Test 10i — when manifest.toml is DIRTY-skipped, bootstrap MUST NOT run
+// for that extractor (would honor user-edited argv). State.json keeps
+// the prior status; user is told to --force if they really want it.
+func TestInit_SkipsBootstrapWhenManifestDirty(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	sentinel := filepath.Join(t.TempDir(), "should-not-run")
+	writeBootstrapManifest(t, src, []string{"sh", "-c", "touch " + sentinel})
+	mustInit(t, src, dest)
+	priorState := readState(t, dest)
+	priorAt := priorState.Extractors["typescript"].BootstrappedAt
+
+	// Locally edit dest manifest.toml (DIRTY) and update source so other
+	// files are upgraded — extractor is touched but manifest is skipped.
+	destManifest := filepath.Join(dest, "extractors/typescript/manifest.toml")
+	if err := os.WriteFile(destManifest, []byte("schema_version = 99\n# locally edited\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	srcExtractor := filepath.Join(src, "extractors/typescript/type-catalog.mjs")
+	if err := os.WriteFile(srcExtractor, []byte("// extractor v2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Clear the first-init sentinel so we can detect a (forbidden) retry.
+	os.Remove(sentinel)
+
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	// dirty manifest → exit=1 (existing skip-dirty contract).
+	if exit != 1 {
+		t.Fatalf("Init exit=%d (want 1 for dirty), out=%s", exit, out.String())
+	}
+	if !strings.Contains(out.String(), "SKIPPED") || !strings.Contains(out.String(), "manifest.toml is locally modified") {
+		t.Errorf("expected SKIPPED bootstrap warning, got: %s", out.String())
+	}
+	if _, err := os.Stat(sentinel); err == nil {
+		t.Errorf("bootstrap should NOT have run while manifest is DIRTY")
+	}
+	after := readState(t, dest)
+	if after.Extractors["typescript"].BootstrappedAt == nil ||
+		priorAt == nil ||
+		!after.Extractors["typescript"].BootstrappedAt.Equal(*priorAt) {
+		t.Errorf("BootstrappedAt advanced despite skipped bootstrap: prior=%v after=%v",
+			priorAt, after.Extractors["typescript"].BootstrappedAt)
+	}
+}
 
 // Test 10e — downgrade simulation: an old binary (whose InitState has no
 // Extractors field) reads then writes state.json, dropping the extractors

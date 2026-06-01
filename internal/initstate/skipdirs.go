@@ -4,19 +4,42 @@
 // stay in sync; a drift guard in genembed's tests enforces this.
 package initstate
 
-// SkipDirs lists directory basenames pruned at every depth when walking
-// extractor source trees. The set covers language-specific vendor / build
-// caches that balloon the catalog without contributing to extractor source.
-//
-// SkipDirs is read-only after package init. Concurrent reads are safe; do
-// not mutate.
-var SkipDirs = map[string]bool{
-	"node_modules": true,
-	".build":       true,
-	".swiftpm":     true,
-	"DerivedData":  true,
-	"Pods":         true,
-	"dist":         true,
-	"build":        true,
-	"coverage":     true,
+// skipDirsCanonical is the canonical set of directory basenames pruned at
+// every depth when walking extractor source trees. The set covers
+// language-specific vendor / build caches that balloon the catalog without
+// contributing to extractor source. Kept unexported so callers cannot mutate
+// the package-level state; consume via SkipDirs() (returns a fresh map) or
+// IsSkipped(name) (read-only predicate).
+var skipDirsCanonical = []string{
+	"node_modules",
+	".build",
+	".swiftpm",
+	"DerivedData",
+	"Pods",
+	"dist",
+	"build",
+	"coverage",
+}
+
+// SkipDirs returns a freshly allocated copy of the skip-dir set. Each call
+// yields an independent map so callers cannot accidentally mutate the
+// canonical list shared across packages — the reference-copy footgun in
+// `var x = pkg.SomeMap` is impossible by construction.
+func SkipDirs() map[string]bool {
+	out := make(map[string]bool, len(skipDirsCanonical))
+	for _, name := range skipDirsCanonical {
+		out[name] = true
+	}
+	return out
+}
+
+// IsSkipped reports whether the directory basename appears in the
+// canonical skip set. Read-only; safe to call concurrently.
+func IsSkipped(name string) bool {
+	for _, s := range skipDirsCanonical {
+		if s == name {
+			return true
+		}
+	}
+	return false
 }

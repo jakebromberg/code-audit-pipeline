@@ -125,7 +125,13 @@ func Run(opts Options) (int, error) {
 		base := path.Base(rel)
 
 		if d.IsDir() {
-			if opts.Skip[base] {
+			// Skip-by-basename (from --skip CSV) plus dot-prefixed
+			// directories at any depth (.git, .idea, .vscode, .claude,
+			// .next, .cursor, etc.). The init.go walker applies the same
+			// rule for filesystem --from copies; without this clause the
+			// embedded extractor tree could bake IDE state into the
+			// shipped binary.
+			if opts.Skip[base] || strings.HasPrefix(base, ".") {
 				return fs.SkipDir
 			}
 			return nil
