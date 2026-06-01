@@ -446,6 +446,78 @@ assert_file_exists "$PUB_BUCKET/by-repo/wxyc-skip-refresh/latest.json" \
 rm -rf "$PUB_BUCKET" "$PUB_CAT"
 
 # ====================================================================
+# publish-catalog-reusable.yml — contract tests
+# ====================================================================
+#
+# The reusable workflow (.github/workflows/publish-catalog-reusable.yml,
+# PR 2 of #154) scrapes stderr from publish-catalog.sh to surface two
+# step outputs (published-prefix, catalogs-published). If publish-
+# catalog.sh's log format changes, the workflow's output scraping
+# breaks silently — and the workflow can't be exercised from `bash`.
+# These tests pin the log lines the workflow depends on.
+
+echo "=== reusable contract: publish stderr exposes prefix and per-file upload lines ==="
+PUB_BUCKET=$(mk_scratch)
+PUB_CAT=$(mk_scratch)
+cat > "$PUB_CAT/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+cat > "$PUB_CAT/function-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"function-catalog","version":"0.5.0"},"entries":[]}
+JSON
+log=$(bash "$PIPELINE/publish-catalog.sh" \
+  --repo jakebromberg/contract-test --sha c0ffee1234abcd \
+  --catalogs-dir "$PUB_CAT" --bucket-fs "$PUB_BUCKET" --skip-refresh 2>&1)
+# These two regexes are the workflow's; if these break, the workflow's
+# `published-prefix` and `catalogs-published` outputs go empty.
+prefix=$(printf '%s\n' "$log" | grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' | head -1 | sed 's:/$::')
+count=$(printf '%s\n' "$log" | grep -cE '^  uploaded by-repo/' || true)
+assert_contains "$prefix" "by-repo/jakebromberg-contract-test/" "workflow's prefix regex finds the published prefix"
+assert_contains "$prefix" "_c0ffee1" "workflow's prefix regex captures the short-sha tail"
+assert_eq "2" "$count" "workflow's per-file-upload regex counts both catalogs"
+rm -rf "$PUB_BUCKET" "$PUB_CAT"
+
+echo "=== reusable contract: file-hashes-off default produces a publishable batch ==="
+# Mirrors the workflow's include-file-hashes=false default. The composite
+# would emit type-catalog + function-catalog only; this batch must pass
+# publish-catalog.sh's v1.1 validation gate.
+PUB_BUCKET=$(mk_scratch)
+PUB_CAT=$(mk_scratch)
+cat > "$PUB_CAT/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+cat > "$PUB_CAT/function-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"function-catalog","version":"0.5.0"},"entries":[]}
+JSON
+bash "$PIPELINE/publish-catalog.sh" \
+  --repo jakebromberg/fh-off --sha aaaaaaaaaaaaaa \
+  --catalogs-dir "$PUB_CAT" --bucket-fs "$PUB_BUCKET" --skip-refresh >/dev/null 2>&1
+rc=$?
+assert_eq "0" "$rc" "file-hashes-off batch publishes cleanly"
+assert_file_exists "$PUB_BUCKET/by-repo/jakebromberg-fh-off/latest.json" "latest.json written"
+rm -rf "$PUB_BUCKET" "$PUB_CAT"
+
+echo "=== reusable contract: file-hashes-on batch is refused (until #141) ==="
+# This is the documented gap. The workflow's input default is `false` so
+# this only fires if a consumer explicitly opts in too early; verify the
+# error reaches the user instead of silently uploading a malformed batch.
+PUB_BUCKET=$(mk_scratch)
+PUB_CAT=$(mk_scratch)
+cat > "$PUB_CAT/type-catalog.json" <<'JSON'
+{"schema_version":"1.1","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0"},"entries":[]}
+JSON
+# Bare-array file-hashes — what extractors/file-hashes/file-hashes.mjs
+# actually emits today.
+printf '[]\n' > "$PUB_CAT/file-hashes.json"
+out=$(bash "$PIPELINE/publish-catalog.sh" \
+  --repo jakebromberg/fh-on --sha bbbbbbbbbbbbbb \
+  --catalogs-dir "$PUB_CAT" --bucket-fs "$PUB_BUCKET" --skip-refresh 2>&1)
+rc=$?
+assert_nonzero_exit "$rc" "file-hashes-on (bare-array) batch refused"
+assert_contains "$out" "file-hashes.json" "refusal names file-hashes.json specifically"
+rm -rf "$PUB_BUCKET" "$PUB_CAT"
+
+# ====================================================================
 # Summary
 # ====================================================================
 

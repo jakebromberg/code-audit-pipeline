@@ -1,0 +1,46 @@
+# Copy this file to `.github/workflows/audit-publish.yml` in any repo you
+# want to publish a code-audit catalog from. The reusable workflow it
+# invokes lives in jakebromberg/code-audit-pipeline; one tag bump there
+# advances every consumer.
+#
+# Prerequisites (one-time per repo, per org):
+#   - The org's Cloudflare R2 bucket exists (or any S3-compatible bucket).
+#   - OIDC trust is set up between GitHub Actions and the bucket — see
+#     docs/audit-publish-setup.md in code-audit-pipeline for the policy.
+#   - The role/keys are wired into this repo's secrets.
+
+name: Publish code-audit catalog
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Nightly catch-up in case a push misses publication. Adjust per repo.
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+# `id-token: write` is required for OIDC. Leave it on even if you use
+# static keys — it's a permission grant, not a behavior change.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    uses: jakebromberg/code-audit-pipeline/.github/workflows/publish-catalog-reusable.yml@v1
+    with:
+      # Point these at your org's R2 (or S3) bucket. Bucket names must be
+      # unique per Cloudflare account; endpoint is the account-scoped URL
+      # printed in the R2 dashboard under "S3 API".
+      bucket-name: wxyc-code-audit
+      bucket-endpoint: https://<account-id>.r2.cloudflarestorage.com
+      # Recommended: assume an OIDC-trusted role rather than passing
+      # static keys. Comment out role-to-assume + uncomment the secrets
+      # block below to fall back to keys.
+      role-to-assume: arn:aws:iam::000000000000:role/wxyc-code-audit-publisher
+    secrets: inherit
+    # When using static keys instead of OIDC, drop the `role-to-assume`
+    # line above and uncomment:
+    # secrets:
+    #   r2-access-key-id:     ${{ secrets.R2_ACCESS_KEY_ID }}
+    #   r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
