@@ -31,6 +31,13 @@ const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
 const SCHEMA_VERSION = '1.1';
 
+// Standard filter-CLI EPIPE handling: a downstream consumer closing the pipe
+// (`… | head -1`) shouldn't surface as a stack trace. Set before any write.
+process.stdout.on('error', (err) => {
+  if (err.code === 'EPIPE') process.exit(0);
+  throw err;
+});
+
 const { values } = parseArgs({
   options: {
     root:                    { type: 'string' },
@@ -42,24 +49,62 @@ const { values } = parseArgs({
     'include-imports':       { type: 'boolean', default: false },
     'list-relevant':         { type: 'boolean', default: false },
     'include-tests':         { type: 'boolean', default: false },
+    // `-0`/`--null` follows the xargs/find/grep convention for NUL-separated
+    // I/O. Node's parseArgs accepts a digit as a short alias.
     'null':                  { type: 'boolean', short: '0', default: false },
     help:                    { type: 'boolean', default: false },
   },
 });
 
-// --list-relevant: pure-query mode. Reads candidate paths from stdin, applies
-// the walk predicate, prints kept paths to stdout. No --root required, no file
-// parsing. See docs/plans/159-implementation.md.
-if (values['list-relevant']) {
-  await streamRelevantPaths(process.stdin, process.stdout, {
-    includeTests: values['include-tests'],
-    nullSeparated: values.null,
-  });
+const EXTRACTION_FLAGS = ['root', 'shared', 'touched', 'output',
+  'emit-references-graph', 'emit-files', 'include-imports'];
+const QUERY_FLAGS = ['include-tests', 'null'];
+
+// --help is matched first so `--list-relevant --help` still prints usage.
+// Then validate mode/flag pairing so a typo (`--null` without `--list-relevant`,
+// or `--root foo --list-relevant`) errors loudly instead of being silently inert.
+if (values.help) {
+  printUsage(0);
+} else if (values['list-relevant']) {
+  const stray = EXTRACTION_FLAGS.filter((f) => values[f] !== undefined && values[f] !== false);
+  if (stray.length > 0) {
+    process.stderr.write(
+      `error: --list-relevant is a pure-query mode; the following extraction flags do not apply: ${stray.map((f) => `--${f}`).join(', ')}\n`,
+    );
+    process.exit(2);
+  }
+  // --list-relevant: pure-query mode. Reads candidate paths from stdin, applies
+  // the walk predicate, prints kept paths to stdout. No --root required, no file
+  // parsing. See docs/plans/159-implementation.md.
+  try {
+    await streamRelevantPaths(process.stdin, process.stdout, {
+      includeTests: values['include-tests'],
+      nullSeparated: values.null,
+    });
+  } catch (err) {
+    if (err.code !== 'EPIPE') {
+      process.stderr.write(`error: --list-relevant: ${err.message}\n`);
+      process.exit(1);
+    }
+  }
   process.exit(0);
+} else {
+  const stray = QUERY_FLAGS.filter((f) => values[f]);
+  if (stray.length > 0) {
+    process.stderr.write(
+      `error: ${stray.map((f) => `--${f}`).join(', ')} only apply in --list-relevant mode\n`,
+    );
+    process.exit(2);
+  }
 }
 
-if (values.help || !values.root) {
+if (!values.root) {
+  printUsage(1);
+}
+
+function printUsage(exitCode) {
   process.stderr.write(`usage: type-catalog.mjs --root <path> [--shared <path>] [--touched <json>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>] [--include-imports]
+       type-catalog.mjs --list-relevant [--include-tests] [--null|-0]    # pure-query mode (no --root)
 
   --root           Required. Root of the codebase to scan.
   --shared         Optional. A secondary package root (canonical types you compare
@@ -109,7 +154,7 @@ Test files are always extracted; every row carries an \`is_test\` flag derived
 from the file path. To exclude tests post-hoc, pipe through:
   jq '.entries | map(select(.is_test | not))'
 `);
-  process.exit(values.help ? 0 : 1);
+  process.exit(exitCode);
 }
 
 const ROOT = resolve(values.root);

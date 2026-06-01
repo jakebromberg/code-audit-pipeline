@@ -96,3 +96,70 @@ test('tolerates missing trailing separator', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
   assert.equal(res.stdout, 'src/foo.ts\n');
 });
+
+// ---- PR 244 review: input normalization end-to-end ----
+
+test('CRLF input (Windows / git autocrlf) yields the expected subset, not empty', () => {
+  const input = 'src/foo.ts\r\nsrc/bar.js\r\nsrc/baz.tsx\r\n';
+  const res = runListRelevant({ stdin: input });
+  assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+  assert.equal(res.stdout, 'src/foo.ts\nsrc/baz.tsx\n');
+});
+
+test('./ prefix from `find -print0` composes correctly', () => {
+  const input = './src/foo.ts\0./node_modules/x/y.ts\0./src/bar.tsx\0';
+  const res = runListRelevant({ stdin: input, args: ['--null'] });
+  assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+  assert.equal(res.stdout, 'src/foo.ts\0src/bar.tsx\0');
+});
+
+test('Windows-style backslash paths are normalized and skip-dirs still apply', () => {
+  const input = 'src\\foo.ts\nnode_modules\\pkg\\index.ts\nsrc\\sub\\bar.tsx\n';
+  const res = runListRelevant({ stdin: input });
+  assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+  assert.equal(res.stdout, 'src/foo.ts\nsrc/sub/bar.tsx\n');
+});
+
+test('whitespace-padded inputs are trimmed before emission', () => {
+  const input = '   src/foo.ts   \n  src/bar.tsx  \n';
+  const res = runListRelevant({ stdin: input });
+  assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+  assert.equal(res.stdout, 'src/foo.ts\nsrc/bar.tsx\n');
+});
+
+// ---- Mode / flag validation ----
+
+test('--list-relevant --help prints the help banner and exits 0', () => {
+  const res = runListRelevant({ stdin: '', args: ['--help'] });
+  assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+  assert.match(res.stderr, /usage: type-catalog\.mjs/);
+  assert.match(res.stderr, /--list-relevant/);
+});
+
+test('--list-relevant rejects extraction flags (--root)', () => {
+  const res = runListRelevant({ stdin: '', args: ['--root', '/tmp'] });
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /--list-relevant is a pure-query mode/);
+  assert.match(res.stderr, /--root/);
+});
+
+test('--null without --list-relevant errors out', () => {
+  // Run extractor WITHOUT --list-relevant.
+  const res = spawnSync('node', [EXTRACTOR, '--null'], { encoding: 'utf8' });
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /--null.*only apply in --list-relevant mode/);
+});
+
+test('--include-tests without --list-relevant errors out', () => {
+  const res = spawnSync('node', [EXTRACTOR, '--include-tests'], { encoding: 'utf8' });
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /--include-tests.*only apply in --list-relevant mode/);
+});
+
+test('extraction mode without --root still prints usage (exit 1)', () => {
+  // Regression: the new query-vs-extraction branching must not break the
+  // existing "--root is required" gate.
+  const res = spawnSync('node', [EXTRACTOR], { encoding: 'utf8' });
+  assert.equal(res.status, 1);
+  assert.match(res.stderr, /usage: type-catalog\.mjs/);
+});

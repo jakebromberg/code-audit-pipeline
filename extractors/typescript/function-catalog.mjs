@@ -30,6 +30,7 @@ import {
   genericsList,
 } from './_lib/references.mjs';
 import { isTestPath } from './_lib/paths.mjs';
+import { EXT_RE, SKIP_DIRS } from './_lib/walk-predicate.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
@@ -74,7 +75,8 @@ const TOUCHED = values.touched
   ? new Set(JSON.parse(readFileSync(values.touched, 'utf8')))
   : new Set();
 
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage']);
+// SKIP_DIRS and EXT_RE imported from _lib/walk-predicate.mjs so this walker
+// and type-catalog.mjs stay in lock-step on what counts as a TS source file.
 
 function walkDir(root) {
   const out = [];
@@ -89,7 +91,7 @@ function walkDir(root) {
         if (SKIP_DIRS.has(e.name)) continue;
         walk(full);
       } else if (e.isFile()) {
-        if (!/\.(tsx|ts|mts|cts)$/.test(e.name)) continue;
+        if (!EXT_RE.test(e.name)) continue;
         out.push(full);
       }
     }
