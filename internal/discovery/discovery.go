@@ -87,9 +87,16 @@ type ExtractorOpts struct {
 	HomeDir   string // typically os.UserHomeDir(); empty disables the ~/.config fallback.
 }
 
-// Tier names the discovery layer that resolved. Auto-extract gates on
-// TierConfigDir — earlier tiers signal "user is managing source", and the
-// binary never auto-mutates those.
+// Tier names the discovery layer that resolved. The typed value drives the
+// auto-extract gate in PR β (see issue #241): extract.go will fire
+// EnsureExtractor only when tier == TierConfigDir; earlier tiers signal
+// "user is managing source", and the binary never auto-mutates those.
+//
+// PR α exposes Tier from ResolveExtractorsDir but the production call
+// sites discard the value with `_`. The seam exists so PR β can land its
+// tier-gated logic without rippling the signature change through the
+// codebase twice. Tests already assert tier values against the right
+// enum (TierCwd, TierConfigDir, TierUnknown).
 type Tier int
 
 const (

@@ -13,6 +13,13 @@ import (
 //go:embed queries/_canonical.jq
 var embeddedQueriesRoot embed.FS
 
+// embeddedExtractorsRoot bundles extractor source into the binary so a
+// future change (see issue #241, PR β) can populate
+// ~/.config/audit/extractors/ on a fresh brew install with no checkout
+// required. This PR α ships the embed pipeline but does not yet consume
+// it — the auto-extract gate that reads from embeddedExtractors() lands
+// in PR β.
+//
 //go:embed extractors
 var embeddedExtractorsRoot embed.FS
 
@@ -27,9 +34,13 @@ func embeddedQueries() fs.FS {
 	return sub
 }
 
-// embeddedExtractors returns an fs.FS rooted at the extractors/ subdirectory
-// so callers see <language>/ at the top level (matching the source tree
-// under repo-root/extractors/).
+// embeddedExtractors returns an fs.FS rooted at the extractors/
+// subdirectory so callers see <language>/ at the top level (matching the
+// source tree under repo-root/extractors/).
+//
+// Currently unused by any caller in PR α — see embeddedExtractorsRoot's
+// comment. Kept declared so PR β can wire it into the auto-extract path
+// without an additional accessor.
 func embeddedExtractors() fs.FS {
 	sub, err := fs.Sub(embeddedExtractorsRoot, "extractors")
 	if err != nil {
@@ -37,3 +48,7 @@ func embeddedExtractors() fs.FS {
 	}
 	return sub
 }
+
+// Reference embeddedExtractors so `go vet` does not flag it as unused in
+// PR α. PR β replaces this reference with a real call site.
+var _ = embeddedExtractors
