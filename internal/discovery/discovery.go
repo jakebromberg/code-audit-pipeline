@@ -87,35 +87,59 @@ type ExtractorOpts struct {
 	HomeDir   string // typically os.UserHomeDir(); empty disables the ~/.config fallback.
 }
 
-// ResolveExtractorsDir returns (absPath, label, error).
-func ResolveExtractorsDir(opts ExtractorOpts) (string, string, error) {
+// Tier names the discovery layer that resolved. Auto-extract gates on
+// TierConfigDir — earlier tiers signal "user is managing source", and the
+// binary never auto-mutates those.
+type Tier int
+
+const (
+	TierUnknown   Tier = iota
+	TierFlag           // --extractors-dir / --queries-dir
+	TierCwd            // cwd-relative extractors/ or pipeline/queries/
+	TierAuditHome      // $AUDIT_HOME
+	TierConfigDir      // ~/.config/audit/extractors — the auto-extract target
+	TierEmbedded       // queries-only embedded fallback; not used for extractors
+)
+
+// ResolveExtractorsDir returns (absPath, tier, label, error). tier is the
+// load-bearing typed value used for control-flow decisions (e.g. the
+// auto-extract gate); label remains for human-readable status display.
+func ResolveExtractorsDir(opts ExtractorOpts) (string, Tier, string, error) {
 	cwd := opts.CWD
 	if cwd == "" {
 		var err error
 		cwd, err = os.Getwd()
 		if err != nil {
-			return "", "", fmt.Errorf("discovery: getwd: %w", err)
+			return "", TierUnknown, "", fmt.Errorf("discovery: getwd: %w", err)
 		}
 	}
 
-	candidates := []struct{ path, label string }{}
-	if opts.Flag != "" {
-		candidates = append(candidates, struct{ path, label string }{opts.Flag, "--extractors-dir " + opts.Flag})
+	type candidate struct {
+		path  string
+		tier  Tier
+		label string
 	}
-	candidates = append(candidates, struct{ path, label string }{
-		filepath.Join(cwd, "extractors"),
-		"cwd-relative " + filepath.Join(cwd, "extractors"),
+	var candidates []candidate
+	if opts.Flag != "" {
+		candidates = append(candidates, candidate{opts.Flag, TierFlag, "--extractors-dir " + opts.Flag})
+	}
+	candidates = append(candidates, candidate{
+		path:  filepath.Join(cwd, "extractors"),
+		tier:  TierCwd,
+		label: "cwd-relative " + filepath.Join(cwd, "extractors"),
 	})
 	if opts.AuditHome != "" {
-		candidates = append(candidates, struct{ path, label string }{
-			filepath.Join(opts.AuditHome, "extractors"),
-			"$AUDIT_HOME (" + opts.AuditHome + ")",
+		candidates = append(candidates, candidate{
+			path:  filepath.Join(opts.AuditHome, "extractors"),
+			tier:  TierAuditHome,
+			label: "$AUDIT_HOME (" + opts.AuditHome + ")",
 		})
 	}
 	if opts.HomeDir != "" {
-		candidates = append(candidates, struct{ path, label string }{
-			filepath.Join(opts.HomeDir, ".config", "audit", "extractors"),
-			"~/.config/audit/extractors",
+		candidates = append(candidates, candidate{
+			path:  filepath.Join(opts.HomeDir, ".config", "audit", "extractors"),
+			tier:  TierConfigDir,
+			label: "~/.config/audit/extractors",
 		})
 	}
 
@@ -123,12 +147,12 @@ func ResolveExtractorsDir(opts ExtractorOpts) (string, string, error) {
 		if dirExists(c.path) {
 			abs, err := filepath.Abs(c.path)
 			if err != nil {
-				return "", "", fmt.Errorf("discovery: abs %s: %w", c.path, err)
+				return "", TierUnknown, "", fmt.Errorf("discovery: abs %s: %w", c.path, err)
 			}
-			return abs, c.label, nil
+			return abs, c.tier, c.label, nil
 		}
 	}
-	return "", "", fmt.Errorf("discovery: no extractors directory found (run `code-audit init` to populate ~/.config/audit/)")
+	return "", TierUnknown, "", fmt.Errorf("discovery: no extractors directory found (run `code-audit init` to populate ~/.config/audit/)")
 }
 
 func hasCanonical(dir string) bool {

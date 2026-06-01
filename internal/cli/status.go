@@ -53,7 +53,7 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 	cwd, _ := os.Getwd()
 
 	qsrc, qerr := discovery.ResolveQueriesDir(discovery.QueryOpts{Flag: *queriesDir, AuditHome: auditHome, CWD: cwd}, queriesFS)
-	xpath, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{Flag: *extractorsDir, AuditHome: auditHome, CWD: cwd, HomeDir: homeDir})
+	xpath, _, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{Flag: *extractorsDir, AuditHome: auditHome, CWD: cwd, HomeDir: homeDir})
 
 	fmt.Fprintf(out, "Audit root:        %s\n", absRoot)
 	fmt.Fprintf(out, "Cache:             %s  (audit-version %s)\n", c.Dir, Version)
