@@ -90,6 +90,18 @@ func Parse(path string) (*Manifest, error) {
 	return &m, nil
 }
 
+// validate enforces the schema-version range and per-version field rules.
+//
+// Note: BurntSushi/toml silently ignores unknown top-level fields by
+// default. When introducing schema_version > 2 that adds NEW required
+// fields, bumping MaxSchemaVersion is not enough — wire the field through
+// the Manifest struct and add a presence check here so a v2-capped binary
+// reading a v3 manifest fails loudly (or rejects the manifest) rather
+// than parsing silently with an undefined-default for the new field.
+//
+// To detect unknown fields in the future, switch from toml.Unmarshal to
+// toml.NewDecoder + DisallowUnknownFields (BurntSushi v1.5+) or inspect
+// MetaData.Undecoded() after decode.
 func (m *Manifest) validate(path string) error {
 	if m.SchemaVersion < MinSchemaVersion || m.SchemaVersion > MaxSchemaVersion {
 		return fmt.Errorf("manifest: %s: schema_version must be %d-%d, got %d",
