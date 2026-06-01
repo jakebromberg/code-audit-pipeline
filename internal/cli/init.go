@@ -826,6 +826,13 @@ func runBootstrap(ctx context.Context, extractorDir string, m *manifest.Manifest
 	syncProgress := &syncWriter{w: progress}
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = extractorDir
+	// WaitDelay bounds the post-cancellation drain window. Without it,
+	// `sh -c "sleep 30"` can hang cmd.Wait() for the full 30s on Linux
+	// even after SIGKILL — the orphan `sleep` grandchild inherits the
+	// stdout/stderr pipes, so the os/exec copy goroutines block on
+	// Read() until the grandchild exits. With WaitDelay set, cmd.Wait()
+	// returns within the delay even if pipes haven't drained.
+	cmd.WaitDelay = 2 * time.Second
 	var stderrBuf, stdoutBuf bytes.Buffer
 	cmd.Stdout = io.MultiWriter(syncProgress, &cappedWriter{buf: &stdoutBuf, cap: bootstrapStderrCap})
 	cmd.Stderr = io.MultiWriter(syncProgress, &cappedWriter{buf: &stderrBuf, cap: bootstrapStderrCap})
