@@ -76,7 +76,7 @@ func TestE2EFileHashes(t *testing.T) {
 		"--root", repo,
 		"--audit-root", tmp,
 		"--extractors-dir", extractorsAbs,
-	}, &out)
+	}, &out, nil)
 	if exitCode != 0 {
 		t.Fatalf("Extract exit=%d, out=%s", exitCode, out.String())
 	}

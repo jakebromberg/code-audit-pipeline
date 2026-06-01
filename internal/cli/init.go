@@ -23,11 +23,30 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
 )
 
-// initSubdirs is the list of source subdirectories `code-audit init` copies into
-// the destination. Per ADR-0006, queries get bundled into the binary too, but
-// init still lays them down on disk so contributors can edit and re-run
-// without rebuilding.
+// initSubdirs is the list of source subdirectories `code-audit init` copies
+// into the destination. Per ADR-0006, queries get bundled into the binary
+// too, but init still lays them down on disk so contributors can edit and
+// re-run without rebuilding. The same set is used for both filesystem
+// (--from <checkout>) and embedded sources.
 var initSubdirs = []string{"extractors", "pipeline/queries"}
+
+// SubtreeSrc names one of the initSubdirs and the fs.FS rooted at that
+// subtree. Init() composes a slice of these — one per initSubdir — from
+// either os.DirFS(--from/<sub>) or the binary's embedded source.
+type SubtreeSrc struct {
+	// RelPath is the destination-relative subdirectory the subtree maps to
+	// (e.g. "extractors" or "pipeline/queries"). Matches initSubdirs.
+	RelPath string
+	// FS is the fs.FS rooted at the subtree. fs.WalkDir(FS, ".", ...) yields
+	// the entries to consider for copying. For --from, this is
+	// os.DirFS(filepath.Join(src, RelPath)); for the brew flow, this is
+	// embeddedExtractors() or embeddedQueries() (or equivalent).
+	FS fs.FS
+	// Embedded is true when FS is backed by //go:embed (mode bits are
+	// 0o444 across the board, so the executable bit is inferred from a
+	// `#!` shebang in the file's first two bytes).
+	Embedded bool
+}
 
 // initSkipDirs holds a fresh per-package copy of the canonical skip set so
 // mutations cannot bleed back into the initstate-shared source. A drift
@@ -96,33 +115,51 @@ const (
 	BootstrapNA      = "n-a"
 )
 
-// Init implements `code-audit init`.
-func Init(ctx context.Context, argv []string, stdout io.Writer) int {
+// Init implements `code-audit init`. The embedded slice supplies the brew
+// flow's source (one SubtreeSrc per initSubdir). When --from is given, the
+// filesystem source supersedes embedded; pass nil for embedded in test
+// contexts where --from is always provided.
+func Init(ctx context.Context, argv []string, stdout io.Writer, embedded []SubtreeSrc) int {
 	fset := flag.NewFlagSet("init", flag.ContinueOnError)
 	destFlag := fset.String("dest", "", "destination (default: $XDG_CONFIG_HOME/audit or ~/.config/audit)")
-	fromFlag := fset.String("from", "", "source: a local checked-out code-audit-pipeline repo (required in v1)")
+	fromFlag := fset.String("from", "", "source: a local checked-out code-audit-pipeline repo (defaults to embedded)")
 	upgrade := fset.Bool("upgrade", false, "refresh dest from source even when files exist; warns about local mods")
 	force := fset.Bool("force", false, "overwrite locally-modified files without prompting (implies --upgrade)")
 	dryRun := fset.Bool("dry-run", false, "print what would copy without writing")
 	if err := fset.Parse(argv); err != nil {
 		return 2
 	}
-	if *fromFlag == "" {
-		fmt.Fprintln(stdout, "code-audit init: --from <path> is required in v1 (point at a local checkout of code-audit-pipeline)")
-		return 2
-	}
 	if *force {
 		*upgrade = true
 	}
 
-	src, err := filepath.Abs(*fromFlag)
-	if err != nil {
-		fmt.Fprintf(stdout, "code-audit init: --from path: %v\n", err)
-		return 2
-	}
-	if err := validateSource(src); err != nil {
-		fmt.Fprintf(stdout, "code-audit init: %v\n", err)
-		return 2
+	var (
+		subtrees []SubtreeSrc
+		src      string // filesystem absolute path; "" for embedded source
+	)
+	if *fromFlag != "" {
+		abs, err := filepath.Abs(*fromFlag)
+		if err != nil {
+			fmt.Fprintf(stdout, "code-audit init: --from path: %v\n", err)
+			return 2
+		}
+		src = abs
+		if err := validateSource(src); err != nil {
+			fmt.Fprintf(stdout, "code-audit init: %v\n", err)
+			return 2
+		}
+		for _, sub := range initSubdirs {
+			subtrees = append(subtrees, SubtreeSrc{
+				RelPath: sub,
+				FS:      os.DirFS(filepath.Join(src, sub)),
+			})
+		}
+	} else {
+		if len(embedded) == 0 {
+			fmt.Fprintln(stdout, "code-audit init: no embedded source available; pass --from <checkout>")
+			return 2
+		}
+		subtrees = embedded
 	}
 
 	dest := *destFlag
@@ -138,14 +175,16 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		fmt.Fprintf(stdout, "code-audit init: dest path: %v\n", err)
 		return 2
 	}
-	if err := refuseSymlinkLoop(src, destAbs); err != nil {
-		fmt.Fprintf(stdout, "code-audit init: %v\n", err)
-		return 2
+	if src != "" {
+		if err := refuseSymlinkLoop(src, destAbs); err != nil {
+			fmt.Fprintf(stdout, "code-audit init: %v\n", err)
+			return 2
+		}
 	}
 
 	prior, _ := loadState(destAbs) // missing-OK: every file then classifies NEW
 
-	plan, err := buildCopyPlan(ctx, src, destAbs)
+	plan, err := buildCopyPlan(ctx, subtrees, destAbs)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			fmt.Fprintln(stdout, "code-audit init: cancelled")
@@ -171,7 +210,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		skippedDirty int
 		newState     = InitState{
 			AuditVersion:    Version,
-			SourceRepoRoot:  src,
+			SourceRepoRoot:  sourceRepoRootLabel(src),
 			SourceCommitSHA: gitHeadSHA(src),
 			AppliedAt:       time.Now().UTC().Format(time.RFC3339),
 			Files:           map[string]InitStateFile{},
@@ -191,7 +230,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		switch c.state {
 		case stateNew:
 			if !*dryRun {
-				if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
+				if err := copyFile(c.srcFS, c.srcRel, c.dstAbs, c.mode); err != nil {
 					fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 					return 1
 				}
@@ -205,7 +244,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		case stateClean:
 			if *upgrade {
 				if !*dryRun {
-					if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
+					if err := copyFile(c.srcFS, c.srcRel, c.dstAbs, c.mode); err != nil {
 						fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 						return 1
 					}
@@ -220,7 +259,7 @@ func Init(ctx context.Context, argv []string, stdout io.Writer) int {
 		case stateDirty:
 			if *force {
 				if !*dryRun {
-					if err := copyFile(c.srcAbs, c.dstAbs); err != nil {
+					if err := copyFile(c.srcFS, c.srcRel, c.dstAbs, c.mode); err != nil {
 						fmt.Fprintf(stdout, "code-audit init: copy %s: %v\n", c.relDest, err)
 						return 1
 					}
@@ -322,11 +361,14 @@ const (
 )
 
 type fileClassification struct {
-	srcAbs  string
-	dstAbs  string
-	relDest string // forward-slash, joins-as-state-file-key
-	srcSHA  string
-	state   fileState
+	srcFS    fs.FS  // fs rooted at the subtree containing this file
+	srcRel   string // forward-slash path within srcFS, e.g. "typescript/manifest.toml"
+	embedded bool   // true when srcFS is //go:embed-backed (mode bits non-authoritative)
+	dstAbs   string
+	relDest  string // forward-slash, joins-as-state-file-key (e.g. "extractors/typescript/manifest.toml")
+	srcSHA   string
+	state    fileState
+	mode     os.FileMode // exec bit honored from src (filesystem) or shebang (embedded)
 }
 
 // validateSource confirms --from points at something that looks like a
@@ -422,35 +464,48 @@ func pathContains(parent, child string) bool {
 	return strings.HasPrefix(filepath.Clean(child)+string(filepath.Separator), p)
 }
 
-// buildCopyPlan walks the source subtrees and produces the list of files to
+// buildCopyPlan walks each SubtreeSrc and produces the list of files to
 // consider. Skip patterns mirror initSkipDirs. Honors ctx cancellation so
 // Ctrl-C breaks out of a deep walk on a slow filesystem.
-func buildCopyPlan(ctx context.Context, src, dst string) ([]fileClassification, error) {
+//
+// Symlinks (file or directory) are never followed: fs.WalkDir doesn't
+// recurse into symlinked directories, and the entry-level filter below
+// drops symlink files outright. This is a behaviour change from the prior
+// filepath.WalkDir-based code; the symmetry between --from and embedded
+// sources is worth the divergence.
+func buildCopyPlan(ctx context.Context, subtrees []SubtreeSrc, dst string) ([]fileClassification, error) {
 	var plan []fileClassification
-	for _, sub := range initSubdirs {
-		srcSub := filepath.Join(src, sub)
-		err := filepath.WalkDir(srcSub, func(path string, d fs.DirEntry, walkErr error) error {
+	for _, st := range subtrees {
+		err := fs.WalkDir(st.FS, ".", func(rel string, d fs.DirEntry, walkErr error) error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
 			if walkErr != nil {
 				return walkErr
 			}
+			if rel == "." {
+				return nil
+			}
+			base := d.Name()
 			if d.IsDir() {
-				if initSkipDirs[d.Name()] || (strings.HasPrefix(d.Name(), ".") && path != srcSub) {
+				if initSkipDirs[base] || strings.HasPrefix(base, ".") {
 					return fs.SkipDir
 				}
 				return nil
 			}
-			rel, err := filepath.Rel(src, path)
-			if err != nil {
-				return err
+			// Symlinks not followed: drop the entry.
+			if d.Type()&fs.ModeSymlink != 0 {
+				return nil
 			}
-			relSlash := filepath.ToSlash(rel)
+			relDest := st.RelPath + "/" + rel
+			mode := planFileMode(st.FS, rel, st.Embedded)
 			plan = append(plan, fileClassification{
-				srcAbs:  path,
-				dstAbs:  filepath.Join(dst, rel),
-				relDest: relSlash,
+				srcFS:    st.FS,
+				srcRel:   rel,
+				embedded: st.Embedded,
+				dstAbs:   filepath.Join(dst, filepath.FromSlash(relDest)),
+				relDest:  relDest,
+				mode:     mode,
 			})
 			return nil
 		})
@@ -462,6 +517,31 @@ func buildCopyPlan(ctx context.Context, src, dst string) ([]fileClassification, 
 	return plan, nil
 }
 
+// planFileMode returns the destination mode for a source file. For
+// filesystem sources, the source's stat mode is used (clamped to 0o644
+// minimum). For embedded sources, //go:embed strips mode bits to 0o444 —
+// we sniff the first two bytes; a `#!` shebang promotes the file to 0o755.
+func planFileMode(srcFS fs.FS, srcRel string, embedded bool) os.FileMode {
+	if !embedded {
+		info, err := fs.Stat(srcFS, srcRel)
+		if err != nil {
+			return 0o644
+		}
+		return info.Mode().Perm() | 0o644
+	}
+	f, err := srcFS.Open(srcRel)
+	if err != nil {
+		return 0o644
+	}
+	defer f.Close()
+	var head [2]byte
+	n, _ := f.Read(head[:])
+	if n == 2 && head[0] == '#' && head[1] == '!' {
+		return 0o755
+	}
+	return 0o644
+}
+
 // classifyFiles pre-computes each plan entry's state + source sha. Honors
 // ctx cancellation so a SHA pass over many files can be aborted promptly.
 func classifyFiles(ctx context.Context, plan []fileClassification, dst string, prior *InitState) ([]fileClassification, error) {
@@ -470,9 +550,9 @@ func classifyFiles(ctx context.Context, plan []fileClassification, dst string, p
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		srcSHA, err := sha256File(c.srcAbs)
+		srcSHA, err := sha256FS(c.srcFS, c.srcRel)
 		if err != nil {
-			return nil, fmt.Errorf("sha %s: %w", c.srcAbs, err)
+			return nil, fmt.Errorf("sha %s: %w", c.relDest, err)
 		}
 		c.srcSHA = srcSHA
 		dstInfo, err := os.Stat(c.dstAbs)
@@ -523,20 +603,30 @@ func sha256File(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// copyFile writes via tmp-then-rename. Creates the parent directory. Mode is
-// inherited from src, masked to the user/group/other rwx bits so an
-// over-permissive source (e.g. 0o777) doesn't leak through, and clamped to a
-// 0o644 minimum so we never produce an unreadable destination.
-func copyFile(src, dst string) error {
+// sha256FS is the fs.FS-rooted sibling of sha256File. Works for both
+// os.DirFS-backed and embed.FS-backed sources.
+func sha256FS(srcFS fs.FS, srcRel string) (string, error) {
+	f, err := srcFS.Open(srcRel)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// copyFile writes via tmp-then-rename. Creates the parent directory. The
+// caller supplies the mode (computed by planFileMode); copyFile applies it
+// via O_CREATE + an explicit Chmod since a typical 0o022 umask would strip
+// the executable bit from O_CREATE alone.
+func copyFile(srcFS fs.FS, srcRel, dst string, mode os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	mode := srcInfo.Mode().Perm() | 0o644
-	in, err := os.Open(src)
+	in, err := srcFS.Open(srcRel)
 	if err != nil {
 		return err
 	}
@@ -555,14 +645,21 @@ func copyFile(src, dst string) error {
 		os.Remove(tmp)
 		return err
 	}
-	// Explicit Chmod: O_CREATE applies the mode through umask, which can
-	// strip the executable bit on standard 0o022 umasks. Set it directly so
-	// shell scripts under extractors/ stay executable post-init.
 	if err := os.Chmod(tmp, mode); err != nil {
 		os.Remove(tmp)
 		return err
 	}
 	return os.Rename(tmp, dst)
+}
+
+// sourceRepoRootLabel renders a state.json-friendly identifier for the
+// source. Filesystem paths pass through; the embedded source is recorded
+// as the sentinel "<embedded>".
+func sourceRepoRootLabel(src string) string {
+	if src == "" {
+		return "<embedded>"
+	}
+	return src
 }
 
 // loadState reads the state file at <dest>/.audit-init/state.json. Returns
@@ -605,9 +702,13 @@ func saveState(dest string, s *InitState) error {
 }
 
 // gitHeadSHA returns the source's git HEAD commit (short-circuit to empty if
-// the source isn't a git checkout, or git isn't installed). Recorded in the
-// state file for forensic value only — never load-bearing.
+// the source isn't a git checkout, or git isn't installed, or src is "" —
+// the embedded-source case). Recorded in state.json for forensic value
+// only — never load-bearing.
 func gitHeadSHA(src string) string {
+	if src == "" {
+		return ""
+	}
 	headPath := filepath.Join(src, ".git", "HEAD")
 	data, err := os.ReadFile(headPath)
 	if err != nil {

@@ -1,6 +1,8 @@
-# Bundle queries, leave extractors external, discover via lookup order
+# Bundle queries, leave extractor runtime external, discover via lookup order
 
-The Go binary embeds `pipeline/queries/*.jq` via Go's `embed` package. Extractors are not bundled — each has heavyweight language-specific dependencies (`npm install`, `swift build`, future `pip install`) the binary cannot meaningfully package. Both queries and extractors are discovered via a lookup-order chain that prefers explicit flags, then cwd-relative paths, then `$AUDIT_HOME`, then a fallback: bundled queries (always present) or `~/.config/audit/` for extractors (populated by `code-audit init`). `code-audit init` clones (or extracts a release tarball of) the project source into `~/.config/audit/` to bootstrap extractor discovery on a fresh install.
+> Update (per [ADR-0008](0008-extractor-embedding-and-auto-bootstrap.md)): **extractor *source* is now embedded too** — only the language-specific *runtime* (Node, Swift toolchain, future Python) stays external. The discovery chain (tiers 1–4) is unchanged; ADR-0008 specifies the auto-extract behaviour that fires when tier 4 resolves and is missing or stale. Read this ADR for the chain; read ADR-0008 for what happens at tier 4 on a fresh brew install.
+
+The Go binary embeds `pipeline/queries/*.jq` via Go's `embed` package, plus the extractor source tree under `extractors/<lang>/` (per ADR-0008). The extractor *runtime* — `npm install`, `swift build`, future `pip install` — stays external; the binary executes a manifest-declared `[runtime].bootstrap` argv (e.g. `["npm", "install"]`) automatically when laying down source. Both queries and extractors are discovered via a lookup-order chain that prefers explicit flags, then cwd-relative paths, then `$AUDIT_HOME`, then a fallback: bundled queries (always present) or `~/.config/audit/` for extractors (auto-populated from the embedded source on first `code-audit extract`, or explicitly via `code-audit init`).
 
 ## Considered Options
 

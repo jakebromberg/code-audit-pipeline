@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/auditdir"
 	"github.com/jakebromberg/code-audit-pipeline/internal/discovery"
@@ -102,6 +104,12 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 		fmt.Fprintf(out, "\nWarning: meta.json.root=%q differs from cwd=%q\n", c.Meta().Root, absRoot)
 	}
 
+	bootstrapDest := defaultDest()
+	if bootstrapDest != "" {
+		bootstrapState, _ := loadState(bootstrapDest)
+		renderExtractorBootstrapState(out, bootstrapState, bootstrapDest, homeDir)
+	}
+
 	if rootMismatch || qerr != nil || xerr != nil {
 		return 1
 	}
@@ -109,4 +117,65 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 		return 1
 	}
 	return 0
+}
+
+// renderExtractorBootstrapState prints a per-extractor block sourced from
+// state.Extractors. The block is suppressed when state is nil or has no
+// extractor entries (the case for users who only ever ran cwd-local
+// extractors and never invoked `init`/auto-extract).
+func renderExtractorBootstrapState(out io.Writer, state *InitState, dest, homeDir string) {
+	if state == nil || len(state.Extractors) == 0 {
+		return
+	}
+	names := make([]string, 0, len(state.Extractors))
+	for n := range state.Extractors {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	sourceLabel := state.SourceRepoRoot
+	if sourceLabel == "" {
+		sourceLabel = "?"
+	}
+	fmt.Fprintln(out, "\nExtractors:")
+	for _, n := range names {
+		es := state.Extractors[n]
+		extPath := tildify(filepath.Join(dest, "extractors", n), homeDir)
+		fmt.Fprintf(out, "  %s: %s  [%s]\n", n, extPath, sourceLabel)
+		switch es.BootstrapStatus {
+		case BootstrapOK:
+			when := "?"
+			if es.BootstrappedAt != nil {
+				when = es.BootstrappedAt.UTC().Format(time.RFC3339)
+			}
+			fmt.Fprintf(out, "    bootstrap: ok (%s)\n", when)
+		case BootstrapFailed:
+			firstLine := strings.SplitN(strings.TrimSpace(es.LastError), "\n", 2)[0]
+			if firstLine == "" {
+				firstLine = "(no error captured)"
+			}
+			fmt.Fprintf(out, "    bootstrap: failed: %s\n", firstLine)
+		case BootstrapNA:
+			fmt.Fprintln(out, "    bootstrap: n/a (no [runtime].bootstrap declared)")
+		case BootstrapPending, "":
+			fmt.Fprintln(out, "    bootstrap: pending (will run on next `extract`)")
+		default:
+			fmt.Fprintf(out, "    bootstrap: %s\n", es.BootstrapStatus)
+		}
+	}
+}
+
+// tildify replaces a leading home-dir prefix with "~" so status output is
+// readable without leaking the user's full home path.
+func tildify(p, home string) string {
+	if home == "" {
+		return p
+	}
+	if p == home {
+		return "~"
+	}
+	if strings.HasPrefix(p, home+string(filepath.Separator)) {
+		return "~" + p[len(home):]
+	}
+	return p
 }
