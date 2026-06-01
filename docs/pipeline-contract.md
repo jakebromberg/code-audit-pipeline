@@ -843,5 +843,56 @@ Cluster-id construction lives in `pipeline/queries/_canonical.jq` so the rules a
 - `cluster_id_sorted_paths(prefix; paths)` — for path-keyed clusters (file-duplicates).
 - `loc_key(decl)` — `package:file:line:name` location key for record disambiguation. Also aliased as `fn_location_key` for backwards compatibility.
 - `output_format` — `"text"` (default) or `"jsonl"`, read from `$ENV.OUTPUT_FORMAT`.
+- `is_published` — true when a row's `origin_package` field is a non-empty string. Filters cross-repo collisions down to the published-only subset. Only `kind: "import"` rows currently carry `origin_package` (per PR #196); on type/function rows the predicate returns false.
+- `is_repo_local` — logical complement of `is_published`. True when a row has no `origin_package`, or it's null/empty.
+- `stale_threshold_days` — staleness cutoff in days, sourced from `$ENV.CROSS_REPO_STALE_DAYS` (default 7). Consumed by `coverage.jq` and `preflight-versions.jq`; the same env is read by `refresh-index.mjs` at publish-time when computing each repo's `latest.status`.
 
 Unit tests covering each helper live in `pipeline/queries/_tests/test_canonical.sh`; integration tests covering each query in both modes live in `pipeline/queries/_tests/test_queries_integration.sh`. Both run with no dependencies beyond `jq` and `bash`.
+
+## Cross-repo substrate guardrails (`coverage.jq`, `preflight-versions.jq`, `run-cross-repo-query.sh`)
+
+Cross-repo queries — those that merge catalogs across N repos via the substrate (`docs/substrate.md`) — go through a wrapper that enforces two guardrails before the query runs. The contract: a cross-repo report's consumer can always read its scope and trust its merge-safety without inspecting the wrapper output by eye.
+
+### `pipeline/queries/coverage.jq`
+
+Consumes the substrate's `index.json` directly (single positional argument). Emits a multi-line header in text mode or a structured JSON object in JSONL mode, surfacing:
+
+- `scope: {covered, expected}` — how many repos out of the expected set produced an `ok`-status catalog.
+- `missing[]` — repos in `index.json` whose status is `missing` (in `--known-repos` but absent from the bucket).
+- `stale[]` — repos in `index.json` whose status is `stale` (catalog older than `CROSS_REPO_STALE_DAYS`).
+- `divergent_stale[]` — `ok`-status repos whose freshly-recomputed age vs. the *query-time* threshold value would mark them stale. Surfaces drift between the publish-time and query-time reads of the env var.
+- `errored[]` — currently always empty; reserved for when extractors emit a top-level error count on their catalogs (open in the brief; not yet implemented).
+- `threshold_days`, `comparison_at`, `median_age_hours`, `max_age_hours` — context for the age summary.
+
+Exit is always 0; coverage is informational, not a gate.
+
+### `pipeline/queries/preflight-versions.jq`
+
+Also consumes `index.json` (single positional argument). Groups every `ok`-status catalog's `extractor` block by `(language, name)`. Within each group:
+
+- If majors differ across repos: refuse (exit 1).
+- If minors differ but majors match: pass with a `WARNING: minor version skew` line.
+- If any catalog has a missing or unparseable `extractor.version`: refuse (exit 1).
+
+The refusal model is "fail closed on data unsafety" — version skew within a single extractor type would produce silently wrong cross-repo joins (different `shape_sig` normalization rules, different field names). Multi-language merges are fine; only same-extractor skew refuses.
+
+JSONL mode emits `{status: "ok"|"minor-skew"|"refused", reason, extractors[], refusal_details}`. Text mode emits a per-extractor versions table followed by a `STATUS: <verdict>` line. The jq query terminates with `halt_error(1)` on refusal so callers can rely on the exit code.
+
+### `pipeline/run-cross-repo-query.sh`
+
+The wrapper that runs `fetch-catalogs.sh` → `preflight-versions.jq` → `coverage.jq` → the user's query. Coverage's stdout is prepended to the query's stdout (as `#`-prefixed comment lines so a JSONL consumer can strip them with `grep -v '^#'`). Preflight's exit code propagates as the wrapper's exit code on refusal — the user's query never runs.
+
+```bash
+# Standard cross-repo invocation
+AUDIT_BUCKET_URL=https://catalogs.wxyc.org \
+  pipeline/run-cross-repo-query.sh pipeline/queries/<your-query>.jq
+
+# Override catalog kind (default: type-catalog)
+CROSS_REPO_CATALOG_KIND=function-catalog \
+  pipeline/run-cross-repo-query.sh pipeline/queries/<func-query>.jq
+
+# Subset of repos
+pipeline/run-cross-repo-query.sh --repos wxyc/dj-site,wxyc/shared <query>.jq
+```
+
+The wrapper is the standard cross-repo entry point. Direct invocation of `jq ... | jq ... | jq ...` against the cache is supported for one-off debugging but bypasses the safety net — F1/F2/F3 cross-repo queries should always be wrapped.

@@ -12,8 +12,9 @@ Substrate scope is deliberately narrow: it doesn't run extractors, doesn't compu
 | [`pipeline/publish-catalog.sh`](../pipeline/publish-catalog.sh) | Write path: upload one repo's catalogs, write `latest.json`, trigger index refresh | Each repo's CI on push to `main` (lands under #154) |
 | [`pipeline/refresh-index.mjs`](../pipeline/refresh-index.mjs) | Rebuild `index.json` from the bucket listing (idempotent, self-healing) | `publish-catalog.sh`, nightly cron, manual recovery |
 | [`pipeline/verify-index.sh`](../pipeline/verify-index.sh) | Drift detector: report orphan prefixes and dangling references | After every publish; scheduled CI cron |
+| [`pipeline/run-cross-repo-query.sh`](../pipeline/run-cross-repo-query.sh) | Cross-repo query wrapper: fetch → preflight → coverage → query | Auditor running any cross-repo query |
 
-All four also support a `--bucket-fs DIR` local-filesystem mode for hermetic tests and local dev — no S3 / R2 dependency.
+All four substrate tools (and the wrapper) also support a `--bucket-fs DIR` (or `file://` URL) local-filesystem mode for hermetic tests and local dev — no S3 / R2 dependency.
 
 ## Bucket layout
 
@@ -75,6 +76,32 @@ CLI flags override the env where both are accepted.
 
 ## Local workflow (auditor)
 
+The standard entry point is the cross-repo wrapper (`pipeline/run-cross-repo-query.sh`), which composes fetch + preflight + coverage + query in one invocation. It is the canonical way to run any cross-repo query.
+
+```bash
+# Standard cross-repo invocation. Fetches, preflights versions, prints a
+# coverage header, then runs the query against the merged type-catalog stream.
+AUDIT_BUCKET_URL=https://catalogs.wxyc.org \
+  pipeline/run-cross-repo-query.sh pipeline/queries/cross-package-shadows-any.jq
+
+# Subset of repos (forwarded to fetch-catalogs):
+pipeline/run-cross-repo-query.sh --repos wxyc/dj-site,wxyc/shared \
+  pipeline/queries/cross-package-shadows-any.jq
+
+# Different catalog kind (default: type-catalog):
+CROSS_REPO_CATALOG_KIND=function-catalog \
+  pipeline/run-cross-repo-query.sh pipeline/queries/function-duplicates.jq
+
+# Trust an already-warm cache; skip fetch:
+pipeline/run-cross-repo-query.sh --skip-fetch pipeline/queries/<q>.jq
+```
+
+The wrapper enforces the operational-safety guardrails from #155: a major-version skew across the merged catalogs aborts the run before the query starts, and a coverage header is prepended to the query's output so the consumer can always see which repos contributed to the result. See [`pipeline-contract.md` § Cross-repo substrate guardrails](pipeline-contract.md#cross-repo-substrate-guardrails-coveragejq-preflight-versionsjq-run-cross-repo-querysh) for the contract.
+
+### Manual (bypass the wrapper)
+
+For one-off debugging when you want to skip the safety net:
+
 ```bash
 # Pull every repo's latest catalogs into /tmp/wxyc-audit/catalogs/
 AUDIT_BUCKET_URL=https://catalogs.wxyc.org \
@@ -90,11 +117,7 @@ jq -L pipeline/queries -rf pipeline/queries/cross-package-shadows-any.jq \
   /tmp/wxyc-audit/merged-types.json
 ```
 
-A subset fetch (faster for one-off questions):
-
-```bash
-pipeline/fetch-catalogs.sh --repos wxyc/dj-site,wxyc/shared
-```
+Manual invocation is unsafe in steady state — it omits preflight (so an extractor major-version skew silently corrupts the results) and omits coverage (so the consumer can't tell what scope the report ran over). The wrapper exists to make that the default, not an opt-in.
 
 ## CI workflow (per repo, lands under #154)
 

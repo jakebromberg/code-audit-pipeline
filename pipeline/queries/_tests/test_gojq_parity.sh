@@ -50,6 +50,7 @@ LEAKS_FUNCTIONS_FIXTURE="$FIXTURES_DIR/public-api-leaks-functions.input.json"
 LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
 BACKWARD_IMPORTS_FIXTURE="$FIXTURES_DIR/cross-package-backward-imports-files.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
+INDEX_FIXTURE="$FIXTURES_DIR/cross-repo-ops/all-ok.index.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -210,6 +211,11 @@ both_modes cross-package-backward-imports            "$QUERIES_DIR/cross-package
 echo ""
 echo "=== Cross-catalog (null-input, two slurps) ==="
 both_modes cross-catalog-name-collisions             "$QUERIES_DIR/cross-catalog-name-collisions.jq"             "-n" --slurpfile left "$CROSS_CAT_LEFT" --slurpfile right "$CROSS_CAT_RIGHT"
+
+echo ""
+echo "=== Cross-repo substrate (index.json input) ==="
+both_modes coverage                                  "$QUERIES_DIR/coverage.jq"                                  "$INDEX_FIXTURE"
+both_modes preflight-versions                        "$QUERIES_DIR/preflight-versions.jq"                        "$INDEX_FIXTURE"
 
 echo ""
 echo "=== Summary ==="
