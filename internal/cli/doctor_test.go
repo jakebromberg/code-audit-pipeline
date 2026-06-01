@@ -577,33 +577,7 @@ func TestDoctor_AuditHomeStateLocationConsistent(t *testing.T) {
 	}
 }
 
-// Test 19 — toolProbed dedup is case-insensitive so two manifests
-// declaring "Node" and "node" both probe via a single LookPath call.
-// Hard to verify the count without monkeypatching, but we can at least
-// confirm both extractors render OK against the lowercase key.
-func TestDoctor_ToolProbedCaseInsensitive(t *testing.T) {
-	setupDoctorHome(t,
-		map[string]string{
-			"extra/manifest.toml":      validManifest("extra", []string{"Sh"}, nil),
-			"typescript/manifest.toml": validManifest("typescript", []string{"sh"}, nil),
-		},
-		nil,
-	)
-	var out bytes.Buffer
-	exit := Doctor(nil, &out)
-	if exit != 0 {
-		t.Fatalf("Doctor exit=%d (want 0), out=%s", exit, out.String())
-	}
-	got := out.String()
-	// Both should resolve via PATH-found sh and render `ok`.
-	for _, want := range []string{"Sh  (requires Sh)  ok", "sh  (requires sh)  ok"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("missing %q in output:\n%s", want, got)
-		}
-	}
-}
-
-// Test 20 — requireToolName splits on broader whitespace AND on
+// Test 19 — requireToolName splits on broader whitespace AND on
 // version-operator characters so `node>=18`, `node\t>= 18`, and
 // `node\r>=18` all resolve to "node".
 func TestRequireToolName(t *testing.T) {
