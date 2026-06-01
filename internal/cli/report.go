@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -62,6 +63,11 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	// stream on stdout.
 	fset.SetOutput(os.Stderr)
 	if err := fset.Parse(argv); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			// `--help` is user intent, not an error. Return 0; the usage
+			// text has already been written to stderr by fset.Parse.
+			return 0
+		}
 		return 2
 	}
 
@@ -99,8 +105,8 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	}
 
 	// Validate the marker only in pr-comment mode — text mode doesn't emit it.
-	if *modeFlag == "pr-comment" && !ValidateMarker(*markerFlag) {
-		fmt.Fprintf(os.Stderr, "code-audit: --marker must match [A-Za-z0-9_.:/-]+ and be non-empty, got %q\n", *markerFlag)
+	if *modeFlag == "pr-comment" && !validateMarker(*markerFlag) {
+		fmt.Fprintf(os.Stderr, "code-audit: --marker must match [A-Za-z0-9][A-Za-z0-9_.:/-]* (no '--' substring, max %d chars), got %q\n", markerMaxLen, *markerFlag)
 		return 2
 	}
 
@@ -160,7 +166,12 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 
 	report, failed := composeReport(absRoot, results)
 	if failed {
-		fmt.Fprintln(os.Stderr, report)
+		// Text-mode failure body goes to the caller-supplied writer (the
+		// artifact stream — `code-audit report > findings.md` puts the
+		// partial report on disk regardless of failure). Per-query error
+		// details are visible inside the body itself; the workflow exit
+		// code (1) signals failure.
+		fmt.Fprintln(stdout, report)
 		return 1
 	}
 
@@ -185,12 +196,15 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 //     are logged to stderr and the sections are EXCLUDED from the rendered
 //     body, but successful sections still render normally. Only when
 //     EVERY section failed does the body collapse to the fail-quiet
-//     notice — losing 12 successful sections because 1 errored was the
+//     notice — losing N successful sections because 1 errored was the
 //     pre-fix behavior and obscured useful signal.
-//   - In loud failure mode, errors are rendered into the "Skipped queries"
-//     fallback (per composePRComment's section-rendering rules — note that
-//     pr-comment composition drops skipped sections, so loud-mode failures
-//     also only appear on stderr) and the function returns exit code 1.
+//   - In loud failure mode with partial errors, the rendered body contains
+//     only the successful sections; the exit code is 1 so the workflow
+//     flags red and per-section errors are visible on stderr.
+//   - In loud failure mode with ALL sections errored, the rendered body
+//     would otherwise be "No structural impact" (since composePRComment
+//     filters err sections), which lies about the run — so we substitute
+//     the fail-quiet body wording but still return exit 1.
 //   - When --output fails to write, the body falls back to stdout so an
 //     expensive query run doesn't vanish on a transient filesystem error.
 //
@@ -222,21 +236,25 @@ func emitPRComment(
 	var body string
 	exit := 0
 	switch {
-	case allFailed && failureMode == "quiet":
-		// Every non-skipped section failed; nothing useful to render.
-		// Surface the fail-quiet notice; exit 0 to keep the comment
-		// surface current.
-		body = failQuietBody(opts.marker, detectedLanguages)
+	case allFailed:
+		// Every non-skipped section failed. Render the failure-body
+		// regardless of quiet/loud mode — composePRComment would render
+		// "No structural impact" since it filters err sections, which
+		// would lie about why the report is empty. Quiet returns exit 0
+		// (comment surface stays current); loud returns exit 1.
+		body = failQuietBody(opts.marker, detectedLanguages, opts.sizeCapBytes)
+		if failureMode == "loud" {
+			exit = 1
+		}
 	case errCount > 0 && failureMode == "loud":
-		// composePRComment naturally excludes err/skipped sections, so the
-		// rendered body contains only the successful sections. The loud
-		// failure mode also returns exit 1 so the workflow flags red.
+		// Partial errors in loud mode: render the surviving successful
+		// sections, exit 1 so the workflow flags red.
 		body = composePRComment(results, opts)
 		exit = 1
 	default:
-		// quiet mode with errors-but-not-all-failed: render the successful
-		// sections; the per-section errors logged above to stderr are the
-		// loud diagnostic surface. Comment stays useful.
+		// Quiet mode with errors-but-not-all-failed, or no errors at all:
+		// render the successful sections normally. Per-section errors
+		// were already logged to stderr above.
 		body = composePRComment(results, opts)
 	}
 
