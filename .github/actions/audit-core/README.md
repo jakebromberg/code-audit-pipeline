@@ -108,10 +108,20 @@ jobs:
 
 | Input value | Resolves to | When to use |
 |---|---|---|
-| `v1` (default) | newest `v1.*` release | Default. Get patches automatically, never a breaking change. |
+| `v1` (default) | newest stable `v1.*` release | Default. Get patches automatically, never a breaking change. Pre-release tags (`v1.x.y-rc1`, `v1.x.y-beta`, anything containing `-`) are excluded so a release candidate cannot accidentally satisfy the pin. |
 | `v1.4.2` | exactly `v1.4.2` | Reproducibility-critical contexts (post-mortems, replays). |
-| `latest` | newest release of any major | Bleeding-edge — accept that a major bump can break your job overnight. |
+| `latest` | newest release of any major | Bleeding-edge — accept that a major bump can break your job overnight. Implemented by omitting the tag argument to `gh release download` (which makes gh fetch the latest release), so it works regardless of whether a tag literally named `latest` exists. |
 | `build-from-source` | binary built from the action's own checkout | Only when this repo is the caller (CI for this repo). Not a valid choice for sibling consumers. |
+
+The action's home repository is resolved from `${{ github.action_repository }}` when the action is invoked as `owner/repo/.github/actions/audit-core@ref`, or by reading the git remote of the action's checkout when invoked via a local path (`uses: ./.github/actions/audit-core`). If neither is available, the install step fails with an actionable error rather than silently targeting the caller's repo.
+
+### Boolean inputs
+
+`include-tests` and `include-file-hashes` are string-typed `'true'`/`'false'`. GitHub Actions stringifies YAML boolean inputs to lowercase, so `include-file-hashes: true` (YAML boolean) and `include-file-hashes: 'true'` both work. **Quoted strings like `'True'`/`'TRUE'` are NOT canonicalized** — use lowercase to stay portable.
+
+### audit-root creation
+
+The `audit-root` input is `mkdir -p`'d automatically. Callers can safely point it at a not-yet-existing prefix (e.g. `${{ runner.temp }}/audit-cache`) for cross-job artifact sharing without having to pre-create the directory.
 
 ## Troubleshooting
 
