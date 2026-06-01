@@ -26,9 +26,10 @@ on:
       bucket-region:
         description: >-
           AWS region tag passed to aws-actions/configure-aws-credentials.
-          R2 ignores region routing but the AWS SDK requires a non-empty
-          value; the default "auto" is correct for R2. Override only when
-          publishing to a non-R2 S3 backend that pins a real region.
+          The default "auto" is correct for Cloudflare R2 (which ignores
+          region routing) but the AWS SDK rejects "auto" against real
+          AWS S3 endpoints — non-R2 backends MUST override with a real
+          region like "us-east-1".
         type: string
         required: false
         default: auto
@@ -37,18 +38,21 @@ on:
           OIDC role ARN whose trust policy permits this repo's
           GitHub Actions to assume it. When set, used in preference to
           static R2 access-key secrets (the recommended path). When empty,
-          the workflow falls back to the r2-access-key-id / r2-secret-
-          access-key secrets — see docs/audit-publish-setup.md for the
-          tradeoff.
+          the workflow falls back to the R2_ACCESS_KEY_ID /
+          R2_SECRET_ACCESS_KEY secrets — see docs/audit-publish-setup.md
+          for the tradeoff.
         type: string
         required: false
         default: ''
       audit-binary-version:
         description: >-
-          code-audit release tag to install. See the audit-core composite
-          for the resolution rules. Default "v1" tracks the v1 major
-          series; consumers in operational-critical contexts may want to
-          pin a fully-qualified "v1.2.3".
+          code-audit release tag to install. `v1`/`v2` resolve to the
+          newest stable release of that major series. `latest` resolves
+          to the newest stable release of any major. A fully-qualified
+          `v1.2.3` is used verbatim. Whichever value is resolved is used
+          for BOTH the pipeline-source checkout AND the binary install —
+          eliminating split-brain where the pipeline scripts and the
+          binary come from different releases.
         type: string
         required: false
         default: v1
@@ -80,6 +84,34 @@ on:
         type: boolean
         required: false
         default: false
+      audit-root:
+        description: >-
+          Where the composite places .audit/. Defaults to the runner temp
+          directory so a misconfigured caller can't accidentally commit
+          catalog files back to their repo. Override to share .audit/
+          across jobs (e.g. point at a path that `actions/upload-artifact`
+          will pick up for debug).
+        type: string
+        required: false
+        default: ''
+      github-token:
+        description: >-
+          Token used by the composite for `gh release download`. Defaults
+          to the caller's GITHUB_TOKEN. Override on private-repo or
+          IP-restricted callers whose default token lacks read access to
+          jakebromberg/code-audit-pipeline releases.
+        type: string
+        required: false
+        default: ''
+      skip-refresh:
+        description: >-
+          When true, publish-catalog.sh skips the trailing
+          refresh-index.mjs invocation. Useful for batch publishers that
+          want to refresh once after multiple runs, or as an escape hatch
+          if refresh-index.mjs regresses upstream.
+        type: boolean
+        required: false
+        default: false
       runner:
         description: >-
           Runner label for the publish job. Default ubuntu-latest. Repos
@@ -92,12 +124,15 @@ on:
         required: false
         default: ubuntu-latest
     secrets:
-      r2-access-key-id:
+      # Reusable-workflow secret-input names must be alphanumeric +
+      # underscores to match what `secrets: inherit` can actually
+      # populate (GitHub repo/org secret names disallow hyphens).
+      R2_ACCESS_KEY_ID:
         description: >-
           R2 / S3 access key. Required when role-to-assume is empty.
           Ignored when role-to-assume is set (OIDC takes precedence).
         required: false
-      r2-secret-access-key:
+      R2_SECRET_ACCESS_KEY:
         description: R2 / S3 secret access key. Required when role-to-assume is empty.
         required: false
     outputs:
@@ -109,9 +144,19 @@ on:
       catalogs-published:
         description: Number of catalog files uploaded.
         value: ${{ jobs.publish.outputs.catalogs-published }}
+      languages-detected:
+        description: Comma-separated list of languages the composite ran extractors for.
+        value: ${{ jobs.publish.outputs.languages-detected }}
+      binary-version-used:
+        description: Resolved code-audit release tag actually installed.
+        value: ${{ jobs.publish.outputs.binary-version-used }}
+      requires-macos:
+        description: '"true" iff swift was detected; lets downstream jobs gate to macos-latest.'
+        value: ${{ jobs.publish.outputs.requires-macos }}
 
-# OIDC needs `id-token: write`; static-key callers can drop that down to
-# `id-token: none` but the default permits both auth paths.
+# OIDC needs `id-token: write`. Reusable-workflow permissions are an
+# upper bound — callers can grant less (id-token: none for static-key
+# usage) but the reusable itself does not adapt to the auth path.
 permissions:
   contents: read
   id-token: write
@@ -122,6 +167,9 @@ jobs:
     outputs:
       published-prefix: ${{ steps.publish.outputs.published-prefix }}
       catalogs-published: ${{ steps.publish.outputs.catalogs-published }}
+      languages-detected: ${{ steps.audit.outputs.languages-detected }}
+      binary-version-used: ${{ steps.audit.outputs.binary-version-used }}
+      requires-macos: ${{ steps.audit.outputs.requires-macos }}
     steps:
       - name: Checkout caller repo
         uses: actions/checkout@v6
@@ -129,24 +177,53 @@ jobs:
           fetch-depth: 1
 
       - name: Resolve audit-core ref
-        # The composite lives in this repo's `.github/actions/audit-core`.
-        # We pin to the same tag as the binary so a single version input
-        # advances both the catalog format and the extractor surface in
-        # lockstep.
+        # Resolve `latest` and major-pins (`v1`/`v2`) to a concrete
+        # release tag here so the SAME tag drives both the pipeline-
+        # source checkout below and the composite's binary install.
+        # Without this resolution: actions/checkout `ref: latest` 404s
+        # (no such git ref); and `ref: v1` pulls the floating major-
+        # series tag, which may lag the latest v1.x.y release that the
+        # composite installs — producing split-brain runs.
         id: ref
         shell: bash
         env:
           BINARY_VERSION: ${{ inputs.audit-binary-version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          # build-from-source isn't a valid choice for sibling-repo
-          # callers — it would require the caller to have this repo's
-          # source on disk. Refuse with an actionable error.
-          if [ "$BINARY_VERSION" = "build-from-source" ]; then
+          version="$BINARY_VERSION"
+
+          if [ "$version" = "build-from-source" ]; then
             echo "publish-catalog-reusable: audit-binary-version=build-from-source is only valid for this repo's own CI, not for sibling consumers." >&2
             exit 1
           fi
-          echo "ref=$BINARY_VERSION" >> "$GITHUB_OUTPUT"
+
+          pipeline_repo="jakebromberg/code-audit-pipeline"
+          if [ "$version" = "latest" ]; then
+            resolved="$(gh release list --repo "$pipeline_repo" \
+              --limit 100 --json tagName --jq \
+              '.[] | .tagName | select(contains("-") | not)' \
+              | sort -V | tail -1)"
+            if [ -z "$resolved" ]; then
+              echo "publish-catalog-reusable: no stable releases found on $pipeline_repo" >&2
+              exit 1
+            fi
+          elif echo "$version" | grep -Eq '^v[0-9]+$'; then
+            major="${version#v}"
+            resolved="$(gh release list --repo "$pipeline_repo" \
+              --limit 100 --json tagName --jq \
+              '.[] | .tagName | select(startswith("v'"$major"'.") and (contains("-") | not))' \
+              | sort -V | tail -1)"
+            if [ -z "$resolved" ]; then
+              echo "publish-catalog-reusable: no stable v${major}.* releases found on $pipeline_repo" >&2
+              exit 1
+            fi
+          else
+            resolved="$version"
+          fi
+
+          echo "Resolved audit-binary-version=$version → $resolved" >&2
+          echo "ref=$resolved" >> "$GITHUB_OUTPUT"
 
       # Checkout the audit pipeline so we have publish-catalog.sh + the
       # composite + extractors available at a known path. The composite
@@ -167,14 +244,13 @@ jobs:
         with:
           root: ${{ inputs.root }}
           languages: ${{ inputs.languages }}
-          binary-version: ${{ inputs.audit-binary-version }}
+          # Pass the already-resolved concrete tag so the composite
+          # doesn't re-resolve and risk diverging from the checkout.
+          binary-version: ${{ steps.ref.outputs.ref }}
           include-tests: ${{ inputs.include-tests }}
           include-file-hashes: ${{ inputs.include-file-hashes }}
-          # Put .audit/ under the runner temp dir, not the caller's
-          # checkout, so a misconfigured caller can't accidentally commit
-          # catalog files back to their own repo.
-          audit-root: ${{ runner.temp }}/audit
-          github-token: ${{ github.token }}
+          audit-root: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+          github-token: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
 
       - name: Configure R2 credentials (OIDC)
         if: inputs.role-to-assume != ''
@@ -187,20 +263,23 @@ jobs:
         if: inputs.role-to-assume == ''
         shell: bash
         env:
-          ACCESS_KEY_ID: ${{ secrets.r2-access-key-id }}
-          SECRET_ACCESS_KEY: ${{ secrets.r2-secret-access-key }}
+          ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ inputs.bucket-region }}
         run: |
           set -Eeuo pipefail
           if [ -z "$ACCESS_KEY_ID" ] || [ -z "$SECRET_ACCESS_KEY" ]; then
-            echo "publish-catalog-reusable: role-to-assume is empty and r2-access-key-id / r2-secret-access-key secrets are not set. Configure either OIDC (recommended — see docs/audit-publish-setup.md) or static keys." >&2
+            echo "publish-catalog-reusable: role-to-assume is empty and R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY secrets are not set. Configure either OIDC (recommended — see docs/audit-publish-setup.md) or static keys." >&2
             exit 1
           fi
+          # Heredoc form to $GITHUB_ENV so a secret containing newlines
+          # (paste error, multi-line value) doesn't corrupt the env file
+          # by spilling onto unrelated KEY=VALUE lines.
           {
-            echo "AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID"
-            echo "AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY"
-            echo "AWS_REGION=$AWS_REGION"
-            echo "AWS_DEFAULT_REGION=$AWS_REGION"
+            printf 'AWS_ACCESS_KEY_ID<<__EOF__\n%s\n__EOF__\n' "$ACCESS_KEY_ID"
+            printf 'AWS_SECRET_ACCESS_KEY<<__EOF__\n%s\n__EOF__\n' "$SECRET_ACCESS_KEY"
+            printf 'AWS_REGION=%s\n' "$AWS_REGION"
+            printf 'AWS_DEFAULT_REGION=%s\n' "$AWS_REGION"
           } >> "$GITHUB_ENV"
 
       - name: Publish catalog to R2
@@ -210,6 +289,7 @@ jobs:
           CATALOGS_DIR: ${{ steps.audit.outputs.catalogs-dir }}
           BUCKET_NAME: ${{ inputs.bucket-name }}
           BUCKET_ENDPOINT: ${{ inputs.bucket-endpoint }}
+          SKIP_REFRESH: ${{ inputs.skip-refresh }}
         run: |
           set -Eeuo pipefail
           if [ -z "$CATALOGS_DIR" ]; then
@@ -221,27 +301,36 @@ jobs:
             exit 1
           fi
 
-          # Capture publish-catalog.sh's output prefix from its [2/4] log
-          # line so we can surface it as a workflow output. The script
-          # logs to stderr; we tee a copy through a fifo to scrape it
-          # while still letting the original stderr flow to the job log.
+          extra_args=()
+          if [ "$SKIP_REFRESH" = "true" ]; then
+            extra_args+=( --skip-refresh )
+          fi
+
+          # Mirror stderr to both the job log AND $log. Synchronous pipe
+          # (`2>&1 | tee >&2`) is intentional: a process-substitution
+          # (`2> >(tee "$log" >&2)`) races the tee writer and can leave
+          # $log empty when the very-next grep reads it. pipefail
+          # preserves publish-catalog.sh's exit code through the pipe.
           log="$(mktemp)"
+          trap 'rm -f "$log"' EXIT
           bash "$GITHUB_WORKSPACE/.code-audit-pipeline/pipeline/publish-catalog.sh" \
             --repo "$GITHUB_REPOSITORY" \
             --sha "$GITHUB_SHA" \
             --catalogs-dir "$CATALOGS_DIR" \
             --bucket-name "$BUCKET_NAME" \
             --bucket-endpoint "$BUCKET_ENDPOINT" \
-            2> >(tee "$log" >&2)
+            "${extra_args[@]}" \
+            2>&1 | tee "$log" >&2
 
-          # The published prefix lands in the trailing "Published … to …/"
-          # line; the count is the number of "uploaded by-repo/.../<file>"
-          # lines. Both grep against the captured stderr.
-          prefix="$(grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' "$log" | head -1 | sed 's:/$::')"
+          # `|| true` on both lines: zero matches must produce an empty
+          # output, not abort the step. Keeping them symmetric documents
+          # intent; without `|| true` on the prefix line, set -o pipefail
+          # would propagate grep's exit 1 and kill the workflow after a
+          # successful upload whose log format diverged from the regex.
+          prefix="$(grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' "$log" | head -1 | sed 's:/$::' || true)"
           count="$(grep -cE '^  uploaded by-repo/' "$log" || true)"
           echo "published-prefix=$prefix" >> "$GITHUB_OUTPUT"
-          echo "catalogs-published=$count" >> "$GITHUB_OUTPUT"
-          rm -f "$log"
+          echo "catalogs-published=${count:-0}" >> "$GITHUB_OUTPUT"
 
       - name: Summary
         if: always()

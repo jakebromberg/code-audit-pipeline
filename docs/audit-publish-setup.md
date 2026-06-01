@@ -49,7 +49,7 @@ The flow GitHub → Cloudflare OIDC isn't directly supported (R2 trusts AWS IAM,
 1. **AWS-mediated:** create an AWS IAM role that the GitHub OIDC provider can assume; the role has an IAM policy granting `s3:PutObject` on the R2 bucket (R2 honors S3-API IAM if you front it with an AWS account that holds R2 credentials in Secrets Manager). Complex; not the path most orgs take.
 2. **Cloudflare API token + GitHub secrets:** generate a scoped R2 API token in Cloudflare (Object Read & Write on a single bucket prefix), store as a GitHub repo secret. This is *not* OIDC strictly, but it's the path of least resistance for Cloudflare R2 today. Treat the token like a long-lived secret: rotate quarterly.
 
-The reusable workflow supports either: if you pass `role-to-assume`, it calls `aws-actions/configure-aws-credentials@v4`; if you only pass the `r2-access-key-id` / `r2-secret-access-key` secrets, it exports them as environment variables.
+The reusable workflow supports either: if you pass `role-to-assume`, it calls `aws-actions/configure-aws-credentials@v4`; if you only pass the `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` secrets, it exports them as environment variables.
 
 For the rest of this doc we'll assume the Cloudflare-API-token path with secrets, since that's what most teams will use.
 
@@ -68,6 +68,8 @@ Copy the `Access Key ID` and `Secret Access Key`. In each sibling repo that will
 - `R2_SECRET_ACCESS_KEY` = the secret
 
 For org-wide use, store as **organization secrets** with a repo allowlist instead of per-repo secrets.
+
+These exact names matter: GitHub repo/org secret names allow only alphanumerics and underscores, and the reusable workflow's secret-input names match this constraint (`R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`). With those names, `secrets: inherit` in the consumer workflow forwards them automatically. Renaming either side breaks the inherit binding silently — the reusable falls into its "secrets are not set" branch.
 
 ### 3. IAM / bucket policy (OIDC path only)
 
@@ -112,13 +114,15 @@ The trust policy (the part that says "this GitHub repo's OIDC identity may assum
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
       "StringEquals": { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
-      "StringLike":   { "token.actions.githubusercontent.com:sub": "repo:wxyc/*:ref:refs/heads/main" }
+      "StringLike":   { "token.actions.githubusercontent.com:sub": "repo:wxyc/*:*" }
     }
   }]
 }
 ```
 
-The `sub` wildcard above grants every repo under `wxyc/*` push-only access from main. Tighten if your needs are stricter (e.g. specific repos), loosen with caution.
+The `sub` wildcard `repo:wxyc/*:*` grants every workflow trigger (push, schedule, workflow_dispatch from any branch) on every repo under `wxyc/*` access. This is the most permissive form that lets maintainers test setup by triggering `workflow_dispatch` from a feature branch — a stricter form like `repo:wxyc/*:ref:refs/heads/main` will reject manual dispatches from non-main branches, producing baffling AccessDenied errors during onboarding.
+
+If you need to constrain further (e.g. only the publish workflow, only on main), prefer constraining the publish workflow itself (e.g. limit `workflow_dispatch:` to specific environments) over tightening the trust policy — getting the `sub` claim wrong wastes hours of debugging.
 
 ## Consumer workflow
 
@@ -148,23 +152,36 @@ The reusable workflow handles language detection, toolchain install, extractor e
 |---|---|---|
 | `bucket-name` | required | S3-API bucket name. |
 | `bucket-endpoint` | required | S3-API endpoint URL. R2: `https://<account-id>.r2.cloudflarestorage.com`. |
-| `bucket-region` | `auto` | Region tag for the AWS SDK. R2 ignores it; override only for non-R2 backends. |
+| `bucket-region` | `auto` | Region tag for the AWS SDK. **`auto` is R2-specific** — Cloudflare R2 ignores region routing and accepts the literal string. Real AWS S3 endpoints require a concrete region like `us-east-1` and will fail signature checks with `auto`. |
 | `role-to-assume` | `''` | OIDC role ARN. When set, takes precedence over static-key secrets. |
-| `audit-binary-version` | `v1` | code-audit release tag. Pin to a major series for patch updates without breaking changes; pin a fully-qualified `v1.2.3` to freeze. |
+| `audit-binary-version` | `v1` | code-audit release tag. `v1`/`v2` resolve to the newest stable release of that major; `latest` to the newest stable release of any major; a fully-qualified `v1.2.3` is used verbatim. The resolved tag drives both the pipeline-source checkout and the binary install — eliminating split-brain where source and binary disagree. |
 | `languages` | `''` (auto-detect) | Comma-separated override. Use only when marker-file detection is wrong (rare). |
 | `root` | `.` | Repo root to scan. |
 | `include-tests` | `false` | Pass `--include-tests` to every extractor. |
 | `include-file-hashes` | `false` | **See known gap below.** Default `false` until #141 lands. |
+| `audit-root` | `${{ runner.temp }}/audit` | Where `.audit/` lands on disk. Override to share catalogs across jobs (e.g. point at a path that `actions/upload-artifact` will pick up for debug). |
+| `github-token` | `${{ github.token }}` | Token used by the composite for `gh release download`. Override on private-repo or IP-restricted callers whose default token lacks read access to `jakebromberg/code-audit-pipeline` releases. |
+| `skip-refresh` | `false` | When `true`, skips the trailing `refresh-index.mjs` invocation. Useful for batch publishers that refresh once after multiple runs, or as an escape hatch if `refresh-index.mjs` regresses upstream. |
 | `runner` | `ubuntu-latest` | Runner label. Override to `macos-latest` for Swift-containing repos. |
+
+### Outputs reference
+
+| Output | Purpose |
+|---|---|
+| `published-prefix` | The `by-repo/<repo>/<ts>_<sha>/` prefix the run uploaded under. Use it to construct R2 URLs in notifications. |
+| `catalogs-published` | Number of catalog files uploaded. |
+| `languages-detected` | Comma-separated list of languages the composite ran extractors for. |
+| `binary-version-used` | Resolved `code-audit` release tag actually installed. |
+| `requires-macos` | `"true"` iff Swift was detected. Lets a downstream `needs:`-dependent job gate to `runs-on: macos-latest`. |
 
 ### Secrets reference
 
 | Secret | Required when | Purpose |
 |---|---|---|
-| `r2-access-key-id` | `role-to-assume` is empty | R2 access key. |
-| `r2-secret-access-key` | `role-to-assume` is empty | R2 secret access key. |
+| `R2_ACCESS_KEY_ID` | `role-to-assume` is empty | R2 access key. |
+| `R2_SECRET_ACCESS_KEY` | `role-to-assume` is empty | R2 secret access key. |
 
-Use `secrets: inherit` in the caller workflow so the reusable picks these up automatically when set as repo/org secrets. Explicit forwarding (`secrets: { r2-access-key-id: ${{ secrets.FOO }} }`) is also supported.
+Use `secrets: inherit` in the caller workflow so the reusable picks these up automatically when set as repo/org secrets with these exact names. Explicit forwarding (`secrets: { R2_ACCESS_KEY_ID: ${{ secrets.FOO }} }`) is also supported.
 
 ### Polyglot repos
 
@@ -208,10 +225,12 @@ A polyglot TS+Swift repo currently runs the whole job on a macOS runner because 
 ## Troubleshooting
 
 - **`AccessDenied` from R2 on upload.** Bucket policy / token scope. Token must have `Object Read & Write` on the bucket; OIDC roles need the IAM policy above.
-- **`InvalidAccessKeyId` from R2.** The static keys are wrong, or the OIDC trust policy didn't match (and the workflow silently fell back to env-var keys that aren't set). Check `AWS_ACCESS_KEY_ID` is not empty in the configure step's logs.
+- **`InvalidAccessKeyId` from R2.** The static keys are wrong, OR the secret names don't match: the reusable expects `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` (uppercase + underscores). Hyphenated names won't bind through `secrets: inherit`.
 - **`publish-catalog.sh: REFUSED: file-hashes.json is not a v1.1 wrapper-shaped catalog`.** You set `include-file-hashes: true` before #141 landed. Flip back to `false`.
 - **`audit-core: cannot resolve action repository`.** You're invoking the composite directly via a local path while in a context with no git remote — should not happen in the reusable-workflow path, which checks out the pipeline repo explicitly.
 - **macOS job times out installing toolchains.** Cold cache. The composite reinstalls Node + builds the TS extractor's `node_modules/` on every run; a follow-up will add `actions/cache` to amortize this.
+- **`Couldn't find remote ref latest` from checkout.** You're on an older version of the reusable that forwarded `latest` to `actions/checkout` verbatim. Upgrade `@v1` to the current release — the Resolve step now turns `latest` into a concrete tag before checkout.
+- **`AssumeRoleWithWebIdentity: AccessDenied` on `workflow_dispatch` runs.** The trust policy's `sub` claim is too narrow; manual dispatches from feature branches don't satisfy `refs/heads/main`. Use `repo:wxyc/*:*` per the trust-policy snippet above, or constrain the workflow's triggers instead of the policy.
 
 ## Operational signals to watch
 

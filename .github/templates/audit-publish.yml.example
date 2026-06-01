@@ -14,13 +14,29 @@ name: Publish code-audit catalog
 on:
   push:
     branches: [main]
+    # Skip publishes for changes that don't move the catalog: docs,
+    # GitHub config, ignore files. Tune per repo; the cost of a wasted
+    # run is a duplicate timestamped prefix in R2 with identical
+    # catalogs to the prior run.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**'
+      - '.gitignore'
+      - 'LICENSE*'
   schedule:
-    # Nightly catch-up in case a push misses publication. Adjust per repo.
+    # Nightly catch-up in case a push misses publication. **Pick a
+    # randomized minute and hour per repo** — copying this verbatim
+    # across N consumers schedules them all at the same instant,
+    # racing index.json writes and contending for R2 rate limits.
+    # `date -u +%M` once and substitute, or just pick anything ≠ 17:07.
     - cron: '17 7 * * *'
   workflow_dispatch:
 
-# `id-token: write` is required for OIDC. Leave it on even if you use
-# static keys — it's a permission grant, not a behavior change.
+# `id-token: write` is required for OIDC. Static-key callers may set
+# this to `none` — but note that the reusable workflow's own
+# permissions block declares `id-token: write` as an upper bound; the
+# caller (this file) decides what to actually grant.
 permissions:
   contents: read
   id-token: write
@@ -38,9 +54,12 @@ jobs:
       # static keys. Comment out role-to-assume + uncomment the secrets
       # block below to fall back to keys.
       role-to-assume: arn:aws:iam::000000000000:role/wxyc-code-audit-publisher
+      # bucket-region: us-east-1   # ← uncomment + set if publishing to real S3 (not R2)
     secrets: inherit
     # When using static keys instead of OIDC, drop the `role-to-assume`
-    # line above and uncomment:
+    # line above and uncomment the explicit forwarding below. Note:
+    # `secrets: inherit` works ONLY because the reusable's secret-input
+    # names match real repo-secret names (alphanumerics + underscores).
     # secrets:
-    #   r2-access-key-id:     ${{ secrets.R2_ACCESS_KEY_ID }}
-    #   r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    #   R2_ACCESS_KEY_ID:     ${{ secrets.R2_ACCESS_KEY_ID }}
+    #   R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

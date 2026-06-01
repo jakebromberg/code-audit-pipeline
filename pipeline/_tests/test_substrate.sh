@@ -456,7 +456,13 @@ rm -rf "$PUB_BUCKET" "$PUB_CAT"
 # breaks silently — and the workflow can't be exercised from `bash`.
 # These tests pin the log lines the workflow depends on.
 
-echo "=== reusable contract: publish stderr exposes prefix and per-file upload lines ==="
+echo "=== reusable contract: synchronous pipe preserves stderr for prefix/count scraping ==="
+# Mirrors the exact orchestration the reusable workflow uses:
+# `bash publish-catalog.sh ... 2>&1 | tee "$log" >&2` plus pipefail
+# propagation, then grep against the tempfile. A process-substitution
+# variant (`2> >(tee "$log" >&2)`) would race the tee writer — a bug
+# the workflow shipped briefly in early PR 2 drafts. Pin this contract
+# so a regression to async tee breaks the test before consumers.
 PUB_BUCKET=$(mk_scratch)
 PUB_CAT=$(mk_scratch)
 cat > "$PUB_CAT/type-catalog.json" <<'JSON'
@@ -465,16 +471,23 @@ JSON
 cat > "$PUB_CAT/function-catalog.json" <<'JSON'
 {"schema_version":"1.1","extractor":{"language":"typescript","name":"function-catalog","version":"0.5.0"},"entries":[]}
 JSON
-log=$(bash "$PIPELINE/publish-catalog.sh" \
+log=$(mktemp)
+set -o pipefail
+bash "$PIPELINE/publish-catalog.sh" \
   --repo jakebromberg/contract-test --sha c0ffee1234abcd \
-  --catalogs-dir "$PUB_CAT" --bucket-fs "$PUB_BUCKET" --skip-refresh 2>&1)
+  --catalogs-dir "$PUB_CAT" --bucket-fs "$PUB_BUCKET" --skip-refresh \
+  2>&1 | tee "$log" >/dev/null
+rc=$?
+set +o pipefail
+assert_eq "0" "$rc" "synchronous pipe preserves publish-catalog.sh exit code through pipefail"
 # These two regexes are the workflow's; if these break, the workflow's
 # `published-prefix` and `catalogs-published` outputs go empty.
-prefix=$(printf '%s\n' "$log" | grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' | head -1 | sed 's:/$::')
-count=$(printf '%s\n' "$log" | grep -cE '^  uploaded by-repo/' || true)
+prefix=$(grep -oE 'by-repo/[^ ]+/[0-9TZ:-]+_[a-f0-9]+/' "$log" | head -1 | sed 's:/$::' || true)
+count=$(grep -cE '^  uploaded by-repo/' "$log" || true)
 assert_contains "$prefix" "by-repo/jakebromberg-contract-test/" "workflow's prefix regex finds the published prefix"
 assert_contains "$prefix" "_c0ffee1" "workflow's prefix regex captures the short-sha tail"
 assert_eq "2" "$count" "workflow's per-file-upload regex counts both catalogs"
+rm -f "$log"
 rm -rf "$PUB_BUCKET" "$PUB_CAT"
 
 echo "=== reusable contract: file-hashes-off default produces a publishable batch ==="
