@@ -445,6 +445,102 @@ func TestE2EReportPRComment_BadTouchedPath(t *testing.T) {
 	if exit != 2 {
 		t.Errorf("bad --touched should exit 2 (caller error); got exit=%d, stdout=%s", exit, stdout.String())
 	}
+	// Caller-input error must NOT pollute stdout — otherwise a workflow
+	// piping stdout into the PR comment body would post the error text
+	// without a sticky marker.
+	if stdout.Len() != 0 {
+		t.Errorf("caller-input error should not write to stdout; got: %q", stdout.String())
+	}
+}
+
+// TestE2EReportPRComment_PrCommentOnlyFlagsInTextMode — passing
+// --touched / --marker / --size-cap-bytes / --on-extraction-failure /
+// --detected-languages without --mode pr-comment must exit 2 with a usage
+// error rather than silently filtering the text-mode report or ignoring
+// the flag.
+func TestE2EReportPRComment_PrCommentOnlyFlagsInTextMode(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	touchedPath := filepath.Join(tmp, "touched.json")
+	if err := os.WriteFile(touchedPath, []byte(`[]`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"touched", []string{"--touched", touchedPath}},
+		{"marker", []string{"--marker", "custom"}},
+		{"size-cap-bytes", []string{"--size-cap-bytes", "30000"}},
+		{"on-extraction-failure", []string{"--on-extraction-failure", "loud"}},
+		{"detected-languages", []string{"--detected-languages", "typescript"}},
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			args := append([]string{"--root", tmp, "--query", "exact-duplicates"}, c.args...)
+			var stdout bytes.Buffer
+			exit := cli.Report(context.Background(), args, &stdout, embeddedQueries())
+			if exit != 2 {
+				t.Errorf("--%s in text mode should exit 2; got exit=%d", c.name, exit)
+			}
+		})
+	}
+}
+
+// TestE2EReportPRComment_InvalidMarker — markers containing characters
+// that would corrupt the sticky-comment scan (-->, newline, space, etc.)
+// are rejected at flag-parse time.
+func TestE2EReportPRComment_InvalidMarker(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	cases := []string{
+		"",                 // empty
+		"has space",        // whitespace
+		"contains-->bad",   // closes HTML comment early
+		"line\nbreak",      // multi-line
+		"angle<bracket>",   // <>
+	}
+	for _, marker := range cases {
+		marker := marker
+		t.Run(marker, func(t *testing.T) {
+			var stdout bytes.Buffer
+			exit := cli.Report(context.Background(), []string{
+				"--root", tmp,
+				"--query", "exact-duplicates",
+				"--mode", "pr-comment",
+				"--marker", marker,
+			}, &stdout, embeddedQueries())
+			if exit != 2 {
+				t.Errorf("invalid --marker %q should exit 2; got exit=%d", marker, exit)
+			}
+		})
+	}
+}
+
+// TestE2EReportPRComment_DiagnosticsOnStderr — caller-input errors and
+// the "wrote …" pointer in pr-comment mode must not appear on the
+// caller-supplied stdout writer (which a workflow may pipe into the PR
+// comment body).
+func TestE2EReportPRComment_DiagnosticsOnStderr(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	touchedPath := filepath.Join(tmp, "touched.json")
+	if err := os.WriteFile(touchedPath, []byte(`["a.ts"]`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(tmp, "comment.md")
+	var stdout bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "exact-duplicates",
+		"--touched", touchedPath,
+		"--mode", "pr-comment",
+		"--output", out,
+	}, &stdout, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d, stdout=%s", exit, stdout.String())
+	}
+	if strings.Contains(stdout.String(), "wrote") {
+		t.Errorf("pr-comment mode 'wrote …' diagnostic must go to stderr, not stdout; got stdout: %q", stdout.String())
+	}
 }
 
 // TestE2EReportPRComment_TextModeUnaffected — --mode text (default)

@@ -25,38 +25,66 @@ import (
 // .audit/reports/findings-<date>.md.
 //
 // With --mode pr-comment, the output is a GitHub PR-comment body keyed by a
-// sticky-comment marker on line 1, with cluster-shape rows filtered through
-// --touched (a JSON array of repo-relative file paths). Pipeline-internal
-// errors fail quiet (exit 0 with a marker body) so the comment surface
-// stays current; caller-input errors (bad --touched) exit 2 loud so the
-// workflow author fixes the resolve-touched.sh step. See
-// docs/pipeline-contract.md §"CLI contract" and docs/plans/123-implementation.md.
+// sticky-comment marker on line 1, with rows filtered (per-row by `shape`)
+// through --touched (a JSON array of repo-relative file paths). Pipeline-
+// internal errors fail quiet (exit 0 with a marker body) so the comment
+// surface stays current; caller-input errors (bad --touched, invalid
+// --marker) exit 2 loud so the workflow author fixes the resolve-touched.sh
+// step. See docs/pipeline-contract.md §"CLI contract" and
+// docs/plans/123-implementation.md.
+//
+// Stream convention: `stdout` carries the artifact (text-mode the same
+// "wrote …" pointer as before; pr-comment mode the actual body when
+// --output is unset). All diagnostic chatter — caller-input errors,
+// pipeline-internal errors, the "wrote …" pointer in pr-comment mode —
+// goes to os.Stderr so a workflow that pipes stdout into the PR comment
+// body never injects a `code-audit: …` line.
 func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS) int {
 	fset := flag.NewFlagSet("report", flag.ContinueOnError)
 	rootFlag := fset.String("root", "", "audit root (defaults to cwd)")
 	queriesDir := fset.String("queries-dir", "", "explicit queries directory")
 	outputFlag := fset.String("output", "", "destination .md file (default: .audit/reports/findings-YYYY-MM-DD.md)")
 	skipMissingArgs := fset.Bool("skip-missing-args", false, "skip queries with unsatisfied required --arg instead of failing")
-	touchedFlag := fset.String("touched", "", "path to JSON array of repo-relative paths; filters cluster rows to ones whose members include a touched file")
+	touchedFlag := fset.String("touched", "", "path to JSON array of repo-relative paths; in --mode pr-comment, filters rows to ones whose members include a touched file. Requires --mode pr-comment.")
 	modeFlag := fset.String("mode", "text", "output mode: text | pr-comment")
 	failureFlag := fset.String("on-extraction-failure", "", "loud | quiet (default: loud for text, quiet for pr-comment)")
-	sizeCapFlag := fset.Int("size-cap-bytes", 60000, "max comment body size in pr-comment mode (default 60000, ~4KB headroom under GitHub's 65,536-byte cap)")
-	markerFlag := fset.String("marker", "code-audit-pipeline-v1", "sticky-comment marker for --mode pr-comment; emitted as <!-- <marker> --> on line 1")
-	detectedLangsFlag := fset.String("detected-languages", "", "comma-separated language list used in the fail-quiet body; the composite forwards audit-core's languages-detected output here")
+	sizeCapFlag := fset.Int("size-cap-bytes", 60000, "max comment body size in pr-comment mode (default 60000, ~4KB headroom under GitHub's 65,536-byte cap). Pr-comment mode only.")
+	markerFlag := fset.String("marker", "code-audit-pipeline-v1", "sticky-comment marker for --mode pr-comment; emitted as <!-- <marker> --> on line 1. Pr-comment mode only.")
+	detectedLangsFlag := fset.String("detected-languages", "", "comma-separated language list used in the fail-quiet body; the composite forwards audit-core's languages-detected output here. Pr-comment mode only.")
 	var queryFilters, shapeFilters, argFlags, argJSONFlags, envFlags stringList
 	fset.Var(&queryFilters, "query", "run only this query (repeatable)")
 	fset.Var(&shapeFilters, "shape", "run only queries whose front-matter shape includes this (cluster|pair|metric, repeatable)")
 	fset.Var(&argFlags, "arg", "--arg NAME=VALUE forwarded to every query (repeatable)")
 	fset.Var(&argJSONFlags, "argjson", "--argjson NAME=JSON forwarded to every query (repeatable)")
 	fset.Var(&envFlags, "env", "--env NAME=VALUE forwarded to every query (repeatable)")
+	// Route flag.FlagSet's own usage/error output (triggered by `--help` or
+	// unknown flags) to stderr too, so it never mingles with the artifact
+	// stream on stdout.
+	fset.SetOutput(os.Stderr)
 	if err := fset.Parse(argv); err != nil {
 		return 2
 	}
 
 	if *modeFlag != "text" && *modeFlag != "pr-comment" {
-		fmt.Fprintf(stdout, "code-audit: --mode must be text or pr-comment, got %q\n", *modeFlag)
+		fmt.Fprintf(os.Stderr, "code-audit: --mode must be text or pr-comment, got %q\n", *modeFlag)
 		return 2
 	}
+
+	// Track which pr-comment-only flags the caller explicitly set so a
+	// text-mode invocation with one of them surfaces a usage error rather
+	// than silently ignoring the value.
+	explicitlySet := make(map[string]bool)
+	fset.Visit(func(f *flag.Flag) { explicitlySet[f.Name] = true })
+	prCommentOnlyFlags := []string{"touched", "marker", "size-cap-bytes", "on-extraction-failure", "detected-languages"}
+	if *modeFlag != "pr-comment" {
+		for _, name := range prCommentOnlyFlags {
+			if explicitlySet[name] {
+				fmt.Fprintf(os.Stderr, "code-audit: --%s requires --mode pr-comment\n", name)
+				return 2
+			}
+		}
+	}
+
 	failureMode := *failureFlag
 	if failureMode == "" {
 		if *modeFlag == "pr-comment" {
@@ -66,7 +94,13 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		}
 	}
 	if failureMode != "loud" && failureMode != "quiet" {
-		fmt.Fprintf(stdout, "code-audit: --on-extraction-failure must be loud or quiet, got %q\n", failureMode)
+		fmt.Fprintf(os.Stderr, "code-audit: --on-extraction-failure must be loud or quiet, got %q\n", failureMode)
+		return 2
+	}
+
+	// Validate the marker only in pr-comment mode — text mode doesn't emit it.
+	if *modeFlag == "pr-comment" && !ValidateMarker(*markerFlag) {
+		fmt.Fprintf(os.Stderr, "code-audit: --marker must match [A-Za-z0-9_.:/-]+ and be non-empty, got %q\n", *markerFlag)
 		return 2
 	}
 
@@ -74,7 +108,7 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	if *touchedFlag != "" {
 		t, err := loadTouchedSet(*touchedFlag)
 		if err != nil {
-			fmt.Fprintf(stdout, "code-audit: %v\n", err)
+			fmt.Fprintf(os.Stderr, "code-audit: %v\n", err)
 			return 2
 		}
 		touched = t
@@ -91,13 +125,13 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		Flag: *queriesDir, AuditHome: os.Getenv("AUDIT_HOME"), CWD: absRoot,
 	}, queriesFS)
 	if err != nil {
-		fmt.Fprintf(stdout, "code-audit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "code-audit: %v\n", err)
 		return 3
 	}
 
 	queryNames, err := listQueries(qsrc)
 	if err != nil {
-		fmt.Fprintf(stdout, "code-audit: list queries: %v\n", err)
+		fmt.Fprintf(os.Stderr, "code-audit: list queries: %v\n", err)
 		return 3
 	}
 
@@ -126,7 +160,7 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 
 	report, failed := composeReport(absRoot, results)
 	if failed {
-		fmt.Fprintln(stdout, report)
+		fmt.Fprintln(os.Stderr, report)
 		return 1
 	}
 
@@ -135,21 +169,33 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		dest = filepath.Join(absRoot, ".audit", "reports", "findings-"+time.Now().UTC().Format("2006-01-02")+".md")
 	}
 	if err := writeAtomic(dest, []byte(report)); err != nil {
-		fmt.Fprintf(stdout, "code-audit: write report: %v\n", err)
+		fmt.Fprintf(os.Stderr, "code-audit: write report: %v\n", err)
 		return 1
 	}
+	// Text-mode "wrote …" diagnostic keeps its historical stdout location
+	// for backwards compatibility — existing harnesses scrape it from
+	// stdout. Pr-comment mode (below) emits the same message on stderr.
 	fmt.Fprintf(stdout, "code-audit: wrote %s\n", dest)
 	return 0
 }
 
-// emitPRComment is the pr-comment-mode finalizer: it applies fail-quiet
-// substitution if any section failed, writes the body to --output (or
-// stdout when --output is empty), and returns the exit code.
+// emitPRComment is the pr-comment-mode finalizer. Behavior:
 //
-// In quiet failure mode, any sectionResult with err != nil collapses the
-// entire body to the fail-quiet notice; the loud body is written to
-// stderr so it shows up in the runner log. In loud failure mode, errors
-// are formatted into the body and the function returns exit code 1.
+//   - In quiet failure mode (the pr-comment default), per-section errors
+//     are logged to stderr and the sections are EXCLUDED from the rendered
+//     body, but successful sections still render normally. Only when
+//     EVERY section failed does the body collapse to the fail-quiet
+//     notice — losing 12 successful sections because 1 errored was the
+//     pre-fix behavior and obscured useful signal.
+//   - In loud failure mode, errors are rendered into the "Skipped queries"
+//     fallback (per composePRComment's section-rendering rules — note that
+//     pr-comment composition drops skipped sections, so loud-mode failures
+//     also only appear on stderr) and the function returns exit code 1.
+//   - When --output fails to write, the body falls back to stdout so an
+//     expensive query run doesn't vanish on a transient filesystem error.
+//
+// Diagnostic output (per-section errors, "wrote …" pointer, write
+// failures) goes to os.Stderr to keep stdout clean for the artifact.
 func emitPRComment(
 	stdout io.Writer,
 	results []sectionResult,
@@ -158,30 +204,39 @@ func emitPRComment(
 	detectedLanguages []string,
 	outputPath string,
 ) int {
-	anyErr := false
+	errCount := 0
+	totalNonSkipped := 0
 	for _, r := range results {
+		if r.skipped != "" {
+			continue
+		}
+		totalNonSkipped++
 		if r.err != nil {
-			anyErr = true
-			break
+			errCount++
+			fmt.Fprintf(os.Stderr, "code-audit: query %s: %v\n", r.name, r.err)
 		}
 	}
 
+	allFailed := errCount > 0 && errCount == totalNonSkipped
+
 	var body string
 	exit := 0
-	if anyErr {
-		if failureMode == "quiet" {
-			// Loud body to stderr for diagnostics; quiet body to comment surface.
-			for _, r := range results {
-				if r.err != nil {
-					fmt.Fprintf(os.Stderr, "code-audit: query %s: %v\n", r.name, r.err)
-				}
-			}
-			body = failQuietBody(opts.marker, detectedLanguages)
-		} else {
-			body = composePRComment(results, opts)
-			exit = 1
-		}
-	} else {
+	switch {
+	case allFailed && failureMode == "quiet":
+		// Every non-skipped section failed; nothing useful to render.
+		// Surface the fail-quiet notice; exit 0 to keep the comment
+		// surface current.
+		body = failQuietBody(opts.marker, detectedLanguages)
+	case errCount > 0 && failureMode == "loud":
+		// composePRComment naturally excludes err/skipped sections, so the
+		// rendered body contains only the successful sections. The loud
+		// failure mode also returns exit 1 so the workflow flags red.
+		body = composePRComment(results, opts)
+		exit = 1
+	default:
+		// quiet mode with errors-but-not-all-failed: render the successful
+		// sections; the per-section errors logged above to stderr are the
+		// loud diagnostic surface. Comment stays useful.
 		body = composePRComment(results, opts)
 	}
 
@@ -191,9 +246,13 @@ func emitPRComment(
 	}
 	if err := writeAtomic(outputPath, []byte(body)); err != nil {
 		fmt.Fprintf(os.Stderr, "code-audit: write pr-comment: %v\n", err)
+		// Fallback: emit body to stdout so a transient filesystem error
+		// doesn't discard an expensive query run. Caller (the composite
+		// action's marocchino step) can still pipe stdout into the PR.
+		fmt.Fprint(stdout, body)
 		return 1
 	}
-	fmt.Fprintf(stdout, "code-audit: wrote %s\n", outputPath)
+	fmt.Fprintf(os.Stderr, "code-audit: wrote %s\n", outputPath)
 	return exit
 }
 
