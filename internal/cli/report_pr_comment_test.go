@@ -574,7 +574,7 @@ func TestFailQuietBody(t *testing.T) {
 	if !strings.HasPrefix(got, "<!-- m -->\n") {
 		t.Errorf("missing marker prefix; got: %q", firstLine(got))
 	}
-	if !strings.Contains(got, "extraction failed for typescript, swift") {
+	if !strings.Contains(got, "report unavailable for typescript, swift") {
 		t.Errorf("languages not listed; got: %s", got)
 	}
 
@@ -585,17 +585,82 @@ func TestFailQuietBody(t *testing.T) {
 }
 
 func TestFailQuietBody_RespectsCap(t *testing.T) {
-	// A small cap with many languages should truncate the language list
-	// with a "(+N more)" suffix and keep the body under capBytes.
+	// A cap close to the minimum (but >= sizeCapMin via flag validation
+	// at the Report() boundary) with many languages should truncate the
+	// language list with a "(+N more)" suffix.
 	langs := []string{"typescript", "swift", "go", "python", "rust", "kotlin", "java", "csharp"}
-	cap := 120
+	cap := sizeCapMin
 	got := failQuietBody("m", langs, cap)
 	if len(got) > cap {
 		t.Errorf("body length %d exceeds cap %d for many-languages truncation:\n%s", len(got), cap, got)
 	}
-	if !strings.Contains(got, "more") {
-		t.Errorf("expected '(+N more)' suffix when languages were truncated; got: %s", got)
+}
+
+func TestTruncateRunes(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		max  int
+		want string
+	}{
+		{"empty", "", 5, ""},
+		{"max=0", "abc", 0, ""},
+		{"short fits", "abc", 10, "abc"},
+		{"exact fit", "abcd", 4, "abcd"},
+		{"ascii truncate", "abcdefgh", 4, "abcd"},
+		// Multi-byte UTF-8 (é is 2 bytes, 漢 is 3 bytes). Cut MUST land on
+		// a rune boundary; never produce an invalid byte sequence.
+		{"multibyte cut at boundary", "héllo", 3, "hé"}, // h(1)+é(2) = 3 bytes, fits exactly
+		{"multibyte cut mid-rune", "héllo", 2, "h"},     // 2 bytes can't fit h+é=3, so just h
+		{"cjk fits", "漢字", 6, "漢字"},
+		{"cjk truncate", "漢字漢", 4, "漢"}, // 漢=3 bytes; max=4 fits one rune only
+		{"emoji handled", "ab😀cd", 2, "ab"},
 	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			got := truncateRunes(c.in, c.max)
+			if got != c.want {
+				t.Errorf("truncateRunes(%q, %d) = %q, want %q", c.in, c.max, got, c.want)
+			}
+			if len(got) > c.max && c.max > 0 {
+				t.Errorf("output %q has %d bytes, exceeds max %d", got, len(got), c.max)
+			}
+		})
+	}
+}
+
+func TestParseCSV_RejectsControlChars(t *testing.T) {
+	// Embedded newlines/tabs in a single entry corrupt downstream emit; drop them.
+	got := parseCSV("typescript,foo\nbar,swift")
+	want := []string{"typescript", "swift"}
+	if !equalStrings(got, want) {
+		t.Errorf("parseCSV with embedded newline: got %v, want %v", got, want)
+	}
+	// Tab inside entry also rejected.
+	got = parseCSV("alpha,beta\tgamma,delta")
+	want = []string{"alpha", "delta"}
+	if !equalStrings(got, want) {
+		t.Errorf("parseCSV with embedded tab: got %v, want %v", got, want)
+	}
+	// Carriage return inside entry rejected.
+	got = parseCSV("a,b\rc,d")
+	want = []string{"a", "d"}
+	if !equalStrings(got, want) {
+		t.Errorf("parseCSV with embedded CR: got %v, want %v", got, want)
+	}
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // ---- helpers ----

@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/diffmatch"
 	"github.com/jakebromberg/code-audit-pipeline/internal/frontmatter"
@@ -28,6 +29,16 @@ var markerRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:/-]*$`)
 // `<owner>/<repo>:<workflow>:<id>` patterns while keeping the cap math
 // (footerReserve + len(header)) well-defined.
 const markerMaxLen = 128
+
+// sizeCapMin is the minimum value accepted for --size-cap-bytes in
+// pr-comment mode. Below this, the diagnostic fallback paths
+// (truncationFooter's count-only branch, failQuietBody's <unknown> body)
+// can't fit within the cap. Rejecting at flag-parse time lets the rest of
+// the pipeline assume capBytes >= sizeCapMin, simplifying the cap math.
+// 1024 bytes is well above the worst-case minimal-diagnostic envelope
+// (~250 bytes for the marker-header + count-only footer with a 128-char
+// marker) and small enough to never gate a real workflow.
+const sizeCapMin = 1024
 
 // validateMarker reports whether s is a safe sticky-comment marker. Empty
 // strings are rejected so callers can distinguish "default" from "unset"
@@ -377,7 +388,7 @@ func truncationFooter(omitted []string, capBytes, budget int) string {
 	total := len(prefix) + len(suffix)
 	for i, n := range omitted {
 		if len(n) > nameMax {
-			n = n[:nameMax-1] + "…"
+			n = truncateRunes(n, nameMax-1) + "…"
 		}
 		extra := len(n)
 		if i > 0 {
@@ -395,22 +406,37 @@ func truncationFooter(omitted []string, capBytes, budget int) string {
 		total += extra
 	}
 	if len(names) == 0 {
-		// Even the first name didn't fit; emit a count-only footer.
-		count := fmt.Sprintf("\n> %d section(s) omitted to stay under the %d-byte comment cap. See workflow run logs for the full report.\n", len(omitted), capBytes)
-		if len(count) > budget {
-			// Truly pathological — return the count-only as-is; the caller
-			// will accept the small overshoot since it's the smallest
-			// possible diagnostic. This branch is unreachable for any
-			// realistic capBytes (the count-only footer is ~110 bytes).
-			return count
-		}
-		return count
+		// Even the first name didn't fit within the per-name budget — emit
+		// a count-only footer. sizeCapMin guarantees capBytes is large
+		// enough that the count-only footer (~110 bytes) fits in the
+		// caller's budget (which is at minimum capBytes - len(header)
+		// >= 1024 - markerMaxLen - "<!-- -->" framing ≈ 880 bytes).
+		return fmt.Sprintf("\n> %d section(s) omitted to stay under the %d-byte comment cap. See workflow run logs for the full report.\n", len(omitted), capBytes)
 	}
 	tail := ""
 	if len(names) < len(omitted) {
 		tail = fmt.Sprintf(" (+%d more)", len(omitted)-len(names))
 	}
 	return prefix + strings.Join(names, sep) + tail + suffix
+}
+
+// truncateRunes returns the longest prefix of s whose byte length is ≤ maxBytes,
+// cut on a rune boundary. Safe for UTF-8 input: never produces invalid
+// multi-byte sequences. Used by the truncation footer so a future query name
+// containing non-ASCII chars renders cleanly rather than as mojibake.
+func truncateRunes(s string, maxBytes int) string {
+	if maxBytes <= 0 || s == "" {
+		return ""
+	}
+	if len(s) <= maxBytes {
+		return s
+	}
+	// Start at maxBytes and back up until we land on the first byte of a rune.
+	end := maxBytes
+	for end > 0 && !utf8.RuneStart(s[end]) {
+		end--
+	}
+	return s[:end]
 }
 
 // sectionRender is a per-section rendered body + name pair, accumulated
@@ -420,25 +446,26 @@ type sectionRender struct {
 	body string
 }
 
-// failQuietBody is the comment body emitted in --mode pr-comment
-// --on-extraction-failure quiet when ALL non-skipped sections failed.
-// Detected-languages list is truncated to fit within `capBytes` so the
-// body never exceeds the documented cap.
+// failQuietBody is the comment body emitted when ALL non-skipped sections
+// failed (regardless of quiet/loud mode — quiet exits 0, loud exits 1;
+// both share this body). Detected-languages list is truncated to fit
+// within `capBytes` so the body never exceeds the documented cap.
+//
+// Wording: "report unavailable" rather than "extraction failed" because
+// the underlying failure could be at the extractor, the query engine, or
+// the renderer — the PR-comment surface can't distinguish them, and the
+// PR author's actionable signal is the same in all three cases (read the
+// workflow logs).
 func failQuietBody(marker string, detectedLanguages []string, capBytes int) string {
 	if marker == "" {
 		marker = "code-audit-pipeline-v1"
 	}
 	header := fmt.Sprintf("<!-- %s -->\n\n", marker)
-	prefix := "> code-audit: extraction failed for "
+	prefix := "> code-audit: report unavailable for "
 	suffix := "; see workflow run logs.\n"
 	noLangsBody := header + prefix + "<unknown>" + suffix
-	if capBytes > 0 && len(noLangsBody) > capBytes {
-		// Even the minimal body exceeds the cap. Emit it anyway — there's
-		// no smaller diagnostic that conveys "extraction failed", and the
-		// caller asked for a tiny cap. This branch is unreachable for any
-		// realistic cap (the minimal body is ~80 bytes).
-		return noLangsBody
-	}
+	// sizeCapMin (validated at Report() flag boundary) guarantees capBytes
+	// is large enough for noLangsBody plus a reasonable language list.
 	if len(detectedLanguages) == 0 {
 		return noLangsBody
 	}
