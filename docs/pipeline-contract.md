@@ -668,6 +668,36 @@ A pure-query mode that exposes the extractor's walk predicate without parsing or
 
 Consumed by the PR-comment Action ([#123](https://github.com/jakebromberg/code-audit-pipeline/issues/123)) and the pre-commit hook ([#124](https://github.com/jakebromberg/code-audit-pipeline/issues/124)) to filter `gh pr view --json files` or `git diff --name-only` output to the subset worth feeding to `--touched`. The flag is per-language: each language's extractor exposes its own `--list-relevant` reflecting its own walk semantics. The TypeScript reference is `extractors/typescript/type-catalog.mjs`; other languages adopt the flag with their own predicate definitions per [#159](https://github.com/jakebromberg/code-audit-pipeline/issues/159).
 
+### `code-audit report --mode pr-comment`
+
+The `report` subcommand has two modes:
+
+```
+code-audit report --root <path>                                          # default text mode
+code-audit report --root <path> --mode pr-comment --touched <touched.json> [pr-comment flags]
+```
+
+**Text mode (default).** Iterates every runnable query, runs each in JSONL mode, dispatches each row through the shape renderer (`internal/render/{cluster,pair,metric}.go`), and writes a markdown document to `.audit/reports/findings-YYYY-MM-DD.md` (or `--output <path>`). Errors during any query are listed in a trailing `## Skipped queries` section; engine errors fail the run (exit 1). This mode is the long-form report; behavior is unchanged from pre-#123.
+
+**`pr-comment` mode.** Renders a GitHub PR-comment body keyed by a sticky-comment marker on line 1, with cluster-shape rows filtered through `--touched`. Differences from text mode:
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--touched <path>` | unset | JSON array of repo-relative file paths. Filters cluster-shape rows: a row is kept only if any of its members has `touched_in_window: true` OR its `.file` matches an entry in the set (after `diffmatch.NormalizePath` canonicalization: trim, CRLF strip, `\` → `/`, leading `./` collapse). Pair and metric shapes pass through unchanged. |
+| `--marker <string>` | `code-audit-pipeline-v1` | Sticky-comment marker emitted as `<!-- <marker> -->` on the first line, so consumers using `marocchino/sticky-pull-request-comment@v2` (or compatible) can locate and edit the existing comment in place. |
+| `--size-cap-bytes <N>` | `60000` | Hard cap on rendered body length. Sections render in alphabetical name order; when appending the next section would exceed the cap, the whole section is dropped (no partial rendering) and a `> +N more section(s) omitted` footer is appended. Default leaves ~4KB headroom under GitHub's 65,536-character PR comment cap. |
+| `--on-extraction-failure <loud\|quiet>` | `quiet` for pr-comment, `loud` for text | When `quiet`, pipeline-internal errors (catalog missing, jq engine error, renderer dispatch error) collapse the body to a single-line fail-quiet notice and exit 0; the loud diagnostic body is written to stderr for the runner log. When `loud`, errors are formatted into the body and the exit code is 1. |
+| `--detected-languages <csv>` | empty | Comma-separated language list interpolated into the fail-quiet body. Composite-action consumers forward audit-core's `languages-detected` output here so the fail-quiet body reads `extraction failed for typescript, swift` instead of `<unknown>`. |
+| `--output <path>` | stdout | Where to write the comment body. The composite action writes to a file then forwards it to `marocchino/sticky-pull-request-comment@v2` via `path:`. |
+
+**Error boundary (caller-input vs pipeline-internal).** Bad `--touched` input (missing file, malformed JSON, non-string array element) exits 2 with a usage error — these are workflow-author bugs that the comment surface must not silently mask. Pipeline-internal errors (catalog missing/corrupt, jq engine failure, renderer dispatch error) flow through the `--on-extraction-failure` switch.
+
+**Empty-results path.** When `--touched` is set but no cluster contains a touched member (or `touched.json` is `[]`), the body is the sticky marker line plus a "no structural impact" notice. The sticky comment still updates so the consumer can see the audit ran.
+
+**Path normalization parity.** The Go normalizer (`internal/diffmatch/pathnormalize.go` `NormalizePath`) is a byte-equal port of the TypeScript `extractors/typescript/_lib/walk-predicate.mjs:34` `normalizePath` function. Parity is gated by `internal/diffmatch/pathnormalize_test.go`'s case table, which mirrors the TypeScript-side `extractors/typescript/test/walk-predicate.test.mjs` regression suite.
+
+Consumed by the PR-comment Action ([#123](https://github.com/jakebromberg/code-audit-pipeline/issues/123)). The composite action at `.github/actions/audit-pr-comment/` is the canonical consumer; orgs can also call the reusable workflow at `.github/workflows/pr-comment-reusable.yml`.
+
 ## Cluster-query output contract
 
 Every query in `pipeline/queries/*.jq` (excluding the `_canonical.jq` helper library) emits cluster rows in one of two modes, controlled by the `OUTPUT_FORMAT` environment variable.
