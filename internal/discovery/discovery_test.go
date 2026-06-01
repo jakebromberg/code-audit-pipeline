@@ -67,9 +67,12 @@ func TestExtractorsCwdBeatsAuditHome(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(home, "extractors", "typescript"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	_, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: cwd, AuditHome: home})
+	_, tier, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: cwd, AuditHome: home})
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
+	}
+	if tier != TierCwd {
+		t.Errorf("tier = %v, want TierCwd", tier)
 	}
 	if !strings.Contains(label, "cwd-relative") {
 		t.Errorf("label = %q, want cwd-relative (cwd should beat AUDIT_HOME)", label)
@@ -97,9 +100,12 @@ func TestExtractorsCwdWins(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(cwd, "extractors", "typescript"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	path, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: cwd})
+	path, tier, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: cwd})
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
+	}
+	if tier != TierCwd {
+		t.Errorf("tier = %v, want TierCwd", tier)
 	}
 	if !strings.Contains(path, "extractors") {
 		t.Errorf("path = %q", path)
@@ -111,9 +117,12 @@ func TestExtractorsCwdWins(t *testing.T) {
 
 func TestExtractorsNoSource(t *testing.T) {
 	tmp := t.TempDir()
-	_, _, err := ResolveExtractorsDir(ExtractorOpts{CWD: tmp})
+	_, tier, _, err := ResolveExtractorsDir(ExtractorOpts{CWD: tmp})
 	if err == nil {
 		t.Error("expected error when no extractors directory found")
+	}
+	if tier != TierUnknown {
+		t.Errorf("tier = %v, want TierUnknown", tier)
 	}
 }
 
@@ -123,9 +132,12 @@ func TestExtractorsHomeFallback(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(home, ".config", "audit", "extractors", "typescript"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	path, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: tmp, HomeDir: home})
+	path, tier, label, err := ResolveExtractorsDir(ExtractorOpts{CWD: tmp, HomeDir: home})
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
+	}
+	if tier != TierConfigDir {
+		t.Errorf("tier = %v, want TierConfigDir", tier)
 	}
 	if !strings.Contains(path, ".config/audit/extractors") {
 		t.Errorf("path = %q", path)

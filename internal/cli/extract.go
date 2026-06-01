@@ -55,7 +55,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	auditRootAbs, _ := filepath.Abs(auditRoot)
 
 	cwd, _ := os.Getwd()
-	xdir, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
+	xdir, _, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
 		Flag:      *extractorsDir,
 		AuditHome: os.Getenv("AUDIT_HOME"),
 		CWD:       cwd,
