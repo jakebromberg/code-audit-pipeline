@@ -40,6 +40,10 @@ homebrew_casks:
     repository:
       owner: jakebromberg
       name: homebrew-tap
+      # The default GITHUB_TOKEN can't write to the separate tap repo (403
+      # Resource not accessible by integration). Pin to the user-provisioned
+      # fine-grained PAT scoped to push to jakebromberg/homebrew-tap.
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/jakebromberg/code-audit-pipeline
     description: Cross-cutting structural analysis of codebases.
     binaries:
