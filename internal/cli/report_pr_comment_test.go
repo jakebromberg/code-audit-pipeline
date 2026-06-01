@@ -83,6 +83,18 @@ func TestLoadTouchedSet(t *testing.T) {
 		}
 	})
 
+	t.Run("JSON null is rejected loud (not silently empty)", func(t *testing.T) {
+		path := filepath.Join(dir, "null.json")
+		write(t, path, `null`)
+		_, err := loadTouchedSet(path)
+		if err == nil {
+			t.Fatal("want error for JSON null top-level — silent empty-set fallback would mask a misconfigured resolve-touched.sh")
+		}
+		if !strings.Contains(err.Error(), "JSON null") {
+			t.Errorf("error should name JSON null specifically; got: %v", err)
+		}
+	})
+
 	t.Run("non-string element cites index", func(t *testing.T) {
 		path := filepath.Join(dir, "mixed.json")
 		write(t, path, `["src/foo.ts", 42, "src/bar.ts"]`)
@@ -118,19 +130,104 @@ func TestFilterRowsByTouched_NilTouched(t *testing.T) {
 	}
 }
 
-func TestFilterRowsByTouched_NonClusterShape(t *testing.T) {
-	// Pair and metric shapes pass through unchanged even when touched is set.
-	for _, shape := range []string{"pair", "metric"} {
-		shape := shape
-		t.Run(shape, func(t *testing.T) {
-			rows := []render.Row{{"cluster_id": "x", "shape": shape}}
-			header := &frontmatter.Header{Shape: []string{shape}}
-			got := filterRowsByTouched(rows, header, touchedSet{"some/path.ts": {}})
-			if len(got) != 1 {
-				t.Errorf("non-cluster shape should pass through; got %d", len(got))
-			}
-		})
-	}
+func TestFilterRowsByTouched_PerRowShape(t *testing.T) {
+	// Per-row shape dispatch handles dual-shape queries that emit rows of
+	// multiple shapes in a single stream (e.g. function-duplicates.jq's
+	// cluster + pair sections).
+	touched := touchedSet{"src/foo.ts": {}}
+	header := &frontmatter.Header{Shape: []string{"cluster", "pair"}}
+
+	t.Run("cluster row matched via member.file", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "c1", "shape": "cluster", "members": []any{
+				map[string]any{"file": "src/foo.ts"},
+			}},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("cluster row with matching member should be kept; got %d", len(got))
+		}
+	})
+
+	t.Run("pair row matched via left.file", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "p1", "shape": "pair",
+				"left":  map[string]any{"file": "src/foo.ts"},
+				"right": map[string]any{"file": "elsewhere.ts"},
+			},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("pair row with left.file in touched should be kept; got %d", len(got))
+		}
+	})
+
+	t.Run("pair row matched via right.file", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "p2", "shape": "pair",
+				"left":  map[string]any{"file": "elsewhere.ts"},
+				"right": map[string]any{"file": "src/foo.ts"},
+			},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("pair row with right.file in touched should be kept; got %d", len(got))
+		}
+	})
+
+	t.Run("pair row dropped when neither endpoint touched", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "p3", "shape": "pair",
+				"left":  map[string]any{"file": "a.ts"},
+				"right": map[string]any{"file": "b.ts"},
+			},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 0 {
+			t.Errorf("untouched pair row should be dropped; got %d", len(got))
+		}
+	})
+
+	t.Run("pair row matched via left.touched_in_window", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "p4", "shape": "pair",
+				"left":  map[string]any{"file": "a.ts", "touched_in_window": true},
+				"right": map[string]any{"file": "b.ts"},
+			},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("pair row with touched_in_window endpoint should be kept; got %d", len(got))
+		}
+	})
+
+	t.Run("metric rows always kept (self-filtering payload)", func(t *testing.T) {
+		rows := []render.Row{{"cluster_id": "m1", "shape": "metric"}}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("metric row should be kept (query self-filters); got %d", len(got))
+		}
+	})
+
+	t.Run("envelope-level touched_in_window short-circuits regardless of shape", func(t *testing.T) {
+		rows := []render.Row{
+			{"cluster_id": "e1", "shape": "cluster", "touched_in_window": true, "members": []any{
+				map[string]any{"file": "completely-other.ts"},
+			}},
+		}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("envelope-level touched_in_window should keep the row; got %d", len(got))
+		}
+	})
+
+	t.Run("unknown shape conservatively dropped", func(t *testing.T) {
+		rows := []render.Row{{"cluster_id": "u1", "shape": "novel-shape"}}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 0 {
+			t.Errorf("unknown shape should be dropped; got %d", len(got))
+		}
+	})
 }
 
 func TestFilterRowsByTouched_ClusterRow(t *testing.T) {
@@ -239,30 +336,150 @@ func TestComposePRComment_SizeCap_DropsWholeSection(t *testing.T) {
 			blocks: []string{"### " + name + "\n\n- " + body + "\n"},
 		}
 	}
-	// Cap = 200 bytes. Two ~150-byte sections: first fits, second blows the cap.
+	// Cap = 500 (covers header + alpha ~150 bytes + footer reserve 250). beta
+	// would push past effective budget (500 - 250 footer - ~35 header = 215).
 	results := []sectionResult{mkSec("alpha", 100), mkSec("beta", 100)}
-	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 200})
+	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 500})
 	if !strings.Contains(got, "## alpha") {
-		t.Errorf("alpha should be kept (fits under cap)")
+		t.Errorf("alpha should be kept (fits under cap); got: %s", got)
 	}
 	if strings.Contains(got, "## beta") {
-		t.Errorf("beta should be dropped (would exceed cap)")
+		t.Errorf("beta should be dropped (would exceed cap); got: %s", got)
 	}
-	if !strings.Contains(got, "1 more section(s) omitted") {
+	if !strings.Contains(got, "section(s) omitted") {
 		t.Errorf("size-cap footer missing; got: %s", got)
+	}
+	// New: footer should name the omitted section so the PR reader can find it.
+	if !strings.Contains(got, "beta") {
+		t.Errorf("footer should name dropped section 'beta'; got: %s", got)
+	}
+}
+
+func TestComposePRComment_SizeCap_AlphabeticalPrefixPreserved(t *testing.T) {
+	// When alpha overflows, ALL later sections must be dropped (not just
+	// alpha). Otherwise a smaller beta could sneak past alpha, breaking
+	// the alphabetical-prefix invariant.
+	mkSec := func(name string, n int) sectionResult {
+		return sectionResult{
+			name:   name,
+			header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}},
+			blocks: []string{"### " + name + "\n\n- " + strings.Repeat("x", n) + "\n"},
+		}
+	}
+	// alpha is too big; beta is tiny. Without prefix preservation, beta
+	// would be kept while alpha is dropped — non-obvious to readers.
+	results := []sectionResult{mkSec("alpha", 1000), mkSec("beta", 10)}
+	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 500})
+	if strings.Contains(got, "## alpha") {
+		t.Errorf("alpha should be dropped (too large)")
+	}
+	if strings.Contains(got, "## beta") {
+		t.Errorf("beta should also be dropped (prefix preservation); got: %s", got)
 	}
 }
 
 func TestComposePRComment_SizeCap_AllSectionsOversize(t *testing.T) {
-	// Every section individually exceeds the cap.
+	// Every section individually exceeds the effective cap.
 	huge := strings.Repeat("x", 1000)
 	results := []sectionResult{
 		{name: "alpha", header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}}, blocks: []string{huge}},
 		{name: "beta", header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}}, blocks: []string{huge}},
 	}
 	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 100})
-	if !strings.Contains(got, "every report section exceeded") {
+	if !strings.Contains(got, "report exceeds") {
 		t.Errorf("expected cap-overrun notice; got: %s", got)
+	}
+}
+
+func TestComposePRComment_SizeCap_FinalBodyStaysUnderCap(t *testing.T) {
+	// Regression: the truncation footer used to be appended without
+	// accounting against the cap, so a body could end up cap+footer-size.
+	// Now the cap math reserves a footer envelope so the total stays under.
+	mkSec := func(name string, n int) sectionResult {
+		return sectionResult{
+			name:   name,
+			header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}},
+			blocks: []string{"### " + name + "\n\n- " + strings.Repeat("x", n) + "\n"},
+		}
+	}
+	results := []sectionResult{
+		mkSec("alpha", 100),
+		mkSec("beta", 100),
+		mkSec("gamma", 100),
+		mkSec("delta", 100),
+	}
+	cap := 500
+	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: cap})
+	if len(got) > cap {
+		t.Errorf("body length %d exceeds cap %d (truncation footer overflow)", len(got), cap)
+	}
+}
+
+func TestComposePRComment_DoesNotMutateInput(t *testing.T) {
+	// Regression: composePRComment used to sort the caller's slice in place.
+	mkSec := func(name string) sectionResult {
+		return sectionResult{
+			name:   name,
+			header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}},
+			blocks: []string{"- a\n"},
+		}
+	}
+	results := []sectionResult{mkSec("beta"), mkSec("alpha")}
+	before := []string{results[0].name, results[1].name}
+	_ = composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 60000})
+	after := []string{results[0].name, results[1].name}
+	if before[0] != after[0] || before[1] != after[1] {
+		t.Errorf("composePRComment mutated caller's slice: before=%v after=%v", before, after)
+	}
+}
+
+func TestComposePRComment_NilHeaderDoesNotPanic(t *testing.T) {
+	// Defensive: a sectionResult with blocks but nil header should be
+	// skipped rather than crash on r.header.Desc dereference.
+	results := []sectionResult{
+		{name: "ok", header: &frontmatter.Header{Desc: "Q.", Shape: []string{"cluster"}}, blocks: []string{"- a\n"}},
+		{name: "bad", header: nil, blocks: []string{"- b\n"}},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("composePRComment panicked on nil header: %v", r)
+		}
+	}()
+	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 60000})
+	if !strings.Contains(got, "## ok") {
+		t.Errorf("ok section should still render despite bad sibling")
+	}
+}
+
+func TestValidateMarker(t *testing.T) {
+	good := []string{
+		"code-audit-pipeline-v1",
+		"foo",
+		"a/b/c",
+		"v1.2.3",
+		"ns:marker",
+		"_underscore",
+	}
+	bad := []string{
+		"",
+		"has space",
+		"foo-->",
+		"foo<bar>",
+		"line\nbreak",
+		"with&amp;",
+		"with\rcarriage",
+		"with-->in-middle",
+		"emoji😀",
+	}
+	for _, s := range good {
+		if !ValidateMarker(s) {
+			t.Errorf("ValidateMarker(%q) = false, want true", s)
+		}
+	}
+	for _, s := range bad {
+		if ValidateMarker(s) {
+			t.Errorf("ValidateMarker(%q) = true, want false", s)
+		}
 	}
 }
 
