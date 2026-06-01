@@ -269,6 +269,20 @@ func TestFilterRowsByTouched_ClusterRow(t *testing.T) {
 		}
 	})
 
+	t.Run("kept when member.path matches touched (cross-package-backward-imports.jq)", func(t *testing.T) {
+		// Regression: cross-package-backward-imports.jq emits members with
+		// `path:` (sourced from files.json) rather than `file:`. The
+		// touched-filter must check both keys, otherwise this query's
+		// clusters silently never surface in PR comments.
+		rows := []render.Row{clusterRow("cpbi", []map[string]any{
+			{"path": "src/foo.ts", "package": "shared"},
+		})}
+		got := filterRowsByTouched(rows, header, touched)
+		if len(got) != 1 {
+			t.Errorf("want kept (members with `path` not `file` must also match touched); got %d", len(got))
+		}
+	})
+
 	t.Run("empty touched set drops every cluster", func(t *testing.T) {
 		rows := []render.Row{
 			clusterRow("c5", []map[string]any{{"file": "src/foo.ts"}}),
@@ -379,15 +393,63 @@ func TestComposePRComment_SizeCap_AlphabeticalPrefixPreserved(t *testing.T) {
 }
 
 func TestComposePRComment_SizeCap_AllSectionsOversize(t *testing.T) {
-	// Every section individually exceeds the effective cap.
+	// Every section individually exceeds the effective cap. The cap-overrun
+	// fallback should name the omitted sections (so the PR author can find
+	// them in the workflow logs) AND stay under capBytes.
 	huge := strings.Repeat("x", 1000)
 	results := []sectionResult{
 		{name: "alpha", header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}}, blocks: []string{huge}},
 		{name: "beta", header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}}, blocks: []string{huge}},
 	}
-	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: 100})
-	if !strings.Contains(got, "report exceeds") {
-		t.Errorf("expected cap-overrun notice; got: %s", got)
+	cap := 500
+	got := composePRComment(results, prCommentOpts{marker: "m", sizeCapBytes: cap})
+	if !strings.Contains(got, "section(s) omitted") {
+		t.Errorf("expected truncation footer (kept==0 path should still list omitted sections); got: %s", got)
+	}
+	if !strings.Contains(got, "alpha") || !strings.Contains(got, "beta") {
+		t.Errorf("footer should name omitted sections 'alpha' and 'beta'; got: %s", got)
+	}
+	if len(got) > cap {
+		t.Errorf("body length %d exceeds cap %d (pathological branch overruns cap):\n%s", len(got), cap, got)
+	}
+}
+
+func TestComposePRComment_SizeCap_RealisticQueryNames(t *testing.T) {
+	// Regression: prior footerReserve=250 was undersized for realistic
+	// query-name lengths. Use the longest in-tree query names to assert
+	// the footer envelope is sized correctly.
+	longNames := []string{
+		"cross-package-shape-near-duplicates-any",
+		"cross-package-shape-near-duplicates",
+		"cross-catalog-name-collisions",
+		"protocol-inheritance-candidates",
+		"cross-package-backward-imports",
+		"touched-window-debt-summary",
+		"function-duplicates",
+		"versioned-type-pairs",
+	}
+	results := make([]sectionResult, len(longNames))
+	for i, n := range longNames {
+		results[i] = sectionResult{
+			name:   n,
+			header: &frontmatter.Header{Desc: "d.", Shape: []string{"cluster"}},
+			blocks: []string{"### " + n + "\n\n- " + strings.Repeat("x", 500) + "\n"},
+		}
+	}
+	cap := 1000
+	got := composePRComment(results, prCommentOpts{marker: "code-audit-pipeline-v1", sizeCapBytes: cap})
+	if len(got) > cap {
+		t.Errorf("body length %d exceeds cap %d with realistic query names:\n%s", len(got), cap, got)
+	}
+}
+
+func TestComposePRComment_SizeCap_LargeMarkerRejectedAtFlagBoundary(t *testing.T) {
+	// validateMarker enforces a 128-byte ceiling so a pathologically long
+	// marker can't blow the header past any sensible cap. This test
+	// pins the contract — composePRComment trusts its input.
+	bigMarker := strings.Repeat("a", 200)
+	if validateMarker(bigMarker) {
+		t.Errorf("validateMarker should reject markers over %d chars; got accepted", markerMaxLen)
 	}
 }
 
@@ -458,7 +520,7 @@ func TestValidateMarker(t *testing.T) {
 		"a/b/c",
 		"v1.2.3",
 		"ns:marker",
-		"_underscore",
+		"a_underscore", // starts with alphanum
 	}
 	bad := []string{
 		"",
@@ -470,15 +532,21 @@ func TestValidateMarker(t *testing.T) {
 		"with\rcarriage",
 		"with-->in-middle",
 		"emoji😀",
+		"-leading-dash",       // leading non-alphanumeric
+		"_underscore",         // starts with underscore (not alphanum)
+		"/leading-slash",      // leading slash
+		"foo--bar",            // adjacent --
+		strings.Repeat("a", 129), // exceeds length limit
+		"\ttab",
 	}
 	for _, s := range good {
-		if !ValidateMarker(s) {
-			t.Errorf("ValidateMarker(%q) = false, want true", s)
+		if !validateMarker(s) {
+			t.Errorf("validateMarker(%q) = false, want true", s)
 		}
 	}
 	for _, s := range bad {
-		if ValidateMarker(s) {
-			t.Errorf("ValidateMarker(%q) = true, want false", s)
+		if validateMarker(s) {
+			t.Errorf("validateMarker(%q) = true, want false", s)
 		}
 	}
 }
@@ -502,7 +570,7 @@ func TestComposePRComment_SkippedAndErroredSectionsExcluded(t *testing.T) {
 }
 
 func TestFailQuietBody(t *testing.T) {
-	got := failQuietBody("m", []string{"typescript", "swift"})
+	got := failQuietBody("m", []string{"typescript", "swift"}, 60000)
 	if !strings.HasPrefix(got, "<!-- m -->\n") {
 		t.Errorf("missing marker prefix; got: %q", firstLine(got))
 	}
@@ -510,9 +578,23 @@ func TestFailQuietBody(t *testing.T) {
 		t.Errorf("languages not listed; got: %s", got)
 	}
 
-	gotEmpty := failQuietBody("m", nil)
+	gotEmpty := failQuietBody("m", nil, 60000)
 	if !strings.Contains(gotEmpty, "<unknown>") {
 		t.Errorf("empty languages should render <unknown>; got: %s", gotEmpty)
+	}
+}
+
+func TestFailQuietBody_RespectsCap(t *testing.T) {
+	// A small cap with many languages should truncate the language list
+	// with a "(+N more)" suffix and keep the body under capBytes.
+	langs := []string{"typescript", "swift", "go", "python", "rust", "kotlin", "java", "csharp"}
+	cap := 120
+	got := failQuietBody("m", langs, cap)
+	if len(got) > cap {
+		t.Errorf("body length %d exceeds cap %d for many-languages truncation:\n%s", len(got), cap, got)
+	}
+	if !strings.Contains(got, "more") {
+		t.Errorf("expected '(+N more)' suffix when languages were truncated; got: %s", got)
 	}
 }
 

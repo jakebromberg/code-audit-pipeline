@@ -14,18 +14,35 @@ import (
 )
 
 // markerRE constrains --marker values to characters safe inside an HTML
-// comment and on a single line: alphanumerics, dot, dash, underscore,
-// colon, slash. Any other character — including `>` (which can prematurely
-// close `<!-- … -->`), `<`, `&`, whitespace, or `-->` substrings — is
-// rejected so the sticky-comment marker stays unambiguous on every line-1
-// scan. Validation happens at the Report() flag boundary; composePRComment
-// trusts its input.
-var markerRE = regexp.MustCompile(`^[A-Za-z0-9_.:/-]+$`)
+// comment and on a single line. The first character must be alphanumeric
+// (forbidding leading `-` / `/` which trigger HTML5 bogus-comment / abrupt-
+// closing parser paths). Subsequent characters add `_`, `.`, `:`, `/`,
+// `-`. Adjacent `--` is rejected because the HTML5 spec forbids the
+// two-dash substring inside `<!-- … -->`. Any other character — `>`,
+// `<`, `&`, whitespace, control chars — is rejected so the sticky-
+// comment marker stays unambiguous on every line-1 scan.
+var markerRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:/-]*$`)
 
-// ValidateMarker reports whether s is a safe sticky-comment marker. Empty
+// markerMaxLen bounds the marker length so a marker can never inflate
+// `<!-- <marker> -->` past a sensible budget. 128 bytes leaves room for
+// `<owner>/<repo>:<workflow>:<id>` patterns while keeping the cap math
+// (footerReserve + len(header)) well-defined.
+const markerMaxLen = 128
+
+// validateMarker reports whether s is a safe sticky-comment marker. Empty
 // strings are rejected so callers can distinguish "default" from "unset"
 // at flag parsing rather than silently substituting the default.
-func ValidateMarker(s string) bool { return s != "" && markerRE.MatchString(s) }
+// Adjacent `--` is rejected via a separate substring check (regex
+// alternatives for that constraint are unreadable).
+func validateMarker(s string) bool {
+	if s == "" || len(s) > markerMaxLen {
+		return false
+	}
+	if strings.Contains(s, "--") {
+		return false
+	}
+	return markerRE.MatchString(s)
+}
 
 // touchedSet is the parsed --touched payload: a set of normalized
 // repo-relative paths. Paths are normalized via diffmatch.NormalizePath
@@ -112,10 +129,10 @@ func filterRowsByTouched(rows []render.Row, header *frontmatter.Header, touched 
 
 // rowShape resolves a row's shape: prefer the row-level `shape` field
 // (per-row dispatch, the ADR-0003 contract), fall back to the query
-// header's single shape when the row omits it. Falls back to "cluster"
-// only when the header itself is missing (defensive for synthetic
-// fixtures); the unknown-shape branch in rowIsTouched then conservatively
-// drops the row.
+// header's single shape when the row omits it. Returns "" when neither
+// is resolvable (multi-shape header AND missing per-row shape, or no
+// header AND no per-row shape); rowIsTouched's default branch then
+// conservatively drops the row.
 func rowShape(row render.Row, header *frontmatter.Header) string {
 	if s, ok := row["shape"].(string); ok && s != "" {
 		return s
@@ -183,6 +200,11 @@ func pairRowIsTouched(row render.Row, touched touchedSet) bool {
 // clusterRowIsTouched and pairRowIsTouched. Accepts the JSON-unmarshalled
 // `any` so it can take both members[i] (typically map[string]any) and a
 // nested left/right value.
+//
+// The repo-relative path can live under either `file` (most queries) or
+// `path` (cross-package-backward-imports.jq, which sources its members
+// from files.json where the schema uses `.path`). Both are checked; the
+// touched-filter doesn't dictate which key a query must use.
 func memberIsTouched(m any, touched touchedSet) bool {
 	mm, ok := m.(map[string]any)
 	if !ok {
@@ -191,9 +213,11 @@ func memberIsTouched(m any, touched touchedSet) bool {
 	if t, _ := mm["touched_in_window"].(bool); t {
 		return true
 	}
-	if f, _ := mm["file"].(string); f != "" {
-		if _, hit := touched[diffmatch.NormalizePath(f)]; hit {
-			return true
+	for _, key := range []string{"file", "path"} {
+		if f, _ := mm[key].(string); f != "" {
+			if _, hit := touched[diffmatch.NormalizePath(f)]; hit {
+				return true
+			}
 		}
 	}
 	return false
@@ -281,10 +305,10 @@ func composePRComment(results []sectionResult, opts prCommentOpts) string {
 
 	// Reserve a fixed-size envelope for the truncation footer so the
 	// final body never exceeds capBytes regardless of how many sections
-	// get dropped. The actual footer is bounded by the longest of the
-	// truncated-by-cap and capability-overrun variants below; 250 bytes
-	// covers the section-list interpolation up to ~10 dropped names plus
-	// the surrounding boilerplate.
+	// get dropped. truncationFooter self-bounds at this budget via name
+	// packing — it adds dropped section names until exhausted, then trails
+	// with "(+N more)". 250 bytes leaves room for ~3-4 average-length
+	// names + boilerplate + "(+N more)" trailer.
 	const footerReserve = 250
 	effective := capBytes - footerReserve - len(header)
 	if effective < 0 {
@@ -318,32 +342,75 @@ func composePRComment(results []sectionResult, opts prCommentOpts) string {
 		kept++
 	}
 
-	if len(omitted) > 0 {
-		// Name the dropped sections so the PR author can find them in the
-		// workflow logs. Cap the list at the first few to keep the footer
-		// within the reserved envelope; the count is always exact.
-		const maxNames = 6
-		names := omitted
-		suffix := ""
-		if len(names) > maxNames {
-			names = names[:maxNames]
-			suffix = fmt.Sprintf(" (+%d more)", len(omitted)-maxNames)
-		}
-		footer := fmt.Sprintf(
-			"\n> +%d section(s) omitted to stay under the %d-byte comment cap: %s%s. See workflow run logs for the full report.\n",
-			len(omitted), capBytes, strings.Join(names, ", "), suffix,
-		)
-		b.WriteString(footer)
-	}
-
 	if kept == 0 {
 		// Pathological case — even the first section is larger than the
-		// effective budget. Surface a notice that fits within the cap so
-		// the comment still reads sensibly.
-		return header + fmt.Sprintf("> code-audit: report exceeds the %d-byte comment cap; see workflow logs.\n", capBytes)
+		// effective budget. Surface a notice that fits within the cap AND
+		// names the omitted sections (same information the partial-overflow
+		// footer provides; finding-4 of iteration-1 review applies here too).
+		// truncationFooter is bounded by footerReserve so this body fits.
+		return header + truncationFooter(omitted, capBytes, capBytes-len(header))
+	}
+
+	if len(omitted) > 0 {
+		b.WriteString(truncationFooter(omitted, capBytes, footerReserve))
 	}
 
 	return b.String()
+}
+
+// truncationFooter renders the "+N section(s) omitted" footer, naming as
+// many sections as fit within `budget` bytes. Returns a string ≤ budget.
+// Used by the partial-overflow path (footer appended after kept sections)
+// and the pathological all-overflow path (footer replaces the body).
+func truncationFooter(omitted []string, capBytes, budget int) string {
+	if len(omitted) == 0 {
+		return ""
+	}
+	prefix := fmt.Sprintf("\n> %d section(s) omitted to stay under the %d-byte comment cap: ", len(omitted), capBytes)
+	suffix := ". See workflow run logs for the full report.\n"
+	// Pack as many names as fit, then trail with "(+N more)" when truncated.
+	const sep = ", "
+	// Truncate individual names to a reasonable length so a single
+	// pathologically-long query name (extreme edge case) can't blow the budget.
+	const nameMax = 48
+	var names []string
+	total := len(prefix) + len(suffix)
+	for i, n := range omitted {
+		if len(n) > nameMax {
+			n = n[:nameMax-1] + "…"
+		}
+		extra := len(n)
+		if i > 0 {
+			extra += len(sep)
+		}
+		// Reserve room for a possible "(+N more)" tail if more names follow.
+		reserveTail := 0
+		if i < len(omitted)-1 {
+			reserveTail = len(fmt.Sprintf(" (+%d more)", len(omitted)-i-1))
+		}
+		if total+extra+reserveTail > budget {
+			break
+		}
+		names = append(names, n)
+		total += extra
+	}
+	if len(names) == 0 {
+		// Even the first name didn't fit; emit a count-only footer.
+		count := fmt.Sprintf("\n> %d section(s) omitted to stay under the %d-byte comment cap. See workflow run logs for the full report.\n", len(omitted), capBytes)
+		if len(count) > budget {
+			// Truly pathological — return the count-only as-is; the caller
+			// will accept the small overshoot since it's the smallest
+			// possible diagnostic. This branch is unreachable for any
+			// realistic capBytes (the count-only footer is ~110 bytes).
+			return count
+		}
+		return count
+	}
+	tail := ""
+	if len(names) < len(omitted) {
+		tail = fmt.Sprintf(" (+%d more)", len(omitted)-len(names))
+	}
+	return prefix + strings.Join(names, sep) + tail + suffix
 }
 
 // sectionRender is a per-section rendered body + name pair, accumulated
@@ -354,18 +421,57 @@ type sectionRender struct {
 }
 
 // failQuietBody is the comment body emitted in --mode pr-comment
-// --on-extraction-failure quiet when one or more upstream pipeline
-// errors occurred. detectedLanguages may be empty.
-func failQuietBody(marker string, detectedLanguages []string) string {
+// --on-extraction-failure quiet when ALL non-skipped sections failed.
+// Detected-languages list is truncated to fit within `capBytes` so the
+// body never exceeds the documented cap.
+func failQuietBody(marker string, detectedLanguages []string, capBytes int) string {
 	if marker == "" {
 		marker = "code-audit-pipeline-v1"
 	}
-	langs := strings.Join(detectedLanguages, ", ")
-	if langs == "" {
-		langs = "<unknown>"
+	header := fmt.Sprintf("<!-- %s -->\n\n", marker)
+	prefix := "> code-audit: extraction failed for "
+	suffix := "; see workflow run logs.\n"
+	noLangsBody := header + prefix + "<unknown>" + suffix
+	if capBytes > 0 && len(noLangsBody) > capBytes {
+		// Even the minimal body exceeds the cap. Emit it anyway — there's
+		// no smaller diagnostic that conveys "extraction failed", and the
+		// caller asked for a tiny cap. This branch is unreachable for any
+		// realistic cap (the minimal body is ~80 bytes).
+		return noLangsBody
 	}
-	return fmt.Sprintf(
-		"<!-- %s -->\n\n> code-audit: extraction failed for %s; see workflow run logs.\n",
-		marker, langs,
-	)
+	if len(detectedLanguages) == 0 {
+		return noLangsBody
+	}
+	// Pack as many language names as fit; truncate with "(+N more)".
+	const sep = ", "
+	budget := capBytes
+	if budget <= 0 {
+		budget = 60000
+	}
+	available := budget - len(header) - len(prefix) - len(suffix)
+	var kept []string
+	used := 0
+	for i, l := range detectedLanguages {
+		extra := len(l)
+		if i > 0 {
+			extra += len(sep)
+		}
+		reserveTail := 0
+		if i < len(detectedLanguages)-1 {
+			reserveTail = len(fmt.Sprintf(" (+%d more)", len(detectedLanguages)-i-1))
+		}
+		if used+extra+reserveTail > available {
+			break
+		}
+		kept = append(kept, l)
+		used += extra
+	}
+	if len(kept) == 0 {
+		return noLangsBody
+	}
+	tail := ""
+	if len(kept) < len(detectedLanguages) {
+		tail = fmt.Sprintf(" (+%d more)", len(detectedLanguages)-len(kept))
+	}
+	return header + prefix + strings.Join(kept, sep) + tail + suffix
 }
