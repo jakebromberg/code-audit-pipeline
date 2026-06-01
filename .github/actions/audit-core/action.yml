@@ -1,0 +1,273 @@
+name: audit-core
+description: >-
+  Detect language(s) at the repo root, install required toolchains, install
+  the code-audit binary + extractors, run every applicable extractor, and
+  emit the catalogs directory + detection metadata as outputs. The
+  one-place-it-lives shared substrate for #154 (publish-catalog) and #123
+  (PR-comment Action) — both call this composite; both diverge after.
+
+inputs:
+  root:
+    description: Repo root to scan. Defaults to the workspace.
+    required: false
+    default: '.'
+  languages:
+    description: >-
+      Comma-separated language override (e.g. "typescript,swift"). When
+      empty (default), markers at the repo root are auto-detected via
+      detect-languages.sh.
+    required: false
+    default: ''
+  binary-version:
+    description: >-
+      code-audit release tag to install. Default "v1" tracks the v1 major
+      series — patches roll forward automatically, breaking changes do not.
+      Use "latest" to track HEAD; use a fully-pinned "v1.2.3" to freeze.
+      Use "build-from-source" to build the binary from the action checkout
+      (only useful when this repo's own CI is exercising the composite).
+    required: false
+    default: 'v1'
+  include-tests:
+    description: Pass --include-tests to every extractor invocation.
+    required: false
+    default: 'false'
+  include-file-hashes:
+    description: >-
+      Run the polyglot file-hashes extractor in addition to any
+      language-specific extractors. Default true — file-hashes is cheap
+      (node stdlib, no toolchain) and downstream queries assume it.
+    required: false
+    default: 'true'
+  audit-root:
+    description: >-
+      Where to place the .audit/ cache directory. Defaults to the repo
+      root; override to put .audit/ on a separate prefix for caching or
+      cross-job artifact sharing.
+    required: false
+    default: ''
+  github-token:
+    description: >-
+      Token used for `gh release download` when binary-version is a tag.
+      Defaults to the workflow's GITHUB_TOKEN, which works for public
+      repos. Override on private-repo callers or IP-restricted orgs.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  catalogs-dir:
+    description: Absolute path to the .audit/catalogs/ directory (input to publish-catalog.sh).
+    value: ${{ steps.emit.outputs.catalogs-dir }}
+  languages-detected:
+    description: Comma-separated list of languages the composite ran extractors for. Empty if none.
+    value: ${{ steps.detect.outputs.languages }}
+  binary-version-used:
+    description: Resolved code-audit version string actually installed (after "v1" → "v1.2.3" resolution).
+    value: ${{ steps.install-binary.outputs.version }}
+  requires-macos:
+    description: >-
+      "true" iff swift was among the detected languages. Callers can use
+      this output from a detection-only pre-job to gate the next job onto
+      runs-on macos-latest, avoiding the macOS cost on TS-only repos.
+    value: ${{ steps.detect.outputs.requires-macos }}
+
+runs:
+  using: composite
+  steps:
+    - name: Detect languages
+      id: detect
+      shell: bash
+      env:
+        AUDIT_CORE_ROOT: ${{ inputs.root }}
+        AUDIT_CORE_OVERRIDE: ${{ inputs.languages }}
+      run: |
+        set -Eeuo pipefail
+        if [ -n "$AUDIT_CORE_OVERRIDE" ]; then
+          langs="$AUDIT_CORE_OVERRIDE"
+          echo "Using language override: $langs" >&2
+        else
+          langs="$(${{ github.action_path }}/scripts/detect-languages.sh "$AUDIT_CORE_ROOT" || true)"
+          echo "Auto-detected: ${langs:-<none>}" >&2
+        fi
+        requires_macos=false
+        case ",$langs," in
+          *,swift,*) requires_macos=true ;;
+        esac
+        {
+          echo "languages=$langs"
+          echo "requires-macos=$requires_macos"
+        } >> "$GITHUB_OUTPUT"
+
+    # The composite needs Node unconditionally — file-hashes runs by default,
+    # and it's a Node script. Language-specific extractors layer on top.
+    - name: Set up Node (file-hashes + typescript)
+      if: inputs.include-file-hashes == 'true' || contains(steps.detect.outputs.languages, 'typescript')
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+
+    - name: Set up Go (go)
+      if: contains(steps.detect.outputs.languages, 'go')
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.24'
+
+    - name: Set up Python (python)
+      if: contains(steps.detect.outputs.languages, 'python')
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    # Swift / Rust: the caller's runner must already have these toolchains
+    # (macos-latest has swift; ubuntu-latest has rustc by default). Adding
+    # SwiftyLab/setup-swift or actions-rust-lang/setup-rust is a Phase-2
+    # decision once we see real cold-start times on those languages.
+
+    - name: Install TypeScript extractor dependencies
+      if: contains(steps.detect.outputs.languages, 'typescript')
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        cd "$pipeline_root/extractors/typescript"
+        npm ci
+
+    - name: Install code-audit binary
+      id: install-binary
+      shell: bash
+      env:
+        AUDIT_CORE_VERSION: ${{ inputs.binary-version }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -Eeuo pipefail
+        version="$AUDIT_CORE_VERSION"
+
+        if [ "$version" = "build-from-source" ]; then
+          # Caller is exercising the action against its own source checkout.
+          # Build the binary from ${{ github.action_path }}/../.. (the
+          # composite's owning repo) and put it on PATH.
+          pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+          echo "Building code-audit from source at $pipeline_root" >&2
+          (cd "$pipeline_root" && go generate ./... && go build -o /tmp/code-audit ./cmd/code-audit)
+          install -m 0755 /tmp/code-audit /usr/local/bin/code-audit
+          resolved="$(/usr/local/bin/code-audit version | tr -d '[:space:]')"
+        else
+          # Release-download path. "v1" / "v2" major-pin: resolve to the
+          # newest tag matching v<major>.* via the GitHub Releases API.
+          if echo "$version" | grep -Eq '^v[0-9]+$'; then
+            major="${version#v}"
+            echo "Resolving major-pin $version to newest matching release tag" >&2
+            resolved="$(gh release list --repo "${{ github.action_repository }}" \
+              --limit 100 --json tagName --jq \
+              ".[] | select(.tagName | startswith(\"v${major}.\")) | .tagName" \
+              | sort -V | tail -1)"
+            if [ -z "$resolved" ]; then
+              echo "audit-core: no release tags matching ${version}.* on ${{ github.action_repository }}" >&2
+              exit 1
+            fi
+          else
+            resolved="$version"
+          fi
+          echo "Downloading code-audit ${resolved}" >&2
+          tmp=$(mktemp -d)
+          # Match the asset name convention from goreleaser config.
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch=amd64 ;;
+            aarch64) arch=arm64 ;;
+          esac
+          gh release download "$resolved" \
+            --repo "${{ github.action_repository }}" \
+            --dir "$tmp" \
+            --pattern "code-audit_*_${os}_${arch}*"
+          # goreleaser ships tar.gz on linux/darwin
+          archive=$(find "$tmp" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) | head -1)
+          case "$archive" in
+            *.tar.gz) tar -xzf "$archive" -C "$tmp" ;;
+            *.zip) unzip -q "$archive" -d "$tmp" ;;
+            *) echo "audit-core: unrecognized archive: $archive" >&2; exit 1 ;;
+          esac
+          bin=$(find "$tmp" -type f -name 'code-audit' | head -1)
+          if [ -z "$bin" ]; then
+            echo "audit-core: code-audit binary not found in release archive" >&2
+            exit 1
+          fi
+          install -m 0755 "$bin" /usr/local/bin/code-audit
+        fi
+
+        echo "version=$resolved" >> "$GITHUB_OUTPUT"
+        echo "Installed code-audit $resolved" >&2
+
+    - name: Run language extractors
+      shell: bash
+      env:
+        AUDIT_CORE_LANGS: ${{ steps.detect.outputs.languages }}
+        AUDIT_CORE_ROOT: ${{ inputs.root }}
+        AUDIT_CORE_AUDIT_ROOT: ${{ inputs.audit-root }}
+        AUDIT_CORE_INCLUDE_TESTS: ${{ inputs.include-tests }}
+      run: |
+        set -Eeuo pipefail
+        # Resolve to absolute paths so the bash flags array is stable
+        # regardless of which directory `code-audit` ends up running from.
+        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        extractors_dir="$pipeline_root/extractors"
+        root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
+        audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        audit_root_abs="$(cd "$audit_root" && pwd)"
+
+        flags=( --root "$root_abs" --audit-root "$audit_root_abs" --extractors-dir "$extractors_dir" )
+        if [ "$AUDIT_CORE_INCLUDE_TESTS" = "true" ]; then
+          flags+=( --include-tests )
+        fi
+
+        if [ -z "$AUDIT_CORE_LANGS" ]; then
+          echo "audit-core: no language extractors to run (detection produced no matches)" >&2
+        else
+          IFS=',' read -ra langs <<< "$AUDIT_CORE_LANGS"
+          for lang in "${langs[@]}"; do
+            echo "::group::code-audit extract $lang"
+            code-audit extract "$lang" "${flags[@]}"
+            echo "::endgroup::"
+          done
+        fi
+
+    - name: Run file-hashes extractor
+      if: inputs.include-file-hashes == 'true'
+      shell: bash
+      env:
+        AUDIT_CORE_ROOT: ${{ inputs.root }}
+        AUDIT_CORE_AUDIT_ROOT: ${{ inputs.audit-root }}
+        AUDIT_CORE_INCLUDE_TESTS: ${{ inputs.include-tests }}
+      run: |
+        set -Eeuo pipefail
+        pipeline_root="$(cd "${{ github.action_path }}/../.." && pwd)"
+        extractors_dir="$pipeline_root/extractors"
+        root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
+        audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        audit_root_abs="$(cd "$audit_root" && pwd)"
+
+        flags=( --root "$root_abs" --audit-root "$audit_root_abs" --extractors-dir "$extractors_dir" )
+        if [ "$AUDIT_CORE_INCLUDE_TESTS" = "true" ]; then
+          flags+=( --include-tests )
+        fi
+        echo "::group::code-audit extract file-hashes"
+        code-audit extract file-hashes "${flags[@]}"
+        echo "::endgroup::"
+
+    - name: Emit outputs
+      id: emit
+      shell: bash
+      env:
+        AUDIT_CORE_ROOT: ${{ inputs.root }}
+        AUDIT_CORE_AUDIT_ROOT: ${{ inputs.audit-root }}
+      run: |
+        set -Eeuo pipefail
+        audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        catalogs_dir="$(cd "$audit_root" && pwd)/.audit/catalogs"
+        if [ ! -d "$catalogs_dir" ]; then
+          echo "audit-core: expected catalogs dir not found: $catalogs_dir" >&2
+          exit 1
+        fi
+        count=$(find "$catalogs_dir" -maxdepth 1 -type f -name '*.json' | wc -l | tr -d ' ')
+        echo "audit-core: $count catalog file(s) at $catalogs_dir" >&2
+        echo "catalogs-dir=$catalogs_dir" >> "$GITHUB_OUTPUT"
