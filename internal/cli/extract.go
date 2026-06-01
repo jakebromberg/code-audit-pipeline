@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -14,8 +15,12 @@ import (
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
 )
 
-// Extract implements `code-audit extract <name> ...`.
-func Extract(ctx context.Context, argv []string, out io.Writer) int {
+// Extract implements `code-audit extract <name> ...`. embeddedExtractorsFS
+// is the //go:embed-rooted extractors subtree, used by the auto-extract
+// gate when discovery resolves to ~/.config/audit/extractors and that dir
+// is empty / stale. Pass nil to disable auto-extract (intended for tests
+// that explicitly populate every tier).
+func Extract(ctx context.Context, argv []string, out io.Writer, embeddedExtractorsFS fs.FS) int {
 	if len(argv) < 1 {
 		fmt.Fprintln(out, "usage: code-audit extract <name> [flags]")
 		return 2
@@ -55,7 +60,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	auditRootAbs, _ := filepath.Abs(auditRoot)
 
 	cwd, _ := os.Getwd()
-	xdir, _, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
+	xdir, tier, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
 		Flag:      *extractorsDir,
 		AuditHome: os.Getenv("AUDIT_HOME"),
 		CWD:       cwd,
@@ -64,6 +69,18 @@ func Extract(ctx context.Context, argv []string, out io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(out, "code-audit: %v\n", err)
 		return 3
+	}
+
+	// Auto-extract gate: only fires when the discovery chain fell through
+	// to TierConfigDir (~/.config/audit/extractors). Earlier tiers (Flag,
+	// Cwd, AuditHome) signal "user is managing source" — the binary never
+	// mutates those. Pinned by tests 19, 19a, 19b.
+	if tier == discovery.TierConfigDir && embeddedExtractorsFS != nil {
+		auditDest := filepath.Dir(xdir)
+		if err := ensureExtractor(ctx, name, xdir, auditDest, embeddedExtractorsFS, out); err != nil {
+			fmt.Fprintf(out, "code-audit: %v\n", err)
+			return 1
+		}
 	}
 
 	manifestPath := filepath.Join(xdir, name, "manifest.toml")

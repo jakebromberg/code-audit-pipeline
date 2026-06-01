@@ -73,6 +73,8 @@ This repo uses the [Anti-Capitalist Software License v1.4](https://anticapitalis
 
 ## Operational notes
 
-- The TypeScript extractor's `node_modules/` is gitignored. Run `npm install` inside `extractors/typescript/` once per clone.
+- Source build: `go generate ./... && go install ./cmd/code-audit`. The `go generate` step runs `internal/genembed` to copy `pipeline/queries/*.jq` and `extractors/<lang>/*` into `cmd/code-audit/{queries,extractors}/` for the `//go:embed` in `embed.go`; skipping it fails with `pattern queries/*.jq: no matching files found`.
+- The TypeScript extractor's `node_modules/` is gitignored. `npm install` runs automatically via the manifest's `[runtime].bootstrap` on first `code-audit extract`. Contributors editing extractor source via `code-audit init --from <checkout>` get the same bootstrap pass — no manual `npm install` step.
 - Pipeline outputs (`prs.json`, `prs-classified.json`, `candidates.json`, `catalog.json`, `findings.md`) are gitignored — they are regeneratable and not for version control.
+- Generated `//go:embed` sources (`cmd/code-audit/queries/`, `cmd/code-audit/extractors/`) are gitignored; canonical sources are `pipeline/queries/` and `extractors/`.
 - Per-run scratch directory convention: `/tmp/wxyc-audit/` (or rename per project). Documented in the case study's reproducibility footer.

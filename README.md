@@ -26,16 +26,16 @@ go install github.com/jakebromberg/code-audit-pipeline/cmd/code-audit@latest
 
 Or download a tarball from [Releases](https://github.com/jakebromberg/code-audit-pipeline/releases).
 
-The binary embeds the full `pipeline/queries/*.jq` set, so cluster queries work immediately against any catalog you already have. Extractors live external (each has its own runtime — Node, Swift toolchain, future Python) and are bootstrapped via `code-audit init`.
+The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow.
 
 ## Quick start
 
 ```bash
-# One-time: copy queries + extractors into ~/.config/audit/ from a local checkout.
-code-audit init --from /path/to/code-audit-pipeline
-
-# Run the TypeScript extractor against your repo; output is cached under .audit/.
+# No init required — first `extract` auto-extracts source from the binary
+# and runs the extractor's [runtime].bootstrap (e.g., `npm install`).
 code-audit extract typescript --root /path/to/your/repo
+# First call takes ~30s on a fresh install (npm install for the TS extractor);
+# subsequent calls are fast.
 
 # Inspect cached state and the resolved query/extractor sources.
 code-audit status
@@ -57,7 +57,7 @@ The full subcommand surface:
 | `code-audit query <name>` | Evaluate a query against cached catalogs (or `--catalog <path>` override). |
 | `code-audit status` | Show `.audit/` state, resolved query/extractor sources, and staleness. |
 | `code-audit report` | Run every runnable query and write a markdown report to `.audit/reports/`. |
-| `code-audit init` | Bootstrap `~/.config/audit/` (extractors + queries) from a local source tree. |
+| `code-audit init` | Lay down `~/.config/audit/` (extractors + queries) explicitly. Optional — `extract` auto-bootstraps. Useful for contributors editing extractor source: `init --from <local-checkout>` points at a live tree. |
 | `code-audit version` | Print binary version. |
 
 Per-command flags follow the long-form GNU convention (`--root`, `--queries-dir`, `--catalog`, etc.); run any subcommand with `--help` for the full list.
@@ -73,7 +73,17 @@ Both queries and extractors are resolved via a lookup-order chain ([ADR-0006](do
 
 `code-audit status` always prints the resolved source for both. The cwd-relative path makes contributor edits live without rebuilding the binary; the embedded fallback means a brewed binary works against any pre-existing catalog with no install steps.
 
-To point the binary at the tree `code-audit init` lays down (instead of the embedded set), set `AUDIT_HOME=$XDG_CONFIG_HOME/audit` (or `~/.config/audit`). Without `AUDIT_HOME` set and outside a checkout, queries resolve to the embedded copy — which is the intended default for the brewed binary.
+For tier 4 specifically (the `~/.config/audit/extractors/` fallback), `code-audit extract <name>` auto-extracts the binary's embedded extractor source and runs the manifest's `[runtime].bootstrap` argv on first use. Per-extractor concurrency uses an `flock(2)` at `<extractor>/.audit-init/lock`; outcomes (`ok` / `failed` / `pending` / `n-a`) persist in `~/.config/audit/.audit-init/state.json` and surface in `code-audit status`. See [ADR-0008](docs/adr/0008-extractor-embedding-and-auto-bootstrap.md) for the protocol.
+
+### Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `AUDIT_HOME` | Override tier 3 in the discovery chain — point at `~/.config/audit` (or any sibling layout) to use a non-default location. Unset to fall through to the default tier-4 path. |
+| `XDG_CONFIG_HOME` | Used by `code-audit init`'s default destination (`$XDG_CONFIG_HOME/audit` falls back to `~/.config/audit`). |
+| `HOME` | Determines `~/.config/audit/extractors` (tier 4) when `XDG_CONFIG_HOME` is unset. |
+
+The auto-extract path adds **zero** environment variables — every knob above already existed.
 
 ## What the catalog contains
 
