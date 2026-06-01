@@ -133,6 +133,10 @@ All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FOR
 | `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references | type + references |
 | `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type | function + type |
 | `cross-package-backward-imports.jq` | `shared/*` files importing from `main/*` — layering violation | files |
+| `coverage.jq` | Cross-repo scope report — covered, missing, stale, errored repos against the substrate's `index.json` | substrate index |
+| `preflight-versions.jq` | Refuse cross-repo merge on extractor major-version skew or missing/malformed extractor metadata | substrate index |
+
+For cross-repo queries that merge catalogs across many repos via the substrate ([`docs/substrate.md`](docs/substrate.md)), the canonical entry point is `pipeline/run-cross-repo-query.sh`. It composes fetch → preflight → coverage → query and prepends the coverage header to the query's output, so a consumer can always read its scope and trust the merge-safety. See [`pipeline-contract.md` § Cross-repo substrate guardrails](docs/pipeline-contract.md#cross-repo-substrate-guardrails-coveragejq-preflight-versionsjq-run-cross-repo-querysh).
 
 ## Adding a new extractor
 

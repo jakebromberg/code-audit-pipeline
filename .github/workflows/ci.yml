@@ -19,10 +19,12 @@ jobs:
             pipeline/queries/_tests/test_canonical.sh \
             pipeline/queries/_tests/test_queries_integration.sh \
             pipeline/queries/_tests/test_gojq_parity.sh \
+            pipeline/queries/_tests/test_cross_repo_ops.sh \
             pipeline/queries/_tests/smoke_test_real_catalog.sh \
             pipeline/fetch-catalogs.sh \
             pipeline/publish-catalog.sh \
             pipeline/verify-index.sh \
+            pipeline/run-cross-repo-query.sh \
             pipeline/_tests/test_substrate.sh \
             pipeline/_tests/test_audit_core.sh \
             .github/actions/audit-core/scripts/detect-languages.sh \
@@ -96,6 +98,9 @@ jobs:
 
       - name: audit-core helper tests (detect-languages.sh)
         run: pipeline/_tests/test_audit_core.sh
+
+      - name: cross-repo operational-safety tests (preflight + coverage + wrapper)
+        run: pipeline/queries/_tests/test_cross_repo_ops.sh
 
   go:
     name: go binary

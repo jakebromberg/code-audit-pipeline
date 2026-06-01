@@ -136,6 +136,57 @@ assert_eq "empty input yields empty list" \
   '[]' \
   "$(run '"" | tokens_of | tojson')"
 
+echo "=== is_published (cross-repo filter helper, #155) ==="
+assert_eq "true when origin_package is a non-empty string" \
+  "true" \
+  "$(echo '{"origin_package": "react"}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_published')"
+
+assert_eq "true for scoped package names" \
+  "true" \
+  "$(echo '{"origin_package": "@wxyc/lml-client"}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_published')"
+
+assert_eq "false when origin_package is null" \
+  "false" \
+  "$(echo '{"origin_package": null}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_published')"
+
+assert_eq "false when origin_package field is absent" \
+  "false" \
+  "$(echo '{"kind": "type-alias", "name": "Foo"}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_published')"
+
+assert_eq "false when origin_package is empty string" \
+  "false" \
+  "$(echo '{"origin_package": ""}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_published')"
+
+echo "=== is_repo_local (complement of is_published) ==="
+assert_eq "false when origin_package is set" \
+  "false" \
+  "$(echo '{"origin_package": "react"}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_repo_local')"
+
+assert_eq "true when origin_package is null" \
+  "true" \
+  "$(echo '{"origin_package": null}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_repo_local')"
+
+assert_eq "true when origin_package is absent" \
+  "true" \
+  "$(echo '{"kind": "type-alias"}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_repo_local')"
+
+assert_eq "true when origin_package is empty string" \
+  "true" \
+  "$(echo '{"origin_package": ""}' | jq -L "$QUERIES_DIR" -r 'include "_canonical"; is_repo_local')"
+
+echo "=== stale_threshold_days (env-overridable cutoff in days) ==="
+assert_eq "default is 7 when env unset" \
+  "7" \
+  "$(run 'stale_threshold_days')"
+
+assert_eq "honors CROSS_REPO_STALE_DAYS=14" \
+  "14" \
+  "$(run_env 'CROSS_REPO_STALE_DAYS=14' 'stale_threshold_days')"
+
+assert_eq "honors CROSS_REPO_STALE_DAYS=30" \
+  "30" \
+  "$(run_env 'CROSS_REPO_STALE_DAYS=30' 'stale_threshold_days')"
+
 echo "=== output_format ==="
 assert_eq "default is text" \
   "text" \
