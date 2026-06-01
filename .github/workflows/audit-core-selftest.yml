@@ -1,0 +1,100 @@
+name: audit-core selftest
+
+# End-to-end exercise of the audit-core composite action against this
+# repository's own checkout. Runs only when the composite or its inputs
+# (extractors, code-audit binary, manifests) change, to keep PR CI lean.
+#
+# The "build-from-source" binary-version is used here because no release
+# tag exists for the PR's HEAD; the release-download path is validated by
+# the first real consumer of audit-core under PR 2's reusable workflow.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/actions/audit-core/**'
+      - 'extractors/**'
+      - 'cmd/code-audit/**'
+      - 'internal/**'
+      - 'pipeline/queries/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/actions/audit-core/**'
+      - 'extractors/**'
+      - 'cmd/code-audit/**'
+      - 'internal/**'
+      - 'pipeline/queries/**'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: audit-core against own checkout (build-from-source)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go (build code-audit from source)
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install jq (validates catalog output)
+        run: |
+          jq --version || sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run audit-core composite
+        id: audit
+        uses: ./.github/actions/audit-core
+        with:
+          root: .
+          binary-version: build-from-source
+          # Skip Swift on ubuntu: it would be detected from extractors/swift/Package.swift
+          # at the repo root if we left auto-detection on. Force TS-only for the
+          # selftest, since the extractor sources themselves are the fixture.
+          languages: typescript
+
+      - name: Assert outputs
+        env:
+          CATALOGS_DIR: ${{ steps.audit.outputs.catalogs-dir }}
+          LANGS: ${{ steps.audit.outputs.languages-detected }}
+          MACOS: ${{ steps.audit.outputs.requires-macos }}
+          VERSION: ${{ steps.audit.outputs.binary-version-used }}
+        run: |
+          set -Eeuo pipefail
+          echo "catalogs-dir=$CATALOGS_DIR"
+          echo "languages-detected=$LANGS"
+          echo "requires-macos=$MACOS"
+          echo "binary-version-used=$VERSION"
+
+          test -d "$CATALOGS_DIR" || { echo "ERROR: catalogs-dir missing"; exit 1; }
+          [ "$LANGS" = "typescript" ] || { echo "ERROR: expected langs=typescript, got '$LANGS'"; exit 1; }
+          [ "$MACOS" = "false" ] || { echo "ERROR: expected requires-macos=false for TS, got '$MACOS'"; exit 1; }
+          [ -n "$VERSION" ] || { echo "ERROR: binary-version-used was empty"; exit 1; }
+
+          # Expect TypeScript extractor's two outputs + file-hashes (default-on).
+          test -f "$CATALOGS_DIR/type-catalog.json"
+          test -f "$CATALOGS_DIR/function-catalog.json"
+          test -f "$CATALOGS_DIR/file-hashes.json"
+
+          # type-catalog and function-catalog must be v1.1-wrapped (same shape
+          # publish-catalog.sh enforces; PR 2's reusable workflow will pipe
+          # these directly into it). file-hashes is still bare-array pending
+          # the #141 wrapper migration; validate it as a JSON array instead.
+          for f in "$CATALOGS_DIR/type-catalog.json" "$CATALOGS_DIR/function-catalog.json"; do
+            echo "Validating $(basename "$f") as v1.1 wrapper"
+            jq -e '
+              type == "object"
+              and (.schema_version | type == "string")
+              and (.extractor | type == "object")
+              and ((.entries | type == "array")
+                   or (.edges | type == "array")
+                   or (.nodes | type == "array"))
+            ' "$f" >/dev/null
+          done
+
+          echo "Validating file-hashes.json as JSON array (legacy shape; pending #141 wrapper migration)"
+          jq -e 'type == "array"' "$CATALOGS_DIR/file-hashes.json" >/dev/null
