@@ -39,39 +39,52 @@ include "_canonical";
 
 # Parse an ISO-8601 UTC timestamp ("2026-05-31T12:00:00Z") into epoch seconds.
 # Returns null on failure rather than crashing.
+#
+# jq/gojq parity note: jq's `fromdateiso8601` accepts only the trailing-Z
+# form for UTC; gojq also accepts `+00:00`. To keep coverage byte-stable
+# across engines, normalize the offset form to `Z` before parsing.
 def parse_iso:
   if (. // null) == null then null
-  else (try (fromdateiso8601) catch null)
+  else
+    (sub("\\+00:?00$"; "Z")) as $normalized
+    | (try ($normalized | fromdateiso8601) catch null)
   end;
 
-# "comparison now" — index.json carries `generated_at`. Use it as the
-# reference point for age computation so the report is reproducible given
-# only the index. (A wrapper that wants wall-clock "now" can override via
-# --argjson now_epoch ...; default is index.json's generated_at.)
-($ENV.NOW_OVERRIDE // null) as $now_override
+# "Comparison now" — default to wall-clock UTC (`now` builtin) so the
+# stale comparison reflects real time, not whenever the index was last
+# generated. Tests and reproducibility callers can pin the reference
+# point via NOW_OVERRIDE (epoch seconds). The output's `comparison_at`
+# field records the resolved value so consumers can audit it.
+((($ENV.NOW_OVERRIDE // "") | select(length > 0)) // null) as $now_override
 | ((.generated_at // null) | parse_iso) as $generated_epoch
 | (
-    if $now_override != null then ($now_override | tonumber? // $generated_epoch)
-    else $generated_epoch
+    if $now_override != null then ($now_override | tonumber? // now)
+    else now
     end
   ) as $now_epoch
 | stale_threshold_days as $threshold
 | ($threshold * 86400) as $threshold_seconds
 | .repos as $all_repos
 | (
+    # Project per-repo `covered` rows. `age_seconds` is computed but
+    # NOT emitted on the public envelope — its raw float varies by
+    # sub-millisecond between jq invocations (via the `now` builtin),
+    # which breaks the gojq parity test. The public fields are integer
+    # `age_hours` and one-decimal `age_days`, both stable.
     [
       $all_repos[]
       | select(.status == "ok" and .latest != null)
       | (.latest.published_at | parse_iso) as $pub
+      | (if $pub != null and $now_epoch != null then ($now_epoch - $pub) else null end) as $age_seconds
       | {
           repo: .repo,
           commit_sha: .latest.commit_sha,
           short_sha: .latest.short_sha,
           published_at: .latest.published_at,
-          age_seconds: (if $pub != null and $now_epoch != null then ($now_epoch - $pub) else null end)
+          age_hours: (if $age_seconds != null then ($age_seconds / 3600.0 | floor) else null end),
+          age_days: (if $age_seconds != null then ($age_seconds / 86400.0 | . * 10 | floor / 10) else null end),
+          _age_seconds: $age_seconds
         }
-      | .age_hours = (if .age_seconds != null then (.age_seconds / 3600.0 | floor) else null end)
-      | .age_days = (if .age_seconds != null then (.age_seconds / 86400.0 | . * 10 | floor / 10) else null end)
     ]
   ) as $covered_rows
 | (
@@ -101,23 +114,32 @@ def parse_iso:
     # and query, or the index is older than it claims).
     [
       $covered_rows[]
-      | select(.age_seconds != null and .age_seconds > $threshold_seconds)
+      | select(._age_seconds != null and ._age_seconds > $threshold_seconds)
       | {repo, age_days, observed_threshold: $threshold}
     ]
   ) as $divergent_stale
 | (
     [
       $all_repos[]
-      | select(.extractor_errors // 0 > 0)
+      # Parenthesize the // fallback: jq's precedence parses
+      # `.extractor_errors // 0 > 0` as `.x // (0 > 0)` = `.x // false`,
+      # which keeps every row with the key set — even when value is 0.
+      # The intent is "missing OR zero → exclude", so default first.
+      | select(((.extractor_errors // 0) | tonumber? // 0) > 0)
       | {repo: .repo, extractor_errors: .extractor_errors}
     ]
   ) as $errored_rows
 | (
     # Median age across covered repos (in hours), null if no ages computed.
+    # Even-length arrays average the two middle elements; odd-length pick
+    # the center. Picking the upper-middle (the previous behavior) inflates
+    # the displayed median for length-2 to match the max.
     ($covered_rows | map(.age_hours) | map(select(. != null)) | sort) as $ages
-    | if ($ages | length) == 0 then null
-      elif ($ages | length) == 1 then $ages[0]
-      else $ages[(($ages | length) / 2 | floor)]
+    | ($ages | length) as $n
+    | if $n == 0 then null
+      elif $n == 1 then $ages[0]
+      elif ($n % 2) == 1 then $ages[($n / 2 | floor)]
+      else (($ages[$n/2 - 1] + $ages[$n/2]) / 2)
       end
   ) as $median_age_hours
 | ($covered_rows | map(.age_hours) | map(select(. != null)) | max) as $max_age_hours
@@ -125,13 +147,19 @@ def parse_iso:
     .coverage.total_known_repos // ($all_repos | length)
   ) as $expected
 | ($covered_rows | length) as $covered_count
+| (
+    # ISO-8601 the resolved `now_epoch` so the operator can audit which
+    # reference point produced the staleness verdict.
+    if $now_epoch != null then ($now_epoch | todateiso8601) else null end
+  ) as $comparison_at
 | {
     scope: {covered: $covered_count, expected: $expected},
     threshold_days: $threshold,
-    comparison_at: (.generated_at // null),
+    comparison_at: $comparison_at,
+    index_generated_at: (.generated_at // null),
     median_age_hours: $median_age_hours,
     max_age_hours: $max_age_hours,
-    covered: $covered_rows,
+    covered: ($covered_rows | map(del(._age_seconds))),
     missing: $missing_rows,
     stale: $stale_rows,
     divergent_stale: $divergent_stale,

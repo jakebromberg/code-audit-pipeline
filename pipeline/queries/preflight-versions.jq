@@ -55,26 +55,38 @@ def parse_major(version):
 
 # Pull one row per (repo, catalog) from index.json. Only ok-status repos
 # contribute; stale/missing ones have no catalogs to merge.
+#
+# Defensive: `.extractor.version` panics in jq if `.extractor` is a
+# non-null non-object (number, string, array). We treat any non-object
+# as "missing extractor" so a malformed publisher gets a clean refusal,
+# not a stack trace.
 def catalog_rows:
   [
-    .repos[]
+    (.repos // [])[]
     | select(.status == "ok" and .latest != null)
     | .repo as $repo
     | (.latest.catalogs // [])[]
+    | (
+        if (.extractor // null) == null then null
+        elif (.extractor | type) != "object" then null
+        else .extractor
+        end
+      ) as $ext
     | {
         repo: $repo,
         kind: .kind,
-        extractor: (.extractor // null),
-        version: (.extractor.version // null),
-        language: (.extractor.language // null),
-        ext_name: (.extractor.name // null)
+        extractor: $ext,
+        raw_extractor: .extractor,
+        version: ($ext.version // null),
+        language: ($ext.language // null),
+        ext_name: ($ext.name // null)
       }
     | .major = parse_major(.version)
   ];
 
 catalog_rows as $rows
 | ($rows | map(select(.extractor == null))
-        | map({repo, kind})) as $missing
+        | map({repo, kind, raw: .raw_extractor})) as $missing
 | ($rows | map(select(.extractor != null and (.version == null or .major == null)))
         | map({repo, kind, version})) as $malformed
 | ($rows | map(select(.extractor != null and .major != null))) as $valid

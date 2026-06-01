@@ -5,13 +5,14 @@
 #   1. Fetch — pulls index.json + per-repo catalogs into the local cache via
 #      fetch-catalogs.sh. Skipped with --skip-fetch (caller is responsible
 #      for keeping the cache fresh).
-#   2. Preflight — runs preflight-versions.jq against index.json. Refuses
-#      on major-version skew or missing/malformed extractor blocks.
-#   3. Coverage — runs coverage.jq against index.json. Captures stdout and
-#      prepends it to the query output so the consumer can always see the
-#      scope the report ran over.
-#   4. Query — merges every catalog of $CROSS_REPO_CATALOG_KIND across the
-#      cache and pipes through the user's query.
+#   2. Preflight — runs preflight-versions.jq against index.json (filtered
+#      by --repos, if set). Refuses on major-version skew or
+#      missing/malformed extractor blocks.
+#   3. Coverage — runs coverage.jq against the same filtered index.json.
+#      Captures stdout and prepends it (comment-prefixed) to the query
+#      output so the consumer can always see the scope the report ran over.
+#   4. Query — merges every ok-status catalog of $CROSS_REPO_CATALOG_KIND
+#      and pipes through the user's query.
 #
 # The wrapper exists because the brief's safety net is *enforced*: a query
 # author cannot forget to call preflight or coverage. Every cross-repo
@@ -23,10 +24,11 @@
 # Flags:
 #   --bucket-url URL    Overrides AUDIT_BUCKET_URL.
 #   --cache-dir DIR     Overrides AUDIT_LOCAL_CACHE.
-#   --repos a,b,c       Pass through to fetch-catalogs.sh.
+#   --repos a,b,c       Restrict to a subset of repos (matches index.json's
+#                       "repo" field). Forwarded to fetch-catalogs and used
+#                       to filter the index for preflight + coverage.
 #   --catalog-kind K    Catalog kind to merge for the query (default
 #                       $CROSS_REPO_CATALOG_KIND or `type-catalog`).
-#                       Per-query override.
 #   --skip-fetch        Trust the existing cache; don't re-fetch.
 #   --quiet             Suppress per-step progress lines on stderr.
 #   -h, --help          Show this help.
@@ -34,17 +36,24 @@
 # Env (when flags omitted):
 #   AUDIT_BUCKET_URL          required unless --skip-fetch and cache populated.
 #   AUDIT_LOCAL_CACHE         defaults to /tmp/wxyc-audit/catalogs.
-#   CROSS_REPO_CATALOG_KIND   defaults to type-catalog.
+#   CROSS_REPO_CATALOG_KIND   defaults to type-catalog. Currently the
+#                             wrapper merges only entries-shaped catalogs;
+#                             package-graph (edges/nodes) is refused.
 #   CROSS_REPO_STALE_DAYS     stale threshold; default 7. Read by
 #                             coverage.jq and preflight-versions.jq.
 #
 # Exit:
 #   0 — preflight passed (clean or minor-skew), query ran successfully.
-#   1 — preflight refused, no available repos, or other fatal error.
-#   2 — argument error.
-#   Any other code propagates from the user's query.
+#   1 — preflight refused; merge unsafe at any cost.
+#   2 — argument error, or empty merge set (no ok-status repos in scope).
+#   3 — fetch failed, no index.json available, or another fatal substrate
+#       error before the query can run.
+#   Other codes propagate from the user's query (anything > 3).
 
-set -eu
+# -E so trap inherits into command substitutions; pipefail so an upstream
+# merge crash doesn't get masked by a no-op downstream query. -u so
+# unset-variable bugs surface during dev.
+set -Eeuo pipefail
 
 usage() {
   sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//' >&2
@@ -93,14 +102,23 @@ fi
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
 QUERIES_DIR="$THIS_DIR/queries"
 
+# Force preflight + coverage into text mode regardless of caller env: the
+# wrapper's text-formatting pipeline assumes multi-line text, not the
+# JSONL envelope a `OUTPUT_FORMAT=jsonl` caller would otherwise inherit.
+INTERNAL_JQ_ENV=(env OUTPUT_FORMAT=text)
+
 log() { if [ "$quiet" -eq 0 ]; then echo "$@" >&2; fi }
+
+# Scratch dir for filtered index + tempfiles, cleaned on EXIT.
+SCRATCH=$(mktemp -d "${TMPDIR:-/tmp}/cross-repo.XXXXXX")
+trap 'rm -rf "$SCRATCH"' EXIT INT TERM
 
 # ---- 1) Fetch (unless --skip-fetch) -----------------------------------------
 
 if [ "$skip_fetch" -eq 0 ]; then
   if [ -z "$bucket_url" ]; then
     echo "run-cross-repo-query.sh: AUDIT_BUCKET_URL is required (set via env or --bucket-url; or pass --skip-fetch)" >&2
-    exit 1
+    exit 3
   fi
   log "[1/4] Fetching catalogs..."
   fetch_args=(--bucket-url "$bucket_url" --cache-dir "$cache_dir")
@@ -108,28 +126,45 @@ if [ "$skip_fetch" -eq 0 ]; then
   if [ "$quiet" -eq 1 ]; then fetch_args+=(--quiet); fi
   if ! bash "$THIS_DIR/fetch-catalogs.sh" "${fetch_args[@]}" >&2; then
     echo "run-cross-repo-query.sh: fetch-catalogs.sh failed; cannot proceed" >&2
-    exit 1
+    exit 3
   fi
 else
   log "[1/4] Skipping fetch (--skip-fetch)"
 fi
 
-index_path="$cache_dir/index.json"
-if [ ! -f "$index_path" ]; then
-  echo "run-cross-repo-query.sh: no index.json in cache ($index_path); cannot run preflight or coverage" >&2
-  exit 1
+index_path_raw="$cache_dir/index.json"
+if [ ! -f "$index_path_raw" ]; then
+  echo "run-cross-repo-query.sh: no index.json in cache ($index_path_raw); cannot run preflight or coverage" >&2
+  exit 3
+fi
+
+# Produce a `--repos`-filtered view of index.json so preflight/coverage
+# see only the repos the caller asked for. Without this, version skew in
+# unrelated repos (or stale unrelated repos) would block a subset query.
+index_path="$SCRATCH/filtered-index.json"
+if [ -n "$repos_filter" ]; then
+  filter_json=$(printf '%s' "$repos_filter" | jq -Rsc 'split(",") | map(gsub("^\\s+|\\s+$"; ""))')
+  jq --argjson keep "$filter_json" '
+    .repos = (.repos | map(select(.repo as $r | $keep | index($r))))
+  ' "$index_path_raw" > "$index_path"
+else
+  cp "$index_path_raw" "$index_path"
 fi
 
 # ---- 2) Preflight -----------------------------------------------------------
 
 log "[2/4] Running preflight-versions.jq..."
-# Run preflight in text mode so its summary is human-readable for the
-# operator on stderr; the wrapper inspects its exit code (1 = refused).
-preflight_log=$(mktemp "${TMPDIR:-/tmp}/cross-repo-preflight.XXXXXX")
-trap 'rm -f "$preflight_log"' EXIT
-if ! jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/preflight-versions.jq" "$index_path" > "$preflight_log" 2>&1; then
+preflight_log="$SCRATCH/preflight.log"
+# Capture preflight's stdout+stderr; inspect exit code without `set -e`
+# aborting the script before we get to the diagnostic.
+if "${INTERNAL_JQ_ENV[@]}" jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/preflight-versions.jq" "$index_path" > "$preflight_log" 2>&1; then
+  preflight_rc=0
+else
+  preflight_rc=$?
+fi
+if [ "$preflight_rc" -ne 0 ]; then
   cat "$preflight_log" >&2
-  echo "run-cross-repo-query.sh: preflight refused; aborting (catalogs at incompatible major versions or missing extractor metadata)" >&2
+  echo "run-cross-repo-query.sh: preflight refused (rc=$preflight_rc); aborting — catalogs at incompatible major versions or missing extractor metadata" >&2
   exit 1
 fi
 # On pass, only surface the preflight summary when not quiet.
@@ -140,38 +175,103 @@ fi
 # ---- 3) Coverage ------------------------------------------------------------
 
 log "[3/4] Computing coverage header..."
-coverage_header=$(jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/coverage.jq" "$index_path")
-coverage_rc=$?
+# Pass wall-clock UTC as the staleness reference so the report reflects
+# real time, not the index's `generated_at` (which can lag arbitrarily).
+now_epoch=$(date -u +%s)
+coverage_header_file="$SCRATCH/coverage.txt"
+if "${INTERNAL_JQ_ENV[@]}" NOW_OVERRIDE="$now_epoch" jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/coverage.jq" "$index_path" > "$coverage_header_file" 2> "$SCRATCH/coverage.err"; then
+  coverage_rc=0
+else
+  coverage_rc=$?
+fi
 if [ "$coverage_rc" -ne 0 ]; then
+  cat "$SCRATCH/coverage.err" >&2
   echo "run-cross-repo-query.sh: coverage.jq exited $coverage_rc; aborting" >&2
-  exit 1
+  exit 3
 fi
 
 # ---- 4) Query ---------------------------------------------------------------
 
 log "[4/4] Merging $catalog_kind catalogs and running query..."
-# Discover the relevant catalog files in the cache. Layout:
-#   $cache_dir/by-repo/<seg>/<ts>_<sha>/<kind>.json
-catalog_files=$(find "$cache_dir/by-repo" -mindepth 3 -maxdepth 3 -type f -name "${catalog_kind}.json" 2>/dev/null | sort)
 
-if [ -z "$catalog_files" ]; then
-  echo "run-cross-repo-query.sh: no $catalog_kind.json files found in $cache_dir/by-repo (cache empty or wrong --catalog-kind?)" >&2
-  exit 1
+# Determine the set of ok-status repo prefixes from the *filtered* index.
+# We do NOT trust the cache layout blindly: stale leftover files from
+# earlier fetches must not contaminate the merge. The index is the
+# source of truth for what's in scope.
+catalog_files_list="$SCRATCH/catalog-files.txt"
+jq -r --arg kind "$catalog_kind" '
+  .repos[]
+  | select(.status == "ok" and .latest != null and (.latest.prefix // null) != null)
+  | "\(.latest.prefix)\($kind).json"
+' "$index_path" > "$catalog_files_list"
+
+# Materialize each prefix into an absolute path inside the cache;
+# tolerate missing files by skipping them with a stderr warning.
+catalog_paths=()
+missing_after_fetch=()
+while IFS= read -r rel; do
+  if [ -z "$rel" ]; then continue; fi
+  abs="$cache_dir/$rel"
+  if [ -f "$abs" ]; then
+    catalog_paths+=("$abs")
+  else
+    missing_after_fetch+=("$rel")
+  fi
+done < "$catalog_files_list"
+
+if [ "${#missing_after_fetch[@]}" -gt 0 ]; then
+  echo "run-cross-repo-query.sh: WARNING ${#missing_after_fetch[@]} catalog(s) referenced by index.json are not in the cache (skipped):" >&2
+  for m in "${missing_after_fetch[@]}"; do echo "  $m" >&2; done
 fi
 
-# Prepend the coverage header so the query's consumer can read scope at a
-# glance. Header is comment-prefixed so consumers that ingest the rest as
-# JSONL can drop comment lines with a `grep -v '^# '`.
-printf '# %s\n' "$coverage_header" | sed 's/$//' | awk 'NR==1{print; next} {print "# " $0}' | sed 's/^# # /# /'
-# (the awk pipe re-applies the comment prefix to wrapped lines split by \n
-# inside coverage's stdout)
+if [ "${#catalog_paths[@]}" -eq 0 ]; then
+  echo "run-cross-repo-query.sh: no ok-status $catalog_kind.json files in scope (cache empty, filter excluded all, or wrong --catalog-kind?)" >&2
+  exit 2
+fi
 
-# Merge all catalogs into one stream, then pipe into the query.
-# jq -s 'map(.entries // []) | add' yields the flat entries array; the
-# user's query then operates on that with the same `entries` helper as
-# single-repo invocations.
-# shellcheck disable=SC2086
-echo "$catalog_files" | xargs jq -s 'map(.entries // []) | add | {schema_version: "1.1", extractor: {name: "merged", language: "cross-repo", version: "1.0.0"}, entries: .}' \
+# Reject catalog kinds the merge logic can't faithfully represent. Today
+# the wrapper merges only `.entries`-shaped catalogs; an edges/nodes
+# catalog (e.g. package-graph) would silently merge to an empty stream.
+# Sniff the first catalog's top-level shape and refuse before any query
+# author writes against bogus output.
+first_catalog="${catalog_paths[0]}"
+shape=$(jq -r '
+  if type == "array" then "array-v1.0"
+  elif has("entries") then "entries"
+  elif has("edges") or has("nodes") then "edges-nodes"
+  else "unknown"
+  end
+' "$first_catalog")
+if [ "$shape" = "edges-nodes" ]; then
+  echo "run-cross-repo-query.sh: $catalog_kind catalogs have edges/nodes shape, which the cross-repo merge does not yet support. Refusing rather than silently producing empty results. (First sample: $first_catalog)" >&2
+  exit 2
+fi
+
+# Prepend the coverage header as comment-prefixed lines so consumers can
+# strip them with `grep -v '^#'`. We do this *after* the empty-merge
+# check so an empty scope exits cleanly with no spurious banner.
+while IFS= read -r line; do
+  echo "# $line"
+done < "$coverage_header_file"
+
+# Merge polymorphically: bare-array v1.0 catalogs unwrap into `.entries`;
+# wrapped v1.1 catalogs project `.entries`. Any other shape contributes
+# an empty array (kept defensively even though the pre-check above
+# refuses edges/nodes — a future mixed-shape merge can extend the rule).
+# The merged synthetic catalog mirrors the v1.1 wrapper so downstream
+# queries' `entries` helper works unchanged.
+#
+# Building the jq command with an array preserves quoting through paths
+# with spaces; `xargs` cannot do that without -0 plus find -print0,
+# which complicates the index-driven file list above.
+merge_filter='
+  map(if type == "array" then . else (.entries // []) end)
+  | add
+  | { schema_version: "1.1",
+      extractor: { name: "merged", language: "cross-repo", version: "1.0.0" },
+      entries: . }
+'
+jq -s "$merge_filter" "${catalog_paths[@]}" \
   | jq -L "$QUERIES_DIR" -rf "$query" "${jq_extra_args[@]+"${jq_extra_args[@]}"}"
 
 exit 0
