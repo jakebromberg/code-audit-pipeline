@@ -214,8 +214,14 @@ both_modes cross-catalog-name-collisions             "$QUERIES_DIR/cross-catalog
 
 echo ""
 echo "=== Cross-repo substrate (index.json input) ==="
+# Pin NOW_OVERRIDE so coverage's `now`-based age computation is identical
+# across the jq and gojq runs (they execute sequentially, so an unpinned
+# `now` differs by sub-millisecond between invocations).
+NOW_OVERRIDE_FIXED=1780574400  # 2026-05-31T12:00:00Z (matches the fixture's generated_at)
+export NOW_OVERRIDE="$NOW_OVERRIDE_FIXED"
 both_modes coverage                                  "$QUERIES_DIR/coverage.jq"                                  "$INDEX_FIXTURE"
 both_modes preflight-versions                        "$QUERIES_DIR/preflight-versions.jq"                        "$INDEX_FIXTURE"
+unset NOW_OVERRIDE
 
 echo ""
 echo "=== Summary ==="
