@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/manifest"
@@ -53,7 +54,7 @@ func TestInitFreshCopy(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "audit-home")
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
 	}
@@ -87,7 +88,7 @@ func TestInitNoOpOnRerun(t *testing.T) {
 	mustInit(t, src, dest)
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("rerun Init exit=%d, out=%s", exit, out.String())
 	}
@@ -107,7 +108,7 @@ func TestInitDirtyWithoutForce(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out, nil)
 	if exit != 1 {
 		t.Fatalf("Init exit=%d (want 1 for dirty), out=%s", exit, out.String())
 	}
@@ -131,7 +132,7 @@ func TestInitDirtyWithForce(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--force"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--force"}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("--force Init exit=%d, out=%s", exit, out.String())
 	}
@@ -156,7 +157,7 @@ func TestInitReconcilesAfterStateLoss(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("reconcile Init exit=%d, out=%s", exit, out.String())
 	}
@@ -185,7 +186,7 @@ func TestInitUpgradePullsNewSrc(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("upgrade Init exit=%d, out=%s", exit, out.String())
 	}
@@ -209,7 +210,7 @@ func TestInitDryRun(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "audit-home")
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--dry-run"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--dry-run"}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("dry-run Init exit=%d, out=%s", exit, out.String())
 	}
@@ -236,7 +237,7 @@ func TestInitRefusesSymlinkLoop(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
 	if exit == 0 {
 		t.Fatalf("expected non-zero exit for symlink loop, got 0; out=%s", out.String())
 	}
@@ -251,7 +252,7 @@ func TestInitRefusesSymlinkLoop(t *testing.T) {
 func TestInitMissingFromFlag(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "audit-home")
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--dest", dest}, &out, nil)
 	if exit != 2 {
 		t.Fatalf("missing --from Init exit=%d (want 2), out=%s", exit, out.String())
 	}
@@ -290,7 +291,7 @@ func TestInitPreservesExecutableBit(t *testing.T) {
 func mustInit(t *testing.T, src, dest string) {
 	t.Helper()
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("setup Init exit=%d, out=%s", exit, out.String())
 	}
@@ -616,6 +617,309 @@ func TestInitState_EnsureExtractorsMapNilSafe(t *testing.T) {
 	}
 }
 
+// embeddedFixture returns a pair of fstest.MapFS instances simulating the
+// brew embedded source: one extractors subtree, one queries subtree.
+func embeddedFixture(t *testing.T) []SubtreeSrc {
+	t.Helper()
+	extractorsFS := fstest.MapFS{
+		"typescript/manifest.toml": &fstest.MapFile{
+			Data: []byte(`schema_version = 2
+[extractor]
+name = "typescript"
+version = "0.0.1"
+[[command]]
+catalog = "type-catalog"
+output_file = "type-catalog.json"
+invocation = ["node", "type-catalog.mjs", "--output", "{output}"]
+[runtime]
+requires = ["node >= 18"]
+`),
+			Mode: 0o444,
+		},
+		"typescript/type-catalog.mjs": &fstest.MapFile{
+			Data: []byte("// extractor\n"),
+			Mode: 0o444,
+		},
+	}
+	queriesFS := fstest.MapFS{
+		"_canonical.jq":        &fstest.MapFile{Data: []byte("# helper\n"), Mode: 0o444},
+		"exact-duplicates.jq":  &fstest.MapFile{Data: []byte("#! query: exact-duplicates\n"), Mode: 0o444},
+	}
+	return []SubtreeSrc{
+		{RelPath: "extractors", FS: extractorsFS, Embedded: true},
+		{RelPath: "pipeline/queries", FS: queriesFS, Embedded: true},
+	}
+}
+
+// Test 11 — `code-audit init` (no args) succeeds with embedded source;
+// state.json records source_repo_root: "<embedded>".
+func TestInit_NoFromUsesEmbedded(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--dest", dest}, &out, embeddedFixture(t))
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+	state := readState(t, dest)
+	if state.SourceRepoRoot != "<embedded>" {
+		t.Errorf("SourceRepoRoot = %q, want <embedded>", state.SourceRepoRoot)
+	}
+	if state.SourceCommitSHA != "" {
+		t.Errorf("SourceCommitSHA = %q, want empty for embedded", state.SourceCommitSHA)
+	}
+	for _, rel := range []string{
+		"extractors/typescript/manifest.toml",
+		"extractors/typescript/type-catalog.mjs",
+		"pipeline/queries/_canonical.jq",
+		"pipeline/queries/exact-duplicates.jq",
+	} {
+		if _, err := os.Stat(filepath.Join(dest, rel)); err != nil {
+			t.Errorf("missing copied file %s: %v", rel, err)
+		}
+	}
+}
+
+// Test 11a — embedded-source init runs bootstrap once; state.json records
+// status n-a since the fixture's manifest declares no [runtime].bootstrap.
+func TestInit_NoFromRecordsBootstrapNA(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--dest", dest}, &out, embeddedFixture(t))
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+	state := readState(t, dest)
+	got := state.Extractors["typescript"]
+	if got.BootstrapStatus != BootstrapNA {
+		t.Errorf("status = %q, want %q (%+v)", got.BootstrapStatus, BootstrapNA, got)
+	}
+}
+
+// Test 11b — embedded-source init re-run with no source changes is
+// idempotent: no second bootstrap, no file writes, exit 0.
+func TestInit_NoFromIdempotent(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	emb := embeddedFixture(t)
+
+	var first bytes.Buffer
+	if exit := Init(context.Background(), []string{"--dest", dest}, &first, emb); exit != 0 {
+		t.Fatalf("first Init exit=%d, out=%s", exit, first.String())
+	}
+	stateBefore := readState(t, dest)
+
+	var second bytes.Buffer
+	if exit := Init(context.Background(), []string{"--dest", dest}, &second, emb); exit != 0 {
+		t.Fatalf("second Init exit=%d, out=%s", exit, second.String())
+	}
+	if !strings.Contains(second.String(), "0 new, 0 upgraded") {
+		t.Errorf("expected idempotent summary, got: %s", second.String())
+	}
+	stateAfter := readState(t, dest)
+	beforeAt := stateBefore.Extractors["typescript"].BootstrappedAt
+	afterAt := stateAfter.Extractors["typescript"].BootstrappedAt
+	if beforeAt == nil || afterAt == nil || !afterAt.Equal(*beforeAt) {
+		t.Errorf("BootstrappedAt advanced on idempotent re-init: before=%v after=%v", beforeAt, afterAt)
+	}
+}
+
+// Test 12 — `code-audit init --from <checkout>` still works.
+func TestInit_FromCheckoutStillWorks(t *testing.T) {
+	src := setupSource(t)
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+	state := readState(t, dest)
+	if state.SourceRepoRoot != src {
+		t.Errorf("SourceRepoRoot = %q, want %q", state.SourceRepoRoot, src)
+	}
+}
+
+// Test 12a — os.DirFS(src) and embedded subtrees produce structurally
+// equivalent plans: same relDest set, same SHAs.
+func TestInit_FilesystemAndEmbeddedPlansEquivalent(t *testing.T) {
+	// Build a synthetic source tree on the filesystem mirroring the
+	// embedded fixture exactly.
+	src := t.TempDir()
+	emb := embeddedFixture(t)
+	for _, st := range emb {
+		mfs := st.FS.(fstest.MapFS)
+		for path, file := range mfs {
+			full := filepath.Join(src, filepath.FromSlash(st.RelPath), filepath.FromSlash(path))
+			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(full, file.Data, 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	dstFS := t.TempDir()
+	fsSubtrees := []SubtreeSrc{
+		{RelPath: "extractors", FS: os.DirFS(filepath.Join(src, "extractors"))},
+		{RelPath: "pipeline/queries", FS: os.DirFS(filepath.Join(src, "pipeline/queries"))},
+	}
+	planFS, err := buildCopyPlan(context.Background(), fsSubtrees, dstFS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dstEmb := t.TempDir()
+	planEmb, err := buildCopyPlan(context.Background(), emb, dstEmb)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Compare on (relDest, content SHA) tuples — srcFS pointers differ by
+	// construction, and dstAbs differs by tempdir.
+	tuple := func(plan []fileClassification, root string) map[string]string {
+		t.Helper()
+		got := map[string]string{}
+		for _, c := range plan {
+			sha, err := sha256FS(c.srcFS, c.srcRel)
+			if err != nil {
+				t.Fatalf("sha %s: %v", c.relDest, err)
+			}
+			got[c.relDest] = sha
+		}
+		return got
+	}
+	gotFS := tuple(planFS, dstFS)
+	gotEmb := tuple(planEmb, dstEmb)
+	if len(gotFS) == 0 {
+		t.Fatal("filesystem plan is empty")
+	}
+	if len(gotFS) != len(gotEmb) {
+		t.Fatalf("plan size differs: fs=%d emb=%d", len(gotFS), len(gotEmb))
+	}
+	for k, fsSHA := range gotFS {
+		if embSHA, ok := gotEmb[k]; !ok {
+			t.Errorf("embedded plan missing %q", k)
+		} else if fsSHA != embSHA {
+			t.Errorf("%q sha differs: fs=%s emb=%s", k, fsSHA, embSHA)
+		}
+	}
+}
+
+// Test 12b — --from with a dir containing a symlink loop does not recurse
+// into the symlink (behaviour change from filepath.WalkDir).
+func TestInit_FromDirSymlinkNotRecursed(t *testing.T) {
+	src := setupSource(t)
+	// Plant a symlink inside extractors/typescript that points back at the
+	// source root. With the old filepath.WalkDir code this looped; the new
+	// fs.WalkDir-based code visits the symlink as an entry but doesn't
+	// recurse into it.
+	loopDir := filepath.Join(src, "extractors", "typescript", "loop")
+	if err := os.Symlink(src, loopDir); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
+	if exit != 0 {
+		t.Fatalf("Init exit=%d (expected no-recurse to succeed), out=%s", exit, out.String())
+	}
+	// Confirm the loop wasn't traversed — there should be no
+	// extractors/typescript/loop/extractors/... explosion under dest.
+	if _, err := os.Stat(filepath.Join(dest, "extractors", "typescript", "loop", "extractors")); err == nil {
+		t.Errorf("symlink was traversed; expected fs.WalkDir to skip it")
+	}
+}
+
+// Test 12c — embedded files starting with `#!` get 0o755; non-shebang
+// files get 0o644. Covers the shebang heuristic's edge cases.
+func TestInit_EmbeddedShebangSetsExecBit(t *testing.T) {
+	emb := []SubtreeSrc{
+		{RelPath: "extractors", FS: fstest.MapFS{
+			"x/manifest.toml": &fstest.MapFile{Data: []byte(`schema_version = 1
+[extractor]
+name = "x"
+version = "0.0.1"
+[[command]]
+catalog = "c"
+output_file = "c.json"
+invocation = ["x", "--output", "{output}"]
+`), Mode: 0o444},
+			"x/script.sh":   &fstest.MapFile{Data: []byte("#!/bin/sh\nexit 0\n"), Mode: 0o444},
+			"x/plain.txt":   &fstest.MapFile{Data: []byte("hello\n"), Mode: 0o444},
+			"x/empty.txt":   &fstest.MapFile{Data: []byte{}, Mode: 0o444},
+			"x/onebyte.txt": &fstest.MapFile{Data: []byte("#"), Mode: 0o444},
+			"x/comment.txt": &fstest.MapFile{Data: []byte("# leading hash, no bang\n"), Mode: 0o444},
+		}, Embedded: true},
+		{RelPath: "pipeline/queries", FS: fstest.MapFS{
+			"_canonical.jq": &fstest.MapFile{Data: []byte("# helper\n"), Mode: 0o444},
+		}, Embedded: true},
+	}
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--dest", dest}, &out, emb)
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+
+	cases := []struct {
+		path string
+		exec bool
+	}{
+		{"extractors/x/script.sh", true},
+		{"extractors/x/plain.txt", false},
+		{"extractors/x/empty.txt", false},
+		{"extractors/x/onebyte.txt", false},
+		{"extractors/x/comment.txt", false},
+	}
+	for _, tc := range cases {
+		info, err := os.Stat(filepath.Join(dest, filepath.FromSlash(tc.path)))
+		if err != nil {
+			t.Errorf("stat %s: %v", tc.path, err)
+			continue
+		}
+		isExec := info.Mode().Perm()&0o111 != 0
+		if isExec != tc.exec {
+			t.Errorf("%s exec=%v, want %v (mode=%v)", tc.path, isExec, tc.exec, info.Mode().Perm())
+		}
+	}
+}
+
+// Test 12d — Init with --from <dir> that's missing an extractor subdir
+// fails validateSource (the existing safety net) before any plan walk.
+// Pairs with the discovery-time analogue in Phase 5's test 19b.
+func TestInit_FromMissingSubdirFailsValidateSource(t *testing.T) {
+	src := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(src, "extractors"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// pipeline/queries deliberately missing.
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
+	if exit == 0 {
+		t.Fatalf("expected non-zero exit for missing subdir, out=%s", out.String())
+	}
+	if !strings.Contains(out.String(), "pipeline/queries") {
+		t.Errorf("error should mention pipeline/queries: %s", out.String())
+	}
+}
+
+// Test 12e — Init --from <non-git-dir> succeeds; state.SourceCommitSHA == "".
+func TestInit_FromNonGitDirGraceful(t *testing.T) {
+	src := setupSource(t)
+	// Remove .git to simulate a non-checkout source tree.
+	if err := os.RemoveAll(filepath.Join(src, ".git")); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(t.TempDir(), "audit-home")
+	var out bytes.Buffer
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
+	if exit != 0 {
+		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
+	}
+	state := readState(t, dest)
+	if state.SourceCommitSHA != "" {
+		t.Errorf("SourceCommitSHA = %q, want empty", state.SourceCommitSHA)
+	}
+}
 
 // Test 10g — prior BootstrapFailed status triggers a retry on next init
 // even when no source files changed (covers transient-failure recovery
@@ -648,7 +952,7 @@ func TestInit_RetriesPriorFailure(t *testing.T) {
 	// upgrade. The retry path is then exercised by the touched + failed
 	// union.
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--force"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--force"}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("retry Init exit=%d, out=%s", exit, out.String())
 	}
@@ -686,7 +990,7 @@ func TestInit_PrunesRemovedExtractors(t *testing.T) {
 
 	// Re-init — should prune phantom (no source files for it).
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest}, &out, nil)
 	if exit != 0 {
 		t.Fatalf("Init exit=%d, out=%s", exit, out.String())
 	}
@@ -726,7 +1030,7 @@ func TestInit_SkipsBootstrapWhenManifestDirty(t *testing.T) {
 	os.Remove(sentinel)
 
 	var out bytes.Buffer
-	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out)
+	exit := Init(context.Background(), []string{"--from", src, "--dest", dest, "--upgrade"}, &out, nil)
 	// dirty manifest → exit=1 (existing skip-dirty contract).
 	if exit != 1 {
 		t.Fatalf("Init exit=%d (want 1 for dirty), out=%s", exit, out.String())

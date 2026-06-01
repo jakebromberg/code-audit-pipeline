@@ -28,7 +28,7 @@ func main() {
 
 	switch cmd {
 	case "extract":
-		os.Exit(cli.Extract(ctx, args, stdout))
+		os.Exit(cli.Extract(ctx, args, stdout, embeddedExtractors()))
 	case "query":
 		os.Exit(cli.Query(ctx, args, stdout, queriesFS))
 	case "status":
@@ -36,7 +36,7 @@ func main() {
 	case "report":
 		os.Exit(cli.Report(ctx, args, stdout, queriesFS))
 	case "init":
-		os.Exit(cli.Init(ctx, args, stdout))
+		os.Exit(cli.Init(ctx, args, stdout, embeddedInitSubtrees()))
 	case "find-next-instance":
 		os.Exit(cli.FindNextInstance(ctx, args, stdout))
 	case "archaeology":
@@ -49,6 +49,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "code-audit: unknown subcommand %q\n", cmd)
 		usage()
 		os.Exit(2)
+	}
+}
+
+// embeddedInitSubtrees composes the [extractors, pipeline/queries] subtree
+// list that `code-audit init` uses when no --from is given. Each entry
+// carries an embed-backed fs.FS; the cli package stays decoupled from the
+// embed.FS values that only the main package can see.
+func embeddedInitSubtrees() []cli.SubtreeSrc {
+	return []cli.SubtreeSrc{
+		{RelPath: "extractors", FS: embeddedExtractors(), Embedded: true},
+		{RelPath: "pipeline/queries", FS: embeddedQueries(), Embedded: true},
 	}
 }
 

@@ -159,6 +159,20 @@ func ResolveExtractorsDir(opts ExtractorOpts) (string, Tier, string, error) {
 			return abs, c.tier, c.label, nil
 		}
 	}
+
+	// Auto-extract fallback: if HomeDir was supplied, the ConfigDir
+	// candidate is part of the chain — return its (potentially missing)
+	// path so the caller can trigger auto-extract. Earlier tiers
+	// (Flag/Cwd/AuditHome) are user-controlled; we never fabricate them.
+	for _, c := range candidates {
+		if c.tier == TierConfigDir {
+			abs, err := filepath.Abs(c.path)
+			if err != nil {
+				return "", TierUnknown, "", fmt.Errorf("discovery: abs %s: %w", c.path, err)
+			}
+			return abs, TierConfigDir, c.label, nil
+		}
+	}
 	return "", TierUnknown, "", fmt.Errorf("discovery: no extractors directory found (run `code-audit init` to populate ~/.config/audit/)")
 }
 
