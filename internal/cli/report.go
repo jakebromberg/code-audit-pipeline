@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/jakebromberg/code-audit-pipeline/internal/discovery"
 	"github.com/jakebromberg/code-audit-pipeline/internal/engine"
@@ -286,10 +287,12 @@ func emitPRComment(
 
 // parseCSV splits a comma-separated string; empty input returns nil.
 // Whitespace around each entry is trimmed; empty entries are dropped.
-// Entries containing control characters (after trimming) are dropped
-// silently — a value like `typescript\nfoo` from a misconfigured shell
-// substitution would otherwise corrupt the failQuietBody markdown line
-// or the marocchino sticky-comment line-1 scan.
+// Entries containing any Unicode control character or Unicode line/
+// paragraph separator (U+2028 / U+2029) are dropped silently — a value
+// like `typescript\nfoo` from a misconfigured shell substitution, or a
+// NUL byte injected via a non-UTF-8 byte sequence, would otherwise
+// corrupt the failQuietBody markdown line or break the marocchino
+// sticky-comment line-1 scan.
 func parseCSV(s string) []string {
 	if s == "" {
 		return nil
@@ -298,12 +301,25 @@ func parseCSV(s string) []string {
 	out := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
-		if p == "" || strings.ContainsAny(p, "\n\r\t\v\f") {
+		if p == "" || containsUnsafeRune(p) {
 			continue
 		}
 		out = append(out, p)
 	}
 	return out
+}
+
+// containsUnsafeRune reports whether s contains any rune unsafe to inline
+// into a single-line markdown / HTML-comment context: Unicode control
+// characters (Cc category, including NUL/BS/ESC/DEL) and the explicit
+// line/paragraph separators U+2028 / U+2029.
+func containsUnsafeRune(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) || r == '\u2028' || r == '\u2029' {
+			return true
+		}
+	}
+	return false
 }
 
 // runReportQuery executes a single query for the report run and returns its

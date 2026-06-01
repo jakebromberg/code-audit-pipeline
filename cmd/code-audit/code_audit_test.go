@@ -489,15 +489,25 @@ func TestE2EReportPRComment_PrCommentOnlyFlagsInTextMode(t *testing.T) {
 
 // TestE2EReportPRComment_InvalidMarker — markers containing characters
 // that would corrupt the sticky-comment scan (-->, newline, space, etc.)
-// are rejected at flag-parse time.
+// are rejected at flag-parse time. Includes iteration-3 constraints
+// (leading non-alphanumeric, adjacent `--`, length cap) to pin the
+// binary contract at the flag boundary in addition to the unit test.
 func TestE2EReportPRComment_InvalidMarker(t *testing.T) {
 	tmp := seedPRCommentFixture(t)
 	cases := []string{
-		"",                 // empty
-		"has space",        // whitespace
-		"contains-->bad",   // closes HTML comment early
-		"line\nbreak",      // multi-line
-		"angle<bracket>",   // <>
+		"",               // empty
+		"has space",      // whitespace
+		"contains-->bad", // closes HTML comment early
+		"line\nbreak",    // multi-line
+		"angle<bracket>", // < / >
+		// iteration-3 additions:
+		"-leading-dash",          // leading non-alphanumeric (HTML5 bogus-comment risk)
+		"_leading-underscore",    // leading non-alphanumeric
+		"/leading-slash",         // leading non-alphanumeric
+		"foo--bar",               // adjacent `--` (HTML5 forbids inside <!-- -->)
+		strings.Repeat("a", 129), // exceeds markerMaxLen (128 bytes)
+		"with\tab",               // embedded tab (control char)
+		"with\rcr",               // embedded CR
 	}
 	for _, marker := range cases {
 		marker := marker
@@ -511,6 +521,29 @@ func TestE2EReportPRComment_InvalidMarker(t *testing.T) {
 			}, &stdout, embeddedQueries())
 			if exit != 2 {
 				t.Errorf("invalid --marker %q should exit 2; got exit=%d", marker, exit)
+			}
+		})
+	}
+}
+
+// TestE2EReportPRComment_SizeCapBelowMin — --size-cap-bytes below
+// sizeCapMin (1024) is a caller-input error in pr-comment mode; exits 2
+// at the flag boundary so the cap-honoring contract isn't silently
+// violated by a typo or accidental small value.
+func TestE2EReportPRComment_SizeCapBelowMin(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	for _, cap := range []string{"0", "-1", "100", "1023"} {
+		cap := cap
+		t.Run(cap, func(t *testing.T) {
+			var stdout bytes.Buffer
+			exit := cli.Report(context.Background(), []string{
+				"--root", tmp,
+				"--query", "exact-duplicates",
+				"--mode", "pr-comment",
+				"--size-cap-bytes", cap,
+			}, &stdout, embeddedQueries())
+			if exit != 2 {
+				t.Errorf("--size-cap-bytes %s should exit 2 (below sizeCapMin); got exit=%d", cap, exit)
 			}
 		})
 	}
