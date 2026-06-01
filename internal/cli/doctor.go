@@ -208,8 +208,11 @@ func auditHomeForTier(xpath string, tier discovery.Tier) string {
 
 // renderExtractorDoctor emits one extractor's section and appends any
 // surfaced issues to *problems. toolProbed memoises exec.LookPath
-// results across extractors (case-insensitive) so the same tool isn't
-// probed twice.
+// results across extractors. The cache is case-sensitive on purpose:
+// PATH lookup on Linux is case-sensitive, and "Node" vs "node" are not
+// interchangeable on most filesystems. Two manifests declaring the same
+// tool with different casing will probe twice — LookPath is fast, and
+// the cost is preferable to silently substituting the lowercased form.
 func renderExtractorDoctor(stdout io.Writer, name, extractorDir string, state *InitState, toolProbed map[string]bool, problems *[]string) {
 	fmt.Fprintf(stdout, "  %s\n", name)
 	fmt.Fprintf(stdout, "    path:        %s\n", extractorDir)
@@ -247,12 +250,11 @@ func renderExtractorDoctor(stdout io.Writer, name, extractorDir string, state *I
 			fmt.Fprintf(stdout, "    platform:    %s  (informational; not PATH-probed)\n", req)
 			continue
 		}
-		cacheKey := strings.ToLower(tool)
-		onPath, seen := toolProbed[cacheKey]
+		onPath, seen := toolProbed[tool]
 		if !seen {
 			_, lookErr := exec.LookPath(tool)
 			onPath = lookErr == nil
-			toolProbed[cacheKey] = onPath
+			toolProbed[tool] = onPath
 		}
 		label := "ok"
 		if !onPath {
