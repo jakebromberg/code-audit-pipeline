@@ -66,13 +66,19 @@ invocation = ["sh", "-c", "echo {output}"]
 	return dir
 }
 
-// fakeHome makes os.UserHomeDir() resolve into tmp by overriding $HOME.
+// fakeHome makes os.UserHomeDir() resolve into tmp by overriding $HOME and
+// clears every other env var that participates in the discovery chain so
+// the test is hermetic regardless of the developer's / CI's shell exports.
 // Returns the home path.
 func fakeHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_CONFIG_HOME", "")
+	// AUDIT_HOME otherwise wins over TierConfigDir via the discovery chain
+	// (developer with `export AUDIT_HOME=...` would see spy.calls=0 instead
+	// of the expected 1 in TestExtract_TierConfigDirCallsEnsureExtractor).
+	t.Setenv("AUDIT_HOME", "")
 	return home
 }
 

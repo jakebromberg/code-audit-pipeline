@@ -55,7 +55,13 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 	cwd, _ := os.Getwd()
 
 	qsrc, qerr := discovery.ResolveQueriesDir(discovery.QueryOpts{Flag: *queriesDir, AuditHome: auditHome, CWD: cwd}, queriesFS)
-	xpath, _, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{Flag: *extractorsDir, AuditHome: auditHome, CWD: cwd, HomeDir: homeDir})
+	xpath, _, xlabel, xerr := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
+		Flag:          *extractorsDir,
+		AuditHome:     auditHome,
+		CWD:           cwd,
+		HomeDir:       homeDir,
+		XDGConfigHome: os.Getenv("XDG_CONFIG_HOME"),
+	})
 
 	fmt.Fprintf(out, "Audit root:        %s\n", absRoot)
 	fmt.Fprintf(out, "Cache:             %s  (audit-version %s)\n", c.Dir, Version)
@@ -64,10 +70,24 @@ func Status(args []string, out io.Writer, queriesFS fs.FS) int {
 	} else {
 		fmt.Fprintf(out, "Queries source:    UNRESOLVED  (%v)\n", qerr)
 	}
+	// Discovery's TierConfigDir fallback returns the would-be path even
+	// when the directory doesn't yet exist (so `extract` can auto-extract
+	// into it). Status should not paint a fresh-install pre-extract
+	// environment as healthy — re-stat xpath and downgrade to PENDING
+	// when the path is missing.
+	xpathMissing := false
 	if xerr == nil {
-		fmt.Fprintf(out, "Extractors source: %s  (%s)\n", xlabel, xpath)
-	} else {
+		if info, statErr := os.Stat(xpath); statErr != nil || !info.IsDir() {
+			xpathMissing = true
+		}
+	}
+	switch {
+	case xerr != nil:
 		fmt.Fprintf(out, "Extractors source: UNRESOLVED  (%v)\n", xerr)
+	case xpathMissing:
+		fmt.Fprintf(out, "Extractors source: PENDING  %s  (will be created on first `code-audit extract`)\n", xpath)
+	default:
+		fmt.Fprintf(out, "Extractors source: %s  (%s)\n", xlabel, xpath)
 	}
 
 	rootMismatch := c.Meta().Root != absRoot && c.Meta().Root != ""

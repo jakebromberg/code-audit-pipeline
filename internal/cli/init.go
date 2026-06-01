@@ -108,6 +108,15 @@ func (s *InitState) EnsureExtractorsMap() map[string]ExtractorState {
 
 // Bootstrap status constants. Values stored in state.json; do not change
 // without a migration plan.
+//
+// BootstrapPending is a *render-time* concept rather than a written
+// state: no production code path persists "pending" to disk. An entry
+// that has never been seen by EnsureExtractor has the zero-value empty
+// string for BootstrapStatus, and the status renderer treats that as
+// pending. The constant is kept so tests and explicit constructions can
+// reference the canonical label without hard-coding the literal, and so
+// a future change that wants to record an in-flight bootstrap before
+// blocking on a long install can write it without minting a new value.
 const (
 	BootstrapPending = "pending"
 	BootstrapOK      = "ok"
@@ -182,6 +191,27 @@ func Init(ctx context.Context, argv []string, stdout io.Writer, embedded []Subtr
 		}
 	}
 
+	// Acquire the audit-home state.json lock for the full Init run so we
+	// serialise against concurrent `code-audit extract` (which holds the
+	// same lock briefly around its read/modify/write). Init holds the
+	// lock for longer because the full lay-down + bootstrap pass mutates
+	// state in-place; concurrent extract callers wait. For the brew
+	// one-shot flow this is acceptable. Skipped in --dry-run since no
+	// state.json write happens.
+	if !*dryRun {
+		stateLockDir := filepath.Join(destAbs, ".audit-init")
+		if err := os.MkdirAll(stateLockDir, 0o755); err != nil {
+			fmt.Fprintf(stdout, "code-audit init: mkdir state lock dir: %v\n", err)
+			return 1
+		}
+		stateFD, err := acquireFlock(ctx, filepath.Join(stateLockDir, stateLockName), EnsureExtractorLockTimeout)
+		if err != nil {
+			fmt.Fprintf(stdout, "code-audit init: acquire state lock: %v\n", err)
+			return 1
+		}
+		defer releaseFlock(stateFD)
+	}
+
 	prior, _ := loadState(destAbs) // missing-OK: every file then classifies NEW
 
 	plan, err := buildCopyPlan(ctx, subtrees, destAbs)
@@ -192,6 +222,16 @@ func Init(ctx context.Context, argv []string, stdout io.Writer, embedded []Subtr
 		}
 		fmt.Fprintf(stdout, "code-audit init: build plan: %v\n", err)
 		return 2
+	}
+	// An empty plan from embedded source signals a misbuilt binary (e.g.
+	// `//go:embed extractors` matched a renamed or empty subdir). Old
+	// --from path was protected by validateSource; the embedded path
+	// lacks an analog, so detect it here. For filesystem source we keep
+	// the lenient behaviour — an empty --from tree could be a legitimate
+	// edge case during testing.
+	if len(plan) == 0 && src == "" {
+		fmt.Fprintln(stdout, "code-audit init: embedded source is empty (binary may be misbuilt — check //go:embed directives)")
+		return 1
 	}
 
 	classified, err := classifyFiles(ctx, plan, destAbs, prior)
@@ -274,12 +314,15 @@ func Init(ctx context.Context, argv []string, stdout io.Writer, embedded []Subtr
 				skippedDirty++
 				dirtyExit = true
 				fmt.Fprintf(stdout, "skip DIRTY %s (locally modified; use --force to overwrite)\n", c.relDest)
-				// A DIRTY manifest.toml means the on-disk extractor
-				// declaration is user-edited. Running bootstrap against
-				// it would honor argv the user didn't authorise; flag
-				// the extractor so the bootstrap pass skips it.
-				if strings.HasSuffix(c.relDest, "/manifest.toml") {
-					noteExtractorName(c.relDest, extractorDirtyManifest)
+				// A DIRTY extractor manifest.toml (i.e. the file at
+				// extractors/<name>/manifest.toml exactly — NOT a nested
+				// fixture like extractors/<name>/fixtures/.../manifest.toml)
+				// means the on-disk extractor declaration is user-edited.
+				// Running bootstrap against it would honor argv the user
+				// didn't authorise; flag the extractor so the bootstrap
+				// pass skips it.
+				if name, ok := extractorManifestName(c.relDest); ok {
+					extractorDirtyManifest[name] = true
 				}
 				// Keep the prior state entry so subsequent re-runs still
 				// classify this file as DIRTY against its original
@@ -476,6 +519,9 @@ func pathContains(parent, child string) bool {
 func buildCopyPlan(ctx context.Context, subtrees []SubtreeSrc, dst string) ([]fileClassification, error) {
 	var plan []fileClassification
 	for _, st := range subtrees {
+		if st.FS == nil {
+			return nil, fmt.Errorf("buildCopyPlan: nil FS for subtree %q", st.RelPath)
+		}
 		err := fs.WalkDir(st.FS, ".", func(rel string, d fs.DirEntry, walkErr error) error {
 			if err := ctx.Err(); err != nil {
 				return err
@@ -498,7 +544,10 @@ func buildCopyPlan(ctx context.Context, subtrees []SubtreeSrc, dst string) ([]fi
 				return nil
 			}
 			relDest := st.RelPath + "/" + rel
-			mode := planFileMode(st.FS, rel, st.Embedded)
+			mode, modeErr := planFileMode(st.FS, rel, st.Embedded)
+			if modeErr != nil {
+				return modeErr
+			}
 			plan = append(plan, fileClassification{
 				srcFS:    st.FS,
 				srcRel:   rel,
@@ -521,25 +570,30 @@ func buildCopyPlan(ctx context.Context, subtrees []SubtreeSrc, dst string) ([]fi
 // filesystem sources, the source's stat mode is used (clamped to 0o644
 // minimum). For embedded sources, //go:embed strips mode bits to 0o444 —
 // we sniff the first two bytes; a `#!` shebang promotes the file to 0o755.
-func planFileMode(srcFS fs.FS, srcRel string, embedded bool) os.FileMode {
+//
+// Errors are propagated rather than silently fallen back to 0o644: a stat
+// or open failure on a source file is a real problem (transient EIO, a
+// file deleted between walk and stat, a permission glitch) and the
+// pipeline must surface it instead of writing an unexpected mode.
+func planFileMode(srcFS fs.FS, srcRel string, embedded bool) (os.FileMode, error) {
 	if !embedded {
 		info, err := fs.Stat(srcFS, srcRel)
 		if err != nil {
-			return 0o644
+			return 0, fmt.Errorf("stat %s: %w", srcRel, err)
 		}
-		return info.Mode().Perm() | 0o644
+		return info.Mode().Perm() | 0o644, nil
 	}
 	f, err := srcFS.Open(srcRel)
 	if err != nil {
-		return 0o644
+		return 0, fmt.Errorf("open %s: %w", srcRel, err)
 	}
 	defer f.Close()
 	var head [2]byte
 	n, _ := f.Read(head[:])
 	if n == 2 && head[0] == '#' && head[1] == '!' {
-		return 0o755
+		return 0o755, nil
 	}
-	return 0o644
+	return 0o644, nil
 }
 
 // classifyFiles pre-computes each plan entry's state + source sha. Honors
@@ -747,6 +801,27 @@ func noteExtractorName(relDest string, set map[string]bool) {
 // sites — the implementation is intentionally identical.
 func noteExtractorTouched(relDest string, touched map[string]bool) {
 	noteExtractorName(relDest, touched)
+}
+
+// extractorManifestName returns (name, true) when relDest is exactly the
+// top-level extractor manifest at "extractors/<name>/manifest.toml". A
+// nested fixture like "extractors/typescript/fixtures/pkg/manifest.toml"
+// returns ("", false) — the DIRTY-skipped detector must not over-match
+// fixture files that happen to share the manifest.toml basename.
+func extractorManifestName(relDest string) (string, bool) {
+	const prefix = "extractors/"
+	if !strings.HasPrefix(relDest, prefix) {
+		return "", false
+	}
+	tail := relDest[len(prefix):]
+	idx := strings.IndexByte(tail, '/')
+	if idx <= 0 {
+		return "", false
+	}
+	if tail[idx+1:] != "manifest.toml" {
+		return "", false
+	}
+	return tail[:idx], true
 }
 
 // bootstrapTouchedExtractors parses each requested extractor's manifest

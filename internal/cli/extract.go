@@ -61,10 +61,11 @@ func Extract(ctx context.Context, argv []string, out io.Writer, embeddedExtracto
 
 	cwd, _ := os.Getwd()
 	xdir, tier, _, err := discovery.ResolveExtractorsDir(discovery.ExtractorOpts{
-		Flag:      *extractorsDir,
-		AuditHome: os.Getenv("AUDIT_HOME"),
-		CWD:       cwd,
-		HomeDir:   homeDirOrEmpty(),
+		Flag:          *extractorsDir,
+		AuditHome:     os.Getenv("AUDIT_HOME"),
+		CWD:           cwd,
+		HomeDir:       homeDirOrEmpty(),
+		XDGConfigHome: os.Getenv("XDG_CONFIG_HOME"),
 	})
 	if err != nil {
 		fmt.Fprintf(out, "code-audit: %v\n", err)
