@@ -37,6 +37,8 @@ func main() {
 		os.Exit(cli.Report(ctx, args, stdout, queriesFS))
 	case "init":
 		os.Exit(cli.Init(ctx, args, stdout, embeddedInitSubtrees()))
+	case "doctor":
+		os.Exit(cli.Doctor(args, stdout))
 	case "find-next-instance":
 		os.Exit(cli.FindNextInstance(ctx, args, stdout))
 	case "archaeology":
@@ -74,6 +76,7 @@ Subcommands:
   status            Show .audit/ state, resolved query/extractor sources, and staleness.
   report            Run every runnable query and write .audit/reports/findings-<date>.md.
   init              Bootstrap ~/.config/audit/ (extractors + queries) from a local source tree.
+  doctor            Diagnose bootstrap state, runtime tool availability, and per-extractor manifest health.
   find-next-instance  Given a closed PR, surface other catalog members matching its before-shape.
   archaeology       Gather issues, recent PR diffs, TODOs, deprecations, ADRs, and CLAUDE.md into a context blob.
   version           Print binary version.
