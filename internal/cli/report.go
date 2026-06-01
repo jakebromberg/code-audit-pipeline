@@ -23,12 +23,26 @@ import (
 // Report implements `code-audit report` — runs every runnable query in JSONL mode,
 // dispatches each row to the shape renderer, and writes the result to
 // .audit/reports/findings-<date>.md.
+//
+// With --mode pr-comment, the output is a GitHub PR-comment body keyed by a
+// sticky-comment marker on line 1, with cluster-shape rows filtered through
+// --touched (a JSON array of repo-relative file paths). Pipeline-internal
+// errors fail quiet (exit 0 with a marker body) so the comment surface
+// stays current; caller-input errors (bad --touched) exit 2 loud so the
+// workflow author fixes the resolve-touched.sh step. See
+// docs/pipeline-contract.md §"CLI contract" and docs/plans/123-implementation.md.
 func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.FS) int {
 	fset := flag.NewFlagSet("report", flag.ContinueOnError)
 	rootFlag := fset.String("root", "", "audit root (defaults to cwd)")
 	queriesDir := fset.String("queries-dir", "", "explicit queries directory")
 	outputFlag := fset.String("output", "", "destination .md file (default: .audit/reports/findings-YYYY-MM-DD.md)")
 	skipMissingArgs := fset.Bool("skip-missing-args", false, "skip queries with unsatisfied required --arg instead of failing")
+	touchedFlag := fset.String("touched", "", "path to JSON array of repo-relative paths; filters cluster rows to ones whose members include a touched file")
+	modeFlag := fset.String("mode", "text", "output mode: text | pr-comment")
+	failureFlag := fset.String("on-extraction-failure", "", "loud | quiet (default: loud for text, quiet for pr-comment)")
+	sizeCapFlag := fset.Int("size-cap-bytes", 60000, "max comment body size in pr-comment mode (default 60000, ~4KB headroom under GitHub's 65,536-byte cap)")
+	markerFlag := fset.String("marker", "code-audit-pipeline-v1", "sticky-comment marker for --mode pr-comment; emitted as <!-- <marker> --> on line 1")
+	detectedLangsFlag := fset.String("detected-languages", "", "comma-separated language list used in the fail-quiet body; the composite forwards audit-core's languages-detected output here")
 	var queryFilters, shapeFilters, argFlags, argJSONFlags, envFlags stringList
 	fset.Var(&queryFilters, "query", "run only this query (repeatable)")
 	fset.Var(&shapeFilters, "shape", "run only queries whose front-matter shape includes this (cluster|pair|metric, repeatable)")
@@ -37,6 +51,33 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	fset.Var(&envFlags, "env", "--env NAME=VALUE forwarded to every query (repeatable)")
 	if err := fset.Parse(argv); err != nil {
 		return 2
+	}
+
+	if *modeFlag != "text" && *modeFlag != "pr-comment" {
+		fmt.Fprintf(stdout, "code-audit: --mode must be text or pr-comment, got %q\n", *modeFlag)
+		return 2
+	}
+	failureMode := *failureFlag
+	if failureMode == "" {
+		if *modeFlag == "pr-comment" {
+			failureMode = "quiet"
+		} else {
+			failureMode = "loud"
+		}
+	}
+	if failureMode != "loud" && failureMode != "quiet" {
+		fmt.Fprintf(stdout, "code-audit: --on-extraction-failure must be loud or quiet, got %q\n", failureMode)
+		return 2
+	}
+
+	var touched touchedSet
+	if *touchedFlag != "" {
+		t, err := loadTouchedSet(*touchedFlag)
+		if err != nil {
+			fmt.Fprintf(stdout, "code-audit: %v\n", err)
+			return 2
+		}
+		touched = t
 	}
 
 	root := *rootFlag
@@ -69,11 +110,18 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 		if len(queryFilter) > 0 && !queryFilter[name] {
 			continue
 		}
-		res, skip := runReportQuery(ctx, qsrc, absRoot, name, shapeFilter, argFlags, argJSONFlags, envFlags, *skipMissingArgs)
+		res, skip := runReportQuery(ctx, qsrc, absRoot, name, shapeFilter, argFlags, argJSONFlags, envFlags, *skipMissingArgs, touched)
 		if skip {
 			continue
 		}
 		results = append(results, res)
+	}
+
+	if *modeFlag == "pr-comment" {
+		return emitPRComment(stdout, results, prCommentOpts{
+			marker:       *markerFlag,
+			sizeCapBytes: *sizeCapFlag,
+		}, failureMode, parseCSV(*detectedLangsFlag), *outputFlag)
 	}
 
 	report, failed := composeReport(absRoot, results)
@@ -94,6 +142,78 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	return 0
 }
 
+// emitPRComment is the pr-comment-mode finalizer: it applies fail-quiet
+// substitution if any section failed, writes the body to --output (or
+// stdout when --output is empty), and returns the exit code.
+//
+// In quiet failure mode, any sectionResult with err != nil collapses the
+// entire body to the fail-quiet notice; the loud body is written to
+// stderr so it shows up in the runner log. In loud failure mode, errors
+// are formatted into the body and the function returns exit code 1.
+func emitPRComment(
+	stdout io.Writer,
+	results []sectionResult,
+	opts prCommentOpts,
+	failureMode string,
+	detectedLanguages []string,
+	outputPath string,
+) int {
+	anyErr := false
+	for _, r := range results {
+		if r.err != nil {
+			anyErr = true
+			break
+		}
+	}
+
+	var body string
+	exit := 0
+	if anyErr {
+		if failureMode == "quiet" {
+			// Loud body to stderr for diagnostics; quiet body to comment surface.
+			for _, r := range results {
+				if r.err != nil {
+					fmt.Fprintf(os.Stderr, "code-audit: query %s: %v\n", r.name, r.err)
+				}
+			}
+			body = failQuietBody(opts.marker, detectedLanguages)
+		} else {
+			body = composePRComment(results, opts)
+			exit = 1
+		}
+	} else {
+		body = composePRComment(results, opts)
+	}
+
+	if outputPath == "" {
+		fmt.Fprint(stdout, body)
+		return exit
+	}
+	if err := writeAtomic(outputPath, []byte(body)); err != nil {
+		fmt.Fprintf(os.Stderr, "code-audit: write pr-comment: %v\n", err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "code-audit: wrote %s\n", outputPath)
+	return exit
+}
+
+// parseCSV splits a comma-separated string; empty input returns nil.
+// Whitespace around each entry is trimmed; empty entries are dropped.
+func parseCSV(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 // runReportQuery executes a single query for the report run and returns its
 // sectionResult. The second return is true when the caller should drop the
 // query entirely (e.g. _canonical, shape-filtered out) rather than record a
@@ -108,6 +228,7 @@ func runReportQuery(
 	shapeFilter map[string]bool,
 	argFlags, argJSONFlags, envFlags stringList,
 	skipMissingArgs bool,
+	touched touchedSet,
 ) (sectionResult, bool) {
 	body, queryFile, cleanup, err := readQuery(qsrc, name)
 	if err != nil {
@@ -190,7 +311,12 @@ func runReportQuery(
 		return sectionResult{name: name, header: header, err: fmt.Errorf("engine: %w", err)}, false
 	}
 
-	blocks, err := renderJSONL(buf.Bytes())
+	rows, err := parseJSONLRows(buf.Bytes())
+	if err != nil {
+		return sectionResult{name: name, header: header, err: err}, false
+	}
+	rows = filterRowsByTouched(rows, header, touched)
+	blocks, err := renderRows(rows)
 	if err != nil {
 		return sectionResult{name: name, header: header, err: err}, false
 	}
@@ -200,10 +326,11 @@ func runReportQuery(
 	return sectionResult{name: name, header: header, blocks: blocks}, false
 }
 
-// renderJSONL parses each non-blank line as a JSON object and dispatches it
-// through the shape renderer. Returns one markdown block per row.
-func renderJSONL(buf []byte) ([]string, error) {
-	var out []string
+// parseJSONLRows parses each non-blank line as a JSON object and returns
+// the resulting rows. Split from renderJSONL so the touched-file filter
+// can act on rows before shape dispatch.
+func parseJSONLRows(buf []byte) ([]render.Row, error) {
+	var out []render.Row
 	for i, line := range strings.Split(strings.TrimRight(string(buf), "\n"), "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
@@ -213,9 +340,19 @@ func renderJSONL(buf []byte) ([]string, error) {
 		if err := json.Unmarshal([]byte(trimmed), &row); err != nil {
 			return nil, fmt.Errorf("parse jsonl line %d: %w", i+1, err)
 		}
+		out = append(out, row)
+	}
+	return out, nil
+}
+
+// renderRows dispatches each row through the shape renderer. Returns one
+// markdown block per row.
+func renderRows(rows []render.Row) ([]string, error) {
+	out := make([]string, 0, len(rows))
+	for i, row := range rows {
 		md, err := render.Dispatch(row)
 		if err != nil {
-			return nil, fmt.Errorf("render line %d: %w", i+1, err)
+			return nil, fmt.Errorf("render row %d: %w", i+1, err)
 		}
 		out = append(out, md)
 	}

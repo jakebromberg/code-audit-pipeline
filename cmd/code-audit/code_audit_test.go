@@ -320,6 +320,160 @@ func TestReportSkipsQueriesWithUnsatisfiedArgs(t *testing.T) {
 	}
 }
 
+// seedPRCommentFixture sets up a tmp .audit/ cache with two duplicate type
+// entries (A in a.ts, B in b.ts) plus meta.json. Returns the tmp dir.
+// Used by TestE2EReportPRComment_* to exercise the --mode pr-comment path.
+func seedPRCommentFixture(t *testing.T) string {
+	t.Helper()
+	tmp := t.TempDir()
+	cacheDir := filepath.Join(tmp, ".audit", "catalogs")
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	catalogPath := filepath.Join(cacheDir, "type-catalog.json")
+	body := `{"schema_version":"1.1","extractor":{"language":"x","name":"type-catalog","version":"0"},"entries":[
+  {"name":"A","kind":"interface","package":"main","file":"a.ts","line":1,"exported":true,"is_test":false,"fields":["id:number"],"shape_sig":"id:number","extends":[],"references":[],"references_count":0,"touched_in_window":false},
+  {"name":"B","kind":"interface","package":"main","file":"b.ts","line":1,"exported":true,"is_test":false,"fields":["id:number"],"shape_sig":"id:number","extends":[],"references":[],"references_count":0,"touched_in_window":false}
+]}`
+	if err := os.WriteFile(catalogPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	metaPath := filepath.Join(tmp, ".audit", "meta.json")
+	meta := map[string]any{
+		"audit_version":   cli.Version,
+		"last_touched_at": "2026-05-30T00:00:00Z",
+		"root":            tmp,
+		"catalogs": map[string]any{
+			"type-catalog": map[string]any{
+				"path":       "catalogs/type-catalog.json",
+				"source_sha": "seed",
+				"cli_args":   map[string]any{},
+			},
+		},
+	}
+	mdata, _ := json.MarshalIndent(meta, "", "  ")
+	if err := os.WriteFile(metaPath, mdata, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return tmp
+}
+
+// TestE2EReportPRComment_TouchedFileMatchesCluster — when touched.json
+// contains a file that's a member of an exact-duplicate cluster, the
+// cluster surfaces in the pr-comment body.
+func TestE2EReportPRComment_TouchedFileMatchesCluster(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	touchedPath := filepath.Join(tmp, "touched.json")
+	if err := os.WriteFile(touchedPath, []byte(`["a.ts"]`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(tmp, "comment.md")
+	var stdout bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "exact-duplicates",
+		"--touched", touchedPath,
+		"--mode", "pr-comment",
+		"--output", out,
+		"--marker", "code-audit-pipeline-v1",
+	}, &stdout, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d, stdout=%s", exit, stdout.String())
+	}
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	if !strings.HasPrefix(body, "<!-- code-audit-pipeline-v1 -->\n") {
+		t.Errorf("body should start with sticky marker; got: %q", body[:min(80, len(body))])
+	}
+	if !strings.Contains(body, "exact-duplicates:A+B") {
+		t.Errorf("cluster missing from body:\n%s", body)
+	}
+	if strings.Contains(body, "Skipped queries") {
+		t.Errorf("pr-comment mode should not emit Skipped queries:\n%s", body)
+	}
+}
+
+// TestE2EReportPRComment_NoTouchedFileMatch — when touched.json contains
+// no files that match any cluster member, the body is the no-impact
+// notice (still with marker, so the sticky comment updates).
+func TestE2EReportPRComment_NoTouchedFileMatch(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	touchedPath := filepath.Join(tmp, "touched.json")
+	if err := os.WriteFile(touchedPath, []byte(`["unrelated.ts"]`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(tmp, "comment.md")
+	var stdout bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "exact-duplicates",
+		"--touched", touchedPath,
+		"--mode", "pr-comment",
+		"--output", out,
+	}, &stdout, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d, stdout=%s", exit, stdout.String())
+	}
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	if !strings.HasPrefix(body, "<!-- code-audit-pipeline-v1 -->\n") {
+		t.Errorf("marker missing; got: %q", body[:min(80, len(body))])
+	}
+	if !strings.Contains(body, "No structural impact") {
+		t.Errorf("expected no-impact body; got:\n%s", body)
+	}
+}
+
+// TestE2EReportPRComment_BadTouchedPath — caller-input error (--touched
+// points at a missing file) exits 2 loud, NOT fail-quiet. The workflow
+// author must fix the input, so we don't silently degrade the comment.
+func TestE2EReportPRComment_BadTouchedPath(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	var stdout bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "exact-duplicates",
+		"--touched", filepath.Join(tmp, "does-not-exist.json"),
+		"--mode", "pr-comment",
+	}, &stdout, embeddedQueries())
+	if exit != 2 {
+		t.Errorf("bad --touched should exit 2 (caller error); got exit=%d, stdout=%s", exit, stdout.String())
+	}
+}
+
+// TestE2EReportPRComment_TextModeUnaffected — --mode text (default)
+// preserves the existing pre-PR output behavior byte-for-byte. The
+// presence of the new flags must not change text-mode behavior.
+func TestE2EReportPRComment_TextModeUnaffected(t *testing.T) {
+	tmp := seedPRCommentFixture(t)
+	var stdout bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "exact-duplicates",
+	}, &stdout, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d, stdout=%s", exit, stdout.String())
+	}
+	matches, err := filepath.Glob(filepath.Join(tmp, ".audit", "reports", "findings-*.md"))
+	if err != nil || len(matches) != 1 {
+		t.Fatalf("expected one findings-*.md, got matches=%v err=%v", matches, err)
+	}
+	data, _ := os.ReadFile(matches[0])
+	report := string(data)
+	if !strings.Contains(report, "# Audit findings") {
+		t.Errorf("text-mode header missing; pr-comment changes leaked into text mode:\n%s", report)
+	}
+	if strings.Contains(report, "<!-- code-audit-pipeline-v1 -->") {
+		t.Errorf("sticky marker leaked into text-mode output:\n%s", report)
+	}
+}
+
 // TestQueryWithExplicitCatalog confirms `code-audit query --catalog <path>` works
 // without any cached .audit/ catalog.
 func TestQueryWithExplicitCatalog(t *testing.T) {
