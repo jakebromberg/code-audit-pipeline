@@ -17,6 +17,9 @@ set -u
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$THIS_DIR/../.." && pwd)"
 DETECT="$REPO_ROOT/.github/actions/audit-core/scripts/detect-languages.sh"
+# Real extractors dir for the allowlist tests — only typescript / swift /
+# file-hashes manifests ship here; go / python / rust manifests do not.
+EXTRACTORS_DIR="$REPO_ROOT/extractors"
 
 PASS=0
 FAIL=0
@@ -202,6 +205,53 @@ mkdir -p "$t/subdir"
 : > "$t/subdir/Package.swift"
 got=$("$DETECT" "$t")
 assert_eq "" "$got" "Package.swift in subdir is not a root marker"
+
+echo "=== detect-languages.sh — --extractors-dir allowlist ==="
+
+# Without --extractors-dir, every detected language is emitted (legacy
+# behavior). With --extractors-dir pointing at the real extractors/ tree,
+# only typescript / swift survive because no go / python / rust manifests
+# exist.
+
+t=$(mk_scratch)
+: > "$t/go.mod"
+got_unfiltered=$("$DETECT" "$t")
+got_filtered=$("$DETECT" "$t" --extractors-dir "$EXTRACTORS_DIR")
+assert_eq "go" "$got_unfiltered" "no --extractors-dir flag → 'go' detected (legacy unfiltered behavior)"
+assert_eq "" "$got_filtered" "with real --extractors-dir → 'go' dropped (no extractors/go/manifest.toml)"
+
+t=$(mk_scratch)
+: > "$t/tsconfig.json"
+: > "$t/Package.swift"
+: > "$t/go.mod"
+: > "$t/Cargo.toml"
+got=$("$DETECT" "$t" --extractors-dir "$EXTRACTORS_DIR")
+assert_eq "typescript,swift" "$got" "polyglot repo filtered to languages with manifest.toml present"
+
+# A synthetic extractors-dir containing only python proves that the allowlist
+# is checked per-language and adds 'python' once a manifest appears.
+t=$(mk_scratch)
+: > "$t/pyproject.toml"
+: > "$t/go.mod"
+fake_xdir=$(mk_scratch)
+mkdir -p "$fake_xdir/python"
+: > "$fake_xdir/python/manifest.toml"
+got=$("$DETECT" "$t" --extractors-dir "$fake_xdir")
+assert_eq "python" "$got" "synthetic --extractors-dir with only python manifest → python only (go dropped)"
+
+# Unknown flag is refused (exit 2), not silently ignored.
+set +e
+"$DETECT" "$t" --no-such-flag 2>/dev/null
+rc=$?
+set -e
+assert_rc 2 "$rc" "Unknown flag → exit 2"
+
+# Extra positional arg is refused.
+set +e
+"$DETECT" "$t" extra-arg 2>/dev/null
+rc=$?
+set -e
+assert_rc 2 "$rc" "Extra positional argument → exit 2"
 
 # ---------------------------------------------------------------------------
 

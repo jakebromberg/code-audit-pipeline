@@ -7,31 +7,44 @@ name: audit-core selftest
 # The "build-from-source" binary-version is used here because no release
 # tag exists for the PR's HEAD; the release-download path is validated by
 # the first real consumer of audit-core under PR 2's reusable workflow.
+#
+# Two jobs:
+#  * `selftest-override` — caller passes languages: typescript explicitly,
+#    isolating the toolchain-install + extract path from detection.
+#  * `selftest-autodetect` — caller leaves languages empty so the composite
+#    runs detect-languages.sh + the allowlist filter. The repo root has
+#    only go.mod at the root, so without the allowlist the composite would
+#    crash on "extractor not found"; with it, detection drops the unknown
+#    language and the file-hashes fallback alone produces output.
 
 on:
   pull_request:
     branches: [main]
     paths:
       - '.github/actions/audit-core/**'
+      - '.github/workflows/audit-core-selftest.yml'
       - 'extractors/**'
       - 'cmd/code-audit/**'
       - 'internal/**'
       - 'pipeline/queries/**'
+      - 'pipeline/_tests/**'
   push:
     branches: [main]
     paths:
       - '.github/actions/audit-core/**'
+      - '.github/workflows/audit-core-selftest.yml'
       - 'extractors/**'
       - 'cmd/code-audit/**'
       - 'internal/**'
       - 'pipeline/queries/**'
+      - 'pipeline/_tests/**'
 
 permissions:
   contents: read
 
 jobs:
-  selftest:
-    name: audit-core against own checkout (build-from-source)
+  selftest-override:
+    name: audit-core override path (languages=typescript, build-from-source)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -44,7 +57,12 @@ jobs:
 
       - name: Install jq (validates catalog output)
         run: |
-          jq --version || sudo apt-get update && sudo apt-get install -y jq
+          # `if ! command -v jq` form is unambiguous; the chained
+          # `A || B && C` form is precedence-fragile.
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
 
       - name: Run audit-core composite
         id: audit
@@ -98,3 +116,55 @@ jobs:
 
           echo "Validating file-hashes.json as JSON array (legacy shape; pending #141 wrapper migration)"
           jq -e 'type == "array"' "$CATALOGS_DIR/file-hashes.json" >/dev/null
+
+  selftest-autodetect:
+    name: audit-core auto-detect path (allowlist drops 'go' for missing manifest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go (build code-audit from source)
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
+      - name: Run audit-core composite (auto-detect)
+        id: audit
+        uses: ./.github/actions/audit-core
+        with:
+          root: .
+          binary-version: build-from-source
+          # No `languages:` override — the composite runs detect-languages.sh
+          # against the repo root. The root has only go.mod (no
+          # tsconfig.json/Package.swift at the top level), so:
+          #   - bare detect would emit 'go'
+          #   - allowlist (--extractors-dir) drops it because no
+          #     extractors/go/manifest.toml exists
+          #   - languages-detected resolves to empty string
+          #   - only the file-hashes extractor runs
+
+      - name: Assert outputs
+        env:
+          CATALOGS_DIR: ${{ steps.audit.outputs.catalogs-dir }}
+          LANGS: ${{ steps.audit.outputs.languages-detected }}
+          MACOS: ${{ steps.audit.outputs.requires-macos }}
+        run: |
+          set -Eeuo pipefail
+          echo "catalogs-dir=$CATALOGS_DIR"
+          echo "languages-detected=$LANGS"
+          echo "requires-macos=$MACOS"
+
+          [ "$LANGS" = "" ] || { echo "ERROR: expected langs='' (allowlist drops go), got '$LANGS'"; exit 1; }
+          [ "$MACOS" = "false" ] || { echo "ERROR: expected requires-macos=false, got '$MACOS'"; exit 1; }
+          test -d "$CATALOGS_DIR" || { echo "ERROR: catalogs-dir missing (file-hashes fallback should still populate it)"; exit 1; }
+          test -f "$CATALOGS_DIR/file-hashes.json" || { echo "ERROR: file-hashes.json missing"; exit 1; }
+          # No type-catalog or function-catalog should exist on this path.
+          [ ! -f "$CATALOGS_DIR/type-catalog.json" ] || { echo "ERROR: unexpected type-catalog.json (no TS extractor should have run)"; exit 1; }

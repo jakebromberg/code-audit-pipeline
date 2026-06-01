@@ -79,40 +79,76 @@ runs:
       env:
         AUDIT_CORE_ROOT: ${{ inputs.root }}
         AUDIT_CORE_OVERRIDE: ${{ inputs.languages }}
+        # Bind github.action_path once via env so we don't expand the GHA
+        # template directly into a bash heredoc on every reference. Lets the
+        # shell quote it without a template-vs-shell-interpolation footgun.
+        AUDIT_CORE_ACTION_PATH: ${{ github.action_path }}
       run: |
         set -Eeuo pipefail
+        pipeline_root="$(cd "$AUDIT_CORE_ACTION_PATH/../../.." && pwd)"
+        extractors_dir="$pipeline_root/extractors"
+
         if [ -n "$AUDIT_CORE_OVERRIDE" ]; then
           langs="$AUDIT_CORE_OVERRIDE"
           echo "Using language override: $langs" >&2
         else
-          langs="$(${{ github.action_path }}/scripts/detect-languages.sh "$AUDIT_CORE_ROOT" || true)"
-          echo "Auto-detected: ${langs:-<none>}" >&2
+          # `|| true` is intentionally NOT used here: a missing root or other
+          # detect-languages.sh failure should surface as an action-level
+          # error, not be masked into "no languages detected".
+          langs="$("$AUDIT_CORE_ACTION_PATH/scripts/detect-languages.sh" \
+            "$AUDIT_CORE_ROOT" --extractors-dir "$extractors_dir")"
+          echo "Auto-detected (filtered against installed extractors): ${langs:-<none>}" >&2
         fi
+
+        # Comma-padded token check — avoids substring false-positives like
+        # contains("golang", "go") that a naive `case ",$langs," in *go*`
+        # (or GHA's substring `contains()`) would accept.
         requires_macos=false
         case ",$langs," in
           *,swift,*) requires_macos=true ;;
         esac
+
+        # Per-language flags, exported here for the conditional `if:` on
+        # the toolchain-setup steps below. Using "has-<lang>" outputs lets
+        # those `if:`s use a string-equality check on the booleans rather
+        # than a substring contains() over the languages list.
+        has_typescript=false; has_swift=false; has_go=false; has_python=false; has_rust=false
+        case ",$langs," in *,typescript,*) has_typescript=true ;; esac
+        case ",$langs," in *,swift,*) has_swift=true ;; esac
+        case ",$langs," in *,go,*) has_go=true ;; esac
+        case ",$langs," in *,python,*) has_python=true ;; esac
+        case ",$langs," in *,rust,*) has_rust=true ;; esac
+
         {
           echo "languages=$langs"
           echo "requires-macos=$requires_macos"
+          echo "has-typescript=$has_typescript"
+          echo "has-swift=$has_swift"
+          echo "has-go=$has_go"
+          echo "has-python=$has_python"
+          echo "has-rust=$has_rust"
         } >> "$GITHUB_OUTPUT"
 
     # The composite needs Node unconditionally — file-hashes runs by default,
     # and it's a Node script. Language-specific extractors layer on top.
+    # Gates use the per-language boolean outputs from `detect` rather than
+    # GHA `contains()` substring matches, which would match e.g. 'go' inside
+    # 'golang' or 'mongo' if a future language is added or a user override
+    # passes such a string.
     - name: Set up Node (file-hashes + typescript)
-      if: inputs.include-file-hashes == 'true' || contains(steps.detect.outputs.languages, 'typescript')
+      if: inputs.include-file-hashes == 'true' || steps.detect.outputs.has-typescript == 'true'
       uses: actions/setup-node@v6
       with:
         node-version: '20'
 
     - name: Set up Go (go)
-      if: contains(steps.detect.outputs.languages, 'go')
+      if: steps.detect.outputs.has-go == 'true'
       uses: actions/setup-go@v6
       with:
         go-version: '1.24'
 
     - name: Set up Python (python)
-      if: contains(steps.detect.outputs.languages, 'python')
+      if: steps.detect.outputs.has-python == 'true'
       uses: actions/setup-python@v6
       with:
         python-version: '3.12'
@@ -123,11 +159,13 @@ runs:
     # decision once we see real cold-start times on those languages.
 
     - name: Install TypeScript extractor dependencies
-      if: contains(steps.detect.outputs.languages, 'typescript')
+      if: steps.detect.outputs.has-typescript == 'true'
       shell: bash
+      env:
+        AUDIT_CORE_ACTION_PATH: ${{ github.action_path }}
       run: |
         set -Eeuo pipefail
-        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        pipeline_root="$(cd "$AUDIT_CORE_ACTION_PATH/../../.." && pwd)"
         cd "$pipeline_root/extractors/typescript"
         npm ci
 
@@ -136,67 +174,135 @@ runs:
       shell: bash
       env:
         AUDIT_CORE_VERSION: ${{ inputs.binary-version }}
+        # Fall back to the caller's repository only as a last resort. When
+        # the action is `uses: owner/repo/.github/actions/audit-core@v1`,
+        # github.action_repository is `owner/repo`; when it's a local-path
+        # reference, action_repository is empty and we look at the parent
+        # of action_path to identify the action's home repo.
+        AUDIT_CORE_ACTION_REPO: ${{ github.action_repository }}
+        AUDIT_CORE_ACTION_PATH: ${{ github.action_path }}
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
         set -Eeuo pipefail
         version="$AUDIT_CORE_VERSION"
 
+        # Choose the install destination. /usr/local/bin works for stock
+        # GitHub-hosted ubuntu and macOS runners (the `runner` user has
+        # write access there); for unusual runners we fall back to
+        # $RUNNER_TOOL_CACHE/code-audit/bin, then prepend to $GITHUB_PATH.
+        choose_install_dir() {
+          if [ -w /usr/local/bin ]; then
+            echo /usr/local/bin
+          else
+            local d="${RUNNER_TOOL_CACHE:-$HOME/.local}/code-audit/bin"
+            mkdir -p "$d"
+            echo "$d" >> "$GITHUB_PATH"
+            echo "$d"
+          fi
+        }
+        install_dir="$(choose_install_dir)"
+        echo "audit-core: installing code-audit to $install_dir" >&2
+
         if [ "$version" = "build-from-source" ]; then
           # Caller is exercising the action against its own source checkout.
-          # Build the binary from ${{ github.action_path }}/../../.. (the
-          # composite's owning repo) and put it on PATH.
-          pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+          pipeline_root="$(cd "$AUDIT_CORE_ACTION_PATH/../../.." && pwd)"
           echo "Building code-audit from source at $pipeline_root" >&2
           (cd "$pipeline_root" && go generate ./... && go build -o /tmp/code-audit ./cmd/code-audit)
-          install -m 0755 /tmp/code-audit /usr/local/bin/code-audit
-          resolved="$(/usr/local/bin/code-audit version | tr -d '[:space:]')"
+          install -m 0755 /tmp/code-audit "$install_dir/code-audit"
+          # Source-built binaries have no release tag — use the binary's
+          # own self-report (set via -ldflags by goreleaser, or the
+          # source-tree default).
+          resolved="$("$install_dir/code-audit" version | tr -d '[:space:]')"
         else
-          # Release-download path. "v1" / "v2" major-pin: resolve to the
-          # newest tag matching v<major>.* via the GitHub Releases API.
-          if echo "$version" | grep -Eq '^v[0-9]+$'; then
+          # Release-download path. Resolve the action's home repo: prefer
+          # the runtime-provided action_repository, fall back to walking
+          # action_path (works for local-checkout consumers in this repo's
+          # own CI). Bail with a clear error if both are unavailable.
+          repo="$AUDIT_CORE_ACTION_REPO"
+          if [ -z "$repo" ] && [ -d "$AUDIT_CORE_ACTION_PATH/../../../.git" ]; then
+            repo="$(git -C "$AUDIT_CORE_ACTION_PATH/../../.." config --get remote.origin.url \
+              | sed -E 's#(.*github\.com[/:])##; s#\.git$##')"
+          fi
+          if [ -z "$repo" ]; then
+            echo "audit-core: cannot resolve action repository (github.action_repository is empty and no git remote found). Use binary-version: build-from-source, or invoke via owner/repo@ref." >&2
+            exit 1
+          fi
+
+          # "v1" / "v2" major-pin → newest stable tag matching v<major>.*
+          # via the GitHub Releases API. Pre-release tags (containing '-')
+          # are excluded so `v1` never resolves to v1.3.0-rc1 over v1.2.3.
+          # "latest" is a documented alias for "newest stable release of
+          # any major" → `gh release download` with no tag arg.
+          if [ "$version" = "latest" ]; then
+            resolved=""  # empty = let `gh release download` pick latest
+            echo "Resolving binary-version: latest → newest stable release" >&2
+          elif echo "$version" | grep -Eq '^v[0-9]+$'; then
             major="${version#v}"
-            echo "Resolving major-pin $version to newest matching release tag" >&2
-            resolved="$(gh release list --repo "${{ github.action_repository }}" \
+            echo "Resolving major-pin $version → newest stable v${major}.* tag on $repo" >&2
+            resolved="$(gh release list --repo "$repo" \
               --limit 100 --json tagName --jq \
-              ".[] | select(.tagName | startswith(\"v${major}.\")) | .tagName" \
+              '.[] | .tagName | select(startswith("v'"$major"'.") and (contains("-") | not))' \
               | sort -V | tail -1)"
             if [ -z "$resolved" ]; then
-              echo "audit-core: no release tags matching ${version}.* on ${{ github.action_repository }}" >&2
+              echo "audit-core: no stable release tags matching ${version}.* on $repo" >&2
               exit 1
             fi
           else
             resolved="$version"
           fi
-          echo "Downloading code-audit ${resolved}" >&2
+          echo "Downloading code-audit ${resolved:-<latest>} from $repo" >&2
           tmp=$(mktemp -d)
-          # Match the asset name convention from goreleaser config.
           os="$(uname -s | tr '[:upper:]' '[:lower:]')"
           arch="$(uname -m)"
           case "$arch" in
             x86_64) arch=amd64 ;;
             aarch64) arch=arm64 ;;
+            arm64|amd64) ;;
+            *) echo "audit-core: unsupported architecture: $arch (goreleaser builds amd64 and arm64 only)" >&2; exit 1 ;;
           esac
-          gh release download "$resolved" \
-            --repo "${{ github.action_repository }}" \
-            --dir "$tmp" \
-            --pattern "code-audit_*_${os}_${arch}*"
-          # goreleaser ships tar.gz on linux/darwin
-          archive=$(find "$tmp" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) | head -1)
-          case "$archive" in
-            *.tar.gz) tar -xzf "$archive" -C "$tmp" ;;
-            *.zip) unzip -q "$archive" -d "$tmp" ;;
-            *) echo "audit-core: unrecognized archive: $archive" >&2; exit 1 ;;
+          case "$os" in
+            linux|darwin) ;;
+            *) echo "audit-core: unsupported OS: $os (goreleaser builds linux and darwin only)" >&2; exit 1 ;;
           esac
-          bin=$(find "$tmp" -type f -name 'code-audit' | head -1)
-          if [ -z "$bin" ]; then
-            echo "audit-core: code-audit binary not found in release archive" >&2
+
+          # Tighten pattern to exact extension so a future per-platform
+          # sibling asset (e.g. .deb, .sbom.json) is not pulled too.
+          if [ -n "$resolved" ]; then
+            gh release download "$resolved" --repo "$repo" --dir "$tmp" \
+              --pattern "code-audit_*_${os}_${arch}.tar.gz"
+          else
+            gh release download --repo "$repo" --dir "$tmp" \
+              --pattern "code-audit_*_${os}_${arch}.tar.gz"
+            # When omitting the tag arg, gh fetches the latest release;
+            # backfill the resolved value from the archive name.
+            archive_name="$(find "$tmp" -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+            resolved="$(basename "$archive_name" | sed -E 's/^code-audit_(.+)_[a-z]+_[a-z0-9]+\.tar\.gz$/\1/')"
+          fi
+
+          archive="$(find "$tmp" -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          if [ -z "$archive" ]; then
+            echo "audit-core: no release archive downloaded for ${os}/${arch}" >&2
             exit 1
           fi
-          install -m 0755 "$bin" /usr/local/bin/code-audit
+          tar -xzf "$archive" -C "$tmp"
+          bin="$(find "$tmp" -type f -name 'code-audit' -print -quit)"
+          if [ -z "$bin" ]; then
+            echo "audit-core: code-audit binary not found in release archive $archive" >&2
+            exit 1
+          fi
+          install -m 0755 "$bin" "$install_dir/code-audit"
         fi
 
+        # Cross-check: report what the installed binary actually says about
+        # itself, alongside the resolved tag. They should agree — if they
+        # don't, the goreleaser ldflags injection has regressed.
+        self_report="$("$install_dir/code-audit" version | tr -d '[:space:]')"
         echo "version=$resolved" >> "$GITHUB_OUTPUT"
-        echo "Installed code-audit $resolved" >&2
+        echo "binary-self-report=$self_report" >> "$GITHUB_OUTPUT"
+        if [ "$self_report" != "$resolved" ] && [ "$version" != "build-from-source" ]; then
+          echo "audit-core: warning: binary self-reports '$self_report' but tag was '$resolved'" >&2
+        fi
+        echo "Installed code-audit $resolved (self-report: $self_report)" >&2
 
     - name: Run language extractors
       shell: bash
@@ -205,14 +311,24 @@ runs:
         AUDIT_CORE_ROOT: ${{ inputs.root }}
         AUDIT_CORE_AUDIT_ROOT: ${{ inputs.audit-root }}
         AUDIT_CORE_INCLUDE_TESTS: ${{ inputs.include-tests }}
+        AUDIT_CORE_ACTION_PATH: ${{ github.action_path }}
       run: |
         set -Eeuo pipefail
         # Resolve to absolute paths so the bash flags array is stable
         # regardless of which directory `code-audit` ends up running from.
-        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        # mkdir -p audit-root first — the documented purpose of the input
+        # is "override to put .audit/ on a separate prefix for caching or
+        # cross-job artifact sharing", which strongly implies the caller
+        # may pass a path the composite is expected to create.
+        if [ -z "$AUDIT_CORE_ROOT" ]; then
+          echo "audit-core: --root resolved to empty string; refusing to run" >&2
+          exit 1
+        fi
+        pipeline_root="$(cd "$AUDIT_CORE_ACTION_PATH/../../.." && pwd)"
         extractors_dir="$pipeline_root/extractors"
         root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
         audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        mkdir -p "$audit_root"
         audit_root_abs="$(cd "$audit_root" && pwd)"
 
         flags=( --root "$root_abs" --audit-root "$audit_root_abs" --extractors-dir "$extractors_dir" )
@@ -238,12 +354,14 @@ runs:
         AUDIT_CORE_ROOT: ${{ inputs.root }}
         AUDIT_CORE_AUDIT_ROOT: ${{ inputs.audit-root }}
         AUDIT_CORE_INCLUDE_TESTS: ${{ inputs.include-tests }}
+        AUDIT_CORE_ACTION_PATH: ${{ github.action_path }}
       run: |
         set -Eeuo pipefail
-        pipeline_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        pipeline_root="$(cd "$AUDIT_CORE_ACTION_PATH/../../.." && pwd)"
         extractors_dir="$pipeline_root/extractors"
         root_abs="$(cd "$AUDIT_CORE_ROOT" && pwd)"
         audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        mkdir -p "$audit_root"
         audit_root_abs="$(cd "$audit_root" && pwd)"
 
         flags=( --root "$root_abs" --audit-root "$audit_root_abs" --extractors-dir "$extractors_dir" )
@@ -263,11 +381,19 @@ runs:
       run: |
         set -Eeuo pipefail
         audit_root="${AUDIT_CORE_AUDIT_ROOT:-$AUDIT_CORE_ROOT}"
+        mkdir -p "$audit_root"
         catalogs_dir="$(cd "$audit_root" && pwd)/.audit/catalogs"
         if [ ! -d "$catalogs_dir" ]; then
-          echo "audit-core: expected catalogs dir not found: $catalogs_dir" >&2
-          exit 1
+          # Allowed for the "detection found nothing AND include-file-hashes
+          # was off" case — emit an empty path rather than failing, so the
+          # caller can decide whether that's an error. The README documents
+          # this as a possible outcome.
+          echo "audit-core: no extractors ran (detection empty and include-file-hashes=false); catalogs-dir output left empty" >&2
+          echo "catalogs-dir=" >> "$GITHUB_OUTPUT"
+        else
+          # Single-pass count. find ... -print is finite (one path per line)
+          # and `wc -l` reads it to completion, so no SIGPIPE concern here.
+          count=$(find "$catalogs_dir" -maxdepth 1 -type f -name '*.json' | wc -l | tr -d ' ')
+          echo "audit-core: $count catalog file(s) at $catalogs_dir" >&2
+          echo "catalogs-dir=$catalogs_dir" >> "$GITHUB_OUTPUT"
         fi
-        count=$(find "$catalogs_dir" -maxdepth 1 -type f -name '*.json' | wc -l | tr -d ' ')
-        echo "audit-core: $count catalog file(s) at $catalogs_dir" >&2
-        echo "catalogs-dir=$catalogs_dir" >> "$GITHUB_OUTPUT"
