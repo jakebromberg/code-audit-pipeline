@@ -655,11 +655,18 @@ Every extractor:
 
 ```
 extractor --root <path> [--shared <path>] [--touched <json-file>] [--output <path>] [--emit-references-graph <path>] [--emit-files <path>] [--include-imports]
+extractor --list-relevant [--include-tests] [--null|-0]      # predicate-only query mode; reads paths from stdin
 ```
 
 Defaults: `--output` writes to stdout. `--emit-references-graph`, `--emit-files`, and `--include-imports` are off by default. Summary stats (file counts, kind histogram, error count) go to stderr.
 
 Exit code: `0` if at least one file was successfully indexed, `1` if no files could be parsed.
+
+### `--list-relevant` mode
+
+A pure-query mode that exposes the extractor's walk predicate without parsing or indexing. Reads candidate paths from stdin (one per line by default; NUL-separated with `--null`/`-0`), evaluates each against the same predicate the walker uses (extension match, skip-dir, dotdir, test/spec filtering), and writes the kept subset to stdout in input order. `--include-tests` keeps test/spec/fixture/mock paths; without it they're dropped on the query side (the extraction walker continues to index test files and tag each row with `is_test=true`).
+
+Consumed by the PR-comment Action ([#123](https://github.com/jakebromberg/code-audit-pipeline/issues/123)) and the pre-commit hook ([#124](https://github.com/jakebromberg/code-audit-pipeline/issues/124)) to filter `gh pr view --json files` or `git diff --name-only` output to the subset worth feeding to `--touched`. The flag is per-language: each language's extractor exposes its own `--list-relevant` reflecting its own walk semantics. The TypeScript reference is `extractors/typescript/type-catalog.mjs`; other languages adopt the flag with their own predicate definitions per [#159](https://github.com/jakebromberg/code-audit-pipeline/issues/159).
 
 ## Cluster-query output contract
 
