@@ -44,7 +44,7 @@ func main() {
 	case "archaeology":
 		os.Exit(cli.Archaeology(ctx, args, stdout))
 	case "version", "--version", "-v":
-		fmt.Fprintln(stdout, cli.Version)
+		fmt.Fprintln(stdout, cli.ResolvedVersion())
 	case "help", "--help", "-h":
 		usage()
 	default:
@@ -83,5 +83,5 @@ Subcommands:
 
 See docs/adr/0001..0007.md for the design; plans/pr3-binary-skeleton.md and
 plans/pr4-renderers-report-init.md document the implementation arc.
-`, cli.Version)
+`, cli.ResolvedVersion())
 }
