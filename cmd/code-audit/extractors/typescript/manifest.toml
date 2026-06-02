@@ -1,0 +1,54 @@
+# manifest.toml — registration sidecar for the TypeScript extractor.
+#
+# Read by the future `code-audit` binary (per ADR-0002) to discover this extractor's
+# identity, runtime prerequisites, and per-catalog invocation contract. The
+# extractor scripts themselves (type-catalog.mjs, function-catalog.mjs) are
+# unchanged — only their wiring lives here.
+#
+# Token grammar in `invocation`:
+#   {root}              required positional, audited repo root
+#   {output}            target file under .audit/catalogs/<output_file>
+#   {shared}            secondary package root, when --shared is given
+#   {touched}           path to the JSON array of touched-in-window files
+#   {references_output} sibling artifact path when --emit-references-graph is on
+#   {files_output}      sibling artifact path when --emit-files is on
+#   {min_body_lines}    function-catalog-only threshold knob
+
+schema_version = 2
+
+[extractor]
+name = "typescript"
+language = "typescript"
+version = "0.5.0"
+description = "TypeScript AST extractor (typescript npm package); emits type and function catalogs."
+
+[[command]]
+catalog = "type-catalog"
+output_file = "type-catalog.json"
+invocation = ["node", "type-catalog.mjs", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+  { flag = "--emit-references-graph", placeholder = "{references_output}", when = "references_enabled" },
+  { flag = "--emit-files", placeholder = "{files_output}", when = "files_enabled" },
+  { flag = "--include-imports", when = "include_imports_enabled" },
+]
+sibling_outputs = [
+  { catalog = "references-graph", file = "references.json", when = "references_enabled" },
+  { catalog = "files", file = "files.json", when = "files_enabled" },
+]
+
+[[command]]
+catalog = "function-catalog"
+output_file = "function-catalog.json"
+invocation = ["node", "function-catalog.mjs", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+  { flag = "--min-body-lines", placeholder = "{min_body_lines}", when = "min_body_lines_set" },
+]
+
+[runtime]
+requires = ["node >= 18"]
+bootstrap = ["npm", "install"]
+setup_hint = "Run `npm install` in extractors/typescript/ (once per clone)."

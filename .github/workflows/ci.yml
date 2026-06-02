@@ -111,6 +111,19 @@ jobs:
       - name: Generate embedded queries
         run: go generate ./...
 
+      - name: Verify embedded queries + extractors are in sync with canonical sources
+        # The committed copies under cmd/code-audit/{queries,extractors}/ are
+        # what the Go module proxy ships at a tagged commit. If a PR touches
+        # pipeline/queries/*.jq or extractors/<lang>/* without regenerating and
+        # committing the embeds, `go install ...@tag` would ship a stale (or
+        # broken) binary. This gate forces the regen-and-commit step into the
+        # same PR.
+        run: |
+          if ! git diff --exit-code -- cmd/code-audit/queries cmd/code-audit/extractors; then
+            echo "::error::cmd/code-audit/{queries,extractors}/ are out of sync with pipeline/queries/ or extractors/. Run 'go generate ./...' locally and commit the result." >&2
+            exit 1
+          fi
+
       - name: Go vet
         run: go vet ./...
 

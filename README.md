@@ -26,7 +26,7 @@ go install github.com/jakebromberg/code-audit-pipeline/cmd/code-audit@latest
 
 Or download a tarball from [Releases](https://github.com/jakebromberg/code-audit-pipeline/releases).
 
-The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow.
+The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow. All three install paths (brew, `go install`, tarball) ship the same embedded query + extractor set.
 
 ## Quick start
 
