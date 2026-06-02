@@ -266,7 +266,12 @@ func TestReportSkipsTwoOfSameKindQueries(t *testing.T) {
 }
 
 // TestReportSkipsQueriesWithUnsatisfiedArgs ensures queries with required
-// --arg surface as skipped under --skip-missing-args rather than failing.
+// --arg surface as skipped when --skip-missing-args is true. As of #251
+// that is the default for text mode; the explicit flag here pins down
+// that an explicit `--skip-missing-args` (i.e. `=true`) still works for
+// callers that prefer to spell the intent out. See
+// TestReportDefaultsToSkippingMissingArgs for the no-flag regression
+// guard covering the new default.
 func TestReportSkipsQueriesWithUnsatisfiedArgs(t *testing.T) {
 	tmp := t.TempDir()
 	cacheDir := filepath.Join(tmp, ".audit", "catalogs")
@@ -317,6 +322,117 @@ func TestReportSkipsQueriesWithUnsatisfiedArgs(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "near-duplicates") {
 		t.Errorf("report should list near-duplicates as skipped:\n%s", string(data))
+	}
+}
+
+// TestReportDefaultsToSkippingMissingArgs is the regression guard for #251:
+// `code-audit report` without --skip-missing-args (i.e. relying on the new
+// default of true) must still produce .audit/reports/findings-<date>.md
+// and exit 0 when a selected query has unsatisfied required --arg
+// front-matter. The bug was that the historical loud-failure default
+// caused a fresh `code-audit extract` + `code-audit report` to exit 1
+// and write nothing to disk.
+func TestReportDefaultsToSkippingMissingArgs(t *testing.T) {
+	tmp := t.TempDir()
+	cacheDir := filepath.Join(tmp, ".audit", "catalogs")
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	catalogPath := filepath.Join(cacheDir, "type-catalog.json")
+	body := `{"schema_version":"1.1","extractor":{"language":"x","name":"type-catalog","version":"0"},"entries":[]}`
+	if err := os.WriteFile(catalogPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	metaPath := filepath.Join(tmp, ".audit", "meta.json")
+	meta := map[string]any{
+		"audit_version": cli.Version,
+		"root":          tmp,
+		"catalogs": map[string]any{
+			"type-catalog": map[string]any{
+				"path":       "catalogs/type-catalog.json",
+				"source_sha": "seed",
+				"cli_args":   map[string]any{},
+			},
+		},
+	}
+	mdata, _ := json.MarshalIndent(meta, "", "  ")
+	if err := os.WriteFile(metaPath, mdata, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	// Note: no --skip-missing-args flag. The new default is true, so this
+	// must exit 0 and write findings-<date>.md to disk.
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "near-duplicates",
+	}, &out, embeddedQueries())
+	if exit != 0 {
+		t.Fatalf("Report exit=%d (want 0; default --skip-missing-args should skip not fail), out=%s", exit, out.String())
+	}
+	matches, err := filepath.Glob(filepath.Join(tmp, ".audit", "reports", "findings-*.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected one findings-*.md, got %d", len(matches))
+	}
+	data, _ := os.ReadFile(matches[0])
+	if !strings.Contains(string(data), "Skipped queries") {
+		t.Errorf("report missing skipped section:\n%s", string(data))
+	}
+	if !strings.Contains(string(data), "near-duplicates") {
+		t.Errorf("report should list near-duplicates as skipped:\n%s", string(data))
+	}
+}
+
+// TestReportLoudFailsOnMissingArgsWhenOptOut is the CI-gating regression
+// guard: callers that pass --skip-missing-args=false (the pre-#251
+// default behavior) must still get a non-zero exit when a query has
+// unsatisfied required --arg front-matter. This pins the opt-out path
+// so a future refactor that removes the flag entirely is caught.
+func TestReportLoudFailsOnMissingArgsWhenOptOut(t *testing.T) {
+	tmp := t.TempDir()
+	cacheDir := filepath.Join(tmp, ".audit", "catalogs")
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	catalogPath := filepath.Join(cacheDir, "type-catalog.json")
+	body := `{"schema_version":"1.1","extractor":{"language":"x","name":"type-catalog","version":"0"},"entries":[]}`
+	if err := os.WriteFile(catalogPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	metaPath := filepath.Join(tmp, ".audit", "meta.json")
+	meta := map[string]any{
+		"audit_version": cli.Version,
+		"root":          tmp,
+		"catalogs": map[string]any{
+			"type-catalog": map[string]any{
+				"path":       "catalogs/type-catalog.json",
+				"source_sha": "seed",
+				"cli_args":   map[string]any{},
+			},
+		},
+	}
+	mdata, _ := json.MarshalIndent(meta, "", "  ")
+	if err := os.WriteFile(metaPath, mdata, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	exit := cli.Report(context.Background(), []string{
+		"--root", tmp,
+		"--query", "near-duplicates",
+		"--skip-missing-args=false",
+	}, &out, embeddedQueries())
+	if exit != 1 {
+		t.Fatalf("Report exit=%d (want 1; --skip-missing-args=false should loud-fail on missing required --arg), out=%s", exit, out.String())
+	}
+	// Loud-fail path emits the partial report to stdout and skips the
+	// writeAtomic call, so .audit/reports/ should NOT contain a file.
+	matches, _ := filepath.Glob(filepath.Join(tmp, ".audit", "reports", "findings-*.md"))
+	if len(matches) != 0 {
+		t.Errorf("expected no findings-*.md on loud-fail; got %d", len(matches))
 	}
 }
 
