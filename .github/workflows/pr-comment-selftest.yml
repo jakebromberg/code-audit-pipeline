@@ -54,7 +54,16 @@ jobs:
     name: audit-pr-comment dogfood (render-only)
     runs-on: ubuntu-latest
     steps:
+      # Mirror what pr-comment-reusable.yml does in production: check out
+      # the PR HEAD, not GitHub's synthetic refs/pull/N/merge preview. The
+      # merge preview can differ from HEAD once main advances, and the
+      # selftest should exercise the same tree consumers will see. On push
+      # triggers `head.sha` is empty and checkout falls through to the
+      # default (the push commit), which is what we want there.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
 
       - name: Set up Go (build code-audit from source)
         uses: actions/setup-go@v6

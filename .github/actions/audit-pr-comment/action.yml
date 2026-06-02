@@ -115,6 +115,31 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate inputs
+      # `build-from-source` is reserved for this repo's own selftest — it
+      # makes audit-core invoke `go build` against `$AUDIT_CORE_ACTION_PATH/../../..`,
+      # which only resolves to a valid Go module when the composite was
+      # checked out from the pipeline repo. A sibling consumer passing this
+      # value would hit a confusing `go: cannot find main module` error or
+      # silently build against an unrelated module if the caller's repo is
+      # also a Go repo. Reject early with a clear message; the reusable
+      # workflow has the same guard, but direct-composite callers bypass it.
+      shell: bash
+      env:
+        AUDIT_PR_BINARY_VERSION: ${{ inputs.audit-binary-version }}
+        AUDIT_PR_ACTION_REPO: ${{ github.action_repository }}
+      run: |
+        set -Eeuo pipefail
+        if [ "$AUDIT_PR_BINARY_VERSION" = "build-from-source" ] && [ -n "$AUDIT_PR_ACTION_REPO" ]; then
+          # action_repository is set only when this composite was loaded
+          # from a remote repo via `uses: owner/repo/.../audit-pr-comment@v1`;
+          # it's empty for local `uses: ./...` references (the in-repo
+          # selftest path), which is exactly the case where build-from-source
+          # is valid.
+          echo "audit-pr-comment: audit-binary-version=build-from-source is only valid for in-repo selftest invocations (action_repository=$AUDIT_PR_ACTION_REPO)" >&2
+          exit 1
+        fi
+
     - name: Derive paths
       id: paths
       # Single source of truth for audit-root. Three downstream steps need

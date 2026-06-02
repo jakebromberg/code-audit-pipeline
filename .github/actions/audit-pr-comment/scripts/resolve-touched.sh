@@ -69,9 +69,15 @@ if [ -n "$TOUCHED_RAW" ]; then
   printf '%s\n' "$TOUCHED_RAW" > "$raw_file"
 elif [ -n "$PR_NUMBER" ]; then
   # `gh pr view --json files --jq` is the canonical newline-separated source
-  # of touched repo-relative paths. The `--paginate` flag isn't needed for
-  # the files list (it's not paginated on GitHub's API), and `--repo` is
-  # picked up from $GITHUB_REPOSITORY when running inside a workflow.
+  # of touched repo-relative paths. `--repo` is picked up from
+  # $GITHUB_REPOSITORY when running inside a workflow. Note: GraphQL's
+  # `files` connection on PullRequest is server-side-paged at 100 entries
+  # per page; PRs touching >100 files will return only the first page. For
+  # large PRs the touched set is therefore conservative — `code-audit
+  # report --touched` falls back to "no structural impact" rather than
+  # surfacing false positives, but cluster matches in the unreturned files
+  # are missed. A follow-up (#TBD) switches to `gh api graphql --paginate`
+  # or `gh pr diff --name-only`, neither of which is connection-paged.
   gh pr view "$PR_NUMBER" --json files --jq '.files[].path' > "$raw_file"
 else
   echo "resolve-touched: neither PR_NUMBER nor TOUCHED_RAW is set; cannot resolve touched files" >&2
@@ -174,25 +180,25 @@ filter_file_hashes() {
   cat
 }
 
-# Comma → space split with empty-language tolerance.
-IFS=',' read -ra langs <<< "$LANGUAGES_DETECTED"
-if [ ${#langs[@]} -eq 0 ] || { [ ${#langs[@]} -eq 1 ] && [ -z "${langs[0]:-}" ]; }; then
-  echo "resolve-touched: no languages detected; emitting empty touched set" >&2
-  out='[]'
-  if [ -n "$OUTPUT_PATH" ]; then
-    printf '%s\n' "$out" > "$OUTPUT_PATH"
-  else
-    printf '%s\n' "$out"
-  fi
-  exit 0
-fi
-
 # Always include the file-hashes pass — the composite runs the file-hashes
 # extractor by default (include-file-hashes input is true by default in
 # audit-core), so the catalog will contain file-hashes rows whose .file
 # entries may match touched paths even when no language extractor recognized
 # the file (e.g. an audit window where every touched file is a YAML config).
+# Run BEFORE the no-languages early-exit so config-only repos (no markers
+# detected by audit-core's detect-languages.sh, but file-hashes still
+# populated) still surface their touched config/docs paths.
 filter_file_hashes < "$raw_clean" >> "$filtered_acc"
+
+# Comma → space split with empty-language tolerance. If no language was
+# detected, skip the per-language loop but keep the file-hashes contribution
+# already accumulated above — the downstream dedup-and-encode block emits
+# the resulting touched set (possibly empty, possibly file-hashes-only).
+IFS=',' read -ra langs <<< "$LANGUAGES_DETECTED"
+if [ ${#langs[@]} -eq 0 ] || { [ ${#langs[@]} -eq 1 ] && [ -z "${langs[0]:-}" ]; }; then
+  echo "resolve-touched: no language extractors detected; emitting file-hashes-only touched set" >&2
+  langs=()
+fi
 
 for lang in "${langs[@]}"; do
   # Lowercase + strip whitespace so callers passing `TypeScript`, `Swift`,
