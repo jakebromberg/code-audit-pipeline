@@ -118,9 +118,16 @@ jobs:
         # committing the embeds, `go install ...@tag` would ship a stale (or
         # broken) binary. This gate forces the regen-and-commit step into the
         # same PR.
+        #
+        # Uses `git status --porcelain` rather than `git diff --exit-code` so
+        # NEW embed files appear in the gate output — `git diff` only inspects
+        # tracked paths and would silently ignore an untracked
+        # cmd/code-audit/queries/foo.jq produced by `go generate`.
         run: |
-          if ! git diff --exit-code -- cmd/code-audit/queries cmd/code-audit/extractors; then
+          status="$(git status --porcelain -- cmd/code-audit/queries cmd/code-audit/extractors)"
+          if [ -n "$status" ]; then
             echo "::error::cmd/code-audit/{queries,extractors}/ are out of sync with pipeline/queries/ or extractors/. Run 'go generate ./...' locally and commit the result." >&2
+            echo "$status" >&2
             exit 1
           fi
 
