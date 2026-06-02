@@ -1,0 +1,239 @@
+name: PR comment (reusable)
+
+# Reusable workflow that sibling repos call to post a code-audit
+# "structural impact" comment on every PR. Wraps the audit-pr-comment
+# composite (#123) — the composite + reusable split is intentional and
+# matches publish-catalog-reusable / audit-core: lower-level callers can
+# `uses:` the composite directly; this workflow is the one-screen entry
+# for the comment surface.
+
+on:
+  workflow_call:
+    inputs:
+      audit-binary-version:
+        description: >-
+          code-audit release tag to install. `v1`/`v2` resolve to the
+          newest stable release of that major; `latest` to the newest
+          release of any major; a fully-qualified `v1.2.3` is used
+          verbatim. Whichever value is resolved is used for both the
+          pipeline-source checkout AND the binary install so the
+          composite's source tree and binary can't diverge.
+        type: string
+        required: false
+        default: v1
+      root:
+        description: Repo root to scan. Defaults to the caller's checkout root.
+        type: string
+        required: false
+        default: '.'
+      languages:
+        description: >-
+          Comma-separated language override forwarded to the composite
+          (e.g. `typescript,swift`). Empty means auto-detect from
+          repo-root markers.
+        type: string
+        required: false
+        default: ''
+      include-tests:
+        description: Pass --include-tests to every extractor.
+        type: boolean
+        required: false
+        default: false
+      include-file-hashes:
+        description: >-
+          Include the polyglot file-hashes extractor. Default true so
+          touched-file matching has rows to intersect against for
+          languages without a dedicated walker.
+        type: boolean
+        required: false
+        default: true
+      marker:
+        description: >-
+          Sticky comment marker. Forwarded to both `code-audit report
+          --marker` and marocchino's `header:`. Default tracks the
+          pipeline's v1 schema.
+        type: string
+        required: false
+        default: code-audit-pipeline-v1
+      size-cap-bytes:
+        description: >-
+          Hard cap on rendered comment body length. Default 60000
+          leaves ~4KB headroom under GitHub's 65,536-character cap;
+          minimum 1024 (enforced by `code-audit report`).
+        type: number
+        required: false
+        default: 60000
+      on-extraction-failure:
+        description: >-
+          `loud` exits non-zero on pipeline-internal failures; `quiet`
+          (default) exits 0 with a diagnostic body so the comment
+          surface stays current and the PR isn't blocked.
+        type: string
+        required: false
+        default: quiet
+      audit-root:
+        description: >-
+          Where audit-core places .audit/. Defaults to the runner temp
+          directory so a misconfigured caller can't accidentally commit
+          catalog files back to their repo.
+        type: string
+        required: false
+        default: ''
+      runner:
+        description: >-
+          Runner label for the comment job. Default ubuntu-latest. Repos
+          containing Swift sources must override to macos-latest (Swift
+          toolchain unavailable on the ubuntu runner image). A future
+          iteration may split detection into a lightweight pre-job that
+          picks the runner automatically.
+        type: string
+        required: false
+        default: ubuntu-latest
+      skip-comment:
+        description: >-
+          When true, render the comment body but skip the marocchino
+          post step. Useful for dry-run / preview workflows.
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      comment-path:
+        description: Absolute path to the rendered comment.md (on the runner filesystem).
+        value: ${{ jobs.comment.outputs.comment-path }}
+      touched-count:
+        description: Number of repo-relative paths in the resolved touched set.
+        value: ${{ jobs.comment.outputs.touched-count }}
+      languages-detected:
+        description: Comma-separated list of languages the composite ran extractors for.
+        value: ${{ jobs.comment.outputs.languages-detected }}
+      binary-version-used:
+        description: Resolved code-audit release tag actually installed.
+        value: ${{ jobs.comment.outputs.binary-version-used }}
+
+# `contents: read` for checkout. `pull-requests: write` for the marocchino
+# sticky-comment poster — required even when editing an existing comment.
+# Callers must grant both; the reusable's permissions block is an upper
+# bound, not a request.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Concurrency at the workflow level so rapid force-pushes don't pile up:
+# the in-flight run for the PR is cancelled when a new push lands, and
+# the latest push's run is what produces the comment. marocchino's
+# sticky-comment behavior means the final comment converges to the
+# latest-push state regardless of mid-run cancellations.
+concurrency:
+  group: code-audit-pr-comment-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    # Skip draft PRs by default. Consumers wanting comments on drafts can
+    # override their own `if:` at the calling workflow level (the reusable's
+    # `if:` doesn't compose, so this is a documented default rather than a
+    # hard floor).
+    if: github.event.pull_request.draft == false
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      comment-path: ${{ steps.audit.outputs.comment-path }}
+      touched-count: ${{ steps.audit.outputs.touched-count }}
+      languages-detected: ${{ steps.audit.outputs.languages-detected }}
+      binary-version-used: ${{ steps.audit.outputs.binary-version-used }}
+    steps:
+      - name: Resolve audit-pr-comment ref
+        # Resolve `latest` and major-pins (`v1`/`v2`) to a concrete release
+        # tag here so the SAME tag drives both the pipeline-source checkout
+        # below and the composite's binary install. Without this resolution:
+        # actions/checkout with `ref: latest` 404s (no such git ref), and
+        # `ref: v1` pulls the floating major-series tag which may lag the
+        # latest v1.x.y release — producing split-brain runs where the
+        # composite's source tree and binary come from different releases.
+        id: ref
+        shell: bash
+        env:
+          BINARY_VERSION: ${{ inputs.audit-binary-version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          version="$BINARY_VERSION"
+
+          if [ "$version" = "build-from-source" ]; then
+            echo "pr-comment-reusable: audit-binary-version=build-from-source is only valid for this repo's own CI, not for sibling consumers." >&2
+            exit 1
+          fi
+
+          pipeline_repo="jakebromberg/code-audit-pipeline"
+          if [ "$version" = "latest" ]; then
+            resolved="$(gh release list --repo "$pipeline_repo" \
+              --limit 100 --json tagName --jq \
+              '.[] | .tagName | select(contains("-") | not)' \
+              | sort -V | tail -1)"
+            if [ -z "$resolved" ]; then
+              echo "pr-comment-reusable: no stable releases found on $pipeline_repo" >&2
+              exit 1
+            fi
+          elif echo "$version" | grep -Eq '^v[0-9]+$'; then
+            major="${version#v}"
+            resolved="$(gh release list --repo "$pipeline_repo" \
+              --limit 100 --json tagName --jq \
+              '.[] | .tagName | select(startswith("v'"$major"'.") and (contains("-") | not))' \
+              | sort -V | tail -1)"
+            if [ -z "$resolved" ]; then
+              echo "pr-comment-reusable: no stable v${major}.* releases found on $pipeline_repo" >&2
+              exit 1
+            fi
+          else
+            resolved="$version"
+          fi
+
+          echo "Resolved audit-binary-version=$version → $resolved" >&2
+          echo "ref=$resolved" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout caller repo (PR HEAD)
+        uses: actions/checkout@v6
+        with:
+          # PR HEAD, not the merge commit. The merge commit doesn't exist
+          # for draft / unmerged PRs and the rendered comment should
+          # reflect what the contributor pushed, not GitHub's synthetic
+          # merge preview.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Checkout code-audit-pipeline (composite source)
+        uses: actions/checkout@v6
+        with:
+          repository: jakebromberg/code-audit-pipeline
+          ref: ${{ steps.ref.outputs.ref }}
+          path: .code-audit-pipeline
+          fetch-depth: 1
+
+      - name: Run audit-pr-comment
+        id: audit
+        uses: ./.code-audit-pipeline/.github/actions/audit-pr-comment
+        with:
+          root: ${{ inputs.root }}
+          languages: ${{ inputs.languages }}
+          # Pass the resolved concrete tag, not the input — the composite
+          # will skip its own resolution and use this verbatim.
+          audit-binary-version: ${{ steps.ref.outputs.ref }}
+          include-tests: ${{ inputs.include-tests }}
+          include-file-hashes: ${{ inputs.include-file-hashes }}
+          marker: ${{ inputs.marker }}
+          size-cap-bytes: ${{ inputs.size-cap-bytes }}
+          on-extraction-failure: ${{ inputs.on-extraction-failure }}
+          audit-root: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+          github-token: ${{ github.token }}
+          skip-comment: ${{ inputs.skip-comment }}
+
+      - name: Upload comment artifact
+        # Always upload — even on render-failure paths the artifact carries
+        # the fail-quiet body (or the defensive fallback), which is the
+        # primary debug signal for "why didn't my comment look right."
+        if: always() && steps.audit.outputs.comment-path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-audit-pr-comment
+          path: ${{ steps.audit.outputs.comment-path }}
+          retention-days: 14
+          if-no-files-found: warn
