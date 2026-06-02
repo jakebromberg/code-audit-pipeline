@@ -109,6 +109,17 @@ on:
       binary-version-used:
         description: Resolved code-audit release tag actually installed.
         value: ${{ jobs.comment.outputs.binary-version-used }}
+      posted:
+        description: >-
+          `'true'` iff the marocchino sticky-comment step ran to success.
+          `'false'` for skipped (non-PR event, fork PR with read-only token,
+          `skip-comment: true`) AND for marocchino failures. Consumers
+          wanting CI to redden on fork PRs can branch on
+          `outputs.posted == 'false' && outputs.exit-code == '0'`.
+        value: ${{ jobs.comment.outputs.posted }}
+      exit-code:
+        description: Exit code from `code-audit report --mode pr-comment` (0 in quiet mode; 0/1 in loud mode).
+        value: ${{ jobs.comment.outputs.exit-code }}
 
 # `contents: read` for checkout. `pull-requests: write` for the marocchino
 # sticky-comment poster — required even when editing an existing comment.
@@ -149,6 +160,8 @@ jobs:
       touched-count: ${{ steps.audit.outputs.touched-count }}
       languages-detected: ${{ steps.audit.outputs.languages-detected }}
       binary-version-used: ${{ steps.audit.outputs.binary-version-used }}
+      posted: ${{ steps.audit.outputs.posted }}
+      exit-code: ${{ steps.audit.outputs.exit-code }}
     steps:
       - name: Resolve audit-pr-comment ref
         # Resolve `latest` and major-pins (`v1`/`v2`) to a concrete release
