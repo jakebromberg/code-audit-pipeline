@@ -46,7 +46,7 @@ func Report(ctx context.Context, argv []string, stdout io.Writer, queriesFS fs.F
 	rootFlag := fset.String("root", "", "audit root (defaults to cwd)")
 	queriesDir := fset.String("queries-dir", "", "explicit queries directory")
 	outputFlag := fset.String("output", "", "destination .md file (default: .audit/reports/findings-YYYY-MM-DD.md)")
-	skipMissingArgs := fset.Bool("skip-missing-args", false, "skip queries with unsatisfied required --arg instead of failing")
+	skipMissingArgs := fset.Bool("skip-missing-args", true, "skip queries with unsatisfied required --arg (default true). Pass --skip-missing-args=false for CI gating where a forgotten --arg should be a hard failure.")
 	touchedFlag := fset.String("touched", "", "path to JSON array of repo-relative paths; in --mode pr-comment, filters rows to ones whose members include a touched file. Requires --mode pr-comment.")
 	modeFlag := fset.String("mode", "text", "output mode: text | pr-comment")
 	failureFlag := fset.String("on-extraction-failure", "", "loud | quiet (default: loud for text, quiet for pr-comment)")
