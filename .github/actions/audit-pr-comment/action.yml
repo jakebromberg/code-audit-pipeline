@@ -96,15 +96,46 @@ outputs:
     description: Number of repo-relative paths in the resolved touched set.
     value: ${{ steps.touched.outputs.count }}
   posted:
-    description: '"true" iff the marocchino sticky-comment step ran (and did not skip).'
-    value: ${{ steps.post.outputs.posted }}
+    description: >-
+      `'true'` iff the marocchino sticky-comment step ran to success. Derived
+      from `steps.post.outcome` because marocchino itself does not declare a
+      `posted` output — `outcome` is GHA's built-in success/skipped/failure
+      classification, which is what consumers actually want.
+    value: ${{ steps.post.outcome == 'success' }}
   exit-code:
     description: The exit code from `code-audit report --mode pr-comment` (0/1/2).
     value: ${{ steps.render.outputs.exit-code }}
+  languages-detected:
+    description: Comma-separated languages audit-core ran extractors for. Forwarded from audit-core's output.
+    value: ${{ steps.audit.outputs.languages-detected }}
+  binary-version-used:
+    description: Resolved code-audit release tag actually installed. Forwarded from audit-core's output.
+    value: ${{ steps.audit.outputs.binary-version-used }}
 
 runs:
   using: composite
   steps:
+    - name: Derive paths
+      id: paths
+      # Single source of truth for audit-root. Three downstream steps need
+      # the same value; computing it once here (and reading it via
+      # `steps.paths.outputs.audit-root` everywhere) prevents the
+      # duplicated-expression footgun where a future contributor changes
+      # the default in one place but misses the others, silently splitting
+      # the catalog-write path from the catalog-read path.
+      shell: bash
+      env:
+        AUDIT_PR_AUDIT_ROOT_INPUT: ${{ inputs.audit-root }}
+        RUNNER_TEMP_DIR: ${{ runner.temp }}
+      run: |
+        set -Eeuo pipefail
+        if [ -n "$AUDIT_PR_AUDIT_ROOT_INPUT" ]; then
+          audit_root="$AUDIT_PR_AUDIT_ROOT_INPUT"
+        else
+          audit_root="${RUNNER_TEMP_DIR}/audit"
+        fi
+        echo "audit-root=$audit_root" >> "$GITHUB_OUTPUT"
+
     - name: Run audit-core (HEAD catalogs)
       id: audit
       uses: ./.github/actions/audit-core
@@ -114,7 +145,7 @@ runs:
         binary-version: ${{ inputs.audit-binary-version }}
         include-tests: ${{ inputs.include-tests }}
         include-file-hashes: ${{ inputs.include-file-hashes }}
-        audit-root: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+        audit-root: ${{ steps.paths.outputs.audit-root }}
         github-token: ${{ inputs.github-token }}
 
     - name: Resolve touched files
@@ -124,7 +155,7 @@ runs:
         AUDIT_PR_ACTION_PATH: ${{ github.action_path }}
         AUDIT_PR_LANGS: ${{ steps.audit.outputs.languages-detected }}
         AUDIT_PR_INCLUDE_TESTS: ${{ inputs.include-tests }}
-        AUDIT_PR_AUDIT_ROOT: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+        AUDIT_PR_AUDIT_ROOT: ${{ steps.paths.outputs.audit-root }}
         # PR number is empty for non-pull_request events; in that case
         # resolve-touched.sh fails loud (we explicitly support only the
         # PR-comment surface, which is pull_request-scoped).
@@ -160,7 +191,7 @@ runs:
       id: render
       shell: bash
       env:
-        AUDIT_PR_AUDIT_ROOT: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+        AUDIT_PR_AUDIT_ROOT: ${{ steps.paths.outputs.audit-root }}
         AUDIT_PR_TOUCHED: ${{ steps.touched.outputs.touched-path }}
         AUDIT_PR_MARKER: ${{ inputs.marker }}
         AUDIT_PR_SIZE_CAP: ${{ inputs.size-cap-bytes }}
@@ -211,7 +242,15 @@ runs:
 
     - name: Post sticky comment
       id: post
-      if: inputs.skip-comment != 'true' && github.event.pull_request.number != ''
+      # `github.event_name == 'pull_request'` is the load-bearing gate. The
+      # natural-looking `pull_request.number != ''` is unsafe: when the
+      # composite is invoked from a non-pull_request event (push,
+      # workflow_dispatch, schedule), `pull_request` is null and
+      # `null != ''` evaluates to **true** in GHA expressions — the step
+      # would run unconditionally on every non-PR event and either fail
+      # loud or post to a wrong issue. Pair both checks: event type AND
+      # number-present, plus the explicit `skip-comment` opt-out.
+      if: inputs.skip-comment != 'true' && github.event_name == 'pull_request' && github.event.pull_request.number != ''
       uses: marocchino/sticky-pull-request-comment@v2
       with:
         # marocchino's `header:` is a substring match against the body. The
@@ -224,6 +263,11 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
     - name: Emit step summary
+      # `always()` so the diagnostic summary renders on loud-mode render
+      # failures and on marocchino 403s — exactly the cases where the
+      # summary's languages/touched-count/exit-code/comment-file context is
+      # most useful for debugging.
+      if: always()
       shell: bash
       env:
         AUDIT_PR_COMMENT_PATH: ${{ steps.render.outputs.comment-path }}

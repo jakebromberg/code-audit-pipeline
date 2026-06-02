@@ -171,17 +171,39 @@ jobs:
           code-audit version
 
       - name: Seed a corrupted catalog
-        # Build a minimal .audit/catalogs/ layout where one catalog file
-        # exists but contains malformed JSON. `code-audit report` should
-        # surface engine.Run errors and the pr-comment renderer should
-        # collapse to the fail-quiet body.
+        # Build a .audit/ layout where meta.json registers a catalog whose
+        # underlying file contains malformed JSON. Both halves are required:
+        # without meta.json, `wireCatalogs` returns "not cached" — which
+        # `runReportQuery` classifies as `skipped`, not `err` — and the
+        # fail-quiet body is never rendered (the test would falsely pass
+        # via the "no structural impact" branch). With meta.json present,
+        # `wireCatalogs` returns the catalog path → engine.Run reads the
+        # file → JSON parse fails → query lands as an error → emitPRComment
+        # sees `allFailed` → failQuietBody is emitted.
         run: |
           set -Eeuo pipefail
           audit_root="${RUNNER_TEMP}/audit"
           mkdir -p "$audit_root/.audit/catalogs"
-          # Malformed JSON triggers the engine.Run error path; the
-          # fail-quiet branch substitutes the diagnostic body.
+          # Malformed JSON content the engine will try (and fail) to parse.
           printf 'this is not json\n' > "$audit_root/.audit/catalogs/type-catalog.json"
+          # Minimal meta.json that registers the catalog by kind — just
+          # enough for cache.CatalogPath("type-catalog") to return ok=true
+          # so the engine reaches the parse step. Other registered fields
+          # (source_sha, envelope_summary, cli_args) aren't needed for the
+          # error-surface path the test exercises.
+          cat > "$audit_root/.audit/meta.json" <<'EOF'
+          {
+            "audit_version": "selftest",
+            "root": "/tmp/selftest",
+            "catalogs": {
+              "type-catalog": {
+                "path": "catalogs/type-catalog.json",
+                "source_sha": "",
+                "cli_args": {}
+              }
+            }
+          }
+          EOF
           echo '[]' > "${RUNNER_TEMP}/touched.json"
           echo "AUDIT_ROOT=$audit_root" >> "$GITHUB_ENV"
           echo "TOUCHED_PATH=${RUNNER_TEMP}/touched.json" >> "$GITHUB_ENV"

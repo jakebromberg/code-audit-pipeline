@@ -51,8 +51,17 @@ fi
 # Resolve the raw touched-file list. Fixture path wins when TOUCHED_RAW is
 # explicitly set; otherwise fall back to gh pr view. This lets the selftest
 # inject a deterministic input without standing up a real PR.
+#
+# Initialize the tempfile vars BEFORE installing the trap so that under
+# `set -u` the EXIT handler can reference them safely even when one mktemp
+# fails before the next is assigned. raw_clean is created later but covered
+# by the same trap via the `${var:-}` guards inside it.
+raw_file=''
+raw_clean=''
+filtered_acc=''
+trap 'rm -f "${raw_file:-}" "${raw_clean:-}" "${filtered_acc:-}"' EXIT
+
 raw_file="$(mktemp)"
-trap 'rm -f "$raw_file" "$filtered_acc"' EXIT
 filtered_acc="$(mktemp)"
 : > "$filtered_acc"
 
@@ -71,7 +80,6 @@ fi
 
 # Strip blank lines once up front. Every per-language filter inherits this.
 raw_clean="$(mktemp)"
-trap 'rm -f "$raw_file" "$raw_clean" "$filtered_acc"' EXIT
 grep -v '^[[:space:]]*$' "$raw_file" > "$raw_clean" || true
 
 raw_count="$(wc -l < "$raw_clean" | tr -d ' ')"
@@ -187,7 +195,10 @@ fi
 filter_file_hashes < "$raw_clean" >> "$filtered_acc"
 
 for lang in "${langs[@]}"; do
-  lang="$(echo "$lang" | tr -d '[:space:]')"
+  # Lowercase + strip whitespace so callers passing `TypeScript`, `Swift`,
+  # `Go` (the proper-noun forms humans use) hit the correct case branch
+  # rather than falling through to the passthrough `*)` arm.
+  lang="$(echo "$lang" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
   [ -z "$lang" ] && continue
   case "$lang" in
     typescript) filter_typescript < "$raw_clean" >> "$filtered_acc" ;;
@@ -212,7 +223,11 @@ done
 filtered_count="$(awk '!seen[$0]++' "$filtered_acc" | grep -cv '^[[:space:]]*$' || true)"
 echo "resolve-touched: $filtered_count filtered path(s) after per-language walkers" >&2
 
-json="$(awk '!seen[$0]++' "$filtered_acc" | grep -v '^[[:space:]]*$' | jq -R . | jq -sc .)"
+# `|| true` on the awk-into-grep stage: when every deduped row is blank,
+# `grep -v` exits 1 and `pipefail` would abort the substitution before the
+# fallback below could substitute `[]`. The downstream jq still receives an
+# empty input on that path, and the `[ -z "$json" ]` guard handles it.
+json="$(awk '!seen[$0]++' "$filtered_acc" | { grep -v '^[[:space:]]*$' || true; } | jq -R . | jq -sc .)"
 # Guard against the all-stripped-to-empty case where jq emits null on empty
 # input. The downstream `code-audit report --touched` validates this as a
 # JSON array, so substitute an empty-array literal when needed.
