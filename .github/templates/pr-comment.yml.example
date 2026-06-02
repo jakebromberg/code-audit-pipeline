@@ -1,0 +1,51 @@
+# code-audit PR comment — consumer template
+#
+# Copy this file to `.github/workflows/code-audit-pr-comment.yml` in your
+# repository to enable the structural-impact PR comment via the pipeline's
+# reusable workflow.
+#
+# Required setup:
+#   1. Settings → Actions → General → Workflow permissions → "Read and
+#      write permissions". The marocchino sticky-comment poster requires
+#      `pull-requests: write`.
+#   2. For private repos calling into the public code-audit-pipeline:
+#      no extra config — the default GITHUB_TOKEN can read public actions.
+#
+# See docs/integrations/github-action.md in this repo for the full setup
+# walk-through, including the `base.sha` cache-key pitfall (relevant when
+# a future release adds baseline-diff filtering), ACSL v1.4 licensing
+# notes, and troubleshooting for forks and draft PRs.
+
+name: code-audit (PR comment)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Uncomment to skip the audit on Markdown-only or workflow-config PRs.
+    # Be deliberate — a docs PR may still touch source the catalogs index.
+    # paths-ignore:
+    #   - '**/*.md'
+    #   - '.github/**'
+    #   - '.gitignore'
+    #   - 'LICENSE'
+
+# The reusable workflow declares these same permissions internally, but a
+# job-level permissions block here is required: reusable-workflow
+# permissions are an UPPER BOUND, never an additive grant.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    uses: jakebromberg/code-audit-pipeline/.github/workflows/pr-comment-reusable.yml@v1
+    # All inputs are optional. Defaults reproduce a sensible baseline:
+    # auto-detect languages, install the v1 binary, comment with the v1
+    # marker, fail-quiet on extraction errors.
+    # with:
+    #   audit-binary-version: v1
+    #   marker: code-audit-pipeline-v1
+    #   size-cap-bytes: 60000
+    #   on-extraction-failure: quiet
+    #   # Override the runner for Swift-containing repos:
+    #   # runner: macos-latest

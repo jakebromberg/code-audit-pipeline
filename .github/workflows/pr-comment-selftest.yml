@@ -1,0 +1,236 @@
+name: pr-comment selftest
+
+# End-to-end exercise of the audit-pr-comment composite against this
+# repository's own checkout. Runs on PRs that touch the action surface so
+# regressions surface before they ship.
+#
+# Two jobs, both with `skip-comment: true` so the selftest never tries to
+# post a real PR comment (which would require pull-requests: write across
+# the org and risk noisy comments on every selftest run). The rendered
+# comment.md is uploaded as an artifact for manual inspection.
+#
+#   * dogfood-render — exercises the happy path. audit-core detects this
+#     repo's TypeScript extractor, runs the report, asserts the rendered
+#     body carries the sticky marker and a structural-impact body OR the
+#     "no structural impact" fallback (which is also a valid output).
+#   * fail-quiet-render — injects a syntactically invalid extractor input
+#     to force the engine.Run / parseJSONLRows error path, asserts the
+#     fail-quiet body wording and exit-code 0 contract.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/actions/audit-pr-comment/**'
+      - '.github/actions/audit-core/**'
+      - '.github/workflows/pr-comment-reusable.yml'
+      - '.github/workflows/pr-comment-selftest.yml'
+      - 'extractors/**'
+      - 'cmd/code-audit/**'
+      - 'internal/cli/report.go'
+      - 'internal/cli/report_pr_comment.go'
+      - 'internal/diffmatch/**'
+      - 'pipeline/queries/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/actions/audit-pr-comment/**'
+      - '.github/actions/audit-core/**'
+      - '.github/workflows/pr-comment-reusable.yml'
+      - '.github/workflows/pr-comment-selftest.yml'
+      - 'extractors/**'
+      - 'cmd/code-audit/**'
+      - 'internal/cli/report.go'
+      - 'internal/cli/report_pr_comment.go'
+      - 'internal/diffmatch/**'
+      - 'pipeline/queries/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dogfood-render:
+    name: audit-pr-comment dogfood (render-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go (build code-audit from source)
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
+      - name: Run audit-pr-comment composite
+        id: audit
+        # `skip-comment: true` keeps this selftest from posting a real
+        # comment. We exercise the render path only; posting is exercised
+        # implicitly by the marocchino step's input contract.
+        uses: ./.github/actions/audit-pr-comment
+        env:
+          # The composite reads pull_request.number for resolve-touched.sh,
+          # but the selftest also runs on push (where no PR context exists).
+          # Inject a fixture-mode touched set via the script's TOUCHED_RAW
+          # path so we don't depend on a live PR. The composite forwards
+          # PR_NUMBER through env; we override TOUCHED_RAW at the script
+          # boundary by exporting it before the composite's resolve step.
+          #
+          # NB: this is a selftest-only escape hatch. Real consumer
+          # workflows always pass through gh pr view in the normal path.
+          TOUCHED_RAW: |
+            internal/cli/report.go
+            internal/cli/report_pr_comment.go
+            extractors/typescript/type-catalog.mjs
+        with:
+          root: .
+          audit-binary-version: build-from-source
+          languages: typescript
+          marker: code-audit-pipeline-selftest
+          skip-comment: 'true'
+
+      - name: Assert rendered comment
+        env:
+          COMMENT_PATH: ${{ steps.audit.outputs.comment-path }}
+          TOUCHED_COUNT: ${{ steps.audit.outputs.touched-count }}
+          EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
+        run: |
+          set -Eeuo pipefail
+          echo "comment-path=$COMMENT_PATH"
+          echo "touched-count=$TOUCHED_COUNT"
+          echo "exit-code=$EXIT_CODE"
+
+          test -s "$COMMENT_PATH" || { echo "ERROR: comment.md missing or empty"; exit 1; }
+
+          # First line must be the marker. marocchino's `header:` scan
+          # would otherwise miss it and post a new comment per run.
+          head -n1 "$COMMENT_PATH" | grep -q '^<!-- code-audit-pipeline-selftest -->$' \
+            || { echo "ERROR: marker line missing or malformed:"; head -n1 "$COMMENT_PATH"; exit 1; }
+
+          # Exit code 0 — render path must not fail-loud on the happy
+          # path. (`on-extraction-failure` default is `quiet` for
+          # pr-comment mode, so even a partial extraction failure would
+          # still return 0 here. We assert the strong invariant anyway.)
+          [ "$EXIT_CODE" = "0" ] || { echo "ERROR: expected exit-code=0, got '$EXIT_CODE'"; exit 1; }
+
+          # Body must be either: the "no structural impact" line (touched
+          # set was non-empty but no cluster matched), OR a non-empty
+          # body that includes at least one ## section header. Both are
+          # valid selftest outputs.
+          if grep -q '^_No structural impact:' "$COMMENT_PATH"; then
+            echo "Rendered: no-structural-impact body (valid)"
+          elif grep -qE '^## ' "$COMMENT_PATH"; then
+            echo "Rendered: cluster sections present (valid)"
+          else
+            echo "ERROR: unexpected body shape — neither no-impact notice nor cluster sections found"
+            cat "$COMMENT_PATH"
+            exit 1
+          fi
+
+      - name: Upload rendered comment artifact
+        if: always() && steps.audit.outputs.comment-path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-audit-pr-comment-selftest-dogfood
+          path: ${{ steps.audit.outputs.comment-path }}
+          retention-days: 7
+          if-no-files-found: warn
+
+  fail-quiet-render:
+    name: audit-pr-comment fail-quiet contract (corrupted catalog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go (build code-audit from source)
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
+      - name: Build + install code-audit from source
+        run: |
+          set -Eeuo pipefail
+          go generate ./...
+          go build -o /tmp/code-audit ./cmd/code-audit
+          sudo install -m 0755 /tmp/code-audit /usr/local/bin/code-audit
+          code-audit version
+
+      - name: Seed a corrupted catalog
+        # Build a minimal .audit/catalogs/ layout where one catalog file
+        # exists but contains malformed JSON. `code-audit report` should
+        # surface engine.Run errors and the pr-comment renderer should
+        # collapse to the fail-quiet body.
+        run: |
+          set -Eeuo pipefail
+          audit_root="${RUNNER_TEMP}/audit"
+          mkdir -p "$audit_root/.audit/catalogs"
+          # Malformed JSON triggers the engine.Run error path; the
+          # fail-quiet branch substitutes the diagnostic body.
+          printf 'this is not json\n' > "$audit_root/.audit/catalogs/type-catalog.json"
+          echo '[]' > "${RUNNER_TEMP}/touched.json"
+          echo "AUDIT_ROOT=$audit_root" >> "$GITHUB_ENV"
+          echo "TOUCHED_PATH=${RUNNER_TEMP}/touched.json" >> "$GITHUB_ENV"
+
+      - name: Render with --on-extraction-failure quiet (must exit 0)
+        run: |
+          set -Eeuo pipefail
+          comment_path="${RUNNER_TEMP}/comment.md"
+          # Capture the exit code rather than letting set -e abort: we
+          # specifically assert the quiet contract here.
+          set +e
+          code-audit report \
+            --root "$AUDIT_ROOT" \
+            --touched "$TOUCHED_PATH" \
+            --mode pr-comment \
+            --marker code-audit-pipeline-selftest \
+            --on-extraction-failure quiet \
+            --detected-languages typescript \
+            --output "$comment_path"
+          rc=$?
+          set -e
+          [ "$rc" = "0" ] || { echo "ERROR: expected exit 0 (quiet mode), got $rc"; exit 1; }
+          test -s "$comment_path" || { echo "ERROR: comment.md empty"; exit 1; }
+          head -n1 "$comment_path" | grep -q '^<!-- code-audit-pipeline-selftest -->$' \
+            || { echo "ERROR: marker missing"; head -n1 "$comment_path"; exit 1; }
+          grep -q 'report unavailable' "$comment_path" \
+            || { echo "ERROR: fail-quiet body wording missing"; cat "$comment_path"; exit 1; }
+          echo "fail-quiet contract held"
+          cat "$comment_path"
+
+      - name: Render with --on-extraction-failure loud (must exit non-zero)
+        run: |
+          set -Eeuo pipefail
+          comment_path="${RUNNER_TEMP}/comment-loud.md"
+          set +e
+          code-audit report \
+            --root "$AUDIT_ROOT" \
+            --touched "$TOUCHED_PATH" \
+            --mode pr-comment \
+            --marker code-audit-pipeline-selftest \
+            --on-extraction-failure loud \
+            --detected-languages typescript \
+            --output "$comment_path"
+          rc=$?
+          set -e
+          # loud mode: every section failed → exit 1; the body still
+          # carries the fail-quiet wording for the marocchino step.
+          [ "$rc" != "0" ] || { echo "ERROR: expected non-zero exit (loud mode), got $rc"; exit 1; }
+          test -s "$comment_path" || { echo "ERROR: comment.md empty"; exit 1; }
+          grep -q 'report unavailable' "$comment_path" \
+            || { echo "ERROR: fail-quiet body wording missing in loud-mode output"; cat "$comment_path"; exit 1; }
+          echo "loud contract held (exit $rc, body present)"
