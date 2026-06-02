@@ -123,17 +123,26 @@ permissions:
 # the latest push's run is what produces the comment. marocchino's
 # sticky-comment behavior means the final comment converges to the
 # latest-push state regardless of mid-run cancellations.
+# `|| github.run_id` is the fallback so non-pull_request invocations (a
+# consumer wiring this into workflow_dispatch for preview/debug, or into
+# push for a main-branch run) don't collapse into a single global slot
+# called `code-audit-pr-comment-` that cancels every other run regardless
+# of PR. github.run_id is unique per-run so it effectively disables
+# cross-run cancellation on non-PR triggers — correct behavior given the
+# concurrency rationale (force-push coalescing) only makes sense for PRs.
 concurrency:
-  group: code-audit-pr-comment-${{ github.event.pull_request.number }}
+  group: code-audit-pr-comment-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   comment:
-    # Skip draft PRs by default. Consumers wanting comments on drafts can
-    # override their own `if:` at the calling workflow level (the reusable's
-    # `if:` doesn't compose, so this is a documented default rather than a
-    # hard floor).
-    if: github.event.pull_request.draft == false
+    # Skip draft PRs by default. `draft != true` (not `draft == false`):
+    # when `pull_request` is null on non-PR triggers, `null == false` is
+    # *false* in GHA — the job would silently skip with no log explaining
+    # why. `null != true` is *true*, so non-PR invocations proceed through
+    # this gate and are stopped by the downstream step-level `if:` guards
+    # (e.g. the marocchino post step), which surface the no-op explicitly.
+    if: github.event.pull_request.draft != true
     runs-on: ${{ inputs.runner }}
     outputs:
       comment-path: ${{ steps.audit.outputs.comment-path }}
@@ -222,7 +231,10 @@ jobs:
           marker: ${{ inputs.marker }}
           size-cap-bytes: ${{ inputs.size-cap-bytes }}
           on-extraction-failure: ${{ inputs.on-extraction-failure }}
-          audit-root: ${{ inputs.audit-root != '' && inputs.audit-root || format('{0}/audit', runner.temp) }}
+          # Pass the input verbatim; the composite's `Derive paths` step
+          # falls back to `${{ runner.temp }}/audit` when empty, so the
+          # reusable doesn't need to duplicate that default expression.
+          audit-root: ${{ inputs.audit-root }}
           github-token: ${{ github.token }}
           skip-comment: ${{ inputs.skip-comment }}
 
