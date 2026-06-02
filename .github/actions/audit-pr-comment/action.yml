@@ -276,6 +276,15 @@ runs:
       # loud or post to a wrong issue. Pair both checks: event type AND
       # number-present, plus the explicit `skip-comment` opt-out.
       if: inputs.skip-comment != 'true' && github.event_name == 'pull_request' && github.event.pull_request.number != ''
+      # `continue-on-error: true` so fork PRs don't redden the consumer's CI.
+      # A `pull_request` event raised from a fork carries a read-only
+      # GITHUB_TOKEN that lacks `pull-requests: write`; marocchino exits 1
+      # with "Resource not accessible by integration" and — without this
+      # guard — the whole composite would fail loud. Documented contract in
+      # both this composite's README and docs/integrations/github-action.md
+      # says fork PRs "skip gracefully"; the `posted` output (which reads
+      # `steps.post.outcome`) lets callers detect the no-op when they care.
+      continue-on-error: true
       uses: marocchino/sticky-pull-request-comment@v2
       with:
         # marocchino's `header:` is a substring match against the body. The

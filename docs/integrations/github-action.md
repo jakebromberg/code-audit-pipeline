@@ -106,7 +106,7 @@ The marocchino sticky-comment poster requires `pull-requests: write`. The Action
 1. **Repo level.** Settings → Actions → General → Workflow permissions → "Read and write permissions". The default ("Read repository contents and packages permissions") denies write — first-time installers hit a 403 here.
 2. **Org level.** Org Settings → Actions → General → Workflow permissions. If set to a stricter default (e.g. "Read repository contents permissions"), the repo-level toggle CANNOT override it. The org admin must whitelist the repo or relax the org default.
 
-The failure mode is identical for both: marocchino's step errors out with `Resource not accessible by integration` and exit code 1. The render artifact still uploads (good for debugging), but no comment is posted.
+The failure mode is identical for both: marocchino's step internally exits 1 with `Resource not accessible by integration`. The composite marks that step with `continue-on-error: true` so the surrounding workflow stays green (the render artifact still uploads for debugging and `outputs.posted` is `'false'`), but no comment is posted. Consumers wanting CI to redden on this case can branch on `outputs.posted == 'false' && outputs.exit-code == '0'` in a follow-up step.
 
 If you can't get org-level permissions changed, an alternative is to switch to a personal access token (PAT) with `repo` scope, stored as a repo secret. Pass it via the `github-token` input — but PATs are tied to a human user and rotate when that user leaves, so the workflow-permissions toggle is strongly preferred.
 

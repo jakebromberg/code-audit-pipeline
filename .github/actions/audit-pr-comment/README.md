@@ -34,8 +34,10 @@ For end-user setup, see [`docs/integrations/github-action.md`](../../../docs/int
 |---|---|
 | `comment-path` | Absolute path to the rendered `comment.md`. |
 | `touched-count` | Number of repo-relative paths in the resolved touched set. |
-| `posted` | `true` iff the marocchino step ran (and did not skip). |
-| `exit-code` | Exit code from `code-audit report`. |
+| `posted` | `'true'` iff the marocchino sticky-comment step ran to success; `'false'` for skipped (non-PR event, `skip-comment: 'true'`, fork PR) AND for failure. Derived from `steps.post.outcome == 'success'`. |
+| `exit-code` | Exit code from `code-audit report` (0 in quiet mode; 0/1 in loud mode). |
+| `languages-detected` | Comma-separated languages audit-core ran extractors for. Forwarded from audit-core's same-named output. |
+| `binary-version-used` | Resolved code-audit release tag actually installed (e.g. `v1.2.3`). Forwarded from audit-core's same-named output. |
 
 ## Caller requirements
 
