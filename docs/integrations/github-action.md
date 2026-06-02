@@ -39,37 +39,11 @@ That's the entire install. Two things to verify before the first PR:
 1. **Workflow permissions toggle.** Repo Settings → Actions → General → Workflow permissions must be set to *"Read and write permissions"*. The default *"Read repository contents and packages permissions"* denies `pull-requests: write`, and the marocchino step will fail with a 403 on the first run. See §6 below.
 2. **Org-level permissions.** If your org has *Settings → Actions → General → Workflow permissions* set to a stricter default, the repo-level toggle above can't override it. Talk to your org admin to whitelist this repo. The failure mode is identical to (1).
 
-## 3. `.audit/config.yml`
+## 3. Configuring per-project defaults
 
-The composite reads an optional `.audit/config.yml` at the repo root for project defaults. All values are also expressible as workflow inputs; the precedence chain is:
-
-```
-workflow `with:` inputs   (highest priority — caller wins)
-  ↓
-.audit/config.yml         (project default)
-  ↓
-composite defaults        (hardcoded baseline)
-```
-
-Schema:
-
-```yaml
-languages: typescript,swift   # optional; default: auto-detect from repo-root markers
-root: .                       # optional; default: '.'
-include-tests: false          # optional; default: false
-include-file-hashes: true     # optional; default: true
-```
-
-The `extractor:` and `queries:` overrides that were sketched in the original issue body are dropped — neither is currently needed because the binary's bootstrap path (#214) handles extractor + query discovery centrally. If you need extractor or query overrides, build code-audit locally and use `audit-binary-version: build-from-source` (only valid for this pipeline's own CI; not supported on sibling consumers).
+v1 of this action does not read a project-level config file — every setting is expressed as a workflow input in the consumer's `.github/workflows/code-audit-pr-comment.yml`. The `audit-binary-version: build-from-source` value is reserved for this pipeline's own selftest and is rejected by the composite when invoked outside this repo.
 
 ### Monorepo example
-
-```yaml
-# .audit/config.yml — monorepo with multiple language stacks
-languages: typescript,swift,go
-root: .
-include-file-hashes: true
-```
 
 ```yaml
 # .github/workflows/code-audit-pr-comment.yml
@@ -77,18 +51,24 @@ jobs:
   audit:
     uses: jakebromberg/code-audit-pipeline/.github/workflows/pr-comment-reusable.yml@v1
     with:
-      # Override only the runner — Swift needs macOS.
+      languages: typescript,swift,go
+      include-file-hashes: true
+      # Override the runner — Swift needs macOS.
       runner: macos-latest
 ```
 
 ### Polyrepo example
 
 ```yaml
-# .audit/config.yml — TypeScript-only repo
-languages: typescript
+# .github/workflows/code-audit-pr-comment.yml
+jobs:
+  audit:
+    uses: jakebromberg/code-audit-pipeline/.github/workflows/pr-comment-reusable.yml@v1
+    with:
+      languages: typescript
 ```
 
-No workflow `with:` block needed; the defaults handle everything else.
+A `.audit/config.yml` for project defaults is tracked as a follow-up — once shipped, it will sit between workflow inputs (highest priority) and composite defaults (lowest), letting repo maintainers commit shared defaults without every workflow author re-specifying them.
 
 ## 4. The `base.sha` cache-key pitfall (relevant to v2)
 

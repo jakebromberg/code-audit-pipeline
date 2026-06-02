@@ -24,7 +24,7 @@ For end-user setup, see [`docs/integrations/github-action.md`](../../../docs/int
 | `marker` | `code-audit-pipeline-v1` | Sticky comment marker. Forwarded to `code-audit report --marker` AND marocchino's `header:`. |
 | `size-cap-bytes` | `60000` | Body cap; min `1024` (enforced by `code-audit report`). |
 | `on-extraction-failure` | `quiet` | `quiet` exits 0 with a diagnostic body; `loud` exits non-zero. |
-| `audit-root` | runner temp | Where audit-core writes `.audit/`. |
+| `audit-root` | `${{ runner.temp }}/audit` | Where audit-core writes `.audit/`. |
 | `github-token` | `${{ github.token }}` | Forwarded to audit-core (release download) and marocchino (sticky comment post). |
 | `skip-comment` | `false` | When `true`, render the comment but skip the marocchino post. Used by the selftest. |
 
