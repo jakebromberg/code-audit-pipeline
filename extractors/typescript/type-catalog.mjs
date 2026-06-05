@@ -772,6 +772,14 @@ function extractFromFile(filePath, pkgName, pkgRoot, { collectImports, includeIm
       line: line + 1,
       ...partial,
       extends: partial.extends ?? [],
+      // `conforms_to` is the protocol/interface-implementation axis (issue
+      // #217). The TS extractor doesn't currently emit class declarations
+      // as type records, so `implements` clauses have no decl to attach
+      // to — every TS row carries `conforms_to: []` for shape uniformity
+      // with the Swift extractor and for forward-compat with any future TS
+      // class-emission pass. See docs/pipeline-contract.md § "Heritage split
+      // convention".
+      conforms_to: partial.conforms_to ?? [],
       references: refs,
       references_count: refs.length,
     });

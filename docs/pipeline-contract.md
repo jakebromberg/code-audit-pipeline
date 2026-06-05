@@ -54,7 +54,8 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
 
       "touched_in_window": false,           // true if file is in --touched JSON list
 
-      "extends": ["BaseEntry"],             // direct supertype names, sorted alpha
+      "extends": ["BaseEntry"],             // class-like supertype names, sorted alpha
+      "conforms_to": ["Codable", "Sendable"], // protocol/interface conformance names, sorted alpha
       "references": [                       // names referenced in body, sorted by name
         { "name": "FlowsheetMetadata", "kind": "type-ref" }
       ],
@@ -65,7 +66,8 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "type_text": "Pick<X, 'a' | 'b'>",   // for non-object type aliases
       "type_sig": "pick<x, 'a' | 'b'>",    // normalized type_text for clustering
       "infer_ref": { "kind": "InferSelectModel", "table": "user" }, // ORM-derived types
-      "db_table_name": "user_accounts"      // for ORM table declarations
+      "db_table_name": "user_accounts",     // for ORM table declarations
+      "wraps_notification_name": "AVPlayer.rateDidChangeNotification" // Swift only; see Heritage split convention
     }
   ]
 }
@@ -162,6 +164,7 @@ The data is intended for cross-repo queries (`consumers-of.jq` — #156; `rename
   "type_only": false,                   // true for `import type {…}` or per-binding `{ type X }`
 
   "extends": [],                        // always; required-on-every-row
+  "conforms_to": [],                    // always; required-on-every-row (import rows never declare conformance)
   "references": [],                     // always; required-on-every-row
   "references_count": 0                 // always; required-on-every-row
 }
@@ -211,9 +214,11 @@ Every cluster query in `pipeline/queries/*.jq` either: (a) filters on `.kind` ag
 
 ## Required fields
 
-- `name`, `kind`, `package`, `file`, `line`, `is_test`, `extends`, `references`, `references_count`
+- `name`, `kind`, `package`, `file`, `line`, `is_test`, `extends`, `conforms_to`, `references`, `references_count`
 
-`extends` and `references` are arrays (possibly empty) on every entry — never `null`. Empty extends/references arrays still serialize so consumers can do `(entries[] | select(.references_count == 0))` without a `// 0` fallback. `references_count` is a derived field: `references | length`. It's emitted explicitly because jq queries that filter on it are noisier with the inline length call.
+`extends`, `conforms_to`, and `references` are arrays (possibly empty) on every entry — never `null`. Empty arrays still serialize so consumers can do `(entries[] | select(.references_count == 0))` or `(entries[] | select((.conforms_to // []) | any))` without surprising-null guards. `references_count` is a derived field: `references | length`. It's emitted explicitly because jq queries that filter on it are noisier with the inline length call.
+
+The kinds that admit no inheritance clause syntactically (currently: `type-alias-other`) may omit `extends` and `conforms_to` entirely rather than emit empty arrays — the queries treat absent and `[]` identically via `.extends // []`.
 
 ## Required-when-applicable
 
@@ -224,6 +229,7 @@ Every cluster query in `pipeline/queries/*.jq` either: (a) filters on `.kind` ag
 
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
 - `reference_count` (grep-style identifier-occurrence count, populated by a second pass — coarse "name appears anywhere in scanned source" signal; distinct from `references_count` which is the structural count of typed references inside this declaration's body)
+- `wraps_notification_name` (string | absent) — the verbatim body-expression text of a Swift type's `static var name: Notification.Name { … }` member, when the type also conforms to a `*NotificationMessage` protocol (or Foundation's iOS 26 `NotificationCenter.MainActorMessage` / `NotificationCenter.AsyncMessage`). Populated only by the Swift extractor. Consumed by `notification-wrapper-grouping.jq` to find cross-module notification cross-fire. The query joins by exact string equality — convention: both wrappers spell the name the same way (`AVPlayer.rateDidChangeNotification` verbatim at both sites, not one as `.rateDidChangeNotification`). Singular today; the schema can grow to an array additively if a multi-name case appears.
 
 ### `infer_ref` shape
 
@@ -248,11 +254,11 @@ This is additive: intersection types that resolve get treated like normal shape-
 
 **Order-dependent conflict resolution.** When two operands declare the same field name with different types (`type X = { a: string } & { a: number }`), the extractor keeps the FIRST occurrence in declaration order. TypeScript's true semantics would intersect (`string & number = never`); the substrate flattens to the first binding so `shape_sig` stays deterministic. This is a clustering tool, not a type-checker — if you need conflict detection, compare operand field-type pairs separately, or wait for the dedicated check that will accompany #5 (substrate-emitted cluster_ids).
 
-### `extends` and `references` semantics
+### `extends`, `conforms_to`, and `references` semantics
 
-Both fields are sorted (alphabetically), deduplicated, and never `null` (empty array on declarations with no heritage / no body refs).
+All three fields are sorted (alphabetically), deduplicated, and never `null` (empty array on declarations with no heritage / no body refs).
 
-**`extends`** is the supertype-edge axis. Populated for:
+**`extends`** is the supertype-edge axis (class-like inheritance). Populated for:
 
 | Construct | `extends` content |
 |---|---|
@@ -263,6 +269,46 @@ Both fields are sorted (alphabetically), deduplicated, and never `null` (empty a
 | `type X = A \| B` (union) | `[]` — union variants are *references*, not `extends`. Treating union variants as inheritance would over-claim. |
 | `type X = Pick<Y, "a">` (utility alias) | `[]` — the utility itself isn't a supertype. |
 | `zod-object`, `drizzle-table`, `type-alias-other` | `[]` in v1 (best-effort) |
+| Swift `class Foo: BaseClass` | `["BaseClass"]` |
+| Swift `extension Foo` (`extension Foo: Bar`) | `["Foo"]` (the extended type — the extension IS-A extension-of Foo) |
+| Swift enum raw-value `enum E: String` | `["String"]` (raw-value position is syntactically indistinguishable from a leading protocol — see Heritage split convention) |
+
+**`conforms_to`** is the protocol/interface-implementation axis (issue #217). Populated for:
+
+| Construct | `conforms_to` content |
+|---|---|
+| Swift `class Foo: BaseClass, ProtoA, ProtoB` | `["BaseClass", "ProtoA", "ProtoB"]` (see default-both rule below) |
+| Swift `struct S: Sendable, Hashable` | `["Hashable", "Sendable"]` |
+| Swift `protocol P: Q, R` | `["Q", "R"]` (protocol heritage is conformance-only; Swift forbids protocol↔class inheritance) |
+| Swift `extension Foo: Codable` | `["Codable"]` |
+| TS `class X implements I, J` | `["I", "J"]` (slot reserved; TS class emission deferred — see below) |
+| TS `interface`, `type-alias-*`, `zod-object`, `drizzle-table` | `[]` (interfaces use `extends`, not `implements`) |
+
+### Heritage split convention
+
+Issue #217 separated class-like inheritance (`extends`) from protocol/interface conformance (`conforms_to`) because cluster queries want to distinguish "all members share a real superclass" (rare and unrevealing) from "all members conform to a non-trivial protocol" (the high-signal *already-abstracted* case).
+
+**Swift's default-both rule.** Swift's surface syntax does not distinguish a class supertype from a protocol conformance:
+
+```swift
+class Foo: BaseClass, ProtoA { … }
+//        ↑ class       ↑ protocol — both look the same syntactically
+```
+
+Without a type resolver, the extractor cannot disambiguate at extraction time. So it consults two curated sets in `extractors/swift/Sources/swift-catalog/Common.swift`:
+
+- `CLASS_LIKE_INHERITED` — well-known Apple-framework classes that only appear as superclasses (`NSObject`, `UIView`, `UIViewController`, etc.).
+- `PROTOCOL_LIKE_INHERITED` — well-known stdlib / SwiftUI / Foundation protocols that only appear as conformances (`Equatable`, `Hashable`, `Codable`, `Sendable`, SwiftUI's `View`, `App`, `ViewModifier`, etc.).
+
+For identifiers in neither set, the **default-both** rule applies: the identifier is appended to BOTH `extends` and `conforms_to`. Cluster queries disambiguate at query time by joining against the target's `kind` in the catalog (a `kind: "interface"` target is a protocol; everything else is class-like). This trades up-front extraction precision for downstream recoverability via deterministic catalog joins — the same pattern V7 §6.5's package-graph uses for cross-package resolution.
+
+`ProtocolDeclSyntax` is the one exception: Swift forbids protocols inheriting from concrete types, so every identifier in a protocol's heritage clause is unambiguously a conformance. The extractor short-circuits the partition and routes the whole list to `conforms_to`.
+
+**Extensions** record their *extended type* in `extends` (the extension IS-A extension-of that type, structurally), with any explicit conformance clause contributing only to `conforms_to`. So `extension Foo: Hashable {}` emits `extends: ["Foo"]`, `conforms_to: ["Hashable"]`.
+
+**TypeScript asymmetry (v1).** The TS extractor doesn't currently emit class declarations as type records, so `class X implements I` has no row to attach `conforms_to: ["I"]` to. Every emitted TS row carries `conforms_to: []` for shape uniformity. Cluster queries that consume `conforms_to` (the *already-abstracted* downrank — see `pipeline/queries/_canonical.jq` `is_already_abstracted_cluster`) will never fire on TS-only catalogs in v1. The schema slot is reserved; wiring TS class emission is a forward-compatible follow-up.
+
+**The wxyc-ios-64 use-case** that motivated the split: a 5-member `exact-duplicates` cluster of types all conforming to `MusicService` (a non-trivial protocol) shouldn't surface as a missing-abstraction candidate — the abstraction already exists. With `conforms_to` populated and a `kind`-aware lookup against the catalog's protocol records, cluster queries can demote these clusters (move them to a separate section) without losing the signal entirely. See `notification-wrapper-grouping.jq` and the `is_already_abstracted_cluster` helper for the consumer side.
 
 **`references`** is the names-in-body axis. Populated for every declaration with a recognizable type body. Each entry is `{name: string, kind: "type-ref"}`. The `kind` slot is present from v1 so future kinds (`call-ref`, `import-ref`) extend without a schema break.
 
