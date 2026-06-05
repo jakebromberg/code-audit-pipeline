@@ -1,6 +1,6 @@
 # Schema v2 query audit
 
-A per-query walk of the 28 cluster queries in `pipeline/queries/` against the v2 contract. Status options:
+A per-query walk of the 29 cluster queries in `pipeline/queries/` against the v2 contract (excluding `_canonical.jq`, the shared-helper file). Status options:
 
 - **Runs unchanged** — query depends only on fields v2 carries forward (`shape_sig`, `fields`, `name`, `kind`, `package`, `file`, `line`, `is_test`, `generated`, `touched_in_window`) and either has no `kind` whitelist or has a whitelist that only ever encounters TS-shaped records.
 - **Runs unchanged but with a documented gap** — query operates correctly on v2 catalogs but its TS-shaped `kind` whitelist will under-count polyglot catalogs (e.g., misses `pydantic-model`, `type` (Swift), `dataclass`, etc.). Refits live in `#116` follow-ups.
@@ -42,13 +42,13 @@ Audit procedure for each query: (1) field-reference grep to enumerate what field
 
 ## Summary
 
-- **28 queries audited.**
+- **29 queries audited.**
 - **0 need refit.** No query depends on a v2-redefined or v2-removed field.
 - **17 run unchanged.** Pure shape / body / files / hashes queries.
-- **11 run unchanged but with a documented gap.** Each carries a TS-shaped `kind` whitelist that will under-count polyglot catalogs. These are listed against `#116` for the polyglot kind-list expansion.
+- **12 run unchanged but with a documented gap.** Each carries a TS-shaped `kind` whitelist that will under-count polyglot catalogs. These are listed against `#116` for the polyglot kind-list expansion.
 
 ## Refit plan
 
-The 11 gap queries follow the same pattern: replace the TS-shaped whitelist (`interface | type-alias-* | zod-object | drizzle-table`) with a cross-language kind set (`interface | type-alias-* | zod-object | drizzle-table | pydantic-model | dataclass | type | enum`). The mechanical refit is small per query. The decision of whether to widen each query — vs. ship language-specific siblings — is the conversation in `#116`, not this PR.
+The 12 gap queries follow the same pattern: replace the TS-shaped whitelist (`interface | type-alias-* | zod-object | drizzle-table`) with a cross-language kind set (`interface | type-alias-* | zod-object | drizzle-table | pydantic-model | dataclass | type | enum`). The mechanical refit is small per query. The decision of whether to widen each query — vs. ship language-specific siblings — is the conversation in `#116`, not this PR.
 
 `relations[]` is forward-compat for shape-based queries: queries that today read `extends[]` can switch to `relations[] | select(.kind == "extends") | .target`. The TS extractor continues to emit `extends[]` (v1 shorthand) until `#116` decides per-query which form to consume.

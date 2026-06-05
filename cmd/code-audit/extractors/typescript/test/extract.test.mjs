@@ -61,9 +61,15 @@ test('output is wrapped as schema_version 2.0 with identity/provenance metadata'
     `generated_at: ${cat.generated_at}`);
   assert.ok(Array.isArray(cat.entries));
   // Every entry carries a 40-char hex symbol_id derived from (package, file, name, kind).
+  // Every entry carries language === "typescript" — v2 core-projection requirement
+  // (#137). This is the per-entry stamp, distinct from the wrapper-level
+  // extractor.language; a refactor that drops the per-entry stamp would otherwise
+  // ship green because the wrapper-level check at line 53 would still pass.
   for (const e of cat.entries) {
     assert.ok(/^[0-9a-f]{40}$/.test(e.symbol_id),
       `symbol_id for ${e.kind}/${e.name}: ${e.symbol_id}`);
+    assert.equal(e.language, 'typescript',
+      `entry ${e.kind}/${e.name} missing or wrong per-entry language: ${e.language}`);
   }
 });
 
