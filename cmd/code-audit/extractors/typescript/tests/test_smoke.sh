@@ -23,7 +23,7 @@ EXTRACTOR="$EXTRACTOR_ROOT/type-catalog.mjs"
 
 # Contract version. Bump in lockstep with docs/pipeline-contract.md and the
 # SCHEMA_VERSION constant in type-catalog.mjs.
-EXPECTED_SCHEMA_VERSION="1.1"
+EXPECTED_SCHEMA_VERSION="1.2"
 
 # Declaration names the fixture is expected to produce. Order doesn't matter;
 # the assertion sorts both sides.
@@ -254,15 +254,23 @@ else
   fail "ListenerSchema fields degraded: $(jq -c '[.entries[] | select(.name == "ListenerSchema") | .fields]' "$RUN1")"
 fi
 
-# ---- Assertion: determinism (byte-identical across runs) -------------------
+# ---- Assertion: determinism (structurally identical across runs) -----------
 # The fixture is intentionally multi-file so this guard exercises inter-file
 # ordering, not just a single file's source-position order. A regression that
 # breaks cross-file determinism (e.g., parallel processing) would surface here.
-if cmp -s "$RUN1" "$RUN2"; then
-  pass "byte-identical output across two consecutive runs"
+#
+# The v1.2 envelope's `generated_at` is wall-clock and will differ between
+# runs; strip it before comparison so the rest of the envelope (extractor
+# block, fingerprint_v, entries) remains a determinism guard.
+RUN1_STRIPPED="$WORK_DIR/run1-stripped.json"
+RUN2_STRIPPED="$WORK_DIR/run2-stripped.json"
+jq 'del(.generated_at)' "$RUN1" > "$RUN1_STRIPPED"
+jq 'del(.generated_at)' "$RUN2" > "$RUN2_STRIPPED"
+if cmp -s "$RUN1_STRIPPED" "$RUN2_STRIPPED"; then
+  pass "byte-identical output across two consecutive runs (excluding generated_at)"
 else
   fail "non-deterministic output between runs (diff follows)"
-  diff -u "$RUN1" "$RUN2" | head -40 >&2
+  diff -u "$RUN1_STRIPPED" "$RUN2_STRIPPED" | head -40 >&2
 fi
 
 # Re-enable -e for the final exit-code propagation.

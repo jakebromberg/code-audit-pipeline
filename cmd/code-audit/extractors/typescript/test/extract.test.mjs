@@ -47,13 +47,24 @@ test('extractor exits 0 against the fixture tree', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
 });
 
-test('output is wrapped as schema_version 1.1', () => {
+test('output is wrapped as schema_version 1.2 with identity/provenance metadata', () => {
   const cat = extractCatalog();
-  assert.equal(cat.schema_version, '1.1');
+  assert.equal(cat.schema_version, '1.2');
   assert.equal(cat.extractor.language, 'typescript');
   assert.equal(cat.extractor.name, 'type-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(cat.extractor.version), `version: ${cat.extractor.version}`);
+  // v1.2 additions: extractor.source_sha (git sha or "unknown"), fingerprint_v, generated_at.
+  assert.ok(typeof cat.extractor.source_sha === 'string' && cat.extractor.source_sha.length > 0,
+    `source_sha: ${cat.extractor.source_sha}`);
+  assert.equal(cat.fingerprint_v, 'shape_sig:1');
+  assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(cat.generated_at),
+    `generated_at: ${cat.generated_at}`);
   assert.ok(Array.isArray(cat.entries));
+  // Every entry carries a 40-char hex symbol_id derived from (package, file, name, kind).
+  for (const e of cat.entries) {
+    assert.ok(/^[0-9a-f]{40}$/.test(e.symbol_id),
+      `symbol_id for ${e.kind}/${e.name}: ${e.symbol_id}`);
+  }
 });
 
 test('fixture 01: User interface, no heritage, primitive fields', () => {
@@ -237,9 +248,15 @@ test('--emit-references-graph writes a sibling references.json with sorted, dedu
     assert.equal(res.status, 0, `stderr: ${res.stderr}`);
     assert.ok(existsSync(refsPath), 'references.json should be created');
     const refs = JSON.parse(readFileSync(refsPath, 'utf8'));
-    assert.equal(refs.schema_version, '1.1');
-    assert.deepEqual(refs.extractor, { language: 'typescript', name: 'type-catalog', version: refs.extractor.version });
+    assert.equal(refs.schema_version, '1.2');
+    assert.equal(refs.extractor.language, 'typescript');
+    assert.equal(refs.extractor.name, 'type-catalog');
     assert.match(refs.extractor.version, /^\d+\.\d+\.\d+$/, 'extractor.version must be semver-shaped');
+    assert.ok(typeof refs.extractor.source_sha === 'string' && refs.extractor.source_sha.length > 0,
+      `references.extractor.source_sha: ${refs.extractor.source_sha}`);
+    assert.equal(refs.fingerprint_v, 'shape_sig:1');
+    assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(refs.generated_at),
+      `references.generated_at: ${refs.generated_at}`);
     assert.ok(Array.isArray(refs.edges));
     assert.ok(refs.edges.length > 0, 'expected at least one edge');
     for (const edge of refs.edges) {
@@ -274,14 +291,17 @@ test('--emit-references-graph writes a sibling references.json with sorted, dedu
       seen.add(key);
     }
 
-    // Determinism: a second invocation produces byte-identical output.
+    // Determinism: a second invocation produces structurally identical output.
+    // The v1.2 envelope's wall-clock `generated_at` is stripped before compare
+    // so the rest of the envelope (extractor block + payload) is still a
+    // determinism guard.
     const refsPath2 = join(tmp, 'references-2.json');
     runExtractor(['--emit-references-graph', refsPath2]);
-    assert.equal(
-      readFileSync(refsPath, 'utf8'),
-      readFileSync(refsPath2, 'utf8'),
-      'two runs must produce identical references.json',
-    );
+    const refs1 = JSON.parse(readFileSync(refsPath, 'utf8'));
+    const refs2 = JSON.parse(readFileSync(refsPath2, 'utf8'));
+    delete refs1.generated_at;
+    delete refs2.generated_at;
+    assert.deepEqual(refs1, refs2, 'two runs must produce structurally identical references.json (excluding generated_at)');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -298,10 +318,16 @@ test('without --emit-references-graph, no sibling file is created', () => {
   }
 });
 
-test('output is deterministic across runs', () => {
+test('output is deterministic across runs (modulo v1.2 generated_at)', () => {
   const a = runExtractor();
   const b = runExtractor();
-  assert.equal(a.stdout, b.stdout, 'two invocations must produce byte-identical stdout');
+  const catA = JSON.parse(a.stdout);
+  const catB = JSON.parse(b.stdout);
+  // v1.2 envelope carries a wall-clock generated_at; strip before compare so
+  // the extractor's structural output is still a determinism guard.
+  delete catA.generated_at;
+  delete catB.generated_at;
+  assert.deepEqual(catA, catB, 'two invocations must produce structurally identical output (excluding generated_at)');
 });
 
 test('extends and references arrays are sorted on every entry', () => {

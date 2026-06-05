@@ -85,3 +85,45 @@ test('writeSiblingArtifact defaults log to process.stderr.write when omitted', (
     assert.ok(readFileSync(path, 'utf8').length > 0);
   });
 });
+
+test('writeSiblingArtifact propagates v1.2 fingerprint_v and generated_at when provided', () => {
+  withTmpDir((dir) => {
+    const path = join(dir, 'out.json');
+    writeSiblingArtifact({
+      path,
+      schema_version: '1.2',
+      extractorMeta: { language: 'typescript', name: 'type-catalog', version: '0.5.0', source_sha: 'abcdef0123456789abcdef0123456789abcdef01' },
+      fingerprint_v: 'shape_sig:1',
+      generated_at: '2026-06-04T19:00:00Z',
+      payloadKey: 'edges',
+      payload: [],
+      summary: 'noop',
+      log: () => {},
+    });
+    const got = JSON.parse(readFileSync(path, 'utf8'));
+    assert.equal(got.schema_version, '1.2');
+    assert.equal(got.fingerprint_v, 'shape_sig:1');
+    assert.equal(got.generated_at, '2026-06-04T19:00:00Z');
+    assert.equal(got.extractor.source_sha, 'abcdef0123456789abcdef0123456789abcdef01');
+    // Key order: schema_version, extractor, fingerprint_v, generated_at, edges.
+    assert.deepEqual(Object.keys(got), ['schema_version', 'extractor', 'fingerprint_v', 'generated_at', 'edges']);
+  });
+});
+
+test('writeSiblingArtifact omits fingerprint_v / generated_at when caller does not pass them (back-compat)', () => {
+  withTmpDir((dir) => {
+    const path = join(dir, 'out.json');
+    writeSiblingArtifact({
+      path,
+      schema_version: '1.1',
+      extractorMeta: { language: 'typescript', name: 'type-catalog', version: '0.5.0' },
+      payloadKey: 'entries',
+      payload: [],
+      summary: 'noop',
+      log: () => {},
+    });
+    const got = JSON.parse(readFileSync(path, 'utf8'));
+    assert.equal('fingerprint_v' in got, false);
+    assert.equal('generated_at' in got, false);
+  });
+});

@@ -21,6 +21,7 @@
 import ts from 'typescript';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, relative, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -34,7 +35,30 @@ import { EXT_RE, SKIP_DIRS } from './_lib/walk-predicate.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
-const SCHEMA_VERSION = '1.1';
+const SCHEMA_VERSION = '1.2';
+const FINGERPRINT_V = 'shape_sig:1';
+
+// v1.2 identity / provenance — see docs/pipeline-contract.md "Identity and provenance".
+function computeSourceSha() {
+  try {
+    const sha = execSync('git rev-parse HEAD', {
+      cwd: EXTRACTOR_DIR,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    }).trim();
+    if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+  } catch {
+    // fall through
+  }
+  process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');
+  return 'unknown';
+}
+const SOURCE_SHA = computeSourceSha();
+const GENERATED_AT = new Date().toISOString();
+
+function computeSymbolId(pkg, file, name, kind) {
+  return createHash('sha1').update(`${pkg}/${file}/${name}/${kind}`).digest('hex');
+}
 
 const { values } = parseArgs({
   options: {
@@ -358,13 +382,22 @@ for (const [k, v] of Object.entries(byPkg)) {
 }
 process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
+// v1.2 symbol_id pass — sha1(package + "/" + file + "/" + name + "/" + kind), lowercase hex.
+// For method records `name` is already qualified as `ClassName.methodName`.
+for (const e of all) {
+  e.symbol_id = computeSymbolId(e.package, e.file, e.name, e.kind);
+}
+
 const catalog = {
   schema_version: SCHEMA_VERSION,
   extractor: {
     language: 'typescript',
     name: 'function-catalog',
     version: EXTRACTOR_VERSION,
+    source_sha: SOURCE_SHA,
   },
+  fingerprint_v: FINGERPRINT_V,
+  generated_at: GENERATED_AT,
   entries: all,
 };
 

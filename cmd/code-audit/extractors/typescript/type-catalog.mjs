@@ -13,6 +13,8 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from '
 import { join, relative, resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { createHash } from 'node:crypto';
+import { execSync } from 'node:child_process';
 import {
   BUILTIN_TYPE_DENYLIST,
   extractReferences,
@@ -29,7 +31,38 @@ import { resolveOriginPackage } from './_lib/origin-package.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
-const SCHEMA_VERSION = '1.1';
+const SCHEMA_VERSION = '1.2';
+const FINGERPRINT_V = 'shape_sig:1';
+
+// Compute extractor source_sha once at startup. Shells out to git; falls back
+// to "unknown" with a stderr warning when the extractor source isn't in a git
+// checkout (vendored binary, embedded-and-extracted via `code-audit init`,
+// or git missing from PATH).
+function computeSourceSha() {
+  try {
+    const sha = execSync('git rev-parse HEAD', {
+      cwd: EXTRACTOR_DIR,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    }).trim();
+    if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+  } catch {
+    // fall through to unknown
+  }
+  process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');
+  return 'unknown';
+}
+const SOURCE_SHA = computeSourceSha();
+
+// One ISO-8601 timestamp per extraction run, shared across every sibling
+// artifact emitted by this invocation.
+const GENERATED_AT = new Date().toISOString();
+
+// Compute symbol_id per entry. sha1(package + "/" + file + "/" + name + "/" + kind),
+// lowercase hex. See docs/pipeline-contract.md "Identity and provenance".
+function computeSymbolId(pkg, file, name, kind) {
+  return createHash('sha1').update(`${pkg}/${file}/${name}/${kind}`).digest('hex');
+}
 
 // Standard filter-CLI EPIPE handling: a downstream consumer closing the pipe
 // (`… | head -1`) shouldn't surface as a stack trace. Set before any write.
@@ -996,13 +1029,27 @@ if (syntheticCount > 0) {
 }
 process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
+// --- symbol_id pass (v1.2) ---
+// Emit symbol_id on every entry per the contract's "Identity and provenance"
+// section. Synthetic entries (inline-literal types named "Outer.prop") still
+// hash deterministically — the formula doesn't care about source syntactic
+// validity, only that the tuple is stable.
+for (const e of all) {
+  e.symbol_id = computeSymbolId(e.package, e.file, e.name, e.kind);
+}
+
+const EXTRACTOR_META = {
+  language: 'typescript',
+  name: 'type-catalog',
+  version: EXTRACTOR_VERSION,
+  source_sha: SOURCE_SHA,
+};
+
 const catalog = {
   schema_version: SCHEMA_VERSION,
-  extractor: {
-    language: 'typescript',
-    name: 'type-catalog',
-    version: EXTRACTOR_VERSION,
-  },
+  extractor: EXTRACTOR_META,
+  fingerprint_v: FINGERPRINT_V,
+  generated_at: GENERATED_AT,
   entries: all,
 };
 const json = JSON.stringify(catalog, null, 2);
@@ -1054,7 +1101,9 @@ if (values['emit-references-graph']) {
   writeSiblingArtifact({
     path: values['emit-references-graph'],
     schema_version: SCHEMA_VERSION,
-    extractorMeta: { language: 'typescript', name: 'type-catalog', version: EXTRACTOR_VERSION },
+    extractorMeta: EXTRACTOR_META,
+    fingerprint_v: FINGERPRINT_V,
+    generated_at: GENERATED_AT,
     payloadKey: 'edges',
     payload: edges,
     summary: `Wrote references graph (${edges.length} edges) to ${values['emit-references-graph']}`,
@@ -1072,7 +1121,9 @@ if (EMIT_FILES) {
   writeSiblingArtifact({
     path: values['emit-files'],
     schema_version: SCHEMA_VERSION,
-    extractorMeta: { language: 'typescript', name: 'type-catalog', version: EXTRACTOR_VERSION },
+    extractorMeta: EXTRACTOR_META,
+    fingerprint_v: FINGERPRINT_V,
+    generated_at: GENERATED_AT,
     payloadKey: 'entries',
     payload: fileEntries,
     summary: `Wrote files (${fileEntries.length} files, ${edgeCount} edges) to ${values['emit-files']}`,

@@ -1,9 +1,11 @@
-// Tests for the TypeScript function-catalog extractor (#133 v1.1).
+// Tests for the TypeScript function-catalog extractor (#133, v1.2).
 //
-// Validates the v1.1 wrapper shape, signature-level fields (params/return_ref/
-// references/generics), universal flags (is_test/touched_in_window/synthetic),
-// body-fields gating, and overload-head representation. Mirrors the cache
-// pattern used by extract.test.mjs (type-catalog tests).
+// Validates the v1.1+ wrapper shape, v1.2 identity/provenance metadata
+// (fingerprint_v, generated_at, extractor.source_sha, per-entry symbol_id),
+// signature-level fields (params/return_ref/references/generics), universal
+// flags (is_test/touched_in_window/synthetic), body-fields gating, and
+// overload-head representation. Mirrors the cache pattern used by
+// extract.test.mjs (type-catalog tests).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -47,13 +49,22 @@ test('function-catalog: exits 0 against the fixture tree', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
 });
 
-test('function-catalog: output is wrapped as schema_version 1.1', () => {
+test('function-catalog: output is wrapped as schema_version 1.2 with identity/provenance metadata', () => {
   const cat = extractCatalog();
-  assert.equal(cat.schema_version, '1.1');
+  assert.equal(cat.schema_version, '1.2');
   assert.equal(cat.extractor.language, 'typescript');
   assert.equal(cat.extractor.name, 'function-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(cat.extractor.version), `version: ${cat.extractor.version}`);
+  assert.ok(typeof cat.extractor.source_sha === 'string' && cat.extractor.source_sha.length > 0,
+    `source_sha: ${cat.extractor.source_sha}`);
+  assert.equal(cat.fingerprint_v, 'shape_sig:1');
+  assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(cat.generated_at),
+    `generated_at: ${cat.generated_at}`);
   assert.ok(Array.isArray(cat.entries));
+  for (const e of cat.entries) {
+    assert.ok(/^[0-9a-f]{40}$/.test(e.symbol_id),
+      `symbol_id for ${e.kind}/${e.name}: ${e.symbol_id}`);
+  }
 });
 
 test('function-catalog: noLeakPrimitives — primitives surface no type_refs', () => {

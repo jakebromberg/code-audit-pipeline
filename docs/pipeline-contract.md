@@ -14,16 +14,19 @@ Each section below specifies one. Queries in `pipeline/queries/` consume one spe
 
 ## Type catalog (`type-catalog.json`)
 
-The type catalog is a top-level **wrapper object** carrying the schema version, an `extractor` provenance block, and the entry array. (Pre-v1.1 catalogs were a bare array; see [Schema versioning and back-compat](#schema-versioning-and-back-compat) below.)
+The type catalog is a top-level **wrapper object** carrying the schema version, an `extractor` provenance block, identity/timing metadata, and the entry array. (Pre-v1.1 catalogs were a bare array; see [Schema versioning and back-compat](#schema-versioning-and-back-compat) below.)
 
 ```jsonc
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "extractor": {
     "language": "typescript",
     "name": "type-catalog",
-    "version": "0.4.0"                   // extractor package version
+    "version": "0.4.0",                  // extractor package version
+    "source_sha": "9e7ebb5b…"            // git SHA of extractor source tree, or "unknown"
   },
+  "fingerprint_v": "shape_sig:1",        // algorithm tag for shape-clustering signatures
+  "generated_at": "2026-06-04T19:00:00Z",// ISO-8601 timestamp; one value per extraction run
   "entries": [
     {
       "name": "FlowsheetEntry",            // identifier as declared
@@ -31,6 +34,7 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "package": "main",                    // which root this came from
       "file": "src/models/flowsheet.ts",   // path relative to that root
       "line": 42,                           // 1-indexed
+      "symbol_id": "a3f5…",                // sha1(package + "/" + file + "/" + name + "/" + kind), hex lowercase; optional
       "exported": true,                     // true if exported from the file
       "generated": false,                   // true if .d.ts or under generated/
       "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
@@ -282,8 +286,10 @@ When invoked with `--emit-references-graph <path>`, the extractor writes an inve
 
 ```jsonc
 {
-  "schema_version": "1.1",
-  "extractor": { "language": "typescript", "name": "type-catalog", "version": "0.5.0" },
+  "schema_version": "1.2",
+  "extractor": { "language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "9e7ebb5b…" },
+  "fingerprint_v": "shape_sig:1",
+  "generated_at": "2026-06-04T19:00:00Z",
   "edges": [
     {
       "from": { "package": "main", "name": "FlowsheetView" },
@@ -398,12 +404,15 @@ The artifact is opt-in to keep existing extractor invocations byte-stable for us
 
 ```jsonc
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "extractor": {
     "language": "typescript",
     "name": "type-catalog",
-    "version": "0.4.0"
+    "version": "0.4.0",
+    "source_sha": "9e7ebb5b…"
   },
+  "fingerprint_v": "shape_sig:1",
+  "generated_at": "2026-06-04T19:00:00Z",
   "entries": [
     {
       "path": "src/services/flowsheet.service.ts",
@@ -466,16 +475,19 @@ Stderr summary: `Wrote files (<N> files, <M> edges) to <path>`.
 
 ## Function catalog (`function-catalog.json`)
 
-The function catalog is a top-level **wrapper object** (schema v1.1) carrying schema version, extractor provenance, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
+The function catalog is a top-level **wrapper object** (schema v1.2) carrying schema version, extractor provenance, identity/timing metadata, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
 
 ```jsonc
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "extractor": {
     "language": "typescript",
     "name": "function-catalog",
-    "version": "0.5.0"
+    "version": "0.5.0",
+    "source_sha": "9e7ebb5b…"
   },
+  "fingerprint_v": "shape_sig:1",
+  "generated_at": "2026-06-04T19:00:00Z",
   "entries": [
     {
       "name": "betterAuthSessionToAuthenticationData",
@@ -648,15 +660,45 @@ Exit code: `0` if at least one `Package.swift` or `project.pbxproj` was discover
 
 ## Schema versioning and back-compat
 
-The catalog top level carries `schema_version: "1.1"`. The current TS extractor always emits the wrapper form (`{schema_version, extractor, entries}`); the bare-array form is a pre-v1.1 artifact.
+The catalog top level carries `schema_version: "1.2"` (current). The current TS extractor always emits the wrapper form (`{schema_version, extractor, fingerprint_v, generated_at, entries}`); the bare-array form is a pre-v1.1 artifact.
 
-**Query migration.** Queries consume entries via the `entries` helper in `pipeline/queries/_canonical.jq`, which accepts both forms for one deprecation cycle:
+**Format.** Every `schema_version` is a `"MAJOR.MINOR"` string. Patch versions are not represented (doc-only clarifications do not change the schema string).
+
+### Version-bump rules
+
+| Bump | Trigger | Consumer impact |
+|---|---|---|
+| **Patch** (1.x.y → 1.x.(y+1); not represented in `schema_version`) | Documentation clarification only. No schema change. | None. Consumers see no observable difference. |
+| **Minor** (1.x → 1.(x+1)) | Additive change. A new optional per-entry field; a new optional top-level key; a new permitted `kind` value. | Existing consumers continue to work unchanged. New consumers can read the new field. |
+| **Major** (1.x → 2.0) | Redefines or removes existing semantics. Renaming a kind, changing `shape_sig` normalization, removing a field. | The diff machinery (#117) refuses to compare across major bumps; warns across minor. |
+
+**1.1** was a minor bump from 1.0: the bare array became a wrapper object with `schema_version` + `extractor` + `entries`. **1.2** is a minor bump from 1.1: `symbol_id`, `fingerprint_v`, `generated_at`, and `extractor.source_sha` are all additive and optional from a consumer's perspective. Existing queries continue to work against 1.2 catalogs unchanged.
+
+### Identity and provenance (v1.2)
+
+**`symbol_id`** — `sha1(package + "/" + file + "/" + name + "/" + kind).toLowerCase()`. Hex string. Optional per entry; consumers synthesize the same value on read when absent. Extractors should emit when they can. The audit query [`pipeline/queries/symbol-id-collisions.jq`](../pipeline/queries/symbol-id-collisions.jq) flags any catalog where the formula collides — i.e., where two entries share `(package, file, name, kind)`. The 595-entry case-study corpus surfaces zero collisions; this is the regression guard.
+
+**`fingerprint_v`** — algorithm tag for shape-clustering signatures. Current value `"shape_sig:1"` corresponds to the existing `sorted | join("|") | lower` definition. Bumping the algorithm bumps the tag. Cross-catalog cluster queries that join on `shape_sig` first check this tag matches between catalogs. Convention: `"<algorithm>:<version>"`. Future variants (`"body_hash:1"` for function-catalog body clustering, `"field_names_sig:1"` for shape-of-named-members independent of types — per #118) follow the same convention. No formal enum; the registry grows lazily.
+
+**`generated_at`** — ISO-8601 timestamp recorded once at extraction time and reused across every sibling artifact (`type-catalog.json`, `references.json`, `files.json`, `function-catalog.json`) emitted by the same extractor invocation. Downstream diff and snapshot tooling consume it; queries do not depend on it.
+
+**`extractor.source_sha`** — git SHA of the extractor's own source tree, captured by shelling out to `git rev-parse HEAD` inside the extractor's source directory. For extractors run outside a git checkout (vendored binary, `code-audit init`-extracted sources without `.git`, missing `git` on PATH), records the literal string `"unknown"` and emits exactly this stderr warning at extraction start:
+
+```
+warning: extractor source not in a git checkout; source_sha recorded as "unknown"
+```
+
+This is the load-bearing field for "did the extractor itself change between two catalogs?" The diff machinery (#117) treats `source_sha` mismatch as a reason to warn (extractor output may have changed semantics despite identical `extractor.version`).
+
+### Query migration
+
+Queries consume entries via the `entries` helper in `pipeline/queries/_canonical.jq`, which accepts both forms for one deprecation cycle:
 
 ```jq
 def entries:
   if type == "array" then .                            # v1.0 bare-array
-  elif type == "object" and has("entries") then .entries  # v1.1 wrapper
-  else error("expected catalog: top-level must be array (v1.0) or object with .entries (v1.1)")
+  elif type == "object" and has("entries") then .entries  # v1.1+ wrapper
+  else error("expected catalog: top-level must be array (v1.0) or object with .entries (v1.1+)")
   end;
 ```
 
