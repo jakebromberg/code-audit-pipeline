@@ -64,6 +64,8 @@ test('function-catalog: output is wrapped as schema_version 2.0 with identity/pr
   for (const e of cat.entries) {
     assert.ok(/^[0-9a-f]{40}$/.test(e.symbol_id),
       `symbol_id for ${e.kind}/${e.name}: ${e.symbol_id}`);
+    assert.equal(e.language, 'typescript',
+      `entry ${e.kind}/${e.name} missing or wrong per-entry language: ${e.language}`);
   }
 });
 
