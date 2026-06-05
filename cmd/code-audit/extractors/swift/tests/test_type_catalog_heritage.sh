@@ -103,6 +103,14 @@ assert_jq "NoNameMsg.wraps_notification_name absent" 'null' \
 assert_jq "NoNameMsg.conforms_to"   '[]' \
     '[.[] | select(.name=="NoNameMsg")][0].conforms_to' "$OUT"
 
+# Case 8: ModelOwningANotificationName — declares static var name:
+# Notification.Name but does NOT conform to a *NotificationMessage protocol.
+# wraps_notification_name MUST be absent: the conformance gate (issue #222
+# rule 1 + rule 2 conjunction) prevents tagging unrelated types that happen
+# to expose a name property for their own reasons.
+assert_jq "ModelOwningANotificationName.wraps_notification_name absent (no *NotificationMessage conformance)" 'null' \
+    '[.[] | select(.name=="ModelOwningANotificationName")][0].wraps_notification_name' "$OUT"
+
 # Schema: every type row carries extends and conforms_to as arrays (never null).
 # Typealiases are exempt — they have no inheritance clause syntactically.
 non_alias_count="$(echo "$OUT" | jq '[.[] | select(.kind != "type-alias-other")] | length')"
