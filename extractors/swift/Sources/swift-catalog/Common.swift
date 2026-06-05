@@ -35,6 +35,34 @@ struct FieldStructured: Encodable {
     var isStatic: Bool
 }
 
+/// One type-catalog record. Mirrors the schema in
+/// `docs/pipeline-contract.md` § "Type catalog".
+///
+/// **Heritage axes** (issue #217). `extends` carries the class-like
+/// inheritance edges (Swift class superclass; TS interface extending
+/// interface; TS intersection-type named operand). `conformsTo` carries
+/// the protocol/interface-implementation edges (Swift `: Protocol`;
+/// TS `class implements I`). When an inherited identifier is neither
+/// in the curated CLASS_LIKE_INHERITED nor PROTOCOL_LIKE_INHERITED set,
+/// the Swift extractor's `extractHeritageEdges` appends it to BOTH
+/// arrays per the documented "default-both" rule — cluster queries
+/// disambiguate by joining against the target's `kind` at query time.
+///
+/// Both arrays are sorted alphabetically and de-duplicated before
+/// emission. Empty arrays still serialize (per the pipeline contract's
+/// "required-on-every-row" rule). The kinds that admit no inheritance
+/// clause syntactically (currently: `type-alias-other`, populated by
+/// `TypeAliasDeclSyntax`) carry the array fields as nil so they don't
+/// appear in the JSON.
+///
+/// `wrapsNotificationName` (issue #222) captures the identifier text
+/// of a `Notification.Name` value wrapped by a type conforming to a
+/// `*NotificationMessage` protocol (project-specific naming, or
+/// Foundation's iOS 26 `NotificationCenter.MainActorMessage` /
+/// `NotificationCenter.AsyncMessage`). The wrapper detector reads
+/// the `static var name: Notification.Name { ... }` member's body as
+/// text — string equality is the join key for the
+/// notification-wrapper-grouping query.
 struct TypeRecord: Encodable {
     var name: String
     var kind: String
@@ -51,8 +79,75 @@ struct TypeRecord: Encodable {
     var generics: String?
     var typeText: String?
     var typeSig: String?
-    var extending: String?
+    // `extending` was the pre-#217 single-string field carrying an
+    // extension's extended type. It's superseded by `extends` (plural,
+    // sorted array). The value formerly stored here now lives as
+    // `extends: [<extendedType>]` on extension records.
+    var extends: [String]?
+    var conformsTo: [String]?
+    var wrapsNotificationName: String?
 }
+
+/// Stdlib / SwiftUI / Apple-framework identifiers that, when appearing
+/// in an inheritance clause on a struct / class / actor / enum / extension,
+/// are unambiguously a SUPERCLASS edge — never a protocol conformance.
+///
+/// Intentionally narrow: only the high-frequency Apple-framework classes
+/// that appear in heritage clauses. Anything outside this set falls
+/// through to the "default-both" rule (appended to both `extends` and
+/// `conforms_to`). Cluster queries disambiguate at query-time by joining
+/// against the target's `kind` in the catalog.
+let CLASS_LIKE_INHERITED: Set<String> = [
+    "NSObject",
+    "UIView", "UIViewController", "UIControl", "UIResponder",
+    "UIWindow", "UITableViewCell", "UICollectionViewCell",
+    "NSView", "NSViewController", "NSResponder", "NSWindow",
+    "CALayer",
+    "Operation", "Thread",
+]
+
+/// Stdlib / SwiftUI / Foundation protocol identifiers that, when
+/// appearing in an inheritance clause, are unambiguously a CONFORMANCE
+/// edge — never a superclass.
+///
+/// This set is intentionally narrow (precision over recall). Adding a
+/// name here means "we are confident this is always a protocol";
+/// guessing wrong would put an actual superclass into `conforms_to` and
+/// silently degrade the cluster queries. The default-both rule is the
+/// safety net for anything we're not sure about.
+let PROTOCOL_LIKE_INHERITED: Set<String> = [
+    // Stdlib markers and common protocols
+    "Equatable", "Hashable", "Comparable",
+    "Codable", "Decodable", "Encodable",
+    "Sendable", "AnyObject", "AnyActor",
+    "CustomStringConvertible", "CustomDebugStringConvertible",
+    "Error", "LocalizedError",
+    "Identifiable", "RawRepresentable", "CaseIterable", "OptionSet",
+    "Collection", "Sequence", "IteratorProtocol",
+    "BidirectionalCollection", "RandomAccessCollection",
+    "MutableCollection", "RangeReplaceableCollection",
+    "AsyncSequence", "AsyncIteratorProtocol",
+    "Observable", "ObservableObject",
+    "ExpressibleByStringLiteral", "ExpressibleByIntegerLiteral",
+    "ExpressibleByArrayLiteral", "ExpressibleByDictionaryLiteral",
+    "ExpressibleByNilLiteral", "ExpressibleByBooleanLiteral",
+    "ExpressibleByFloatLiteral", "ExpressibleByStringInterpolation",
+    "Numeric", "BinaryInteger", "BinaryFloatingPoint", "FloatingPoint",
+    "FixedWidthInteger", "SignedInteger", "UnsignedInteger",
+    "Strideable",
+    // SwiftUI
+    "View", "App", "Scene", "ViewModifier",
+    "PreviewProvider", "EnvironmentKey", "PreferenceKey",
+    "Shape", "InsettableShape", "LayoutValueKey",
+    "Animatable", "DynamicProperty",
+    "ToolbarContent", "Commands", "Gesture", "ButtonStyle",
+    "LabelStyle", "TextFieldStyle", "ToggleStyle", "PickerStyle",
+    // Combine
+    "Publisher", "Subscriber", "Subscription", "Cancellable",
+    // Foundation notification-wrapper protocols (iOS 26+)
+    "NotificationCenter.MainActorMessage",
+    "NotificationCenter.AsyncMessage",
+]
 
 struct FunctionRecord: Encodable {
     var name: String
