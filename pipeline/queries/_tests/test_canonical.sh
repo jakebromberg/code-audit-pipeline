@@ -187,6 +187,79 @@ assert_eq "honors CROSS_REPO_STALE_DAYS=30" \
   "30" \
   "$(run_env 'CROSS_REPO_STALE_DAYS=30' 'stale_threshold_days')"
 
+echo "=== intersect_string_arrays ==="
+assert_eq "empty input yields empty array" \
+  '[]' \
+  "$(run '[] | intersect_string_arrays | tojson')"
+
+assert_eq "single input passes through unchanged" \
+  '["a","b"]' \
+  "$(run '[["a","b"]] | intersect_string_arrays | tojson')"
+
+assert_eq "two arrays — common elements preserved in first-array order" \
+  '["b","c"]' \
+  "$(run '[["a","b","c"], ["b","c","d"]] | intersect_string_arrays | tojson')"
+
+assert_eq "no overlap yields empty" \
+  '[]' \
+  "$(run '[["a","b"], ["c","d"]] | intersect_string_arrays | tojson')"
+
+assert_eq "three arrays — only universal members survive" \
+  '["b"]' \
+  "$(run '[["a","b","c"], ["b","c","d"], ["b","e"]] | intersect_string_arrays | tojson')"
+
+echo "=== protocols_index ==="
+# Build a tiny synthetic catalog (bare-array v1.0 form, handled by `entries`).
+# Two interface records sharing a name should merge their fields[]; a
+# non-interface row should be ignored.
+PROTOS_FIXTURE='[
+  {"name":"MusicService","kind":"interface","fields":["fetch(id:String):Track","search(query:String):[Track]"]},
+  {"name":"MusicService","kind":"interface","fields":["save(track:Track):Void"]},
+  {"name":"Sendable","kind":"interface","fields":[]},
+  {"name":"NotAProtocol","kind":"type-alias-object","fields":["a:Int","b:String"]}
+]'
+
+assert_eq "indexes by name; merges fields across same-name records" \
+  '["fetch(id:String):Track","save(track:Track):Void","search(query:String):[Track]"]' \
+  "$(echo "$PROTOS_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; protocols_index | .MusicService.fields | tojson')"
+
+assert_eq "marker protocol with empty fields indexes to empty fields" \
+  '[]' \
+  "$(echo "$PROTOS_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; protocols_index | .Sendable.fields | tojson')"
+
+assert_eq "non-interface kinds are excluded from the index" \
+  'null' \
+  "$(echo "$PROTOS_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; protocols_index | .NotAProtocol // null | tojson')"
+
+echo "=== is_already_abstracted_cluster ==="
+# Hand-crafted index: MusicService is a non-trivial protocol (3 fields);
+# Sendable is a marker (0 fields).
+IDX='{"MusicService":{"kind":"interface","fields":["fetch","save","search"]},"Sendable":{"kind":"interface","fields":[]}}'
+
+assert_eq "cluster sharing a non-trivial protocol is demoted" \
+  'true' \
+  "$(run "[{\"conforms_to\":[\"MusicService\",\"Sendable\"]},{\"conforms_to\":[\"MusicService\"]},{\"conforms_to\":[\"MusicService\",\"Codable\"]}] | is_already_abstracted_cluster(${IDX})")"
+
+assert_eq "cluster sharing only a marker (Sendable) is NOT demoted" \
+  'false' \
+  "$(run "[{\"conforms_to\":[\"Sendable\"]},{\"conforms_to\":[\"Sendable\"]}] | is_already_abstracted_cluster(${IDX})")"
+
+assert_eq "cluster with no shared conformance is NOT demoted" \
+  'false' \
+  "$(run "[{\"conforms_to\":[\"A\"]},{\"conforms_to\":[\"B\"]}] | is_already_abstracted_cluster(${IDX})")"
+
+assert_eq "pair (2-element array) sharing a real protocol is demoted (near-duplicates contract)" \
+  'true' \
+  "$(run "[{\"conforms_to\":[\"MusicService\"]},{\"conforms_to\":[\"MusicService\"]}] | is_already_abstracted_cluster(${IDX})")"
+
+assert_eq "cluster where one member has no conforms_to is NOT demoted (intersection collapses)" \
+  'false' \
+  "$(run "[{\"conforms_to\":[\"MusicService\"]},{}] | is_already_abstracted_cluster(${IDX})")"
+
+assert_eq "cluster sharing a name unknown to \$protocols_idx is NOT demoted" \
+  'false' \
+  "$(run "[{\"conforms_to\":[\"UnregisteredProto\"]},{\"conforms_to\":[\"UnregisteredProto\"]}] | is_already_abstracted_cluster(${IDX})")"
+
 echo "=== output_format ==="
 assert_eq "default is text" \
   "text" \

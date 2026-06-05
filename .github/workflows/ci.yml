@@ -29,6 +29,7 @@ jobs:
             pipeline/_tests/test_audit_core.sh \
             .github/actions/audit-core/scripts/detect-languages.sh \
             extractors/swift/tests/test_package_graph.sh \
+            extractors/swift/tests/test_type_catalog_heritage.sh \
             extractors/typescript/tests/test_smoke.sh
 
   pipeline:
@@ -206,3 +207,6 @@ jobs:
 
       - name: Integration tests (package-graph)
         run: tests/test_package_graph.sh
+
+      - name: Integration tests (type-catalog heritage — extends, conforms_to, wraps_notification_name)
+        run: tests/test_type_catalog_heritage.sh

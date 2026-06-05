@@ -10,10 +10,29 @@
 import Foundation
 import SwiftSyntax
 
+/// Discriminator for the kind of declaration whose inheritance clause we're
+/// extracting. The split matters in two places: (1) protocol declarations
+/// admit only protocol conformances in their heritage list (Swift forbids
+/// a protocol inheriting from a concrete type), so we route the whole list
+/// to `conformsTo`. (2) Other decl kinds use the curated CLASS_LIKE_INHERITED
+/// vs PROTOCOL_LIKE_INHERITED partition with the default-both fallback.
+///
+/// Case names append `Decl` for cases that would otherwise collide with
+/// Swift keywords (`enum`, `extension`, `protocol`). This mirrors the
+/// SwiftSyntax node-type suffix convention (`EnumDeclSyntax`,
+/// `ExtensionDeclSyntax`, `ProtocolDeclSyntax`) and keeps the mapping legible.
+enum DeclaringKind {
+    case structDecl, classDecl, actorDecl, enumDecl, extensionDecl, protocolDecl
+}
+
 final class TypeCatalogVisitor: SyntaxVisitor {
     let file: WalkedFile
     let converter: SourceLocationConverter
     var records: [TypeRecord] = []
+    /// Tally of types emitted with a non-nil `wraps_notification_name` field.
+    /// Surfaced in the type-subcommand stderr summary so an audit knows
+    /// whether the detection pass found anything without grepping the JSON.
+    var notificationWrappersDetected: Int = 0
     private var nameStack: [String] = []
 
     init(file: WalkedFile, tree: SourceFileSyntax) {
@@ -32,7 +51,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            inheritanceClause: node.inheritanceClause,
+            declaringKind: .structDecl
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -52,7 +72,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            inheritanceClause: node.inheritanceClause,
+            declaringKind: .classDecl
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -72,7 +93,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: node.genericParameterClause,
             members: node.memberBlock,
-            extending: nil
+            inheritanceClause: node.inheritanceClause,
+            declaringKind: .actorDecl
         )
         nameStack.append(node.name.text)
         return .visitChildren
@@ -92,7 +114,8 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: nil,
             members: node.memberBlock,
-            extending: nil,
+            inheritanceClause: node.inheritanceClause,
+            declaringKind: .protocolDecl,
             includeMethodSignatures: true
         )
         nameStack.append(node.name.text)
@@ -119,6 +142,12 @@ final class TypeCatalogVisitor: SyntaxVisitor {
 
     override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
         let extended = node.extendedType.trimmedDescription
+        // Extensions record their extended type in `extends` (the extension
+        // IS-A extension-of that type), independent of the inheritance clause.
+        // The clause itself contributes only to `conformsTo` via the
+        // `.extensionDecl` discriminator in extractHeritageEdges; the
+        // extended-type name is injected by emitShapeBearing through
+        // `extendedTypeForExtension`.
         emitShapeBearing(
             simpleName: extended,
             kind: "extension",
@@ -126,7 +155,9 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             modifiers: node.modifiers,
             generics: nil,
             members: node.memberBlock,
-            extending: extended
+            inheritanceClause: node.inheritanceClause,
+            declaringKind: .extensionDecl,
+            extendedTypeForExtension: extended
         )
         nameStack.append(extended)
         return .visitChildren
@@ -157,6 +188,12 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let generics = node.genericParameterClause {
             record.generics = generics.parameters.map { $0.name.text }.joined(separator: ",")
         }
+        // Typealiases admit no inheritance clause syntactically; extends and
+        // conformsTo stay nil so the JSON omits the fields entirely. This
+        // distinguishes "the record genuinely has no inheritance" (kinds that
+        // can have an inheritance clause but don't declare one — emit `[]`)
+        // from "the record's syntactic form admits no inheritance clause"
+        // (typealiases — omit the field).
         records.append(record)
         return .visitChildren
     }
@@ -181,6 +218,66 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         return true
     }
 
+    /// Walk an inheritance clause and partition the inherited identifiers
+    /// into supertype (`extends`) vs. protocol conformance (`conformsTo`).
+    ///
+    /// Routing rules:
+    ///
+    /// - `.protocolDecl`: Swift forbids a protocol from inheriting from a
+    ///   concrete type, so every inherited identifier MUST be a protocol.
+    ///   Whole list → `conformsTo`; `extends` stays empty.
+    ///
+    /// - `.extensionDecl`: The clause contains only conformances (the
+    ///   extension's extended type is recorded separately by the caller).
+    ///   Whole list → `conformsTo`; `extends` is populated by the caller
+    ///   with the extended type's name.
+    ///
+    /// - struct / class / actor / enum: per-identifier dispatch against
+    ///   the curated CLASS_LIKE_INHERITED and PROTOCOL_LIKE_INHERITED sets
+    ///   in Common.swift. Identifiers in neither set fall through to the
+    ///   "default-both" rule: appended to both `extends` and `conformsTo`
+    ///   so cluster queries can disambiguate via the target's `kind` at
+    ///   query time. (For enums, the first inherited identifier is the
+    ///   raw-value type by Swift convention — `enum Status: String, Codable`
+    ///   — and the syntactic position is indistinguishable from a leading
+    ///   protocol. The curated PROTOCOL_LIKE_INHERITED set routes `Codable`
+    ///   correctly; the default-both rule on `String` lands it in both
+    ///   arrays, and the query-time `kind`-join sorts it out.)
+    ///
+    /// Both returned arrays are sorted lexicographically and de-duplicated.
+    /// Empty input clause → ([], []).
+    private func extractHeritageEdges(
+        of clause: InheritanceClauseSyntax?,
+        declaringKind kind: DeclaringKind
+    ) -> (extends: [String], conformsTo: [String]) {
+        guard let clause else { return ([], []) }
+        let identifiers = clause.inheritedTypes.map { $0.type.trimmedDescription }
+
+        switch kind {
+        case .protocolDecl, .extensionDecl:
+            // Whole list is conformance-only.
+            let sorted = Array(Set(identifiers)).sorted()
+            return ([], sorted)
+
+        case .structDecl, .classDecl, .actorDecl, .enumDecl:
+            var extends: Set<String> = []
+            var conforms: Set<String> = []
+            for id in identifiers {
+                if CLASS_LIKE_INHERITED.contains(id) {
+                    extends.insert(id)
+                } else if PROTOCOL_LIKE_INHERITED.contains(id) {
+                    conforms.insert(id)
+                } else {
+                    // Default-both: cluster queries disambiguate via the
+                    // target's `kind` at query time.
+                    extends.insert(id)
+                    conforms.insert(id)
+                }
+            }
+            return (extends.sorted(), conforms.sorted())
+        }
+    }
+
     private func emitShapeBearing(
         simpleName: String,
         kind: String,
@@ -188,7 +285,9 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         modifiers: DeclModifierListSyntax,
         generics: GenericParameterClauseSyntax?,
         members: MemberBlockSyntax,
-        extending: String?,
+        inheritanceClause: InheritanceClauseSyntax?,
+        declaringKind: DeclaringKind,
+        extendedTypeForExtension: String? = nil,
         includeMethodSignatures: Bool = false
     ) {
         let line = converter.location(for: position).line
@@ -208,9 +307,30 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let g = generics {
             record.generics = g.parameters.map { $0.name.text }.joined(separator: ",")
         }
-        if let ext = extending {
-            record.extending = ext
+        let (extendsFromClause, conformsFromClause) =
+            extractHeritageEdges(of: inheritanceClause, declaringKind: declaringKind)
+        // For extensions, the extended type is injected into `extends`
+        // alongside any clause-derived contributions (which extractHeritageEdges
+        // has already emptied for the .extensionDecl path).
+        if let extendedName = extendedTypeForExtension {
+            record.extends = Array(Set([extendedName] + extendsFromClause)).sorted()
+        } else {
+            record.extends = extendsFromClause
         }
+        record.conformsTo = conformsFromClause
+
+        // Notification-wrapper detection (issue #222). Scan the member block
+        // for a `static var name: Notification.Name { ... }` and record the
+        // body expression text. Skipped on protocol decls — a protocol's own
+        // requirement declaration doesn't WRAP a notification name, it just
+        // requires that conformers do.
+        if declaringKind != .protocolDecl,
+           let wrapName = extractNotificationName(from: members)
+        {
+            record.wrapsNotificationName = wrapName
+            notificationWrappersDetected += 1
+        }
+
         records.append(record)
     }
 
@@ -265,7 +385,83 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         if let generics = node.genericParameterClause {
             record.generics = generics.parameters.map { $0.name.text }.joined(separator: ",")
         }
+        let (extendsFromClause, conformsFromClause) =
+            extractHeritageEdges(of: node.inheritanceClause, declaringKind: .enumDecl)
+        record.extends = extendsFromClause
+        record.conformsTo = conformsFromClause
         records.append(record)
+    }
+
+    // MARK: - notification-wrapper detection
+
+    /// Find a `static var name: Notification.Name { <expr> }` declaration in
+    /// the given member block and return the body expression's text.
+    ///
+    /// Recognized patterns:
+    ///
+    ///   static var name: Notification.Name { someName }
+    ///   static var name: Notification.Name { .someCaseName }
+    ///   static var name: Notification.Name { return someName }
+    ///   static var name: Notification.Name { get { someName } }
+    ///   static var name: Notification.Name { AVPlayer.rateDidChangeNotification }
+    ///
+    /// Returns the body expression's verbatim text (e.g.,
+    /// `"AVPlayer.rateDidChangeNotification"` or `".someCaseName"`). The
+    /// notification-wrapper-grouping query joins by exact string equality —
+    /// the convention is "both wrappers spell the name the same way."
+    ///
+    /// Returns nil if no matching declaration is found, or if the type
+    /// annotation isn't recognizably `Notification.Name`, or if the body
+    /// is more complex than a single expression / single-statement getter.
+    private func extractNotificationName(from members: MemberBlockSyntax) -> String? {
+        for member in members.members {
+            guard let varDecl = member.decl.as(VariableDeclSyntax.self) else { continue }
+            guard hasStaticModifier(varDecl.modifiers) else { continue }
+            for binding in varDecl.bindings {
+                guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
+                      pattern.identifier.text == "name"
+                else { continue }
+                guard let typeAnnot = binding.typeAnnotation else { continue }
+                let typeText = typeAnnot.type.trimmedDescription
+                guard typeText == "Notification.Name" || typeText == "Foundation.Notification.Name"
+                else { continue }
+                // Body is a code block (getter): {…} or explicit-getter {get{…}}.
+                guard let accessor = binding.accessorBlock else { continue }
+                switch accessor.accessors {
+                case .getter(let statements):
+                    return extractSingleExpression(statements)
+                case .accessors(let accessorList):
+                    for acc in accessorList {
+                        guard acc.accessorSpecifier.text == "get" else { continue }
+                        guard let body = acc.body else { continue }
+                        if let expr = extractSingleExpression(body.statements) {
+                            return expr
+                        }
+                    }
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Extract a single expression's text from a getter's statement list.
+    /// Handles the bare-expression form (`{ foo }`) and the `return foo` form.
+    /// Multi-statement bodies aren't supported — the wrapper pattern is
+    /// always a single-line getter in practice.
+    private func extractSingleExpression(_ statements: CodeBlockItemListSyntax) -> String? {
+        guard statements.count == 1, let first = statements.first else { return nil }
+        switch first.item {
+        case .expr(let expr):
+            return expr.trimmedDescription
+        case .stmt(let stmt):
+            // Handle `return foo` form.
+            if let ret = stmt.as(ReturnStmtSyntax.self), let expr = ret.expression {
+                return expr.trimmedDescription
+            }
+            return nil
+        case .decl:
+            return nil
+        }
     }
 
     /// Both forms of the field set, returned together so emitShapeBearing can

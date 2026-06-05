@@ -30,6 +30,7 @@ TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
+ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
 
 PASS=0
 FAIL=0
@@ -189,6 +190,112 @@ assert_symbol_id_collisions_semantic() {
   printf "  ✓ symbol-id-collisions (semantic): 1 cluster of 2 (Y); slash-flatten-only X pair NOT collided\n"
 }
 assert_symbol_id_collisions_semantic
+
+echo ""
+echo "=== notification-wrapper-grouping query (issue #222) ==="
+# Hand-crafted synthetic catalog with two cross-module wrappers for the same
+# Notification.Name (expect to cluster), one lone wrapper for a different name
+# (expect dropped), and a row without wraps_notification_name (expect ignored).
+NOTIF_FIXTURE_TMP="$(mktemp)"
+trap 'rm -f "$NOTIF_FIXTURE_TMP"' EXIT
+cat > "$NOTIF_FIXTURE_TMP" <<'JSON'
+[
+  {"name":"PlayerRateDidChangeMessage","kind":"type-alias-object","package":"PlayerCore","file":"PlayerRateDidChangeMessage.swift","line":3,"wraps_notification_name":"AVPlayer.rateDidChangeNotification","touched_in_window":false,"generated":false},
+  {"name":"HLSRateDidChangeMessage","kind":"type-alias-object","package":"HLSPlayer","file":"HLSRateDidChangeMessage.swift","line":7,"wraps_notification_name":"AVPlayer.rateDidChangeNotification","touched_in_window":true,"generated":false},
+  {"name":"LoneWrapper","kind":"type-alias-object","package":"Other","file":"LoneWrapper.swift","line":2,"wraps_notification_name":".someOtherNotification","touched_in_window":false,"generated":false},
+  {"name":"BlankNameMsg","kind":"type-alias-object","package":"Other","file":"BlankNameMsg.swift","line":2,"touched_in_window":false,"generated":false}
+]
+JSON
+assert_jsonl_has_prefix notification-wrapper-grouping.jq "$NOTIF_FIXTURE_TMP" "notification-wrapper-grouping:"
+
+# Semantic: exactly one cluster of two members, named AVPlayer.rateDidChangeNotification.
+notif_rows="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r -f "$QUERIES_DIR/notification-wrapper-grouping.jq" "$NOTIF_FIXTURE_TMP")"
+notif_count="$(printf '%s\n' "$notif_rows" | grep -c .)"
+if [[ "$notif_count" == "1" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ notification-wrapper-grouping: exactly one cluster row emitted\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ notification-wrapper-grouping: expected 1 row, got %s\n%s\n" "$notif_count" "$notif_rows"
+fi
+
+cluster_name="$(printf '%s\n' "$notif_rows" | jq -r '.wraps_notification_name')"
+member_count="$(printf '%s\n' "$notif_rows" | jq -r '.members | length')"
+if [[ "$cluster_name" == "AVPlayer.rateDidChangeNotification" && "$member_count" == "2" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ notification-wrapper-grouping: cluster keyed on AVPlayer.rateDidChangeNotification with 2 members\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ notification-wrapper-grouping: expected name=AVPlayer.rateDidChangeNotification members=2, got name=%s members=%s\n" "$cluster_name" "$member_count"
+fi
+
+# Negative cases: LoneWrapper and BlankNameMsg must not appear anywhere.
+if ! printf '%s\n' "$notif_rows" | jq -e '.members[] | select(.name=="LoneWrapper" or .name=="BlankNameMsg")' >/dev/null 2>&1; then
+  PASS=$((PASS + 1))
+  printf "  ✓ notification-wrapper-grouping: lone wrapper and null-wrap rows correctly dropped\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ notification-wrapper-grouping: lone or null-wrap rows leaked into output:\n%s\n" "$notif_rows"
+fi
+
+echo ""
+echo "=== already-abstracted demotion (issue #217) ==="
+# Per the fixture: SpotifyClient/AppleMusicClient both conform to the real
+# protocol MusicService (3 declared fields) → demoted=true. ColdPair1/2 have
+# no conforms_to → demoted=false. SendableA/B share only the Sendable marker
+# (0 fields, fails the "non-trivial" check) → demoted=false.
+assert_demoted_partition() {
+  local query="$1"; shift
+  local extra_args=("$@")
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r "${extra_args[@]}" \
+    -f "$QUERIES_DIR/$query" "$ALREADY_ABSTRACTED_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s demotion: query crashed: %s\n" "$query" "$result"
+    return
+  }
+
+  local demoted_count not_demoted_count
+  demoted_count="$(printf '%s\n' "$result" | jq -s '[.[] | select(.demoted == true)] | length')"
+  not_demoted_count="$(printf '%s\n' "$result" | jq -s '[.[] | select(.demoted == false)] | length')"
+
+  if (( demoted_count >= 1 && not_demoted_count >= 1 )); then
+    PASS=$((PASS + 1))
+    printf "  ✓ %s demotion: %s demoted row(s), %s non-demoted row(s)\n" \
+      "$query" "$demoted_count" "$not_demoted_count"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ %s demotion: expected ≥1 of each, got demoted=%s non-demoted=%s\n%s\n" \
+      "$query" "$demoted_count" "$not_demoted_count" "$result"
+  fi
+}
+
+assert_demoted_partition exact-duplicates.jq
+assert_demoted_partition name-collisions.jq
+assert_demoted_partition near-duplicates.jq --argjson threshold 0.5
+
+# near-duplicates regression: confirm the MusicService pair (real-protocol)
+# is demoted, the ColdPair (no conformance) is not, the Sendable pair (marker
+# only) is not, AND the sort order puts un-demoted rows before demoted rows.
+nd_result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
+  -f "$QUERIES_DIR/near-duplicates.jq" "$ALREADY_ABSTRACTED_FIXTURE")"
+music_demoted="$(printf '%s\n' "$nd_result" \
+  | jq -rs '.[] | select((.left.name == "SpotifyClient" and .right.name == "AppleMusicClient") or (.left.name == "AppleMusicClient" and .right.name == "SpotifyClient")) | .demoted')"
+cold_demoted="$(printf '%s\n' "$nd_result" \
+  | jq -rs '.[] | select((.left.name == "ColdPair1" and .right.name == "ColdPair2") or (.left.name == "ColdPair2" and .right.name == "ColdPair1")) | .demoted')"
+sendable_demoted="$(printf '%s\n' "$nd_result" \
+  | jq -rs '.[] | select((.left.name == "SendableA" and .right.name == "SendableB") or (.left.name == "SendableB" and .right.name == "SendableA")) | .demoted')"
+last_demoted="$(printf '%s\n' "$nd_result" | jq -s '.[-1].demoted')"
+
+if [[ "$music_demoted" == "true" && "$cold_demoted" == "false" \
+   && "$sendable_demoted" == "false" && "$last_demoted" == "true" ]]; then
+  PASS=$((PASS + 1))
+  printf "  ✓ near-duplicates demotion: MusicService pair demoted, ColdPair + Sendable-marker pairs not, demoted sorted to tail\n"
+else
+  FAIL=$((FAIL + 1))
+  printf "  ✗ near-duplicates demotion regression: MusicService=%s ColdPair=%s Sendable=%s last_demoted=%s\n%s\n" \
+    "$music_demoted" "$cold_demoted" "$sendable_demoted" "$last_demoted" "$nd_result"
+fi
 
 echo ""
 echo "=== Function-catalog query ==="

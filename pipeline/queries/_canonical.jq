@@ -246,3 +246,83 @@ def is_repo_local:
 def stale_threshold_days:
   (($ENV.CROSS_REPO_STALE_DAYS // "") | tonumber? // null) as $parsed
   | if $parsed == null or $parsed <= 0 then 7 else $parsed end;
+
+# ─── Already-abstracted cluster helpers (issue #217) ──────────────────────
+#
+# Cluster queries downrank groups whose members already share a non-trivial
+# protocol — five conformers of `MusicService` aren't a missing-abstraction
+# candidate, they're an EXISTING abstraction. The substrate signal:
+#
+#   - Every cluster member carries `conforms_to[]` listing the protocol
+#     identifiers from its inheritance clause.
+#   - The catalog's protocol records (`kind: "interface"`) declare member
+#     requirements (in `fields[]`).
+#
+# A protocol is "non-trivial" when it has ≥2 declared requirements
+# (`fields | length >= 2`). Marker protocols like Sendable / Equatable /
+# Hashable declare zero requirements (the standard library synthesizes
+# their behaviour) and correctly drop out of the downrank signal.
+#
+# This `fields | length` heuristic stands in for the principled signal
+# (`references_count`, the count of typed references inside the protocol's
+# surface) which the Swift extractor doesn't yet emit. Known limitations
+# documented per the heuristic:
+#
+#   * OVERPREDICTS on test-local protocols with rich method signatures
+#     but no cross-module references — the cluster will downrank.
+#     Precision loss, not a missing finding. Acceptable for v1.
+#   * UNDERPREDICTS on composition-only protocols (`protocol Codable:
+#     Decodable & Encodable {}`) — zero declared members. This is the
+#     intended behaviour: the downrank wants protocols with method
+#     bodies that justify shared-implementation, not naming sugar.
+#
+# The next iteration (separate issue) will wire `references_count` for
+# Swift protocols and swap the predicate; that's a strict precision win.
+
+# Intersection of N string arrays. Inputs are sorted-unique by the
+# `conforms_to[]` extractor contract; this returns the common elements
+# in the order they appear in the first array. Empty input → []; single
+# input passes through; the reduce step starts from arr[0] and filters
+# by membership in each subsequent array via `IN()` (the same pattern
+# from PR review 5763acba on `default-impl-candidates.jq`).
+def intersect_string_arrays:
+  if length == 0 then []
+  elif length == 1 then .[0]
+  else .[0] as $first
+       | reduce .[1:][] as $next ($first; map(select(IN($next[]))))
+  end;
+
+# Build a name → {kind, fields} lookup over interface records in the
+# catalog. The `group_by(.name) | add | unique` merge handles Swift's
+# `protocol Foo { ... } / extension Foo { ... }` case where the same
+# protocol name appears in two records — the union of their fields[]
+# is the protocol's full requirement surface. (This convention was
+# codified by PR review 5763acba on `default-impl-candidates.jq`.)
+#
+# Consumed via:  (. | protocols_index) as $protocols_idx
+# Each cluster query computes this once at the top of its pipeline.
+def protocols_index:
+  [ entries[] | select(.kind == "interface") ]
+  | group_by(.name)
+  | map({key: .[0].name,
+         value: {kind: "interface",
+                 fields: (map(.fields // []) | add | unique)}})
+  | from_entries;
+
+# Predicate over a cluster's member list. Returns true when the cluster
+# is "already abstracted" — all members share at least one `conforms_to`
+# entry, AND that shared entry resolves to a non-trivial protocol in
+# $protocols_idx (kind == "interface" with fields | length >= 2).
+#
+# Input: an array of decl objects (each carrying a sorted-unique
+# `conforms_to[]`). Pair queries pass a 2-element array; cluster queries
+# pass the N-element cluster.
+#
+# Returns false if any member has no `conforms_to` (intersection collapses
+# to []), or if the shared entries don't resolve to non-trivial protocols.
+def is_already_abstracted_cluster($protocols_idx):
+  ([.[] | (.conforms_to // [])] | intersect_string_arrays) as $shared
+  | $shared
+  | any(. as $name
+        | ($protocols_idx[$name] // null)
+        | . != null and .kind == "interface" and ((.fields // []) | length) >= 2);

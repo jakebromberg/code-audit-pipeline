@@ -110,6 +110,7 @@ switch args.subcommand {
 case "type":
     var allRecords: [TypeRecord] = []
     var parseErrors = 0
+    var notificationWrappers = 0
     for file in files {
         do {
             let source = try String(contentsOfFile: file.absolutePath, encoding: .utf8)
@@ -117,12 +118,13 @@ case "type":
             let visitor = TypeCatalogVisitor(file: file, tree: tree)
             visitor.walk(tree)
             allRecords.append(contentsOf: visitor.records)
+            notificationWrappers += visitor.notificationWrappersDetected
         } catch {
             parseErrors += 1
             logErr("parse error in \(file.relativePath): \(error)")
         }
     }
-    logErr("emitted \(allRecords.count) type records (parse errors: \(parseErrors))")
+    logErr("emitted \(allRecords.count) type records (parse errors: \(parseErrors), notification wrappers: \(notificationWrappers))")
     do {
         try writeJSON(allRecords, to: args.output)
     } catch {
