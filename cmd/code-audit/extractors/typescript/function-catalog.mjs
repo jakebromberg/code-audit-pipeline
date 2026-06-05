@@ -36,8 +36,9 @@ import { EXT_RE, SKIP_DIRS } from './_lib/walk-predicate.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
-const SCHEMA_VERSION = '1.2';
+const SCHEMA_VERSION = '2.0';
 const FINGERPRINT_V = 'shape_sig:1';
+const LANGUAGE = 'typescript';
 
 // v1.2 identity / provenance — see docs/pipeline-contract.md "Identity and
 // provenance". See extractors/typescript/type-catalog.mjs::computeSourceSha
@@ -418,10 +419,12 @@ for (const [k, v] of Object.entries(byPkg)) {
 }
 process.stderr.write(`is_test entries: ${isTestCount}\n`);
 
-// v1.2 symbol_id pass — sha1(package + "/" + file + "/" + name + "/" + kind), lowercase hex.
-// For method records `name` is already qualified as `ClassName.methodName`.
+// v1.2 symbol_id pass + v2.0 language stamp. For method records `name` is
+// already qualified as `ClassName.methodName`, so the symbol_id formula gets
+// a unique tuple per overload-by-class.
 for (const e of all) {
   e.symbol_id = computeSymbolId(e.package, e.file, e.name, e.kind);
+  e.language = LANGUAGE;
 }
 
 const catalog = {

@@ -63,9 +63,9 @@ test('files.json: without --emit-files, no files.json is written', () => {
   }
 });
 
-test('files.json: wrapped as schema_version 1.2 with identity/provenance metadata', () => {
+test('files.json: wrapped as schema_version 2.0 with identity/provenance metadata', () => {
   const f = extractFiles();
-  assert.equal(f.schema_version, '1.2');
+  assert.equal(f.schema_version, '2.0');
   assert.equal(f.extractor.language, 'typescript');
   assert.equal(f.extractor.name, 'type-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(f.extractor.version), `version: ${f.extractor.version}`);
@@ -237,7 +237,7 @@ test('files.json: existing catalog output remains unchanged when --emit-files is
   // Determinism check: --emit-files should be a pure side effect. The primary
   // stdout (catalog) must NOT differ in extracted structure.
   //
-  // Note: v1.2 introduces a wall-clock `generated_at` field, so byte-for-byte
+  // Note: v2.0 introduces a wall-clock `generated_at` field, so byte-for-byte
   // equality between two runs is no longer expected; the comparison strips the
   // timestamp before asserting equality so the rest of the envelope remains a
   // determinism guard.

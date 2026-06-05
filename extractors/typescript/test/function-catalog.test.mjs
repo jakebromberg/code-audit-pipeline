@@ -1,6 +1,6 @@
 // Tests for the TypeScript function-catalog extractor (#133, v1.2).
 //
-// Validates the v1.1+ wrapper shape, v1.2 identity/provenance metadata
+// Validates the v1.1+ wrapper shape, v2.0 identity/provenance metadata
 // (fingerprint_v, generated_at, extractor.source_sha, per-entry symbol_id),
 // signature-level fields (params/return_ref/references/generics), universal
 // flags (is_test/touched_in_window/synthetic), body-fields gating, and
@@ -49,9 +49,9 @@ test('function-catalog: exits 0 against the fixture tree', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
 });
 
-test('function-catalog: output is wrapped as schema_version 1.2 with identity/provenance metadata', () => {
+test('function-catalog: output is wrapped as schema_version 2.0 with identity/provenance metadata', () => {
   const cat = extractCatalog();
-  assert.equal(cat.schema_version, '1.2');
+  assert.equal(cat.schema_version, '2.0');
   assert.equal(cat.extractor.language, 'typescript');
   assert.equal(cat.extractor.name, 'function-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(cat.extractor.version), `version: ${cat.extractor.version}`);
