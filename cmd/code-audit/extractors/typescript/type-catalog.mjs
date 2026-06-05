@@ -32,8 +32,9 @@ import { resolveOriginPackage } from './_lib/origin-package.mjs';
 
 const EXTRACTOR_DIR = dirname(fileURLToPath(import.meta.url));
 const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.json'), 'utf8')).version;
-const SCHEMA_VERSION = '1.2';
+const SCHEMA_VERSION = '2.0';
 const FINGERPRINT_V = 'shape_sig:1';
+const LANGUAGE = 'typescript';
 
 // Compute extractor source_sha once at startup. Shells out to git; falls back
 // to "unknown" with a stderr warning when the extractor source isn't in a
@@ -1115,8 +1116,13 @@ process.stderr.write(`is_test entries: ${isTestCount}\n`);
 // section. Synthetic entries (inline-literal types named "Outer.prop") still
 // hash deterministically — the formula doesn't care about source syntactic
 // validity, only that the tuple is stable.
+//
+// Same pass also stamps `language: "typescript"` on every entry — the v2
+// core-projection requirement. Doing both in the same loop avoids a redundant
+// walk over the entry array.
 for (const e of all) {
   e.symbol_id = computeSymbolId(e.package, e.file, e.name, e.kind);
+  e.language = LANGUAGE;
 }
 
 const EXTRACTOR_META = {

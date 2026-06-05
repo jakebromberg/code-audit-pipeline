@@ -18,7 +18,7 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
 
 ```jsonc
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "extractor": {
     "language": "typescript",
     "name": "type-catalog",
@@ -34,6 +34,7 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "package": "main",                    // which root this came from
       "file": "src/models/flowsheet.ts",   // path relative to that root
       "line": 42,                           // 1-indexed
+      "language": "typescript",             // v2 core projection: language tag
       "symbol_id": "a3f5…",                // sha1 over (package, file, name, kind) joined by NUL bytes, hex lowercase; optional
       "exported": true,                     // true if exported from the file
       "generated": false,                   // true if .d.ts or under generated/
@@ -286,7 +287,7 @@ When invoked with `--emit-references-graph <path>`, the extractor writes an inve
 
 ```jsonc
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "extractor": { "language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "9e7ebb5b…" },
   "fingerprint_v": "shape_sig:1",
   "generated_at": "2026-06-04T19:00:00Z",
@@ -404,7 +405,7 @@ The artifact is opt-in to keep existing extractor invocations byte-stable for us
 
 ```jsonc
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "extractor": {
     "language": "typescript",
     "name": "type-catalog",
@@ -475,11 +476,11 @@ Stderr summary: `Wrote files (<N> files, <M> edges) to <path>`.
 
 ## Function catalog (`function-catalog.json`)
 
-The function catalog is a top-level **wrapper object** (schema v1.2) carrying schema version, extractor provenance, identity/timing metadata, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
+The function catalog is a top-level **wrapper object** (schema v2.0) carrying schema version, extractor provenance, identity/timing metadata, and the entry array. Pre-v1.1 catalogs were a bare array; queries consume via the `entries` helper in `_canonical.jq` which accepts both forms.
 
 ```jsonc
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "extractor": {
     "language": "typescript",
     "name": "function-catalog",
@@ -643,7 +644,7 @@ Exit code: `0` if at least one `Package.swift` or `project.pbxproj` was discover
 
 ## Schema versioning and back-compat
 
-The catalog top level carries `schema_version: "1.2"` (current). The current TS extractor always emits the wrapper form (`{schema_version, extractor, fingerprint_v, generated_at, entries}`); the bare-array form is a pre-v1.1 artifact.
+The catalog top level carries `schema_version: "2.0"` (current). The current TS extractor always emits the wrapper form (`{schema_version, extractor, fingerprint_v, generated_at, entries}`); the bare-array form is a pre-v1.1 artifact.
 
 **Format.** Every `schema_version` is a `"MAJOR.MINOR"` string. Patch versions are not represented (doc-only clarifications do not change the schema string).
 
@@ -655,7 +656,7 @@ The catalog top level carries `schema_version: "1.2"` (current). The current TS 
 | **Minor** (1.x → 1.(x+1)) | Additive change. A new optional per-entry field; a new optional top-level key; a new permitted `kind` value. | Existing consumers continue to work unchanged. New consumers can read the new field. |
 | **Major** (1.x → 2.0) | Redefines or removes existing semantics. Renaming a kind, changing `shape_sig` normalization, removing a field. | The diff machinery (#117) refuses to compare across major bumps; warns across minor. |
 
-**1.1** was a minor bump from 1.0: the bare array became a wrapper object with `schema_version` + `extractor` + `entries`. **1.2** is a minor bump from 1.1: `symbol_id`, `fingerprint_v`, `generated_at`, and `extractor.source_sha` are all additive and optional from a consumer's perspective. Existing queries continue to work against 1.2 catalogs unchanged.
+**1.1** was a minor bump from 1.0: the bare array became a wrapper object with `schema_version` + `extractor` + `entries`. **1.2** is a minor bump from 1.1: `symbol_id`, `fingerprint_v`, `generated_at`, and `extractor.source_sha` are all additive and optional from a consumer's perspective. Existing queries continue to work against 1.2 catalogs unchanged. **2.0** is the v2 two-tier ratification (see "Schema v2 — two-tier ratification" below): the byte-level changes are additive (`language` field, optional `language_data.<lang>.*`, optional `relations[]`, optional honesty markers), but the contract reorganizes around a cross-language core projection. Existing v1 catalogs continue to validate; existing v1 queries continue to run.
 
 ### Identity and provenance (v1.2)
 
@@ -672,6 +673,124 @@ warning: extractor source not in a git checkout; source_sha recorded as "unknown
 ```
 
 This is the load-bearing field for "did the extractor itself change between two catalogs?" The diff machinery (#117) treats `source_sha` mismatch as a reason to warn (extractor output may have changed semantics despite identical `extractor.version`).
+
+### Schema v2 — two-tier ratification
+
+v2.0 (`schema_version: "2.0"`) is the ratification of the two-tier shape the Python and Swift extractor design notes converged on. It is technically additive at the consumer level (every existing field continues to mean what it meant in v1.2) but conceptually reorganizes the contract around a small **core projection** of cross-language fields, with language-specific extensions cordoned into `language_data.<lang>.*`. That reorganization warrants the major-version label even though the byte-level diff is small.
+
+`schema_version: "2.0"` validates under the same `MAJOR.MINOR` string convention as v1.1 / v1.2; the regex `/^[12]\.\d+$/` (or, more generally, `/^\d+\.\d+$/`) is the accepted check.
+
+#### Core projection (v2)
+
+Required on every record, regardless of language:
+
+- `name` (string) — identifier as declared in source.
+- `kind` (string) — from the cross-language vocabulary (`migration`, `sql-query`, `sql-external-reference`, `external-import`) or a language-specific extension (`interface`, `type-alias-*`, `zod-object`, `drizzle-table`, `import`, `type`, `conformance`, `macro_definition`, `macro_application`, `pydantic-model`, `fastapi-route`, `fastapi-dependency`, `dataclass`, `enum`, `pyo3-function`, …). The vocabulary is open; extractors document their kinds in their own notes.
+- `package` (string) — extraction root identifier.
+- `file` (string) — path relative to that root.
+- `line` (number, 1-indexed).
+- `language` (string) — `"typescript"`, `"swift"`, `"python"`, `"rust"`, `"go"`, `"sql"`, etc.
+
+Required-when-applicable (carried forward from v1, semantics unchanged):
+
+- `shape_sig` and `fields[]` for shape-of-named-members constructs.
+- `type_text` and `type_sig` for non-object type aliases.
+
+Optional carry-overs from v1: `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured`, `extends`, `references`, `references_count`, `symbol_id`, `is_test`.
+
+Optional v2 additions:
+
+- `language_data` (object; keys are language names, values are language-specific extension namespaces).
+- `relations` (array of typed-edge objects; see "Relations slot" below).
+- `core_projection_complete` (boolean; absence implies `true`).
+- `omitted_features` (array of strings; absence implies `[]`).
+
+#### `language_data.<lang>.*` namespace
+
+The `language_data` object is keyed by language name. Each value is the language-specific extension namespace — fields whose meaning is only legible inside that language's idiom. A single record can carry multiple language sub-namespaces (e.g., a Python `sql-query` record carries both `language_data.python.*` for composition info and `language_data.sql.*` for dialect info).
+
+Fields under `language_data.<lang>.*` are NOT part of the cross-language core projection. Queries that operate cross-language work against the core projection; queries that operate on language-specific structure pin to a language and read its sub-namespace.
+
+Every field name below traces to a specific illustrative record in [`docs/pipeline-contract-v2-fixtures.jsonl`](./pipeline-contract-v2-fixtures.jsonl). New fields require a corresponding illustrative record before they enter the table — the "speculation gate" enforces evidence-driven schema growth.
+
+| Language | Field | Where seen (fixture record) |
+|---|---|---|
+| `swift` | `decl_kind`, `access`, `conformances[]`, `macro_applications[]`, `associated_types[]`, `inherited_protocols[]`, `member_isolation`, `is_retroactive`, `is_unchecked`, `context`, `roles[]`, `synthesized_member_names[]`, `synthesized_conformances[]`, `implementation_module`, `implementation_type` | Swift File 1 (`FetchPlaylistEvent`), Swift File 2 (`AnalyticsEvent` macro), Swift File 3 (`MainActorNotificationMessage`, `Notification → Sendable`) |
+| `python` | `bases[]`, `base_alias`, `future_annotations`, `field_metadata`, `method`, `path`, `router_name`, `router_decl_file`, `router_decl_line`, `mount_file`, `mount_line`, `mount_prefix`, `router_prefix`, `decorator_path`, `request_model`, `response_model`, `dependencies[]`, `mount_dependencies[]`, `query_params[]`, `tags[]`, `composition`, `static_prefix`, `fragment_alternatives[]`, `execute_sites[]`, `loaded_from[]`, `transformations[]`, `execute_via`, `returns`, `depends_on[]`, `is_async`, `singleton`, `singleton_state_name`, `lifecycle_close`, `errors_raised[]`, `base`, `members[]`, `decorator`, `field_defaults`, `qualified_name`, `implementation_language`, `implementation_package`, `resolution`, `imported_as`, `migration_framework`, `revision`, `down_revision`, `upgrade_ops[]`, `guards[]` | Python Files 1–7 |
+| `sql` | `dialect`, `tables_read[]`, `tables_written[]`, `columns_selected[]`, `where_predicates[]`, `order_by[]`, `placeholder_count`, `placeholder_style` | Python File 3 Form A (`_FLOWSHEET_SQL`) and Form B (`_search_uncached:filtered-branch`) |
+| `rust` | `fn_signature`, `pyo3_attribute`, `registered_in` | Python File 6 Path 2 (`to_match_form` PyO3 view) |
+
+Worked example (Python File 3 Form A):
+
+```jsonc
+{
+  "kind": "sql-query", "name": "_FLOWSHEET_SQL", "language": "python",
+  "package": "semantic-index", "file": "semantic_index/pg_source.py", "line": 57,
+  "language_data": {
+    "python": { "composition": "static-literal", "execute_sites": [{"function": "load_flowsheet_entries"}] },
+    "sql":    { "dialect": "postgresql", "tables_read": ["wxyc_schema.flowsheet"], "where_predicates": [{"left":"entry_type","op":"=","right":"'track'"}] }
+  }
+}
+```
+
+`language: "python"` is the *host* language (the SQL is composed by Python); `language_data.sql.*` carries the dialect-specific shape. The two-tier schema doing its work.
+
+#### Relations slot
+
+`relations` is a flat array of typed-edge objects. Each edge has at minimum:
+
+- `kind` (string) — relation type.
+- `target` (string) — the related symbol's name, fully qualified when possible.
+
+Edges may carry additional kind-specific fields (e.g., `retroactive: true`, `unchecked: true` for conformances; `via_macro: "AnalyticsEvent"` for synthetic conformances derived from macro joins).
+
+Open vocabulary; example `kind` values used in the v2 fixtures:
+
+| `kind` | Where seen |
+|---|---|
+| `extends` | Python File 2 (`LookupRequest extends _GeneratedLookupRequest`) |
+| `conforms_to` | Swift File 3 (`Notification → Sendable` retroactive); v2 generalization of Lane A's per-record `conforms_to: string[]` |
+| `applies_macro` | Swift File 1 (`FetchPlaylistEvent applies_macro AnalyticsEvent`) |
+| `mounts_router` | Python File 1 (`main.py mounts_router lookup_router with_prefix /api/v1`) |
+| `loads_sql_from` | Python File 3 Form C (Alembic migration loads external `.sql` files) |
+
+Existing `extends: string[]` on type records remains as a v1 shorthand. v2 introduces `relations[]` as the canonical form. Queries can adopt either: `extends[]?` continues to work for the shorthand; `relations[] | select(.kind == "extends") | .target` for the canonical form. The cluster-query refits (#116) decide which form each query consumes.
+
+#### Honesty markers
+
+`core_projection_complete: false` and `omitted_features[]` mark records where the extractor knows it has lost fidelity vs. the source.
+
+Default `core_projection_complete: true` and `omitted_features: []` (both may be absent — absence implies completeness).
+
+Examples drawn from the v2 fixtures:
+
+- `["macro_expansion"]` — Swift File 1: a macro-applied struct whose synthesized members and conformances are not in the source AST.
+- `["inherited_fields"]` — Python File 2: a Pydantic subclass that declares only the additions; base-class fields live in another record reachable via `relations[] | select(.kind == "extends")`.
+- `["runtime_branch_choice", "dynamic_column_list"]` — Python File 3 Form B: an f-string SQL with conditional branches the AST cannot statically resolve.
+- `["sending_parameter_annotation", "self_type_resolution"]` — Swift File 3: a protocol whose member signatures carry Swift 6 isolation annotations the v2 schema does not yet model.
+
+Vocabulary is freeform strings. v2 does not impose a closed enum. If a future audit query demands controlled vocabulary, that's a v2.1 conversation.
+
+Existing cluster queries do not consult these fields; they are for downstream filters ("show me only rows where the catalog is honest about its losses") and for documentation/communication.
+
+#### Cross-language kinds (v2)
+
+Cross-language `kind` values — the same `kind` appears in records from multiple languages, with language-specific payload under `language_data.<lang>.*`:
+
+- `migration` — schema migration (Alembic for Python, Drizzle for TypeScript, Flyway/Liquibase elsewhere). `language_data.<lang>.{migration_framework, revision, down_revision, upgrade_ops, guards, …}`.
+- `sql-query` — a SQL statement composed inside a host language. `language: "<host>"`; `language_data.sql.{dialect, tables_read, tables_written, columns_selected, where_predicates, order_by, placeholder_count, placeholder_style}`; `language_data.<host>.{composition, execute_sites, static_prefix, fragment_alternatives, …}`.
+- `sql-external-reference` — host-language code that loads a SQL file at runtime. `language_data.<host>.{loaded_from, transformations, execute_via}`.
+- `external-import` — host-language code that imports a symbol whose implementation lives in a different language (PyO3, FFI, native extensions). `language_data.<host>.{imported_as, implementation_language, implementation_package, resolution}`.
+
+Language-specific kinds (do not cross language boundaries; documented for clarity):
+
+- TypeScript: `interface`, `type-alias-object`, `type-alias-union`, `type-alias-intersection`, `type-alias-infer-model`, `type-alias-other`, `zod-object`, `drizzle-table`, `inline-object`, `import`.
+- Swift: `type` (struct/class/enum), `interface` (protocol), `conformance`, `macro_definition`, `macro_application`.
+- Python: `pydantic-model`, `fastapi-route`, `fastapi-dependency`, `dataclass`, `enum`, `pyo3-function`.
+
+#### v2 deliberate scope
+
+v2 does NOT redefine `shape_sig`, change the normalization rule for any field, or remove any v1 field. It is structurally additive. The major-version label is a signal that the *contract has reorganized*: cross-language extractors and consumers should target v2's core projection, not v1's TS-shaped one. Existing v1 catalogs continue to validate; existing v1 queries continue to run.
 
 ### Query migration
 

@@ -23,7 +23,7 @@ EXTRACTOR="$EXTRACTOR_ROOT/type-catalog.mjs"
 
 # Contract version. Bump in lockstep with docs/pipeline-contract.md and the
 # SCHEMA_VERSION constant in type-catalog.mjs.
-EXPECTED_SCHEMA_VERSION="1.2"
+EXPECTED_SCHEMA_VERSION="2.0"
 
 # Declaration names the fixture is expected to produce. Order doesn't matter;
 # the assertion sorts both sides.

@@ -47,13 +47,13 @@ test('extractor exits 0 against the fixture tree', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
 });
 
-test('output is wrapped as schema_version 1.2 with identity/provenance metadata', () => {
+test('output is wrapped as schema_version 2.0 with identity/provenance metadata', () => {
   const cat = extractCatalog();
-  assert.equal(cat.schema_version, '1.2');
+  assert.equal(cat.schema_version, '2.0');
   assert.equal(cat.extractor.language, 'typescript');
   assert.equal(cat.extractor.name, 'type-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(cat.extractor.version), `version: ${cat.extractor.version}`);
-  // v1.2 additions: extractor.source_sha (git sha or "unknown"), fingerprint_v, generated_at.
+  // v2.0 additions: extractor.source_sha (git sha or "unknown"), fingerprint_v, generated_at.
   assert.ok(typeof cat.extractor.source_sha === 'string' && cat.extractor.source_sha.length > 0,
     `source_sha: ${cat.extractor.source_sha}`);
   assert.equal(cat.fingerprint_v, 'shape_sig:1');
@@ -248,7 +248,7 @@ test('--emit-references-graph writes a sibling references.json with sorted, dedu
     assert.equal(res.status, 0, `stderr: ${res.stderr}`);
     assert.ok(existsSync(refsPath), 'references.json should be created');
     const refs = JSON.parse(readFileSync(refsPath, 'utf8'));
-    assert.equal(refs.schema_version, '1.2');
+    assert.equal(refs.schema_version, '2.0');
     assert.equal(refs.extractor.language, 'typescript');
     assert.equal(refs.extractor.name, 'type-catalog');
     assert.match(refs.extractor.version, /^\d+\.\d+\.\d+$/, 'extractor.version must be semver-shaped');
@@ -292,7 +292,7 @@ test('--emit-references-graph writes a sibling references.json with sorted, dedu
     }
 
     // Determinism: a second invocation produces structurally identical output.
-    // The v1.2 envelope's wall-clock `generated_at` is stripped before compare
+    // The v2.0 envelope's wall-clock `generated_at` is stripped before compare
     // so the rest of the envelope (extractor block + payload) is still a
     // determinism guard.
     const refsPath2 = join(tmp, 'references-2.json');
@@ -318,12 +318,12 @@ test('without --emit-references-graph, no sibling file is created', () => {
   }
 });
 
-test('output is deterministic across runs (modulo v1.2 generated_at)', () => {
+test('output is deterministic across runs (modulo v2.0 generated_at)', () => {
   const a = runExtractor();
   const b = runExtractor();
   const catA = JSON.parse(a.stdout);
   const catB = JSON.parse(b.stdout);
-  // v1.2 envelope carries a wall-clock generated_at; strip before compare so
+  // v2.0 envelope carries a wall-clock generated_at; strip before compare so
   // the extractor's structural output is still a determinism guard.
   delete catA.generated_at;
   delete catB.generated_at;
