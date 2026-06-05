@@ -101,6 +101,29 @@ struct ModelOwningANotificationName {
     static var name: Notification.Name { Notification.Name("model.unrelated") }
 }
 
+// Positive case for the iOS 26 Foundation protocols (issue #222):
+// `NotificationCenter.MainActorMessage` (and `NotificationCenter.AsyncMessage`)
+// are the canonical wrapper protocols Apple ships with iOS 26 — the
+// pipeline-contract.md detection rule explicitly lists them alongside the
+// project-naming `*NotificationMessage` suffix. The qualified identifier
+// `NotificationCenter.MainActorMessage` does NOT end in "NotificationMessage"
+// (it ends in "MainActorMessage"), so a suffix-only gate would silently miss
+// it. The detection in TypeCatalogVisitor must explicitly OR-in the qualified
+// Foundation names. This fixture locks that behavior in.
+//
+// Placeholder so the conformance type parses cleanly without importing
+// Foundation; only the qualified identifier text matters for detection.
+enum NotificationCenter {
+    protocol MainActorMessage {}
+    protocol AsyncMessage {}
+}
+struct PlayerRateDidChangeMessage: NotificationCenter.MainActorMessage {
+    static var name: Notification.Name { AVPlayer.rateDidChangeNotification }
+}
+struct PlayerStateAsyncMessage: NotificationCenter.AsyncMessage {
+    static var name: Notification.Name { Notification.Name("player.state") }
+}
+
 // Placeholder so AVPlayer.rateDidChangeNotification references resolve
 // at parse time for the fixture (we don't import AVFoundation here).
 enum AVPlayer {

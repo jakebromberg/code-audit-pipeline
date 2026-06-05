@@ -324,17 +324,23 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         // body expression text. Skipped on protocol decls — a protocol's own
         // requirement declaration doesn't WRAP a notification name, it just
         // requires that conformers do. ALSO requires that the type conforms
-        // to a `*NotificationMessage` protocol (per pipeline-contract.md
-        // "Notification-wrapper detection" and plans/issue-217-222 detection
-        // rules); without this guard any type that happens to expose a
-        // `static var name: Notification.Name { ... }` (model identifiers,
-        // view IDs, etc.) gets falsely tagged and pollutes the
-        // notification-wrapper-grouping cluster output.
-        let conformsToNotificationMessage = conformsFromClause.contains { proto in
+        // to a wrapper protocol — either a project-naming `*NotificationMessage`
+        // OR Foundation's iOS 26 `NotificationCenter.MainActorMessage` /
+        // `NotificationCenter.AsyncMessage` (per pipeline-contract.md
+        // "Notification-wrapper detection" line 227 and plans/issue-217-222
+        // detection rule 1). Without this guard any type that happens to
+        // expose `static var name: Notification.Name { ... }` (model
+        // identifiers, view IDs, etc.) gets falsely tagged. The Foundation
+        // names are also listed in Common.swift::PROTOCOL_LIKE_INHERITED;
+        // we keep them inline here so the detection rule is readable in
+        // one place rather than scattered across files.
+        let conformsToWrapperProtocol = conformsFromClause.contains { proto in
             proto.hasSuffix("NotificationMessage")
+                || proto == "NotificationCenter.MainActorMessage"
+                || proto == "NotificationCenter.AsyncMessage"
         }
         if declaringKind != .protocolDecl,
-           conformsToNotificationMessage,
+           conformsToWrapperProtocol,
            let wrapName = extractNotificationName(from: members)
         {
             record.wrapsNotificationName = wrapName

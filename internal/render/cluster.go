@@ -102,6 +102,34 @@ func formatHeaderValue(key string, v any) string {
 			return key + "=true"
 		}
 		return key + "=false"
+	case "demoted":
+		// Only surface when true. The jq queries (exact-duplicates,
+		// name-collisions, near-duplicates) emit `demoted: false` on every
+		// non-demoted cluster — the 90% case — and rendering `demoted=false`
+		// on every header would clutter the markdown report with noise. When
+		// true, the cluster is already-abstracted and the operator needs to
+		// see that signal prominently; mirror the jq text mode which only
+		// prefixes "[DEMOTED — already abstracted]" for the true case.
+		b, ok := v.(bool)
+		if !ok || !b {
+			return ""
+		}
+		return "demoted=true"
+	case "wraps_notification_name":
+		// Collapse internal whitespace so a multi-line getter body
+		// (`{ Notification.Name(\n        "x"\n    ) }`) doesn't break the
+		// comma-separated header line. The extractor preserves trivia in
+		// trimmedDescription; the renderer is the natural place to normalize
+		// because the same value also flows into the JSONL where preserving
+		// the original formatting may matter for downstream comparison.
+		s, _ := v.(string)
+		if s == "" {
+			return ""
+		}
+		// Replace any run of whitespace (incl. newlines, tabs) with a single
+		// space, then trim.
+		s = strings.Join(strings.Fields(s), " ")
+		return "wraps_notification_name=" + s
 	default:
 		if n, ok := numericInt(v); ok {
 			return fmt.Sprintf("%s=%d", key, n)

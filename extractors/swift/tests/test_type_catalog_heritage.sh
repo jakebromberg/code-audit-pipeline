@@ -111,6 +111,18 @@ assert_jq "NoNameMsg.conforms_to"   '[]' \
 assert_jq "ModelOwningANotificationName.wraps_notification_name absent (no *NotificationMessage conformance)" 'null' \
     '[.[] | select(.name=="ModelOwningANotificationName")][0].wraps_notification_name' "$OUT"
 
+# Case 9 + 10: Foundation iOS 26 wrapper protocols. The qualified identifiers
+# `NotificationCenter.MainActorMessage` and `NotificationCenter.AsyncMessage`
+# do NOT end in "NotificationMessage" (they end in "MainActorMessage" /
+# "AsyncMessage"), so a suffix-only gate would silently miss them — exactly
+# the canonical iOS 26 case the audit was designed to surface. Detection must
+# OR-in the qualified Foundation names alongside the *NotificationMessage
+# suffix check.
+assert_jq "PlayerRateDidChangeMessage.wraps_notification_name (Foundation MainActorMessage)" '"AVPlayer.rateDidChangeNotification"' \
+    '[.[] | select(.name=="PlayerRateDidChangeMessage")][0].wraps_notification_name' "$OUT"
+assert_jq "PlayerStateAsyncMessage.wraps_notification_name (Foundation AsyncMessage)" '"Notification.Name(\"player.state\")"' \
+    '[.[] | select(.name=="PlayerStateAsyncMessage")][0].wraps_notification_name' "$OUT"
+
 # Schema: every type row carries extends and conforms_to as arrays (never null).
 # Typealiases are exempt — they have no inheritance clause syntactically.
 non_alias_count="$(echo "$OUT" | jq '[.[] | select(.kind != "type-alias-other")] | length')"
