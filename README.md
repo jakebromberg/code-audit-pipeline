@@ -121,6 +121,7 @@ All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FOR
 | `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold | type |
 | `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
 | `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |
+| `copied-from-header.jq` | Files whose top comment self-confesses as a fork (`// Copied from X`, `// Fork of X`, etc.) — requires `file-hashes --scan-header` | file-hash |
 | `cross-catalog-name-collisions.jq` | Type names declared in TWO catalogs (cross-repo, cross-language) | type, two-catalog |
 | `migration-progress.jq` | Counts decls on old vs new `shape_sig`, computes % migrated, lists touched-in-window stragglers | type |
 | `shape-sig-frequency.jq` | Lists `shape_sig` values by count desc with sample names | type |

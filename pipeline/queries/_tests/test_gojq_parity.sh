@@ -51,6 +51,7 @@ LEAKS_TYPES_FIXTURE="$FIXTURES_DIR/public-api-leaks-types.input.json"
 BACKWARD_IMPORTS_FIXTURE="$FIXTURES_DIR/cross-package-backward-imports-files.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 INDEX_FIXTURE="$FIXTURES_DIR/cross-repo-ops/all-ok.index.json"
+COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -172,6 +173,7 @@ both_modes generic-function-candidates               "$QUERIES_DIR/generic-funct
 echo ""
 echo "=== File-hash queries ==="
 both_modes file-duplicates                           "$QUERIES_DIR/file-duplicates.jq"                           "$FILES_FIXTURE"
+both_modes copied-from-header                        "$QUERIES_DIR/copied-from-header.jq"                        "$COPIED_FROM_HEADER_FIXTURE"
 
 echo ""
 echo "=== Migration-progress queries ==="

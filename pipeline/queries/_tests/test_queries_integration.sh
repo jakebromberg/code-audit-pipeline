@@ -28,6 +28,7 @@ ORPHAN_INFER_MODEL_FIXTURE="$FIXTURES_DIR/orphan-infer-model.input.json"
 IS_TEST_TREE="$FIXTURES_DIR/is-test-tree"
 TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
+COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 
 PASS=0
 FAIL=0
@@ -157,6 +158,59 @@ assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic
 echo ""
 echo "=== File-hash query ==="
 assert_jsonl_has_prefix file-duplicates.jq "$FILES_FIXTURE" "file-duplicates-"
+assert_jsonl_has_prefix copied-from-header.jq "$COPIED_FROM_HEADER_FIXTURE" "copied-from-header:"
+assert_envelope_shape    copied-from-header.jq "$COPIED_FROM_HEADER_FIXTURE"
+
+# Semantic checks for copied-from-header. Fixture has 4 rows:
+#   - main:Sources/UI/DebugHUD.swift           — phrase: "copied from"
+#   - main:Sources/UI/Plain.swift              — header_match: null (filtered)
+#   - shared:Sources/Net/AnyHttpClient.swift   — phrase: "based on" (license-attribution, still surfaces in v1)
+#   - main:Sources/UI/Generated.swift          — phrase: "copied from", generated: true (filtered by default)
+# Default invocation: 2 rows (DebugHUD, AnyHttpClient). With INCLUDE_GENERATED=true: 3 rows.
+assert_copied_from_header_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/copied-from-header.jq" "$COPIED_FROM_HEADER_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count expected=2
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "$expected" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic): expected %d rows (default), got %d\n%s\n" "$expected" "$count" "$jsonl"
+    return
+  fi
+  if ! printf '%s\n' "$jsonl" | jq -r '.cluster_id' | grep -qx "copied-from-header:main:Sources/UI/DebugHUD.swift"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic): missing DebugHUD cluster\n"
+    return
+  fi
+  if printf '%s\n' "$jsonl" | jq -r '.file' | grep -qx "Sources/UI/Plain.swift"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic): Plain.swift should be filtered (header_match null)\n"
+    return
+  fi
+  if printf '%s\n' "$jsonl" | jq -r '.file' | grep -qx "Sources/UI/Generated.swift"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic): Generated.swift should be filtered (generated:true)\n"
+    return
+  fi
+  # INCLUDE_GENERATED=true picks up the generated row.
+  local jsonl_gen count_gen
+  jsonl_gen="$(OUTPUT_FORMAT=jsonl INCLUDE_GENERATED=true jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/copied-from-header.jq" "$COPIED_FROM_HEADER_FIXTURE" 2>&1)"
+  count_gen="$(printf '%s\n' "$jsonl_gen" | grep -c .)"
+  if [[ "$count_gen" != "3" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-from-header (semantic, INCLUDE_GENERATED): expected 3 rows, got %d\n" "$count_gen"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ copied-from-header (semantic): default %d rows, INCLUDE_GENERATED=true %d rows; Plain/Generated correctly gated\n" "$count" "$count_gen"
+}
+assert_copied_from_header_semantic
 
 echo ""
 echo "=== Migration-progress queries ==="
@@ -1057,6 +1111,7 @@ assert_text_has_cid function-duplicates.jq "$FUNCS_FIXTURE" --argjson threshold 
 assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
+assert_text_has_cid copied-from-header.jq "$COPIED_FROM_HEADER_FIXTURE"
 assert_text_has_cid migration-progress.jq "$MIGRATION_FIXTURE" \
   --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 assert_text_has_cid shape-sig-frequency.jq "$MIGRATION_FIXTURE"

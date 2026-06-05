@@ -561,7 +561,24 @@ The file-hash catalog is a single JSON array. Each entry describes one source fi
 
 **Skip rules.** Skips `.dotdirs`, `node_modules`, `dist`, `build`, `coverage` (shared with the type extractor) plus `tests/` and `*.test.*` / `*.spec.*` files unless `--include-tests` is passed. Extension filter is configurable via `--extensions` (default `ts,tsx,mts,cts`). (Forward-looking: the type extractor has dropped `--include-tests` and tags every row with `is_test` instead — see `## Type catalog` → `### Test path patterns`. Aligning file-hashes with that model is pending.)
 
-Used by `pipeline/queries/file-duplicates.jq`, which emits two sections: exact-byte clusters and whitespace-normalized-only clusters (files identical after normalization but not byte-equal).
+### Optional `header_match` field (extractor v0.6.0+)
+
+When the extractor is invoked with `--scan-header`, every record additionally carries:
+
+```jsonc
+{
+  // ...standard file-hashes fields above...
+  "header_match": {                                    // null when no phrase matched
+    "line": 1,                                          // 1-indexed line of the match
+    "phrase": "copied from",                           // lowercased phrase that triggered the match
+    "text": "// Copied from DebugPanel for shader testing."  // raw source line, trailing whitespace stripped
+  }
+}
+```
+
+The extractor reads the first 30 lines of each file and matches against a fixed phrase list (`copied from`, `fork of`, `based on`, `duplicate of`, `ported from` — case-insensitive substring). When `--scan-header` is **not** set, the field is **omitted entirely**, preserving byte-stable output for legacy readers. Consumed by `pipeline/queries/copied-from-header.jq` (#220).
+
+Used by `pipeline/queries/file-duplicates.jq` (two sections: exact-byte and whitespace-normalized-only clusters) and `pipeline/queries/copied-from-header.jq` (files whose top comment self-confesses as a fork, when `--scan-header` is set).
 
 ## Package graph (`package-graph.json`)
 

@@ -126,6 +126,134 @@ func TestE2EFileHashes(t *testing.T) {
 	}
 }
 
+// TestE2EFileHashesScanHeader exercises the --scan-header flag added for
+// the copied-from-header.jq query (#220). Runs file-hashes against a tree
+// of three files (one with a "Copied from" header, one without, one without
+// any flag set as a control) and asserts the catalog rows carry the
+// expected header_match shape.
+func TestE2EFileHashesScanHeader(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node not on PATH")
+	}
+	if _, err := os.Stat("../../extractors/file-hashes/manifest.toml"); err != nil {
+		t.Skip("file-hashes extractor not present")
+	}
+
+	tmp := t.TempDir()
+	repo := filepath.Join(tmp, "repo")
+	src := filepath.Join(repo, "src")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"forked.ts": "// Copied from DebugPanel for shader testing.\nexport const x = 1;\n",
+		"plain.ts":  "import { y } from './y';\nexport const z = 2;\n",
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(src, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	extractorsAbs, err := filepath.Abs("../../extractors")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// --- Variant 1: with --scan-header set. Every row carries header_match (null or object).
+	var out bytes.Buffer
+	exitCode := cli.Extract(context.Background(), []string{
+		"file-hashes",
+		"--root", repo,
+		"--audit-root", tmp,
+		"--extractors-dir", extractorsAbs,
+		"--scan-header",
+	}, &out, nil)
+	if exitCode != 0 {
+		t.Fatalf("Extract (--scan-header) exit=%d, out=%s", exitCode, out.String())
+	}
+
+	catalogPath := filepath.Join(tmp, ".audit", "catalogs", "file-hashes.json")
+	data, err := os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatalf("read catalog: %v", err)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(data, &rows); err != nil {
+		t.Fatalf("unmarshal catalog: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 rows in catalog, got %d: %s", len(rows), string(data))
+	}
+	byFile := map[string]map[string]any{}
+	for _, r := range rows {
+		f, _ := r["file"].(string)
+		byFile[f] = r
+	}
+
+	forked := byFile["src/forked.ts"]
+	if forked == nil {
+		t.Fatalf("missing src/forked.ts row in catalog: %s", string(data))
+	}
+	hmRaw, ok := forked["header_match"]
+	if !ok {
+		t.Fatalf("src/forked.ts row missing header_match key (got: %+v)", forked)
+	}
+	hm, ok := hmRaw.(map[string]any)
+	if !ok || hm == nil {
+		t.Fatalf("src/forked.ts header_match expected object, got %T: %v", hmRaw, hmRaw)
+	}
+	if got, _ := hm["phrase"].(string); got != "copied from" {
+		t.Errorf("src/forked.ts header_match.phrase = %q, want \"copied from\"", got)
+	}
+	if got, _ := hm["line"].(float64); int(got) != 1 {
+		t.Errorf("src/forked.ts header_match.line = %v, want 1", hm["line"])
+	}
+	if got, _ := hm["text"].(string); !strings.Contains(got, "Copied from DebugPanel") {
+		t.Errorf("src/forked.ts header_match.text = %q, want it to contain \"Copied from DebugPanel\"", got)
+	}
+
+	plain := byFile["src/plain.ts"]
+	if plain == nil {
+		t.Fatalf("missing src/plain.ts row in catalog: %s", string(data))
+	}
+	plainHM, present := plain["header_match"]
+	if !present {
+		t.Errorf("src/plain.ts row missing header_match key — with --scan-header set, key must be present (null)")
+	}
+	if plainHM != nil {
+		t.Errorf("src/plain.ts header_match = %v, want nil", plainHM)
+	}
+
+	// --- Variant 2: without --scan-header. Field is omitted entirely.
+	if err := os.RemoveAll(filepath.Join(tmp, ".audit")); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	exitCode = cli.Extract(context.Background(), []string{
+		"file-hashes",
+		"--root", repo,
+		"--audit-root", tmp,
+		"--extractors-dir", extractorsAbs,
+	}, &out, nil)
+	if exitCode != 0 {
+		t.Fatalf("Extract (default) exit=%d, out=%s", exitCode, out.String())
+	}
+	data, err = os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatalf("read catalog v2: %v", err)
+	}
+	var rows2 []map[string]any
+	if err := json.Unmarshal(data, &rows2); err != nil {
+		t.Fatalf("unmarshal catalog v2: %v", err)
+	}
+	for _, r := range rows2 {
+		if _, present := r["header_match"]; present {
+			t.Errorf("default invocation row %v should NOT carry header_match", r["file"])
+		}
+	}
+}
+
 // TestE2EReport runs `code-audit report` end-to-end against a manually-seeded
 // .audit/ cache: catalog file on disk + meta.json index. Asserts the output
 // is created, contains the targeted section, and lists skipped queries.
