@@ -201,6 +201,21 @@ cat > "$TMP/unknown-source-sha.json" <<'EOF'
 EOF
 assert_exit "source_sha=unknown is accepted" "0" "$(run_validator "$TMP/unknown-source-sha.json")"
 
+# --- Tightening: source_sha must be LOWERCASE hex; uppercase is rejected ---
+# The contract specifies lowercase; downstream consumers that key on source_sha
+# as a case-sensitive identity break if an extractor ships uppercase. Pin the
+# rejection so a future regex-relaxation (e.g., adding the `i` flag) trips the
+# test rather than shipping silently.
+cat > "$TMP/uppercase-source-sha.json" <<'EOF'
+{
+  "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.1.0", "source_sha": "ABCDEF0123456789ABCDEF0123456789ABCDEF01"},
+  "entries": []
+}
+EOF
+assert_exit "uppercase source_sha is rejected" "1" "$(run_validator "$TMP/uppercase-source-sha.json")"
+assert_stderr_contains "uppercase-sha error mentions lowercase requirement" "source_sha"
+
 # --- NUL-formula regression: slash-flatten-only ambiguity does NOT collide ---
 # (package="Shared", file="Generated/X.ts") vs (package="Shared/Generated",
 # file="X.ts") share a slash-joined string but distinct 4-tuples. Both rows

@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
+import { homedir } from 'node:os';
 import {
   BUILTIN_TYPE_DENYLIST,
   extractReferences,
@@ -39,48 +40,65 @@ const FINGERPRINT_V = 'shape_sig:1';
 // git checkout (vendored binary, embedded-and-extracted via `code-audit init`,
 // or git missing from PATH).
 //
-// The search MUST be bounded to the extractor's own repo. Without
-// GIT_CEILING_DIRECTORIES, `git rev-parse HEAD` walks up the directory tree
-// indefinitely — when the extractor is laid down under ~/.config/audit/
-// extractors/typescript/ and the user's $HOME is itself a git checkout
-// (dotfiles, home-manager, monorepo vendored binary), git returns the outer
-// repo's HEAD instead of "unknown", silently misattributing source_sha to
-// an unrelated repository. We set GIT_CEILING_DIRECTORIES to the parent of
-// EXTRACTOR_DIR so the walk stops there. We also verify the resolved repo
-// toplevel actually matches the extractor's tree as a defense in depth —
-// a future symlink or bind-mount can otherwise confuse the boundary.
+// The challenge: when the extractor is laid down under ~/.config/audit/
+// extractors/typescript/ (the embedded-install path from `code-audit init`)
+// and the user's $HOME is itself a git checkout (dotfiles, home-manager),
+// a naive `git rev-parse HEAD` walks up the directory tree and returns the
+// dotfiles HEAD, silently misattributing source_sha to an unrelated repo.
 //
-// Timeout: 2s ceiling. Without it, a slow / disconnected network FS hosting
-// the search path would hang the entire extractor on module load with no
-// diagnostic (stderr is silenced to suppress git's own noise on the success
-// path). GIT_TERMINAL_PROMPT=0 prevents git from prompting for credentials
-// on any auxiliary config-fetch.
+// Solution: walk up from EXTRACTOR_DIR ourselves. At each ancestor, run
+// `git rev-parse --show-toplevel`; the FIRST ancestor whose toplevel equals
+// itself IS the extractor's own repo root, and we read its HEAD. Stop the
+// walk at $HOME (or filesystem root, or a defensive depth bound) — anything
+// at or above $HOME is by construction NOT the extractor's repo. The
+// dotfiles case (`$HOME/.git`) is never reached because the loop exits at
+// $HOME. The normal in-repo case (`<repo>/extractors/typescript/`) finds
+// the toplevel at `<repo>` within two hops. The embedded case
+// (`~/.config/audit/extractors/typescript/`) walks up to `.config`, none
+// of those levels is a git toplevel, then exits at $HOME and returns
+// "unknown" as intended.
+//
+// Per-call options:
+//   timeout: 2000ms — without this, a slow or disconnected network FS
+//     hosting the search path would hang the extractor at module load
+//     with no diagnostic on stderr.
+//   GIT_TERMINAL_PROMPT=0 — prevents git from prompting for credentials
+//     on any auxiliary config-fetch.
 function computeSourceSha() {
-  try {
-    const parent = dirname(EXTRACTOR_DIR);
-    const env = {
-      ...process.env,
-      GIT_CEILING_DIRECTORIES: parent,
-      GIT_TERMINAL_PROMPT: '0',
-    };
-    const opts = {
-      cwd: EXTRACTOR_DIR,
-      stdio: ['ignore', 'pipe', 'ignore'],
-      encoding: 'utf8',
-      timeout: 2000,
-      env,
-    };
-    const sha = execSync('git rev-parse HEAD', opts).trim();
-    if (!/^[0-9a-f]{40}$/.test(sha)) return unknownSha();
-    // Defense in depth: confirm the toplevel matches the extractor's tree.
-    // If a ceiling wasn't honored (e.g., a symlinked .git that points
-    // upstream), the toplevel will not be a prefix of EXTRACTOR_DIR.
-    const toplevel = execSync('git rev-parse --show-toplevel', opts).trim();
-    if (!toplevel || !EXTRACTOR_DIR.startsWith(toplevel)) return unknownSha();
-    return sha;
-  } catch {
-    return unknownSha();
+  const env = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+  const baseOpts = {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf8',
+    timeout: 2000,
+    env,
+  };
+  const home = homedir();
+  let dir = EXTRACTOR_DIR;
+  // Defensive depth bound: no realistic project nests deeper than 16 levels
+  // under HOME. Loop also exits at $HOME and at the filesystem root.
+  for (let i = 0; i < 16; i++) {
+    if (!dir || dir === home) break;
+    try {
+      const toplevel = execSync('git rev-parse --show-toplevel', {
+        ...baseOpts,
+        cwd: dir,
+      }).trim();
+      if (toplevel === dir) {
+        const sha = execSync('git rev-parse HEAD', {
+          ...baseOpts,
+          cwd: dir,
+        }).trim();
+        if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+        return unknownSha();
+      }
+    } catch {
+      // not a git dir at this level, or git unavailable; keep walking
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break; // filesystem root
+    dir = parent;
   }
+  return unknownSha();
 }
 function unknownSha() {
   process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');

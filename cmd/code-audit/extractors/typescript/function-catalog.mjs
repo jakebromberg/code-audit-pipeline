@@ -22,6 +22,7 @@ import ts from 'typescript';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { homedir } from 'node:os';
 import { join, relative, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -40,30 +41,40 @@ const FINGERPRINT_V = 'shape_sig:1';
 
 // v1.2 identity / provenance — see docs/pipeline-contract.md "Identity and
 // provenance". See extractors/typescript/type-catalog.mjs::computeSourceSha
-// for the long-form rationale; the bounded-walk + timeout pattern is shared.
+// for the long-form rationale; the bounded walk-up pattern is shared.
 function computeSourceSha() {
-  try {
-    const parent = dirname(EXTRACTOR_DIR);
-    const env = {
-      ...process.env,
-      GIT_CEILING_DIRECTORIES: parent,
-      GIT_TERMINAL_PROMPT: '0',
-    };
-    const opts = {
-      cwd: EXTRACTOR_DIR,
-      stdio: ['ignore', 'pipe', 'ignore'],
-      encoding: 'utf8',
-      timeout: 2000,
-      env,
-    };
-    const sha = execSync('git rev-parse HEAD', opts).trim();
-    if (!/^[0-9a-f]{40}$/.test(sha)) return unknownSha();
-    const toplevel = execSync('git rev-parse --show-toplevel', opts).trim();
-    if (!toplevel || !EXTRACTOR_DIR.startsWith(toplevel)) return unknownSha();
-    return sha;
-  } catch {
-    return unknownSha();
+  const env = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+  const baseOpts = {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf8',
+    timeout: 2000,
+    env,
+  };
+  const home = homedir();
+  let dir = EXTRACTOR_DIR;
+  for (let i = 0; i < 16; i++) {
+    if (!dir || dir === home) break;
+    try {
+      const toplevel = execSync('git rev-parse --show-toplevel', {
+        ...baseOpts,
+        cwd: dir,
+      }).trim();
+      if (toplevel === dir) {
+        const sha = execSync('git rev-parse HEAD', {
+          ...baseOpts,
+          cwd: dir,
+        }).trim();
+        if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+        return unknownSha();
+      }
+    } catch {
+      // not a git dir at this level; keep walking
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
+  return unknownSha();
 }
 function unknownSha() {
   process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');
