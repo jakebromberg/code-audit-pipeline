@@ -269,8 +269,19 @@ func TestE2EFileHashesScanMarks(t *testing.T) {
 
 	// Build the three fixture files. Line numbers below are exact and pinned
 	// in the assertions, so any drift in the fixture composer must also
-	// update expected outputs.
-	mkLine := func(n int, content string) string { _ = n; return content + "\n" }
+	// update expected outputs. `mkLine` asserts the running counter matches
+	// the declared line number so a reordering bug in the loop body produces
+	// an immediate failure instead of silently drifting denseMarks's
+	// pinned-line expectations.
+	var lineNo int
+	mkLine := func(n int, content string) string {
+		lineNo++
+		if lineNo != n {
+			t.Fatalf("fixture composer: declared line %d, running counter %d", n, lineNo)
+		}
+		return content + "\n"
+	}
+	resetLineNo := func() { lineNo = 0 }
 	var dense strings.Builder
 	denseMarks := []struct {
 		line  int
@@ -302,6 +313,7 @@ func TestE2EFileHashesScanMarks(t *testing.T) {
 		}
 	}
 
+	resetLineNo()
 	var sparse strings.Builder
 	sparseTotal := 100
 	sparseByLine := map[int]string{1: "Header", 50: "Footer"}
@@ -316,6 +328,7 @@ func TestE2EFileHashesScanMarks(t *testing.T) {
 			sparse.WriteString(mkLine(i, "var x"+strconv.Itoa(i)+" = 0"))
 		}
 	}
+	resetLineNo()
 	var none strings.Builder
 	for i := 1; i <= 10; i++ {
 		none.WriteString(mkLine(i, "let y"+strconv.Itoa(i)+" = 0"))
@@ -416,6 +429,9 @@ func TestE2EFileHashesScanMarks(t *testing.T) {
 	if mc, _ := nn["mark_count"].(float64); int(mc) != 0 {
 		t.Errorf("none.swift mark_count = %v, want 0", nn["mark_count"])
 	}
+	if lc, _ := nn["line_count"].(float64); int(lc) != 10 {
+		t.Errorf("none.swift line_count = %v, want 10", nn["line_count"])
+	}
 	noneLabels, _ := nn["mark_labels"].([]any)
 	if len(noneLabels) != 0 {
 		t.Errorf("none.swift mark_labels expected empty, got %v", noneLabels)
@@ -450,6 +466,138 @@ func TestE2EFileHashesScanMarks(t *testing.T) {
 				t.Errorf("default invocation row %v should NOT carry %q", r["file"], key)
 			}
 		}
+	}
+}
+
+// TestE2EFileHashesScanMarksEdgeCases pins regressions for three line-handling
+// edge cases that surfaced in code review:
+//
+//	(1) multi-dash MARK separator: `// MARK: --- Audio Session ---` must
+//	    capture the label as `Audio Session ---` (only leading dashes are
+//	    stripped; trailing decorative dashes are part of the label).
+//	(2) bare-CR line endings: a file whose only line terminator is `\r`
+//	    (legacy Mac, some clipboard pastes) must be split into multiple
+//	    lines, not collapsed into a single line that masks every MARK.
+//	(3) UTF-8 BOM prefix: a file beginning with the U+FEFF byte-order mark
+//	    must still match a first-line `// MARK:` directive.
+func TestE2EFileHashesScanMarksEdgeCases(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node not on PATH")
+	}
+	if _, err := os.Stat("../../extractors/file-hashes/manifest.toml"); err != nil {
+		t.Skip("file-hashes extractor not present")
+	}
+
+	tmp := t.TempDir()
+	repo := filepath.Join(tmp, "repo")
+	src := filepath.Join(repo, "Sources")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// (1) Multi-dash divider. Three lines: opener, middle MARK, body.
+	multiDash := "// header\n// MARK: --- Audio Session ---\nfunc f() {}\n"
+	// (2) Bare-CR. Four logical lines separated only by `\r`. With the bare-CR
+	// fix, lines split into 4; without, the whole file is a single line.
+	bareCR := "let a = 1\r// MARK: - First\rlet b = 2\r// MARK: - Second\r"
+	// (3) BOM-prefixed. The first byte is the UTF-8 BOM (EF BB BF); first line
+	// is a MARK; if BOM stripping isn't applied, the regex misses it.
+	bom := "\uFEFF// MARK: - Top\nfunc g() {}\n"
+
+	for name, body := range map[string]string{
+		"multidash.swift": multiDash,
+		"barecr.swift":    bareCR,
+		"bom.swift":       bom,
+	} {
+		if err := os.WriteFile(filepath.Join(src, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	extractorsAbs, err := filepath.Abs("../../extractors")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	exitCode := cli.Extract(context.Background(), []string{
+		"file-hashes",
+		"--root", repo,
+		"--audit-root", tmp,
+		"--extractors-dir", extractorsAbs,
+		"--extensions", "swift",
+		"--scan-marks",
+	}, &out, nil)
+	if exitCode != 0 {
+		t.Fatalf("Extract exit=%d, out=%s", exitCode, out.String())
+	}
+	catalogPath := filepath.Join(tmp, ".audit", "catalogs", "file-hashes.json")
+	data, err := os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatalf("read catalog: %v", err)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(data, &rows); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	byFile := map[string]map[string]any{}
+	for _, r := range rows {
+		f, _ := r["file"].(string)
+		byFile[f] = r
+	}
+
+	// (1) Multi-dash: mark_count=1, label="Audio Session ---". The regex
+	// strips the leading dash run and surrounding whitespace; trailing
+	// decorative dashes are not stripped (they're part of the label content,
+	// not the separator). Acceptable rendering; locks down the boundary so
+	// future changes to MARK_RE notice.
+	md := byFile["Sources/multidash.swift"]
+	if md == nil {
+		t.Fatalf("missing multidash.swift row")
+	}
+	if mc, _ := md["mark_count"].(float64); int(mc) != 1 {
+		t.Errorf("multidash.swift mark_count = %v, want 1", md["mark_count"])
+	}
+	mdLabels, _ := md["mark_labels"].([]any)
+	if len(mdLabels) != 1 {
+		t.Fatalf("multidash.swift mark_labels len = %d, want 1", len(mdLabels))
+	}
+	if mdLine, _ := mdLabels[0].(map[string]any)["line"].(float64); int(mdLine) != 2 {
+		t.Errorf("multidash.swift mark_labels[0].line = %v, want 2", mdLine)
+	}
+	if mdLabel, _ := mdLabels[0].(map[string]any)["label"].(string); mdLabel != "Audio Session ---" {
+		t.Errorf("multidash.swift mark_labels[0].label = %q, want %q", mdLabel, "Audio Session ---")
+	}
+
+	// (2) Bare-CR: 4 lines, 2 MARKs at lines 2 and 4.
+	cr := byFile["Sources/barecr.swift"]
+	if cr == nil {
+		t.Fatalf("missing barecr.swift row")
+	}
+	if lc, _ := cr["line_count"].(float64); int(lc) != 4 {
+		t.Errorf("barecr.swift line_count = %v, want 4 (bare CR must split)", cr["line_count"])
+	}
+	if mc, _ := cr["mark_count"].(float64); int(mc) != 2 {
+		t.Errorf("barecr.swift mark_count = %v, want 2", cr["mark_count"])
+	}
+
+	// (3) BOM-prefixed: first-line MARK must match. mark_count=1 at line 1.
+	bm := byFile["Sources/bom.swift"]
+	if bm == nil {
+		t.Fatalf("missing bom.swift row")
+	}
+	if mc, _ := bm["mark_count"].(float64); int(mc) != 1 {
+		t.Errorf("bom.swift mark_count = %v, want 1 (BOM must be stripped)", bm["mark_count"])
+	}
+	bmLabels, _ := bm["mark_labels"].([]any)
+	if len(bmLabels) != 1 {
+		t.Fatalf("bom.swift mark_labels len = %d, want 1", len(bmLabels))
+	}
+	if bmLine, _ := bmLabels[0].(map[string]any)["line"].(float64); int(bmLine) != 1 {
+		t.Errorf("bom.swift mark_labels[0].line = %v, want 1", bmLine)
+	}
+	if bmLabel, _ := bmLabels[0].(map[string]any)["label"].(string); bmLabel != "Top" {
+		t.Errorf("bom.swift mark_labels[0].label = %q, want %q", bmLabel, "Top")
 	}
 }
 

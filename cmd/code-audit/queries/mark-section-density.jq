@@ -7,13 +7,18 @@
 # file-hashes extractor when invoked with `--scan-marks` (extractor v0.6.0+).
 # Without `--scan-marks` those fields are absent and the query emits nothing.
 #
-# Run:  jq -L pipeline/queries -rf pipeline/queries/mark-section-density.jq file-hashes.json
+# Run:  jq -L pipeline/queries --argjson min_marks 6 --argjson min_lines 400 \
+#         -rf pipeline/queries/mark-section-density.jq file-hashes.json
 #       (file-hashes must have been generated with --scan-marks; otherwise
-#        the fields are absent and the query emits zero rows.)
+#        the fields are absent and the query emits zero rows. `code-audit
+#        query` supplies min_marks/min_lines from the front-matter defaults
+#        below; raw jq invocations may rely on the in-jq fallback that
+#        substitutes the same defaults when --argjson is omitted.)
 #
-# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -rf pipeline/queries/mark-section-density.jq file-hashes.json
+# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries --argjson min_marks 6 \
+#                --argjson min_lines 400 -rf pipeline/queries/mark-section-density.jq file-hashes.json
 #
-# Thresholds are tunable via positional --argjson:
+# Thresholds are tunable via --argjson:
 #   --argjson min_marks 6       require at least N MARK sections (default 6)
 #   --argjson min_lines 400     require strictly more than N total lines (default 400)
 #
@@ -39,10 +44,10 @@
 #     "suggested cut points." Refactor judgment is left to the agent layer
 #     consuming the cluster.
 #
-# cluster_id format:  mark-section-density:<package>:<file>
-# One cluster per matched file; uniqueness guaranteed by the (package, file)
-# pair the file-hashes extractor enforces (see _canonical.jq + the
-# copied-from-header / orphan-infer-model precedent).
+# cluster_id format:  mark-section-density:<package>__<file>
+# One cluster per matched file; the `__` separator (per the versioned-type-pairs
+# precedent) keeps the prefix/package/file boundary unambiguous even when Swift
+# packages emitted by resolveSwiftPackage carry colons (e.g. `app:iOS`).
 #
 #! query: mark-section-density
 #! shape: cluster
@@ -54,25 +59,42 @@
 
 include "_canonical";
 
-[ entries[]
+# Fallbacks so raw jq invocations (without --argjson) match the front-matter
+# defaults that `code-audit query` injects from the #! arg lines above. jq's
+# `$min_marks // 6` doesn't work for undefined variables — they raise at parse
+# time — so we use the `try / catch` form which captures the "is not defined"
+# error and substitutes the documented default.
+(try $min_marks catch 6) as $min_marks
+| (try $min_lines catch 400) as $min_lines
+| [ entries[]
   | select((.mark_count // null) != null)
+  | select((.line_count // null) != null)
   | select(.mark_count >= $min_marks)
   | select(.line_count > $min_lines)
+  | (.mark_labels // []) as $labels
+  | ($labels | if length > 0 then .[0].line else 1 end) as $first_line
   | {
-      cluster_id: cluster_id_single_name("mark-section-density"; "\(.package):\(.file)"),
+      cluster_id: cluster_id_single_name("mark-section-density"; "\(.package)__\(.file)"),
       query: "mark-section-density",
       shape: "cluster",
       package,
       file,
       mark_count,
       line_count,
-      mark_labels,
+      mark_labels: $labels,
+      # Members carry name/kind/line so the binary's markdown renderer
+      # (internal/render/cluster.go::renderMember) prints a meaningful row
+      # instead of a bare ' — pkg:file' bullet. The `file` value doubles as
+      # the symbol name because this query operates at file granularity.
       members: [{
+        name: .file,
+        kind: "file",
         package,
         file,
+        line: $first_line,
         mark_count,
         line_count,
-        mark_labels
+        mark_labels: $labels
       }]
     }
 ]
@@ -87,6 +109,6 @@ include "_canonical";
     "[\(.mark_count) marks / \(.line_count) lines] cid=\(.cluster_id)\n"
     + "    \(.package):\(.file)\n"
     + (.mark_labels
-        | map("      L\(.line)  \(.label)")
+        | map("      L\(.line)  \(if .label == "" then "(unlabeled)" else .label end)")
         | join("\n"))
   end
