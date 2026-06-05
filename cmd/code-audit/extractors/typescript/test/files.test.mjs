@@ -63,12 +63,17 @@ test('files.json: without --emit-files, no files.json is written', () => {
   }
 });
 
-test('files.json: wrapped as schema_version 1.1 with extractor provenance', () => {
+test('files.json: wrapped as schema_version 1.2 with identity/provenance metadata', () => {
   const f = extractFiles();
-  assert.equal(f.schema_version, '1.1');
+  assert.equal(f.schema_version, '1.2');
   assert.equal(f.extractor.language, 'typescript');
   assert.equal(f.extractor.name, 'type-catalog');
   assert.ok(/^\d+\.\d+\.\d+/.test(f.extractor.version), `version: ${f.extractor.version}`);
+  assert.ok(typeof f.extractor.source_sha === 'string' && f.extractor.source_sha.length > 0,
+    `source_sha: ${f.extractor.source_sha}`);
+  assert.equal(f.fingerprint_v, 'shape_sig:1');
+  assert.ok(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(f.generated_at),
+    `generated_at: ${f.generated_at}`);
   assert.ok(Array.isArray(f.entries));
 });
 
@@ -229,8 +234,13 @@ test('files.json: shared package files also appear in entries[]', () => {
 });
 
 test('files.json: existing catalog output remains unchanged when --emit-files is also passed', () => {
-  // Determinism check: --emit-files should be byte-identical to a side
-  // effect. The primary stdout (catalog) must NOT be affected.
+  // Determinism check: --emit-files should be a pure side effect. The primary
+  // stdout (catalog) must NOT differ in extracted structure.
+  //
+  // Note: v1.2 introduces a wall-clock `generated_at` field, so byte-for-byte
+  // equality between two runs is no longer expected; the comparison strips the
+  // timestamp before asserting equality so the rest of the envelope remains a
+  // determinism guard.
   const tmp = mkdtempSync(join(tmpdir(), 'files-test-'));
   try {
     const catalog1 = join(tmp, 'catalog-1.json');
@@ -240,9 +250,12 @@ test('files.json: existing catalog output remains unchanged when --emit-files is
     const res2 = runExtractor(['--shared', FIXTURES_SHARED, '--output', catalog2, '--emit-files', files1]);
     assert.equal(res1.status, 0);
     assert.equal(res2.status, 0);
-    const a = readFileSync(catalog1, 'utf8');
-    const b = readFileSync(catalog2, 'utf8');
-    assert.equal(a, b, 'catalog stdout should be byte-identical with/without --emit-files');
+    const a = JSON.parse(readFileSync(catalog1, 'utf8'));
+    const b = JSON.parse(readFileSync(catalog2, 'utf8'));
+    // Strip the wall-clock field; everything else must match exactly.
+    delete a.generated_at;
+    delete b.generated_at;
+    assert.deepEqual(a, b, 'catalog envelope (excluding generated_at) and entries should be identical with/without --emit-files');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

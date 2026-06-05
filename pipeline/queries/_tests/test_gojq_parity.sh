@@ -161,6 +161,7 @@ both_modes subset-pairs                              "$QUERIES_DIR/subset-pairs.
 both_modes protocol-inheritance-candidates           "$QUERIES_DIR/protocol-inheritance-candidates.jq"           "$TYPES_FIXTURE" --argjson min_overlap 2
 both_modes pat-candidates                            "$QUERIES_DIR/pat-candidates.jq"                            "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 both_modes generic-struct-candidates                 "$QUERIES_DIR/generic-struct-candidates.jq"                 "$TYPES_FIXTURE" --argjson max_slot_diffs 1
+both_modes symbol-id-collisions                      "$QUERIES_DIR/symbol-id-collisions.jq"                      "$TYPES_FIXTURE"
 
 echo ""
 echo "=== Function-catalog queries ==="
