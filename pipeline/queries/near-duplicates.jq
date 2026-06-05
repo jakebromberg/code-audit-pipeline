@@ -12,6 +12,14 @@
 # legitimate "should be unified" pairs; lower for broader recall, higher to
 # focus only on near-exact matches.
 #
+# Each row carries a `demoted` boolean (issue #217). When true, both endpoints
+# already conform to the same non-trivial protocol — i.e., the abstraction the
+# duplication "should" become already exists. Demoted pairs are still emitted
+# (signal not lost) but sorted to the tail in text mode and carry
+# `demoted: true` in JSONL mode so downstream consumers can filter. Pair
+# queries pass the 2-element array `[left, right]` to the cluster predicate;
+# the predicate's contract is "an array of decls."
+#
 # cluster_id format:  near-duplicates:LocA+LocB  (sorted location keys
 #                                                 — package:file:line:name)
 #
@@ -24,7 +32,9 @@
 
 include "_canonical";
 
-[ entries[] | select(.package == "main" and .fields and (.fields | length) >= 3) ] as $bs
+. as $catalog
+| ($catalog | protocols_index) as $protocols_idx
+| [ entries[] | select(.package == "main" and .fields and (.fields | length) >= 3) ] as $bs
 | [
     range(0; $bs | length) as $i
     | range($i + 1; $bs | length) as $j
@@ -38,14 +48,18 @@ include "_canonical";
     | { cluster_id: cluster_id_sorted_pair("near-duplicates"; loc_key($a); loc_key($b)),
         query: "near-duplicates",
         shape: "pair",
-        jacc: $jacc, left: $a, right: $b, left_fields: $af, right_fields: $bf }
+        jacc: $jacc,
+        demoted: ([$a, $b] | is_already_abstracted_cluster($protocols_idx)),
+        left: $a, right: $b, left_fields: $af, right_fields: $bf }
   ]
-| sort_by(-(.jacc))
+# Sort un-demoted pairs first (highest-Jaccard first), then demoted (also
+# highest-Jaccard first within the demoted section).
+| sort_by(.demoted, -(.jacc))
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "[\((.jacc * 100) | floor)%] \(.left.name)@\(.left.file):\(.left.line)  <->  \(.right.name)@\(.right.file):\(.right.line) cid=\(.cluster_id)\n"
+    "\(if .demoted then "[DEMOTED — already abstracted] " else "" end)[\((.jacc * 100) | floor)%] \(.left.name)@\(.left.file):\(.left.line)  <->  \(.right.name)@\(.right.file):\(.right.line) cid=\(.cluster_id)\n"
     + "    left fields:  \(.left_fields | join(", "))\n"
     + "    right fields: \(.right_fields | join(", "))"
   end

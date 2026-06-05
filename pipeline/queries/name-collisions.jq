@@ -9,6 +9,11 @@
 # shadowing), and same name with semantically different shapes (the
 # "antipattern of name overloading").
 #
+# Each row carries a `demoted` boolean (issue #217). When true, the cluster's
+# members already share a non-trivial protocol — typical case: a redeclared
+# type that's a deliberate per-module re-spelling of a shared protocol's
+# requirements. Demoted clusters are sorted to the tail in text mode.
+#
 # cluster_id format:  name-collisions:Name  (the colliding name)
 #
 #! query: name-collisions
@@ -25,26 +30,30 @@ include "_canonical";
 # --include-imports) which would otherwise inflate clusters with consumer-edge
 # references to the same exported name.
 # V2 substrate: filter generated codegen entries (see exact-duplicates.jq for rationale).
-[ entries[]
-  | select((.generated // false) != true)
-  | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object" or . == "drizzle-table")
-]
+. as $catalog
+| ($catalog | protocols_index) as $protocols_idx
+| [ entries[]
+    | select((.generated // false) != true)
+    | select(.kind | startswith("type-alias") or . == "interface" or . == "zod-object" or . == "drizzle-table")
+  ]
 | group_by(.name)
 | map(select(length > 1))
 | map(select((map(.file) | unique | length) > 1))
-| map({
-    cluster_id: cluster_id_single_name("name-collisions"; .[0].name),
-    query: "name-collisions",
-    shape: "cluster",
-    name: .[0].name,
-    members: map({kind, package, file, line, touched_in_window, shape_sig})
-  })
-| sort_by(-(.members | length), .name)
+| map(. as $cluster
+      | {
+          cluster_id: cluster_id_single_name("name-collisions"; .[0].name),
+          query: "name-collisions",
+          shape: "cluster",
+          name: .[0].name,
+          demoted: ($cluster | is_already_abstracted_cluster($protocols_idx)),
+          members: map({kind, package, file, line, touched_in_window, shape_sig})
+        })
+| sort_by(.demoted, -(.members | length), .name)
 | .[]
 | if output_format == "jsonl" then
     @json
   else
-    "\(.name) (\(.members | length)) cid=\(.cluster_id)\n"
+    "\(if .demoted then "[DEMOTED — already abstracted] " else "" end)\(.name) (\(.members | length)) cid=\(.cluster_id)\n"
     + (.members
         | map("  \(if .touched_in_window then "*" else " " end) [\(.kind)] \(.package):\(.file):\(.line)"
               + (if .shape_sig then "  sig=" + (.shape_sig | .[0:80]) else "" end))

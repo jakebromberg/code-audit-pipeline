@@ -53,6 +53,7 @@ VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 INDEX_FIXTURE="$FIXTURES_DIR/cross-repo-ops/all-ok.index.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
+NOTIFICATION_WRAPPERS_FIXTURE="$FIXTURES_DIR/notification-wrappers.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -170,6 +171,7 @@ both_modes symbol-id-collisions                      "$QUERIES_DIR/symbol-id-col
 # collided) lives in test_queries_integration.sh's semantic assertion.
 # Parity contract here is "jq and gojq agree on the empty-result fixture,"
 # which is sufficient because the engine doesn't care about input shape.
+both_modes notification-wrapper-grouping             "$QUERIES_DIR/notification-wrapper-grouping.jq"             "$NOTIFICATION_WRAPPERS_FIXTURE"
 
 echo ""
 echo "=== Function-catalog queries ==="
