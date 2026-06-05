@@ -52,6 +52,7 @@ BACKWARD_IMPORTS_FIXTURE="$FIXTURES_DIR/cross-package-backward-imports-files.inp
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 INDEX_FIXTURE="$FIXTURES_DIR/cross-repo-ops/all-ok.index.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
+MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -180,6 +181,7 @@ echo ""
 echo "=== File-hash queries ==="
 both_modes file-duplicates                           "$QUERIES_DIR/file-duplicates.jq"                           "$FILES_FIXTURE"
 both_modes copied-from-header                        "$QUERIES_DIR/copied-from-header.jq"                        "$COPIED_FROM_HEADER_FIXTURE"
+both_modes mark-section-density                      "$QUERIES_DIR/mark-section-density.jq"                      "$MARK_SECTION_DENSITY_FIXTURE" --argjson min_marks 6 --argjson min_lines 400
 
 echo ""
 echo "=== Migration-progress queries ==="

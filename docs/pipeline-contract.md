@@ -594,6 +594,35 @@ The extractor reads the first 30 lines of each file and matches against a fixed 
 
 Used by `pipeline/queries/file-duplicates.jq` (two sections: exact-byte and whitespace-normalized-only clusters) and `pipeline/queries/copied-from-header.jq` (files whose top comment self-confesses as a fork, when `--scan-header` is set).
 
+### Optional `mark_count` / `line_count` / `mark_labels` fields (extractor v0.6.0+)
+
+When `file-hashes.mjs` is invoked with `--scan-marks` (a Swift-calibrated convenience flag), every record carries three additional top-level fields:
+
+```jsonc
+{
+  "package": "app:iOS",
+  "file": "Sources/Audio/AudioPlayerController.swift",
+  "generated": false,
+  "size_bytes": 36000,
+  "size_normalized": 35990,
+  "sha256": "...",
+  "sha256_normalized": "...",
+  "mark_count": 13,                          // count of `// MARK:` lines in the file
+  "line_count": 812,                         // total source-line count (wc -l semantics)
+  "mark_labels": [                           // 1-indexed line numbers + captured labels
+    { "line": 12,  "label": "Singleton" },
+    { "line": 67,  "label": "Player Factory" },
+    { "line": 134, "label": "State" }
+  ]
+}
+```
+
+`mark_count` and `mark_labels[].label` are populated by the regex `/^[ \t]*\/\/\s*MARK:\s*-?\s*(.*?)\s*$/` — Swift's `// MARK: <title>` (with or without the optional visual `-` separator). `line_count` follows POSIX `wc -l` semantics (count of newline-terminated lines; a trailing `\n` does not produce an extra empty line).
+
+**Omitted entirely when flag unset.** Records produced without `--scan-marks` carry zero of the three fields — not `null`, not `0`. Downstream queries gate on `select((.mark_count // null) != null)` to stay back-compatible. This matches the convention used for other optional file-hashes fields.
+
+Used by `pipeline/queries/mark-section-density.jq`, which surfaces long files with high MARK density as maintainer-pre-labeled refactor candidates.
+
 ## Package graph (`package-graph.json`)
 
 V7 §6.5 enrichment. Cross-package dependency edges so an agent can name the *correct* extraction target package (one already upstream of both consumers) rather than recommending an arbitrary "common" package. The graph is a single JSON object, not an array, because two parallel collections (nodes and edges) are the natural representation and re-deriving one from the other on every query would be wasteful.

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -250,6 +251,204 @@ func TestE2EFileHashesScanHeader(t *testing.T) {
 	for _, r := range rows2 {
 		if _, present := r["header_match"]; present {
 			t.Errorf("default invocation row %v should NOT carry header_match", r["file"])
+		}
+	}
+}
+
+// TestE2EFileHashesScanMarks exercises the --scan-marks flag added for the
+// mark-section-density.jq query (#221). Runs file-hashes against three Swift
+// files (dense MARK density, sparse, none) and asserts mark_count /
+// line_count / mark_labels shape on each row.
+func TestE2EFileHashesScanMarks(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node not on PATH")
+	}
+	if _, err := os.Stat("../../extractors/file-hashes/manifest.toml"); err != nil {
+		t.Skip("file-hashes extractor not present")
+	}
+
+	// Build the three fixture files. Line numbers below are exact and pinned
+	// in the assertions, so any drift in the fixture composer must also
+	// update expected outputs.
+	mkLine := func(n int, content string) string { _ = n; return content + "\n" }
+	var dense strings.Builder
+	denseMarks := []struct {
+		line  int
+		label string
+	}{
+		{1, "Singleton"},
+		{8, "Player Factory"},
+		{15, "State"},
+		{22, "Audio Session"},
+		{29, "Remote Command Center"},
+		{36, "Notifications"},
+		{43, "App Lifecycle"},
+	}
+	denseTotal := 50
+	markByLine := map[int]string{}
+	for _, m := range denseMarks {
+		markByLine[m.line] = m.label
+	}
+	for i := 1; i <= denseTotal; i++ {
+		if lbl, ok := markByLine[i]; ok {
+			// Alternate `// MARK:` and `// MARK: -` styles.
+			if i%2 == 1 {
+				dense.WriteString(mkLine(i, "// MARK: - "+lbl))
+			} else {
+				dense.WriteString(mkLine(i, "// MARK: "+lbl))
+			}
+		} else {
+			dense.WriteString(mkLine(i, "func line"+strconv.Itoa(i)+"() {}"))
+		}
+	}
+
+	var sparse strings.Builder
+	sparseTotal := 100
+	sparseByLine := map[int]string{1: "Header", 50: "Footer"}
+	for i := 1; i <= sparseTotal; i++ {
+		if lbl, ok := sparseByLine[i]; ok {
+			if i == 50 {
+				sparse.WriteString(mkLine(i, "// MARK: - "+lbl))
+			} else {
+				sparse.WriteString(mkLine(i, "// MARK: "+lbl))
+			}
+		} else {
+			sparse.WriteString(mkLine(i, "var x"+strconv.Itoa(i)+" = 0"))
+		}
+	}
+	var none strings.Builder
+	for i := 1; i <= 10; i++ {
+		none.WriteString(mkLine(i, "let y"+strconv.Itoa(i)+" = 0"))
+	}
+
+	tmp := t.TempDir()
+	repo := filepath.Join(tmp, "repo")
+	src := filepath.Join(repo, "Sources")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"dense.swift":  dense.String(),
+		"sparse.swift": sparse.String(),
+		"none.swift":   none.String(),
+	} {
+		if err := os.WriteFile(filepath.Join(src, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	extractorsAbs, err := filepath.Abs("../../extractors")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// --- Variant 1: with --scan-marks set.
+	var out bytes.Buffer
+	exitCode := cli.Extract(context.Background(), []string{
+		"file-hashes",
+		"--root", repo,
+		"--audit-root", tmp,
+		"--extractors-dir", extractorsAbs,
+		"--extensions", "swift",
+		"--scan-marks",
+	}, &out, nil)
+	if exitCode != 0 {
+		t.Fatalf("Extract (--scan-marks) exit=%d, out=%s", exitCode, out.String())
+	}
+
+	catalogPath := filepath.Join(tmp, ".audit", "catalogs", "file-hashes.json")
+	data, err := os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatalf("read catalog: %v", err)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(data, &rows); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	byFile := map[string]map[string]any{}
+	for _, r := range rows {
+		f, _ := r["file"].(string)
+		byFile[f] = r
+	}
+
+	// dense.swift assertions.
+	d := byFile["Sources/dense.swift"]
+	if d == nil {
+		t.Fatalf("missing dense.swift row: %s", string(data))
+	}
+	if mc, _ := d["mark_count"].(float64); int(mc) != 7 {
+		t.Errorf("dense.swift mark_count = %v, want 7", d["mark_count"])
+	}
+	if lc, _ := d["line_count"].(float64); int(lc) != 50 {
+		t.Errorf("dense.swift line_count = %v, want 50", d["line_count"])
+	}
+	labels, _ := d["mark_labels"].([]any)
+	if len(labels) != 7 {
+		t.Fatalf("dense.swift mark_labels len = %d, want 7: %v", len(labels), labels)
+	}
+	for i, expected := range denseMarks {
+		got, _ := labels[i].(map[string]any)
+		if line, _ := got["line"].(float64); int(line) != expected.line {
+			t.Errorf("dense.swift mark_labels[%d].line = %v, want %d", i, got["line"], expected.line)
+		}
+		if lbl, _ := got["label"].(string); lbl != expected.label {
+			t.Errorf("dense.swift mark_labels[%d].label = %q, want %q", i, got["label"], expected.label)
+		}
+	}
+
+	// sparse.swift assertions.
+	sp := byFile["Sources/sparse.swift"]
+	if sp == nil {
+		t.Fatalf("missing sparse.swift row")
+	}
+	if mc, _ := sp["mark_count"].(float64); int(mc) != 2 {
+		t.Errorf("sparse.swift mark_count = %v, want 2", sp["mark_count"])
+	}
+	if lc, _ := sp["line_count"].(float64); int(lc) != 100 {
+		t.Errorf("sparse.swift line_count = %v, want 100", sp["line_count"])
+	}
+
+	// none.swift assertions.
+	nn := byFile["Sources/none.swift"]
+	if nn == nil {
+		t.Fatalf("missing none.swift row")
+	}
+	if mc, _ := nn["mark_count"].(float64); int(mc) != 0 {
+		t.Errorf("none.swift mark_count = %v, want 0", nn["mark_count"])
+	}
+	noneLabels, _ := nn["mark_labels"].([]any)
+	if len(noneLabels) != 0 {
+		t.Errorf("none.swift mark_labels expected empty, got %v", noneLabels)
+	}
+
+	// --- Variant 2: without --scan-marks. Fields are omitted entirely.
+	if err := os.RemoveAll(filepath.Join(tmp, ".audit")); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	exitCode = cli.Extract(context.Background(), []string{
+		"file-hashes",
+		"--root", repo,
+		"--audit-root", tmp,
+		"--extractors-dir", extractorsAbs,
+		"--extensions", "swift",
+	}, &out, nil)
+	if exitCode != 0 {
+		t.Fatalf("Extract (default) exit=%d, out=%s", exitCode, out.String())
+	}
+	data, err = os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatalf("read catalog v2: %v", err)
+	}
+	var rows2 []map[string]any
+	if err := json.Unmarshal(data, &rows2); err != nil {
+		t.Fatalf("unmarshal v2: %v", err)
+	}
+	for _, r := range rows2 {
+		for _, key := range []string{"mark_count", "line_count", "mark_labels"} {
+			if _, present := r[key]; present {
+				t.Errorf("default invocation row %v should NOT carry %q", r["file"], key)
+			}
 		}
 	}
 }

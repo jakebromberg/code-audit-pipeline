@@ -29,6 +29,7 @@ IS_TEST_TREE="$FIXTURES_DIR/is-test-tree"
 TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
+MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 
 PASS=0
 FAIL=0
@@ -251,6 +252,61 @@ assert_copied_from_header_semantic() {
   printf "  ✓ copied-from-header (semantic): default %d rows, INCLUDE_GENERATED=true %d rows; Plain/Generated correctly gated\n" "$count" "$count_gen"
 }
 assert_copied_from_header_semantic
+
+assert_jsonl_has_prefix mark-section-density.jq "$MARK_SECTION_DENSITY_FIXTURE" "mark-section-density:" \
+  --argjson min_marks 6 --argjson min_lines 400
+assert_envelope_shape    mark-section-density.jq "$MARK_SECTION_DENSITY_FIXTURE" \
+  --argjson min_marks 6 --argjson min_lines 400
+
+# Semantic checks for mark-section-density. Fixture has 4 rows:
+#   - app:iOS:Sources/Audio/AudioPlayerController.swift  — 13 marks / 812 lines (PASSES defaults)
+#   - app:iOS:Sources/UI/Short.swift                     — 8 marks / 200 lines  (filtered at default 400 min_lines)
+#   - main:Sources/Data/Sparse.swift                     — 3 marks / 900 lines  (filtered at default 6 min_marks)
+#   - main:Sources/Util/NoMarks.swift                    — no mark_count field  (filtered: null mark_count)
+# At defaults: exactly 1 row (AudioPlayerController). At min_marks=2/min_lines=100: 3 rows.
+assert_mark_section_density_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_marks 6 --argjson min_lines 400 \
+    -f "$QUERIES_DIR/mark-section-density.jq" "$MARK_SECTION_DENSITY_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (semantic, defaults): expected 1 row, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+  if ! printf '%s\n' "$jsonl" | jq -r '.file' | grep -qx "Sources/Audio/AudioPlayerController.swift"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (semantic, defaults): missing AudioPlayerController\n"
+    return
+  fi
+  local low_jsonl low_count
+  low_jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_marks 2 --argjson min_lines 100 \
+    -f "$QUERIES_DIR/mark-section-density.jq" "$MARK_SECTION_DENSITY_FIXTURE" 2>&1)"
+  low_count="$(printf '%s\n' "$low_jsonl" | grep -c .)"
+  if [[ "$low_count" != "3" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (semantic, low thresholds): expected 3 rows, got %d\n" "$low_count"
+    return
+  fi
+  # Densest-first ordering: first row must be AudioPlayerController (13 marks).
+  local first_file
+  first_file="$(printf '%s\n' "$low_jsonl" | head -1 | jq -r '.file')"
+  if [[ "$first_file" != "Sources/Audio/AudioPlayerController.swift" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (semantic): densest-first ordering broken; first file = %s\n" "$first_file"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ mark-section-density (semantic): defaults emit %d row, low thresholds emit %d, densest-first holds\n" "$count" "$low_count"
+}
+assert_mark_section_density_semantic
 
 echo ""
 echo "=== Migration-progress queries ==="
@@ -1152,6 +1208,7 @@ assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_co
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
 assert_text_has_cid copied-from-header.jq "$COPIED_FROM_HEADER_FIXTURE"
+assert_text_has_cid mark-section-density.jq "$MARK_SECTION_DENSITY_FIXTURE" --argjson min_marks 6 --argjson min_lines 400
 assert_text_has_cid migration-progress.jq "$MIGRATION_FIXTURE" \
   --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 assert_text_has_cid shape-sig-frequency.jq "$MIGRATION_FIXTURE"

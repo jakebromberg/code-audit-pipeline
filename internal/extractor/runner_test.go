@@ -41,6 +41,8 @@ func TestWhenSatisfied(t *testing.T) {
 		{"min_body_lines_set", Args{}, false},
 		{"scan_header_set", Args{ScanHeader: true}, true},
 		{"scan_header_set", Args{}, false},
+		{"scan_marks_set", Args{ScanMarks: true}, true},
+		{"scan_marks_set", Args{}, false},
 	}
 	for _, c := range cases {
 		if got := whenSatisfied(c.when, c.args); got != c.want {

@@ -30,6 +30,10 @@ type Args struct {
 	// which captures the first matched "copied from"-style phrase in each
 	// file's top comment block. Drives the copied-from-header.jq query.
 	ScanHeader bool
+	// ScanMarks activates the file-hashes extractor's --scan-marks pass,
+	// which counts `// MARK:` comment lines and captures their labels.
+	// Drives the mark-section-density.jq query.
+	ScanMarks bool
 	// SetupHint, if non-empty, is appended to any subprocess failure as
 	// `hint: <SetupHint>`. Sourced from the manifest's [runtime].setup_hint
 	// so that errors like "node_modules missing" point users at the exact
@@ -171,6 +175,8 @@ func whenSatisfied(when string, args Args) bool {
 		return args.IncludeImports
 	case "scan_header_set":
 		return args.ScanHeader
+	case "scan_marks_set":
+		return args.ScanMarks
 	}
 	return false
 }
@@ -195,5 +201,7 @@ func recordArg(cli map[string]any, when string, args Args) {
 		cli["include_imports"] = true
 	case "scan_header_set":
 		cli["scan_header"] = true
+	case "scan_marks_set":
+		cli["scan_marks"] = true
 	}
 }
