@@ -798,14 +798,14 @@ Cross-language `kind` values — the same `kind` appears in records from multipl
 - `migration` — schema migration (Alembic for Python, Drizzle for TypeScript, Flyway/Liquibase elsewhere). `language_data.<lang>.{migration_framework, revision, down_revision, upgrade_ops, guards, …}`.
 - `sql-query` — a SQL statement composed inside a host language. `language: "<host>"`; `language_data.sql.{dialect, tables_read, tables_written, columns_selected, where_predicates, order_by, placeholder_count, placeholder_style}`; `language_data.<host>.{composition, execute_sites, static_prefix, fragment_alternatives, …}`.
 - `sql-external-reference` — host-language code that loads a SQL file at runtime. `language_data.<host>.{loaded_from, transformations, execute_via}`.
-- `external-import` — host-language code that imports a symbol whose implementation lives in a different language (PyO3, FFI, native extensions). `language_data.<host>.{imported_as, implementation_language, implementation_package, resolution}`.
+- `external-import` — host-language code that imports a symbol whose implementation lives in a different language (PyO3, FFI, native extensions). `language_data.<host>.{imported_as, implementation_language, implementation_package, resolution}`. The host-side of the PyO3 cross-language pair; the implementation-side row is `pyo3-function` (under Rust in the language-specific kinds below) — together they form the join key for cross-language consumption queries.
 
 Language-specific kinds (within a single language ecosystem; documented for clarity):
 
 - TypeScript: `interface`, `type-alias-object`, `type-alias-union`, `type-alias-intersection`, `type-alias-infer-model`, `type-alias-other`, `zod-object`, `drizzle-table`, `inline-object`, `import`.
 - Swift: `type` (struct/class/enum), `interface` (protocol), `conformance`, `macro_definition`, `macro_application`.
 - Python: `pydantic-model`, `fastapi-route`, `fastapi-dependency`, `dataclass`, `enum`.
-- Rust: `pyo3-function` (a Rust function exported across the PyO3 FFI boundary; `language: "rust"`, `language_data.rust.pyo3.{python_qualified_name, attribute_kind, registration_site}`. See the `pyo3-function` row in `docs/pipeline-contract-v2-fixtures.jsonl` for the canonical record shape. Paired with the host-side `external-import` row on the Python side to form the cross-language join — `external-import` is in the cross-language section above; `pyo3-function` lives here because the row's structure is Rust-extractor-emitted.).
+- Rust: `pyo3-function` — a Rust function exported across the PyO3 FFI boundary. `language: "rust"`; `language_data.rust.{fn_signature, pyo3_attribute, registered_in}`; `language_data.python.qualified_name` carries the Python-side import path so a cross-language query can join on it. See the `pyo3-function` row in [`docs/pipeline-contract-v2-fixtures.jsonl`](pipeline-contract-v2-fixtures.jsonl) for the canonical record shape, and the field-namespace summary table at "Schema v2 — two-tier ratification" → "Language extension fields" for the per-language-namespace map. Paired with the host-side `external-import` row above to form the cross-language join.
 
 #### v2 deliberate scope
 
