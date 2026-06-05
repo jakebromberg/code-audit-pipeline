@@ -26,12 +26,13 @@ const { values } = parseArgs({
     extensions:     { type: 'string', default: 'ts,tsx,mts,cts' },
     'include-tests':{ type: 'boolean', default: false },
     'scan-header':  { type: 'boolean', default: false },
+    'scan-marks':   { type: 'boolean', default: false },
     help:           { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: file-hashes.mjs --root <path> [--shared <path>] [--output <path>] [--extensions ts,tsx,...] [--include-tests] [--scan-header]
+  process.stderr.write(`usage: file-hashes.mjs --root <path> [--shared <path>] [--output <path>] [--extensions ts,tsx,...] [--include-tests] [--scan-header] [--scan-marks]
 
   --root          Required. Root of the codebase to scan.
   --shared        Optional. A secondary package root. Tagged as package="shared".
@@ -43,6 +44,9 @@ if (values.help || !values.root) {
                   first "copied from"-style phrase that matches. Adds a
                   header_match: { line, phrase, text } | null field to every row.
                   Drives pipeline/queries/copied-from-header.jq.
+  --scan-marks    Optional. Scan each file for "// MARK:" section markers (Swift
+                  convention). Adds mark_count, line_count, and mark_labels[]
+                  fields to every row. Drives pipeline/queries/mark-section-density.jq.
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -51,6 +55,7 @@ const ROOT = resolve(values.root);
 const SHARED = values.shared ? resolve(values.shared) : null;
 const INCLUDE_TESTS = values['include-tests'];
 const SCAN_HEADER = values['scan-header'];
+const SCAN_MARKS = values['scan-marks'];
 const EXTS = new Set(values.extensions.split(',').map((s) => s.trim()).filter(Boolean));
 
 // Header phrases captured by --scan-header. Substring match, case-insensitive.
@@ -69,6 +74,16 @@ const HEADER_PHRASES = [
 // typical license / copyright blocks plus a short header comment under them
 // without spilling into actual code in any reasonable file.
 const HEADER_SCAN_LINES = 30;
+
+// MARK detection regex. Swift convention is `// MARK: <title>` with an optional
+// `-` separator that is purely visual (`// MARK: - Foo`). We accept both forms
+// and strip the leading dash + surrounding whitespace from the captured label
+// so consumers see a clean section name.
+//
+// Anchored at start-of-line with optional indent so a `MARK:` inside a string
+// or inside a multi-line comment doesn't false-match. Swift forbids `//`-style
+// comments inside string literals, so this is a clean signal in practice.
+const MARK_RE = /^[ \t]*\/\/\s*MARK:\s*-?\s*(.*?)\s*$/;
 
 // Swift mode: enabled when 'swift' is among --extensions. Mirrors the swift-catalog
 // extractor's skip-list and package resolution so cross-catalog queries see the same
@@ -156,6 +171,41 @@ function scanHeader(buf) {
   return null;
 }
 
+// scanMarks walks every line of the file, counts // MARK: sections, and
+// returns { mark_count, line_count, mark_labels: [{line, label}] }. Labels
+// are captured per the MARK_RE regex; empty-label MARK lines (`// MARK:`) emit
+// `label: ""` so the consumer sees the line without inventing a name.
+//
+// line_count is the number of source lines (newline-terminated), matching
+// POSIX `wc -l` semantics: a file ending with `\n` whose body holds N
+// newline-separated content lines reports `line_count = N`. The trailing-
+// blank-line trimming used by `normalize()` is intentionally NOT applied;
+// mark-section-density.jq filters on raw file length, not normalized.
+// mark_labels[].line uses 1-indexed line numbers.
+function scanMarks(buf) {
+  const text = buf.toString('utf8').replace(/\r\n/g, '\n');
+  const lines = text.split('\n');
+  // A trailing `\n` produces a final empty entry from split; drop it so the
+  // line_count matches `wc -l`. If the file doesn't end with `\n` the last
+  // entry holds real content and stays. Files with zero bytes split into a
+  // single empty string; drop that too.
+  if (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop();
+  }
+  const marks = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(MARK_RE);
+    if (m) {
+      marks.push({ line: i + 1, label: m[1] });
+    }
+  }
+  return {
+    mark_count: marks.length,
+    line_count: lines.length,
+    mark_labels: marks,
+  };
+}
+
 function hashFile(filePath, pkgName, pkgRoot) {
   const buf = readFileSync(filePath);
   const norm = normalize(buf);
@@ -176,6 +226,12 @@ function hashFile(filePath, pkgName, pkgRoot) {
   // output.
   if (SCAN_HEADER) {
     record.header_match = scanHeader(buf);
+  }
+  // When --scan-marks is set, every record carries mark_count, line_count,
+  // and mark_labels[]. When unset, the fields are omitted entirely so legacy
+  // readers see byte-stable output.
+  if (SCAN_MARKS) {
+    Object.assign(record, scanMarks(buf));
   }
   return record;
 }

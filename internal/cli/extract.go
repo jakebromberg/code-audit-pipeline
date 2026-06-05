@@ -35,6 +35,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer, embeddedExtracto
 	emitFiles := fs.Bool("emit-files", false, "request files sibling")
 	includeImports := fs.Bool("include-imports", false, "emit kind:import consumer-edge rows (TypeScript)")
 	scanHeader := fs.Bool("scan-header", false, "scan top of each file for \"copied from\"-style phrases (file-hashes)")
+	scanMarks := fs.Bool("scan-marks", false, "scan each file for // MARK: section markers (file-hashes)")
 	extensions := fs.String("extensions", "", "comma-separated file extensions")
 	minBody := fs.Int("min-body-lines", 0, "function-body line threshold")
 	extractorsDir := fs.String("extractors-dir", "", "explicit extractors directory")
@@ -109,6 +110,7 @@ func Extract(ctx context.Context, argv []string, out io.Writer, embeddedExtracto
 		EmitFiles:      *emitFiles,
 		IncludeImports: *includeImports,
 		ScanHeader:     *scanHeader,
+		ScanMarks:      *scanMarks,
 		SetupHint:      m.Runtime.SetupHint,
 	}
 
