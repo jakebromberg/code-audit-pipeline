@@ -34,7 +34,7 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "package": "main",                    // which root this came from
       "file": "src/models/flowsheet.ts",   // path relative to that root
       "line": 42,                           // 1-indexed
-      "symbol_id": "a3f5…",                // sha1(package + "/" + file + "/" + name + "/" + kind), hex lowercase; optional
+      "symbol_id": "a3f5…",                // sha1 over (package, file, name, kind) joined by NUL bytes, hex lowercase; optional
       "exported": true,                     // true if exported from the file
       "generated": false,                   // true if .d.ts or under generated/
       "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
@@ -676,7 +676,7 @@ The catalog top level carries `schema_version: "1.2"` (current). The current TS 
 
 ### Identity and provenance (v1.2)
 
-**`symbol_id`** — `sha1(package + "/" + file + "/" + name + "/" + kind).toLowerCase()`. Hex string. Optional per entry; consumers synthesize the same value on read when absent. Extractors should emit when they can. The audit query [`pipeline/queries/symbol-id-collisions.jq`](../pipeline/queries/symbol-id-collisions.jq) flags any catalog where the formula collides — i.e., where two entries share `(package, file, name, kind)`. The 595-entry case-study corpus surfaces zero collisions; this is the regression guard.
+**`symbol_id`** — sha1 over the 4-tuple `(package, file, name, kind)` joined by NUL bytes (`\x00`), lowercase hex. Hex string. Optional per entry; consumers synthesize the same value on read when absent. Extractors should emit when they can. The audit query [`pipeline/queries/symbol-id-collisions.jq`](../pipeline/queries/symbol-id-collisions.jq) flags any catalog where two entries share the 4-tuple. The 595-entry case-study corpus surfaces zero collisions; this is the regression guard. **Why NUL and not `/`** — package values legitimately contain forward slashes (`Shared/Generated`, `Shared/Analytics`; first-class throughout the fixtures and `_canonical.jq`), and file paths obviously do. A `/`-joined formula is not injective: `(package="Shared", file="Generated/X.ts", name="X", kind="interface")` and `(package="Shared/Generated", file="X.ts", name="X", kind="interface")` flatten to the same string and hash to the same sha1, silently merging unrelated entries when cross-repo joins use `symbol_id` as the key. NUL cannot appear in identifiers or POSIX path components, so the formula is structurally collision-safe.
 
 **`fingerprint_v`** — algorithm tag for shape-clustering signatures. Current value `"shape_sig:1"` corresponds to the existing `sorted | join("|") | lower` definition. Bumping the algorithm bumps the tag. Cross-catalog cluster queries that join on `shape_sig` first check this tag matches between catalogs. Convention: `"<algorithm>:<version>"`. Future variants (`"body_hash:1"` for function-catalog body clustering, `"field_names_sig:1"` for shape-of-named-members independent of types — per #118) follow the same convention. No formal enum; the registry grows lazily.
 

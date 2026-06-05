@@ -18,9 +18,11 @@ PASS=0
 FAIL=0
 
 # Compute symbol_id with node's createHash to match the validator's formula.
+# NUL-byte joined; see extractors/typescript/type-catalog.mjs::computeSymbolId
+# for the rationale and pipeline/validate-catalog.mjs for the reference impl.
 symbol_id() {
   local pkg="$1" file="$2" name="$3" kind="$4"
-  node -e "const c=require('node:crypto'); console.log(c.createHash('sha1').update(process.argv[1]).digest('hex'))" "$pkg/$file/$name/$kind"
+  node -e "const c=require('node:crypto'); const args=process.argv.slice(1); console.log(c.createHash('sha1').update(args.join('\x00')).digest('hex'))" "$pkg" "$file" "$name" "$kind"
 }
 
 run_validator() {
@@ -112,13 +114,13 @@ assert_exit "malformed schema_version is rejected" "1" "$(run_validator "$TMP/ba
 
 # --- entries not an array ---
 cat > "$TMP/bad-entries.json" <<'EOF'
-{"schema_version": "1.2", "entries": {"foo": "bar"}}
+{"schema_version": "1.2", "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.4.0", "source_sha": "unknown"}, "entries": {"foo": "bar"}}
 EOF
 assert_exit "non-array .entries rejected" "1" "$(run_validator "$TMP/bad-entries.json")"
 
 # --- missing required entry field ---
 cat > "$TMP/missing-line.json" <<'EOF'
-{"schema_version": "1.2", "entries": [{"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts"}]}
+{"schema_version": "1.2", "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.4.0", "source_sha": "unknown"}, "entries": [{"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts"}]}
 EOF
 assert_exit "entry missing line is rejected" "1" "$(run_validator "$TMP/missing-line.json")"
 assert_stderr_contains "error mentions line field" '"line"'
@@ -128,6 +130,7 @@ CORRECT_ID="$(symbol_id main src/foo.ts Foo interface)"
 cat > "$TMP/valid-symbol-id.json" <<EOF
 {
   "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.4.0", "source_sha": "unknown"},
   "entries": [
     {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10, "symbol_id": "$CORRECT_ID"}
   ]
@@ -139,6 +142,7 @@ assert_exit "valid symbol_id (matches formula)" "0" "$(run_validator "$TMP/valid
 cat > "$TMP/bad-symbol-id.json" <<'EOF'
 {
   "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.4.0", "source_sha": "unknown"},
   "entries": [
     {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10, "symbol_id": "0000000000000000000000000000000000000000"}
   ]
@@ -154,6 +158,66 @@ cat > "$TMP/bare-bad-symbol.json" <<'EOF'
 ]
 EOF
 assert_exit "symbol_id mismatch rejected on bare-array catalog" "1" "$(run_validator "$TMP/bare-bad-symbol.json")"
+
+# --- Tightening: schema_version="1.0" on a wrapper is malformed ---
+# v1.0 was bare-array only; a wrapper labeled "1.0" is impossible by contract.
+cat > "$TMP/wrapper-1.0.json" <<'EOF'
+{"schema_version": "1.0", "entries": []}
+EOF
+assert_exit "schema_version 1.0 on wrapper is rejected" "1" "$(run_validator "$TMP/wrapper-1.0.json")"
+assert_stderr_contains "1.0 wrapper error mentions bare-array-only" "bare-array-only"
+
+# --- Tightening: extractor block is required on wrapper form ---
+cat > "$TMP/no-extractor.json" <<'EOF'
+{"schema_version": "1.2", "entries": []}
+EOF
+assert_exit "wrapper without extractor block is rejected" "1" "$(run_validator "$TMP/no-extractor.json")"
+assert_stderr_contains "missing-extractor error names the block" "extractor block is required"
+
+# --- Tightening: extractor.{name,language,version} are required ---
+cat > "$TMP/empty-extractor.json" <<'EOF'
+{"schema_version": "1.2", "extractor": {}, "entries": []}
+EOF
+assert_exit "empty extractor block is rejected" "1" "$(run_validator "$TMP/empty-extractor.json")"
+assert_stderr_contains "empty-extractor error names the missing field" "extractor.name"
+
+# --- Tightening: extractor.source_sha shape must be 40-hex or "unknown" ---
+cat > "$TMP/malformed-source-sha.json" <<'EOF'
+{
+  "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.1.0", "source_sha": "I am a teapot"},
+  "entries": []
+}
+EOF
+assert_exit "malformed source_sha is rejected" "1" "$(run_validator "$TMP/malformed-source-sha.json")"
+assert_stderr_contains "malformed-sha error mentions source_sha shape" "source_sha"
+# "unknown" sentinel must be accepted
+cat > "$TMP/unknown-source-sha.json" <<'EOF'
+{
+  "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.1.0", "source_sha": "unknown"},
+  "entries": []
+}
+EOF
+assert_exit "source_sha=unknown is accepted" "0" "$(run_validator "$TMP/unknown-source-sha.json")"
+
+# --- NUL-formula regression: slash-flatten-only ambiguity does NOT collide ---
+# (package="Shared", file="Generated/X.ts") vs (package="Shared/Generated",
+# file="X.ts") share a slash-joined string but distinct 4-tuples. Both rows
+# carry their own correct sha1; the validator must accept both.
+ID_A="$(symbol_id "Shared" "Generated/X.ts" "X" "interface")"
+ID_B="$(symbol_id "Shared/Generated" "X.ts" "X" "interface")"
+cat > "$TMP/slash-flatten-distinct.json" <<EOF
+{
+  "schema_version": "1.2",
+  "extractor": {"name": "type-catalog", "language": "typescript", "version": "0.1.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "X", "kind": "interface", "package": "Shared", "file": "Generated/X.ts", "line": 1, "symbol_id": "$ID_A"},
+    {"name": "X", "kind": "interface", "package": "Shared/Generated", "file": "X.ts", "line": 2, "symbol_id": "$ID_B"}
+  ]
+}
+EOF
+assert_exit "NUL formula: slash-flatten-only ambiguity accepted (distinct symbol_ids)" "0" "$(run_validator "$TMP/slash-flatten-distinct.json")"
 
 echo
 echo "=== summary ==="
