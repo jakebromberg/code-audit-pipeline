@@ -86,12 +86,12 @@ test('writeSiblingArtifact defaults log to process.stderr.write when omitted', (
   });
 });
 
-test('writeSiblingArtifact propagates v1.2 fingerprint_v and generated_at when provided', () => {
+test('writeSiblingArtifact propagates v2.0 fingerprint_v and generated_at when provided', () => {
   withTmpDir((dir) => {
     const path = join(dir, 'out.json');
     writeSiblingArtifact({
       path,
-      schema_version: '1.2',
+      schema_version: '2.0',
       extractorMeta: { language: 'typescript', name: 'type-catalog', version: '0.5.0', source_sha: 'abcdef0123456789abcdef0123456789abcdef01' },
       fingerprint_v: 'shape_sig:1',
       generated_at: '2026-06-04T19:00:00Z',
@@ -101,7 +101,7 @@ test('writeSiblingArtifact propagates v1.2 fingerprint_v and generated_at when p
       log: () => {},
     });
     const got = JSON.parse(readFileSync(path, 'utf8'));
-    assert.equal(got.schema_version, '1.2');
+    assert.equal(got.schema_version, '2.0');
     assert.equal(got.fingerprint_v, 'shape_sig:1');
     assert.equal(got.generated_at, '2026-06-04T19:00:00Z');
     assert.equal(got.extractor.source_sha, 'abcdef0123456789abcdef0123456789abcdef01');

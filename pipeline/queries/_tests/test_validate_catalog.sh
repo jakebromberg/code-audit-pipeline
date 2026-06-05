@@ -240,6 +240,114 @@ cat > "$TMP/slash-flatten-distinct.json" <<EOF
 EOF
 assert_exit "NUL formula: slash-flatten-only ambiguity accepted (distinct symbol_ids)" "0" "$(run_validator "$TMP/slash-flatten-distinct.json")"
 
+# --- v2.0: language is required ---
+cat > "$TMP/valid20.json" <<'EOF'
+{
+  "schema_version": "2.0",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10, "language": "typescript"}
+  ]
+}
+EOF
+assert_exit "valid 2.0 catalog with language on every entry" "0" "$(run_validator "$TMP/valid20.json")"
+
+cat > "$TMP/v20-missing-language.json" <<'EOF'
+{
+  "schema_version": "2.0",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10}
+  ]
+}
+EOF
+assert_exit "v2.0 entry missing language is rejected" "1" "$(run_validator "$TMP/v20-missing-language.json")"
+assert_stderr_contains "v2.0 rejection mentions language" "language"
+
+# --- v1.2 without language continues to validate (back-compat regression) ---
+cat > "$TMP/v12-no-language.json" <<'EOF'
+{
+  "schema_version": "1.2",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.4.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10}
+  ]
+}
+EOF
+assert_exit "v1.2 entry without language is accepted (back-compat)" "0" "$(run_validator "$TMP/v12-no-language.json")"
+
+# --- v1.2 may opportunistically carry relations[] (forward-compat shim) ---
+cat > "$TMP/v12-relations.json" <<'EOF'
+{
+  "schema_version": "1.2",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.4.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10,
+     "relations": [{"kind": "extends", "target": "Bar"}]}
+  ]
+}
+EOF
+assert_exit "v1.2 entry with relations[] is accepted (forward-compat shim)" "0" "$(run_validator "$TMP/v12-relations.json")"
+
+# --- relations[] without kind is rejected (regardless of version) ---
+cat > "$TMP/bad-relations.json" <<'EOF'
+{
+  "schema_version": "2.0",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10, "language": "typescript",
+     "relations": [{"target": "Bar"}]}
+  ]
+}
+EOF
+assert_exit "relations[] entry missing kind is rejected" "1" "$(run_validator "$TMP/bad-relations.json")"
+assert_stderr_contains "rejection mentions relations" "relations"
+
+# --- language_data with bad key is rejected ---
+cat > "$TMP/bad-lang-data-key.json" <<'EOF'
+{
+  "schema_version": "2.0",
+  "extractor": {"language": "typescript", "name": "type-catalog", "version": "0.5.0", "source_sha": "unknown"},
+  "entries": [
+    {"name": "Foo", "kind": "interface", "package": "main", "file": "src/foo.ts", "line": 10, "language": "typescript",
+     "language_data": {"BadKey With Space": {}}}
+  ]
+}
+EOF
+assert_exit "language_data with non-lowercase key is rejected" "1" "$(run_validator "$TMP/bad-lang-data-key.json")"
+
+# --- v2 fixtures: every record in docs/pipeline-contract-v2-fixtures.jsonl
+#     validates clean when wrapped in a v2.0 envelope. This is the "fixture
+#     ratification" KPI from the #137 plan. Wrapper supplies the now-required
+#     extractor block; the fixtures themselves are entry-shaped.
+FIXTURES="$REPO_ROOT/docs/pipeline-contract-v2-fixtures.jsonl"
+if [[ -f "$FIXTURES" ]]; then
+  fixture_count=0
+  fail_count=0
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    fixture_count=$((fixture_count + 1))
+    wrapped=$(mktemp "$TMP/fixture-XXXXXX")
+    mv "$wrapped" "$wrapped.json"
+    wrapped="$wrapped.json"
+    printf '{"schema_version":"2.0","extractor":{"language":"typescript","name":"type-catalog","version":"0.5.0","source_sha":"unknown"},"entries":[%s]}\n' "$line" > "$wrapped"
+    if [[ "$(run_validator "$wrapped")" != "0" ]]; then
+      fail_count=$((fail_count + 1))
+      printf "    fixture line %d failed validation:\n" "$fixture_count"
+      sed 's/^/      err: /' "$TMP/err.txt"
+    fi
+  done < "$FIXTURES"
+  if (( fail_count == 0 && fixture_count > 0 )); then
+    PASS=$((PASS + 1))
+    printf "  ok all %d v2 fixture records validate clean\n" "$fixture_count"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  FAIL v2 fixtures: %d of %d failed\n" "$fail_count" "$fixture_count"
+  fi
+else
+  printf "  SKIP v2 fixtures (file not found at %s)\n" "$FIXTURES"
+fi
+
 echo
 echo "=== summary ==="
 printf "  %d passed, %d failed\n" "$PASS" "$FAIL"

@@ -16,11 +16,15 @@
 //   - 1.1 wrapper objects (schema_version, extractor, entries)
 //   - 1.2 wrapper objects (adds fingerprint_v, generated_at, extractor.source_sha,
 //     and per-entry symbol_id; all optional from a consumer's perspective)
+//   - 2.0 wrapper objects (the v2 two-tier ratification — adds the `language`
+//     core-projection field, `language_data.<lang>.*`, `relations[]`,
+//     `core_projection_complete`, `omitted_features[]`. v2 enforces
+//     `language` on every entry; the other v2 fields are optional)
 //
 // Rules enforced:
 //   - top level is array OR object with .entries
-//   - if wrapped: schema_version matches /^\d+\.\d+$/ and major is in {1}
-//     (refuse 0.x and unknown 2.x+ until ratified — keeps the validator
+//   - if wrapped: schema_version matches /^\d+\.\d+$/ and major is in {1, 2}
+//     (refuse 0.x and unknown 3.x+ until ratified — keeps the validator
 //     honest about what it actually checks)
 //   - .entries is an array
 //   - per entry: name (string), kind (string), package (string),
@@ -30,14 +34,25 @@
 //     docs/pipeline-contract.md "Identity and provenance" for the rationale.
 //     This check applies to ALL entries regardless of envelope form —
 //     a bare-array entry that carries symbol_id is still subject to it.
+//   - if schema_version starts with "2.": require `language` (string) on every
+//     entry. The other v2 fields are validated when present (regardless of
+//     envelope version, since extractors may emit them as a forward-compat
+//     shim on v1.x catalogs).
+//   - if entry.language_data is present, it must be an object whose keys are
+//     lowercase language names with no whitespace.
+//   - if entry.relations is present, it must be an array; each element is an
+//     object with string `kind` and string `target` fields.
+//   - if entry.core_projection_complete is present, it must be a boolean.
+//   - if entry.omitted_features is present, it must be an array of strings.
 
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { argv, exit, stderr } from 'node:process';
 
 const SCHEMA_VERSION_RE = /^(\d+)\.(\d+)$/;
-const ALLOWED_MAJORS = new Set([1]);
+const ALLOWED_MAJORS = new Set([1, 2]);
 const SHA1_HEX_RE = /^[0-9a-f]{40}$/;
+const LANGUAGE_KEY_RE = /^[a-z][a-z0-9_+-]*$/;
 
 function fail(file, msg, ctx = '') {
   stderr.write(`validate-catalog: ${file}: ${msg}${ctx ? '\n  ' + ctx : ''}\n`);
@@ -57,7 +72,7 @@ function computeSymbolId(pkg, file, name, kind) {
 function isString(v) { return typeof v === 'string'; }
 function isFiniteNumber(v) { return typeof v === 'number' && Number.isFinite(v); }
 
-function validateEntry(file, entry, idx) {
+function validateEntry(file, entry, idx, major) {
   const here = `entry[${idx}] ${entry.kind ?? '<no-kind>'}/${entry.name ?? '<no-name>'}`;
   for (const field of ['name', 'kind', 'package', 'file']) {
     if (!isString(entry[field])) fail(file, `${here}: required field "${field}" missing or not a string`);
@@ -75,6 +90,65 @@ function validateEntry(file, entry, idx) {
         `declared=${entry.symbol_id}\n  derived=${derived}\n  formula=sha1((package, file, name, kind) joined by NUL bytes)\n  inputs=(${JSON.stringify(entry.package)}, ${JSON.stringify(entry.file)}, ${JSON.stringify(entry.name)}, ${JSON.stringify(entry.kind)})`);
     }
   }
+
+  // v2: language is required on every entry. v1.x: language is optional but
+  // validated when present (for the forward-compat shim case).
+  if (major === 2) {
+    if (!isString(entry.language)) {
+      fail(file, `${here}: v2 catalog requires "language" (string) on every entry`);
+    }
+  } else if (entry.language !== undefined && !isString(entry.language)) {
+    fail(file, `${here}: language must be a string when present`);
+  }
+
+  // language_data: object keyed by language name; checked regardless of envelope
+  // version so v1.x extractors emitting the v2 shim still get validation.
+  if (entry.language_data !== undefined) {
+    const ld = entry.language_data;
+    if (typeof ld !== 'object' || ld === null || Array.isArray(ld)) {
+      fail(file, `${here}: language_data must be an object`);
+    }
+    for (const key of Object.keys(ld)) {
+      if (!LANGUAGE_KEY_RE.test(key)) {
+        fail(file, `${here}: language_data key ${JSON.stringify(key)} is not a lowercase language identifier`);
+      }
+      const sub = ld[key];
+      if (typeof sub !== 'object' || sub === null || Array.isArray(sub)) {
+        fail(file, `${here}: language_data.${key} must be an object`);
+      }
+    }
+  }
+
+  // relations: array of typed-edge objects. Each requires `kind` and `target`.
+  if (entry.relations !== undefined) {
+    if (!Array.isArray(entry.relations)) {
+      fail(file, `${here}: relations must be an array`);
+    }
+    for (let j = 0; j < entry.relations.length; j++) {
+      const rel = entry.relations[j];
+      if (typeof rel !== 'object' || rel === null || Array.isArray(rel)) {
+        fail(file, `${here}: relations[${j}] must be an object`);
+      }
+      if (!isString(rel.kind)) {
+        fail(file, `${here}: relations[${j}].kind must be a string`);
+      }
+      if (!isString(rel.target)) {
+        fail(file, `${here}: relations[${j}].target must be a string`);
+      }
+    }
+  }
+
+  if (entry.core_projection_complete !== undefined
+      && typeof entry.core_projection_complete !== 'boolean') {
+    fail(file, `${here}: core_projection_complete must be a boolean when present`);
+  }
+
+  if (entry.omitted_features !== undefined) {
+    if (!Array.isArray(entry.omitted_features)
+        || !entry.omitted_features.every(isString)) {
+      fail(file, `${here}: omitted_features must be an array of strings when present`);
+    }
+  }
 }
 
 function validateEnvelope(file, root) {
@@ -84,7 +158,7 @@ function validateEnvelope(file, root) {
   }
   const m = SCHEMA_VERSION_RE.exec(root.schema_version);
   if (!m) {
-    fail(file, `schema_version "${root.schema_version}" must match MAJOR.MINOR (e.g., "1.2")`);
+    fail(file, `schema_version "${root.schema_version}" must match MAJOR.MINOR (e.g., "1.2" or "2.0")`);
   }
   const major = Number(m[1]);
   const minor = Number(m[2]);
@@ -133,6 +207,7 @@ function validateEnvelope(file, root) {
   if (root.generated_at !== undefined && !isString(root.generated_at)) {
     fail(file, 'generated_at must be a string when present');
   }
+  return major;
 }
 
 function validateFile(file) {
@@ -150,11 +225,13 @@ function validateFile(file) {
   }
 
   let entries;
+  // major == null means "bare array, version checks skipped"
+  let major = null;
   if (Array.isArray(root)) {
     warn(file, 'pre-1.1 bare-array catalog; consumers should upgrade to wrapper');
     entries = root;
   } else if (typeof root === 'object' && root !== null && 'entries' in root) {
-    validateEnvelope(file, root);
+    major = validateEnvelope(file, root);
     entries = root.entries;
   } else {
     fail(file, 'top level must be a JSON array (pre-1.1) or an object with .entries');
@@ -165,7 +242,7 @@ function validateFile(file) {
     if (typeof e !== 'object' || e === null || Array.isArray(e)) {
       fail(file, `entry[${i}] is not an object`);
     }
-    validateEntry(file, e, i);
+    validateEntry(file, e, i, major);
   }
 }
 
