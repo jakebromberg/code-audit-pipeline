@@ -308,6 +308,29 @@ assert_mark_section_density_semantic() {
 }
 assert_mark_section_density_semantic
 
+# Contract-lock: mark-section-density.jq's docstring promises raw jq invocations
+# REQUIRE --argjson min_marks / --argjson min_lines (because jq rejects undefined
+# variables at parse time, before any try / catch could run). Running without
+# either flag must fail at compile time. The intent here is to detect any future
+# change that re-introduces a fragile in-jq fallback claim.
+assert_mark_section_density_argjson_required() {
+  local err
+  if err="$(jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/mark-section-density.jq" \
+    "$MARK_SECTION_DENSITY_FIXTURE" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (argjson-required): expected compile error, got success\n%s\n" "$err"
+    return
+  fi
+  if ! printf '%s' "$err" | grep -q "is not defined"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ mark-section-density (argjson-required): expected 'is not defined' error, got:\n%s\n" "$err"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ mark-section-density (argjson-required): raw jq without --argjson correctly fails at compile time\n"
+}
+assert_mark_section_density_argjson_required
+
 echo ""
 echo "=== Migration-progress queries ==="
 assert_jsonl_has_prefix migration-progress.jq "$MIGRATION_FIXTURE" "migration-progress:" \

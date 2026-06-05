@@ -10,17 +10,19 @@
 # Run:  jq -L pipeline/queries --argjson min_marks 6 --argjson min_lines 400 \
 #         -rf pipeline/queries/mark-section-density.jq file-hashes.json
 #       (file-hashes must have been generated with --scan-marks; otherwise
-#        the fields are absent and the query emits zero rows. `code-audit
-#        query` supplies min_marks/min_lines from the front-matter defaults
-#        below; raw jq invocations may rely on the in-jq fallback that
-#        substitutes the same defaults when --argjson is omitted.)
+#        the fields are absent and the query emits zero rows. Both --argjson
+#        flags are REQUIRED for raw jq invocation — jq compiles the whole
+#        program before running it and rejects undefined variables at parse
+#        time, so an in-jq `try $min_marks catch 6` fallback cannot exist.
+#        `code-audit query` injects the front-matter defaults below
+#        automatically; raw jq has no equivalent and must pass --argjson.)
 #
 # JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries --argjson min_marks 6 \
 #                --argjson min_lines 400 -rf pipeline/queries/mark-section-density.jq file-hashes.json
 #
-# Thresholds are tunable via --argjson:
-#   --argjson min_marks 6       require at least N MARK sections (default 6)
-#   --argjson min_lines 400     require strictly more than N total lines (default 400)
+# Thresholds (tunable):
+#   --argjson min_marks 6       require at least N MARK sections (default 6 via #! arg)
+#   --argjson min_lines 400     require strictly more than N total lines (default 400 via #! arg)
 #
 # Calibration notes (from #221 body): wxyc-ios-64's AudioPlayerController.swift
 # is 800+ lines / 13 MARKs. The 6 / 400 defaults were chosen so that single
@@ -59,19 +61,20 @@
 
 include "_canonical";
 
-# Fallbacks so raw jq invocations (without --argjson) match the front-matter
-# defaults that `code-audit query` injects from the #! arg lines above. jq's
-# `$min_marks // 6` doesn't work for undefined variables — they raise at parse
-# time — so we use the `try / catch` form which captures the "is not defined"
-# error and substitutes the documented default.
-(try $min_marks catch 6) as $min_marks
-| (try $min_lines catch 400) as $min_lines
-| [ entries[]
+# $min_marks and $min_lines must be supplied externally (--argjson for raw jq,
+# auto-injected by `code-audit query` from the #! arg defaults above). jq
+# rejects undefined variables at parse time, so an in-jq fallback is not
+# possible — see the docstring above.
+[ entries[]
   | select((.mark_count // null) != null)
   | select((.line_count // null) != null)
   | select(.mark_count >= $min_marks)
   | select(.line_count > $min_lines)
-  | (.mark_labels // []) as $labels
+  # mark_labels may be null/absent (defense for malformed catalogs) OR may be
+  # the wrong type entirely; in either case fall back to []. The `if type`
+  # check guards against type drift (e.g. mark_labels: {}), which the simpler
+  # `// []` alternative would NOT catch — `//` only substitutes on null/false.
+  | ((.mark_labels | if type == "array" then . else [] end)) as $labels
   | ($labels | if length > 0 then .[0].line else 1 end) as $first_line
   | {
       cluster_id: cluster_id_single_name("mark-section-density"; "\(.package)__\(.file)"),
