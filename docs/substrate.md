@@ -116,7 +116,7 @@ pipeline/publish-catalog.sh \
   --bucket-endpoint "$AUDIT_ENDPOINT"
 ```
 
-`publish-catalog.sh` validates each catalog against the v1.1 wrapper shape before uploading. Bare-array catalogs are refused (exits nonzero).
+`publish-catalog.sh` validates each catalog against the v1.1+ wrapper shape before uploading (currently the TS extractor emits v1.2; v1.1 wrappers continue to validate). Bare-array catalogs are refused (exits nonzero).
 
 ## Recovery procedures
 
@@ -151,7 +151,7 @@ Non-zero exit means drift. The fix is usually a single `refresh-index.mjs` run.
 
 ### Mixed schema versions across repos
 
-`fetch-catalogs.sh` doesn't refuse to merge across schema versions yet — every per-repo catalog carries its own `schema_version` field and consumers can filter. The downstream guard (`pipeline/queries/_canonical.jq`) is the line that enforces the contract: cluster queries today accept v1.0 (bare array) AND v1.1 (wrapper object) transparently. Major-version bumps would require a coordinated migration; the substrate's job is to surface what's there, not to police it.
+`fetch-catalogs.sh` doesn't refuse to merge across schema versions yet — every per-repo catalog carries its own `schema_version` field and consumers can filter. The downstream guard (`pipeline/queries/_canonical.jq`) is the line that enforces the contract: cluster queries today accept v1.0 (bare array) AND v1.1+ (wrapper object — `1.1`, `1.2`, etc.) transparently. Major-version bumps would require a coordinated migration; the substrate's job is to surface what's there, not to police it.
 
 ## Cost model
 

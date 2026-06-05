@@ -35,20 +35,54 @@ const SCHEMA_VERSION = '1.2';
 const FINGERPRINT_V = 'shape_sig:1';
 
 // Compute extractor source_sha once at startup. Shells out to git; falls back
-// to "unknown" with a stderr warning when the extractor source isn't in a git
-// checkout (vendored binary, embedded-and-extracted via `code-audit init`,
+// to "unknown" with a stderr warning when the extractor source isn't in a
+// git checkout (vendored binary, embedded-and-extracted via `code-audit init`,
 // or git missing from PATH).
+//
+// The search MUST be bounded to the extractor's own repo. Without
+// GIT_CEILING_DIRECTORIES, `git rev-parse HEAD` walks up the directory tree
+// indefinitely — when the extractor is laid down under ~/.config/audit/
+// extractors/typescript/ and the user's $HOME is itself a git checkout
+// (dotfiles, home-manager, monorepo vendored binary), git returns the outer
+// repo's HEAD instead of "unknown", silently misattributing source_sha to
+// an unrelated repository. We set GIT_CEILING_DIRECTORIES to the parent of
+// EXTRACTOR_DIR so the walk stops there. We also verify the resolved repo
+// toplevel actually matches the extractor's tree as a defense in depth —
+// a future symlink or bind-mount can otherwise confuse the boundary.
+//
+// Timeout: 2s ceiling. Without it, a slow / disconnected network FS hosting
+// the search path would hang the entire extractor on module load with no
+// diagnostic (stderr is silenced to suppress git's own noise on the success
+// path). GIT_TERMINAL_PROMPT=0 prevents git from prompting for credentials
+// on any auxiliary config-fetch.
 function computeSourceSha() {
   try {
-    const sha = execSync('git rev-parse HEAD', {
+    const parent = dirname(EXTRACTOR_DIR);
+    const env = {
+      ...process.env,
+      GIT_CEILING_DIRECTORIES: parent,
+      GIT_TERMINAL_PROMPT: '0',
+    };
+    const opts = {
       cwd: EXTRACTOR_DIR,
       stdio: ['ignore', 'pipe', 'ignore'],
       encoding: 'utf8',
-    }).trim();
-    if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+      timeout: 2000,
+      env,
+    };
+    const sha = execSync('git rev-parse HEAD', opts).trim();
+    if (!/^[0-9a-f]{40}$/.test(sha)) return unknownSha();
+    // Defense in depth: confirm the toplevel matches the extractor's tree.
+    // If a ceiling wasn't honored (e.g., a symlinked .git that points
+    // upstream), the toplevel will not be a prefix of EXTRACTOR_DIR.
+    const toplevel = execSync('git rev-parse --show-toplevel', opts).trim();
+    if (!toplevel || !EXTRACTOR_DIR.startsWith(toplevel)) return unknownSha();
+    return sha;
   } catch {
-    // fall through to unknown
+    return unknownSha();
   }
+}
+function unknownSha() {
   process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');
   return 'unknown';
 }
@@ -58,10 +92,23 @@ const SOURCE_SHA = computeSourceSha();
 // artifact emitted by this invocation.
 const GENERATED_AT = new Date().toISOString();
 
-// Compute symbol_id per entry. sha1(package + "/" + file + "/" + name + "/" + kind),
-// lowercase hex. See docs/pipeline-contract.md "Identity and provenance".
+// Compute symbol_id per entry. sha1 over (package, file, name, kind) joined
+// by NUL bytes (\x00), lowercase hex. See docs/pipeline-contract.md
+// "Identity and provenance" for the formal definition.
+//
+// Why NUL and not `/`: package values legitimately contain forward slashes
+// (`Shared/Generated`, `Shared/Analytics`; first-class throughout the
+// fixtures and _canonical.jq), and file paths obviously do. A `/`-joined
+// formula is not injective — e.g. (package="Shared", file="Generated/X.ts",
+// name="X", kind="interface") and (package="Shared/Generated", file="X.ts",
+// name="X", kind="interface") flatten to the same string and hash to the
+// same sha1, silently merging unrelated entries when cross-repo joins use
+// symbol_id as the key. NUL cannot appear in identifiers (every host
+// language rejects it in symbol names) and cannot appear in file paths
+// (POSIX path separators and identifier rules both exclude it). The choice
+// is structurally collision-safe rather than collision-rare.
 function computeSymbolId(pkg, file, name, kind) {
-  return createHash('sha1').update(`${pkg}/${file}/${name}/${kind}`).digest('hex');
+  return createHash('sha1').update(`${pkg}\x00${file}\x00${name}\x00${kind}`).digest('hex');
 }
 
 // Standard filter-CLI EPIPE handling: a downstream consumer closing the pipe

@@ -87,7 +87,7 @@ The auto-extract path adds **zero** environment variables — every knob above a
 
 ## What the catalog contains
 
-Top-level JSON is `{schema_version: "1.1", extractor: {...}, entries: [...]}` — one record per declared type inside `entries`. The contract is in [`docs/pipeline-contract.md`](docs/pipeline-contract.md). Core fields every extractor emits:
+Top-level JSON is `{schema_version: "1.2", extractor: {name, language, version, source_sha}, fingerprint_v, generated_at, entries: [...]}` — one record per declared type inside `entries`. The contract is in [`docs/pipeline-contract.md`](docs/pipeline-contract.md). Core fields every extractor emits:
 
 | Field | Meaning |
 |---|---|

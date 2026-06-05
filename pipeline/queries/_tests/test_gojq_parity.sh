@@ -162,6 +162,11 @@ both_modes protocol-inheritance-candidates           "$QUERIES_DIR/protocol-inhe
 both_modes pat-candidates                            "$QUERIES_DIR/pat-candidates.jq"                            "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 both_modes generic-struct-candidates                 "$QUERIES_DIR/generic-struct-candidates.jq"                 "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 both_modes symbol-id-collisions                      "$QUERIES_DIR/symbol-id-collisions.jq"                      "$TYPES_FIXTURE"
+# Hit-path coverage for symbol-id-collisions (planted 4-tuple collision + a
+# slash-flatten-only ambiguity that the pre-NUL formula would have falsely
+# collided) lives in test_queries_integration.sh's semantic assertion.
+# Parity contract here is "jq and gojq agree on the empty-result fixture,"
+# which is sufficient because the engine doesn't care about input shape.
 
 echo ""
 echo "=== Function-catalog queries ==="

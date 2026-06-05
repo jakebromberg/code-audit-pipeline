@@ -38,26 +38,45 @@ const EXTRACTOR_VERSION = JSON.parse(readFileSync(join(EXTRACTOR_DIR, 'package.j
 const SCHEMA_VERSION = '1.2';
 const FINGERPRINT_V = 'shape_sig:1';
 
-// v1.2 identity / provenance — see docs/pipeline-contract.md "Identity and provenance".
+// v1.2 identity / provenance — see docs/pipeline-contract.md "Identity and
+// provenance". See extractors/typescript/type-catalog.mjs::computeSourceSha
+// for the long-form rationale; the bounded-walk + timeout pattern is shared.
 function computeSourceSha() {
   try {
-    const sha = execSync('git rev-parse HEAD', {
+    const parent = dirname(EXTRACTOR_DIR);
+    const env = {
+      ...process.env,
+      GIT_CEILING_DIRECTORIES: parent,
+      GIT_TERMINAL_PROMPT: '0',
+    };
+    const opts = {
       cwd: EXTRACTOR_DIR,
       stdio: ['ignore', 'pipe', 'ignore'],
       encoding: 'utf8',
-    }).trim();
-    if (/^[0-9a-f]{40}$/.test(sha)) return sha;
+      timeout: 2000,
+      env,
+    };
+    const sha = execSync('git rev-parse HEAD', opts).trim();
+    if (!/^[0-9a-f]{40}$/.test(sha)) return unknownSha();
+    const toplevel = execSync('git rev-parse --show-toplevel', opts).trim();
+    if (!toplevel || !EXTRACTOR_DIR.startsWith(toplevel)) return unknownSha();
+    return sha;
   } catch {
-    // fall through
+    return unknownSha();
   }
+}
+function unknownSha() {
   process.stderr.write('warning: extractor source not in a git checkout; source_sha recorded as "unknown"\n');
   return 'unknown';
 }
 const SOURCE_SHA = computeSourceSha();
 const GENERATED_AT = new Date().toISOString();
 
+// NUL-byte joined; see extractors/typescript/type-catalog.mjs::computeSymbolId
+// for the rationale (slash-joined formula was not injective when package or
+// file contained `/`, which they legitimately do).
 function computeSymbolId(pkg, file, name, kind) {
-  return createHash('sha1').update(`${pkg}/${file}/${name}/${kind}`).digest('hex');
+  return createHash('sha1').update(`${pkg}\x00${file}\x00${name}\x00${kind}`).digest('hex');
 }
 
 const { values } = parseArgs({

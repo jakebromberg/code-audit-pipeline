@@ -148,6 +148,46 @@ assert_jsonl_has_prefix protocol-inheritance-candidates.jq "$TYPES_FIXTURE" "pro
 assert_jsonl_has_prefix pat-candidates.jq "$TYPES_FIXTURE" "pat-candidates:" --argjson max_slot_diffs 1
 assert_jsonl_has_prefix generic-struct-candidates.jq "$TYPES_FIXTURE" "generic-struct-candidates:" --argjson max_slot_diffs 1
 
+# symbol-id-collisions hit-path semantic test: the fixture is hand-tuned to
+# exercise (a) a real 4-tuple collision (two Y rows with identical package /
+# file / name / kind) and (b) a slash-flatten-only ambiguity that the OLD
+# slash-joined formula would have falsely collided (Shared / Generated/X.ts
+# vs Shared/Generated / X.ts). Asserts exactly 1 collision cluster of 2.
+SYMBOL_ID_COLLISIONS_FIXTURE="$FIXTURES_DIR/symbol-id-collisions.input.json"
+assert_symbol_id_collisions_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/symbol-id-collisions.jq" "$SYMBOL_ID_COLLISIONS_FIXTURE")" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ symbol-id-collisions (semantic): query crashed\n"
+    return
+  }
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ symbol-id-collisions (semantic): expected 1 collision cluster, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+  local members_len
+  members_len="$(printf '%s\n' "$jsonl" | jq '.members | length')"
+  if [[ "$members_len" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ symbol-id-collisions (semantic): expected 2 members in collision cluster, got %d\n" "$members_len"
+    return
+  fi
+  local cluster_name
+  cluster_name="$(printf '%s\n' "$jsonl" | jq -r '.members[0].name')"
+  if [[ "$cluster_name" != "Y" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ symbol-id-collisions (semantic): expected the Y/main/src/y.ts collision; got %s\n" "$cluster_name"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ symbol-id-collisions (semantic): 1 cluster of 2 (Y); slash-flatten-only X pair NOT collided\n"
+}
+assert_symbol_id_collisions_semantic
+
 echo ""
 echo "=== Function-catalog query ==="
 assert_jsonl_has_prefix function-duplicates.jq "$FUNCS_FIXTURE" "function-duplicates-" --argjson threshold 0.5
