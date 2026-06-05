@@ -25,8 +25,9 @@
 //   - .entries is an array
 //   - per entry: name (string), kind (string), package (string),
 //     file (string), line (number ≥ 1) are required
-//   - if entry.symbol_id is present, it equals
-//     sha1(package + "/" + file + "/" + name + "/" + kind), lowercase hex.
+//   - if entry.symbol_id is present, it equals sha1 over (package, file,
+//     name, kind) joined by NUL bytes (\x00), lowercase hex — see
+//     docs/pipeline-contract.md "Identity and provenance" for the rationale.
 //     This check applies to ALL entries regardless of envelope form —
 //     a bare-array entry that carries symbol_id is still subject to it.
 
@@ -71,7 +72,7 @@ function validateEntry(file, entry, idx) {
     const derived = computeSymbolId(entry.package, entry.file, entry.name, entry.kind);
     if (derived !== entry.symbol_id) {
       fail(file, `${here}: symbol_id mismatch`,
-        `declared=${entry.symbol_id}\n  derived=${derived}\n  formula=sha1("${entry.package}/${entry.file}/${entry.name}/${entry.kind}")`);
+        `declared=${entry.symbol_id}\n  derived=${derived}\n  formula=sha1((package, file, name, kind) joined by NUL bytes)\n  inputs=(${JSON.stringify(entry.package)}, ${JSON.stringify(entry.file)}, ${JSON.stringify(entry.name)}, ${JSON.stringify(entry.kind)})`);
     }
   }
 }
