@@ -62,6 +62,8 @@ var clusterHeaderKeys = []string{
 	"base_name",
 	"shapes_match",
 	"shapes_observed",
+	"mark_count",
+	"line_count",
 }
 
 // formatHeaderValue renders one payload field for the header line. body_hash

@@ -608,7 +608,7 @@ When `file-hashes.mjs` is invoked with `--scan-marks` (a Swift-calibrated conven
   "sha256": "...",
   "sha256_normalized": "...",
   "mark_count": 13,                          // count of `// MARK:` lines in the file
-  "line_count": 812,                         // total source-line count (wc -l semantics)
+  "line_count": 812,                         // total source-line count (see "Line counting" below)
   "mark_labels": [                           // 1-indexed line numbers + captured labels
     { "line": 12,  "label": "Singleton" },
     { "line": 67,  "label": "Player Factory" },
@@ -617,7 +617,9 @@ When `file-hashes.mjs` is invoked with `--scan-marks` (a Swift-calibrated conven
 }
 ```
 
-`mark_count` and `mark_labels[].label` are populated by the regex `/^[ \t]*\/\/\s*MARK:\s*-?\s*(.*?)\s*$/` — Swift's `// MARK: <title>` (with or without the optional visual `-` separator). `line_count` follows POSIX `wc -l` semantics (count of newline-terminated lines; a trailing `\n` does not produce an extra empty line).
+`mark_count` and `mark_labels[].label` are populated by the regex `/^[ \t]*\/\/\s*MARK:\s*-*\s*(.*?)\s*$/` — Swift's `// MARK: <title>` (with or without an optional visual `-` separator of any length). Triple-quoted multi-line strings can contain MARK-shaped lines and will be counted; this is documented and accepted.
+
+**Line counting.** `line_count` is the count of source lines after `split('\n')` with a trailing empty entry trimmed. For files terminated by `\n` this matches POSIX `wc -l`; for files without a trailing `\n` the implementation counts the final partial line while `wc -l` does not (the file `"abc"` reports `line_count = 1` here, `0` from `wc -l`). CRLF and bare CR line endings are both normalized to LF before splitting, and a leading UTF-8 BOM is stripped so the first line's `// MARK:` is matched.
 
 **Omitted entirely when flag unset.** Records produced without `--scan-marks` carry zero of the three fields — not `null`, not `0`. Downstream queries gate on `select((.mark_count // null) != null)` to stay back-compatible. This matches the convention used for other optional file-hashes fields.
 

@@ -76,14 +76,18 @@ const HEADER_PHRASES = [
 const HEADER_SCAN_LINES = 30;
 
 // MARK detection regex. Swift convention is `// MARK: <title>` with an optional
-// `-` separator that is purely visual (`// MARK: - Foo`). We accept both forms
-// and strip the leading dash + surrounding whitespace from the captured label
-// so consumers see a clean section name.
+// visual separator made of one or more dashes (`// MARK: - Foo`, `// MARK: --- Foo ---`).
+// We accept any leading run of dashes and strip them along with surrounding
+// whitespace from the captured label so consumers see a clean section name.
 //
-// Anchored at start-of-line with optional indent so a `MARK:` inside a string
-// or inside a multi-line comment doesn't false-match. Swift forbids `//`-style
-// comments inside string literals, so this is a clean signal in practice.
-const MARK_RE = /^[ \t]*\/\/\s*MARK:\s*-?\s*(.*?)\s*$/;
+// Anchored at start-of-line with optional indent. Known limitation: Swift
+// triple-quoted multi-line strings can contain `// MARK:`-shaped lines as
+// plain text; the regex is line-anchored, not scope-aware, and will count
+// those as MARKs. False-positive risk negligible in practice (typical Swift
+// codebases do not embed MARK-shaped text inside docstrings) but flagged so
+// downstream consumers can choose to skeptic-pass clusters originating from
+// files with heavy string-literal content.
+const MARK_RE = /^[ \t]*\/\/\s*MARK:\s*-*\s*(.*?)\s*$/;
 
 // Swift mode: enabled when 'swift' is among --extensions. Mirrors the swift-catalog
 // extractor's skip-list and package resolution so cross-catalog queries see the same
@@ -141,10 +145,11 @@ function sha256(buf) {
 }
 
 function normalize(buf) {
-  // Decode as utf-8, normalize line endings, drop trailing whitespace per line, drop trailing
-  // blank lines. Encode back to utf-8 for hashing.
-  const text = buf.toString('utf8');
-  const lines = text.replace(/\r\n/g, '\n').split('\n').map((l) => l.replace(/[ \t]+$/, ''));
+  // Decode as utf-8, strip a leading UTF-8 BOM, normalize line endings
+  // (CRLF and bare CR both map to LF), drop trailing whitespace per line,
+  // drop trailing blank lines. Encode back to utf-8 for hashing.
+  const text = buf.toString('utf8').replace(/^﻿/, '');
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').map((l) => l.replace(/[ \t]+$/, ''));
   while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
   return Buffer.from(lines.join('\n'), 'utf8');
 }
@@ -176,19 +181,26 @@ function scanHeader(buf) {
 // are captured per the MARK_RE regex; empty-label MARK lines (`// MARK:`) emit
 // `label: ""` so the consumer sees the line without inventing a name.
 //
-// line_count is the number of source lines (newline-terminated), matching
-// POSIX `wc -l` semantics: a file ending with `\n` whose body holds N
-// newline-separated content lines reports `line_count = N`. The trailing-
-// blank-line trimming used by `normalize()` is intentionally NOT applied;
-// mark-section-density.jq filters on raw file length, not normalized.
+// line_count is the count of source lines after dropping a trailing empty
+// entry from `split('\n')`. This matches `wc -l` for files terminated by a
+// newline; for files without a trailing newline the implementation counts
+// the final partial line (so `"abc"` reports 1) while `wc -l` reports 0.
+// Documented divergence; mark-section-density.jq's thresholds are calibrated
+// against this counter, not POSIX `wc -l`. The trailing-blank-line trimming
+// used by `normalize()` is intentionally NOT applied here.
 // mark_labels[].line uses 1-indexed line numbers.
+//
+// Line-ending handling: CRLF and bare CR are both normalized to LF before
+// splitting, so files with legacy CR-only endings (classic Mac, clipboard
+// pastes from some sources) are correctly counted as multi-line.
+// A leading UTF-8 BOM is stripped so the first line's `// MARK:` is matched.
 function scanMarks(buf) {
-  const text = buf.toString('utf8').replace(/\r\n/g, '\n');
+  const text = buf.toString('utf8').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
   const lines = text.split('\n');
   // A trailing `\n` produces a final empty entry from split; drop it so the
-  // line_count matches `wc -l`. If the file doesn't end with `\n` the last
-  // entry holds real content and stays. Files with zero bytes split into a
-  // single empty string; drop that too.
+  // line_count is the count of content-bearing lines. If the file doesn't
+  // end with `\n` the last entry holds real content and stays (counted).
+  // Files with zero bytes split into a single empty string; drop that too.
   if (lines.length > 0 && lines[lines.length - 1] === '') {
     lines.pop();
   }
