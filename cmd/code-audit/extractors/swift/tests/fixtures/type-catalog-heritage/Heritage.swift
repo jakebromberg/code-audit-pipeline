@@ -89,6 +89,18 @@ struct NoNameMsg {
     let unrelated: Int
 }
 
+// Negative case for the conformance gate (issue #222): an Identifiable-like
+// model that exposes `static var name: Notification.Name` for its own reasons
+// (e.g., owns a notification namespace) but DOES NOT conform to a
+// *NotificationMessage protocol. The extractor must NOT tag this as a
+// notification wrapper — without the conformance gate, this would falsely
+// surface in `notification-wrapper-grouping.jq` and cluster with real
+// notification messages that happen to share a Notification.Name value.
+struct ModelOwningANotificationName {
+    let identifier: String
+    static var name: Notification.Name { Notification.Name("model.unrelated") }
+}
+
 // Placeholder so AVPlayer.rateDidChangeNotification references resolve
 // at parse time for the fixture (we don't import AVFoundation here).
 enum AVPlayer {

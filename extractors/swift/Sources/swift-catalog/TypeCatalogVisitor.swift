@@ -323,8 +323,18 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         // for a `static var name: Notification.Name { ... }` and record the
         // body expression text. Skipped on protocol decls — a protocol's own
         // requirement declaration doesn't WRAP a notification name, it just
-        // requires that conformers do.
+        // requires that conformers do. ALSO requires that the type conforms
+        // to a `*NotificationMessage` protocol (per pipeline-contract.md
+        // "Notification-wrapper detection" and plans/issue-217-222 detection
+        // rules); without this guard any type that happens to expose a
+        // `static var name: Notification.Name { ... }` (model identifiers,
+        // view IDs, etc.) gets falsely tagged and pollutes the
+        // notification-wrapper-grouping cluster output.
+        let conformsToNotificationMessage = conformsFromClause.contains { proto in
+            proto.hasSuffix("NotificationMessage")
+        }
         if declaringKind != .protocolDecl,
+           conformsToNotificationMessage,
            let wrapName = extractNotificationName(from: members)
         {
             record.wrapsNotificationName = wrapName
