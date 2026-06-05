@@ -26,6 +26,10 @@ type Args struct {
 	EmitReferences bool
 	EmitFiles      bool
 	IncludeImports bool
+	// ScanHeader activates the file-hashes extractor's --scan-header pass,
+	// which captures the first matched "copied from"-style phrase in each
+	// file's top comment block. Drives the copied-from-header.jq query.
+	ScanHeader bool
 	// SetupHint, if non-empty, is appended to any subprocess failure as
 	// `hint: <SetupHint>`. Sourced from the manifest's [runtime].setup_hint
 	// so that errors like "node_modules missing" point users at the exact
@@ -165,6 +169,8 @@ func whenSatisfied(when string, args Args) bool {
 		return args.Extensions != ""
 	case "include_imports_enabled":
 		return args.IncludeImports
+	case "scan_header_set":
+		return args.ScanHeader
 	}
 	return false
 }
@@ -187,5 +193,7 @@ func recordArg(cli map[string]any, when string, args Args) {
 		cli["extensions"] = args.Extensions
 	case "include_imports_enabled":
 		cli["include_imports"] = true
+	case "scan_header_set":
+		cli["scan_header"] = true
 	}
 }

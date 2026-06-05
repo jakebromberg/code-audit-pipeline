@@ -72,6 +72,7 @@ var validWhen = map[string]bool{
 	"min_body_lines_set":      true,
 	"extensions_set":          true,
 	"include_imports_enabled": true,
+	"scan_header_set":         true,
 }
 
 // Parse reads and validates a manifest.toml at the given path.

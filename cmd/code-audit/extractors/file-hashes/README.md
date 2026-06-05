@@ -30,6 +30,7 @@ node file-hashes.mjs \
 | `--output` | Optional. Write JSON to this path. Default: stdout. |
 | `--extensions` | Optional. Comma-separated list of extensions to hash (no dots). Default `ts,tsx,mts,cts`. |
 | `--include-tests` | Optional. Don't skip `tests/`, `*.test.*`, `*.spec.*`. |
+| `--scan-header` | Optional. Scan the first ~30 lines of each file for "copied from"-style phrases (`copied from`, `fork of`, `based on`, `duplicate of`, `ported from` — case-insensitive). Each record gains a `header_match: { line, phrase, text } \| null` field. Drives `pipeline/queries/copied-from-header.jq`. |
 
 Stats land on stderr; the JSON catalog lands on stdout (or `--output`).
 

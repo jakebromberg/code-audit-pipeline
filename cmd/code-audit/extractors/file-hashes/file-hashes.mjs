@@ -25,12 +25,13 @@ const { values } = parseArgs({
     output:         { type: 'string' },
     extensions:     { type: 'string', default: 'ts,tsx,mts,cts' },
     'include-tests':{ type: 'boolean', default: false },
+    'scan-header':  { type: 'boolean', default: false },
     help:           { type: 'boolean', default: false },
   },
 });
 
 if (values.help || !values.root) {
-  process.stderr.write(`usage: file-hashes.mjs --root <path> [--shared <path>] [--output <path>] [--extensions ts,tsx,...] [--include-tests]
+  process.stderr.write(`usage: file-hashes.mjs --root <path> [--shared <path>] [--output <path>] [--extensions ts,tsx,...] [--include-tests] [--scan-header]
 
   --root          Required. Root of the codebase to scan.
   --shared        Optional. A secondary package root. Tagged as package="shared".
@@ -38,6 +39,10 @@ if (values.help || !values.root) {
   --extensions    Optional. Comma-separated list of extensions to hash (no dots).
                   Default: ts,tsx,mts,cts. Pass e.g. "ts,tsx,js,jsx,py" to broaden.
   --include-tests Optional. Don't skip tests/ and *.test.*/*.spec.* files.
+  --scan-header   Optional. Read the first ~30 lines of each file and surface the
+                  first "copied from"-style phrase that matches. Adds a
+                  header_match: { line, phrase, text } | null field to every row.
+                  Drives pipeline/queries/copied-from-header.jq.
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -45,7 +50,25 @@ if (values.help || !values.root) {
 const ROOT = resolve(values.root);
 const SHARED = values.shared ? resolve(values.shared) : null;
 const INCLUDE_TESTS = values['include-tests'];
+const SCAN_HEADER = values['scan-header'];
 const EXTS = new Set(values.extensions.split(',').map((s) => s.trim()).filter(Boolean));
+
+// Header phrases captured by --scan-header. Substring match, case-insensitive.
+// Order is precedence-within-a-line: an earlier phrase in this list takes priority
+// when multiple phrases match the same line. Lowercase by construction so the
+// per-line comparison can lowercase the line once and substring-test directly.
+const HEADER_PHRASES = [
+  'copied from',
+  'fork of',
+  'based on',
+  'duplicate of',
+  'ported from',
+];
+
+// Number of leading source lines scanned for header-match phrases. ~30 covers
+// typical license / copyright blocks plus a short header comment under them
+// without spilling into actual code in any reasonable file.
+const HEADER_SCAN_LINES = 30;
 
 // Swift mode: enabled when 'swift' is among --extensions. Mirrors the swift-catalog
 // extractor's skip-list and package resolution so cross-catalog queries see the same
@@ -111,13 +134,35 @@ function normalize(buf) {
   return Buffer.from(lines.join('\n'), 'utf8');
 }
 
+// scanHeader looks at the first HEADER_SCAN_LINES lines for any HEADER_PHRASES
+// match. Returns `{ line: 1-indexed, phrase, text }` on hit, `null` on no hit.
+// Earliest line wins; within a line, earliest entry in HEADER_PHRASES wins.
+//
+// Text is the raw source line stripped of trailing \r and trailing whitespace —
+// single-line by construction (we split on \n after CRLF→LF normalization).
+function scanHeader(buf) {
+  const text = buf.toString('utf8').replace(/\r\n/g, '\n');
+  const lines = text.split('\n');
+  const limit = Math.min(lines.length, HEADER_SCAN_LINES);
+  for (let i = 0; i < limit; i++) {
+    const raw = lines[i].replace(/[ \t\r]+$/, '');
+    const lower = raw.toLowerCase();
+    for (const phrase of HEADER_PHRASES) {
+      if (lower.includes(phrase)) {
+        return { line: i + 1, phrase, text: raw };
+      }
+    }
+  }
+  return null;
+}
+
 function hashFile(filePath, pkgName, pkgRoot) {
   const buf = readFileSync(filePath);
   const norm = normalize(buf);
   const relPath = relative(pkgRoot, filePath);
   const isGenerated = /(^|\/)generated\//.test(relPath) || relPath.endsWith('.d.ts') || relPath.endsWith('.generated.swift');
   const pkg = SWIFT_MODE ? resolveSwiftPackage(relPath) : pkgName;
-  return {
+  const record = {
     package: pkg,
     file: relPath,
     generated: isGenerated,
@@ -126,6 +171,13 @@ function hashFile(filePath, pkgName, pkgRoot) {
     sha256: sha256(buf),
     sha256_normalized: sha256(norm),
   };
+  // When --scan-header is set, every record carries header_match (null on miss).
+  // When unset, the field is omitted entirely so legacy readers see byte-stable
+  // output.
+  if (SCAN_HEADER) {
+    record.header_match = scanHeader(buf);
+  }
+  return record;
 }
 
 // --- Run ---

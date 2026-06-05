@@ -39,6 +39,8 @@ func TestWhenSatisfied(t *testing.T) {
 		{"include_tests_set", Args{IncludeTests: true}, true},
 		{"min_body_lines_set", Args{MinBodyLines: 5}, true},
 		{"min_body_lines_set", Args{}, false},
+		{"scan_header_set", Args{ScanHeader: true}, true},
+		{"scan_header_set", Args{}, false},
 	}
 	for _, c := range cases {
 		if got := whenSatisfied(c.when, c.args); got != c.want {
