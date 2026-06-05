@@ -496,6 +496,7 @@ The function catalog is a top-level **wrapper object** (schema v2.0) carrying sc
       "package": "main",
       "file": "lib/features/authentication/utilities.ts",
       "line": 89,
+      "language": "typescript",
       "generated": false,
       "exported": true,
       "async": false,
@@ -671,7 +672,7 @@ The catalog top level carries `schema_version: "2.0"` (current). The current TS 
 |---|---|---|
 | **Patch** (1.x.y → 1.x.(y+1); not represented in `schema_version`) | Documentation clarification only. No schema change. | None. Consumers see no observable difference. |
 | **Minor** (1.x → 1.(x+1)) | Additive change. A new optional per-entry field; a new optional top-level key; a new permitted `kind` value. | Existing consumers continue to work unchanged. New consumers can read the new field. |
-| **Major** (1.x → 2.0) | Redefines or removes existing semantics. Renaming a kind, changing `shape_sig` normalization, removing a field. | The diff machinery (#117) refuses to compare across major bumps; warns across minor. |
+| **Major** (1.x → 2.0) | Either (a) redefines or removes existing semantics — renaming a kind, changing `shape_sig` normalization, removing a field — or (b) signals an intentional architectural reorganization even when byte-level changes are additive (e.g., v2.0's two-tier core-projection ratification). The bump itself is the signal; consumers should re-read the contract. | The diff machinery (#117) refuses to compare across major bumps; warns across minor. Additive-major bumps are themselves comparable as additive, but the diff tool defaults to refusal until an operator passes `--allow-additive-major` (see #117). |
 
 **1.1** was a minor bump from 1.0: the bare array became a wrapper object with `schema_version` + `extractor` + `entries`. **1.2** is a minor bump from 1.1: `symbol_id`, `fingerprint_v`, `generated_at`, and `extractor.source_sha` are all additive and optional from a consumer's perspective. Existing queries continue to work against 1.2 catalogs unchanged. **2.0** is the v2 two-tier ratification (see "Schema v2 — two-tier ratification" below): the byte-level changes are additive (`language` field, optional `language_data.<lang>.*`, optional `relations[]`, optional honesty markers), but the contract reorganizes around a cross-language core projection. Existing v1 catalogs continue to validate; existing v1 queries continue to run.
 
@@ -799,11 +800,12 @@ Cross-language `kind` values — the same `kind` appears in records from multipl
 - `sql-external-reference` — host-language code that loads a SQL file at runtime. `language_data.<host>.{loaded_from, transformations, execute_via}`.
 - `external-import` — host-language code that imports a symbol whose implementation lives in a different language (PyO3, FFI, native extensions). `language_data.<host>.{imported_as, implementation_language, implementation_package, resolution}`.
 
-Language-specific kinds (do not cross language boundaries; documented for clarity):
+Language-specific kinds (within a single language ecosystem; documented for clarity):
 
 - TypeScript: `interface`, `type-alias-object`, `type-alias-union`, `type-alias-intersection`, `type-alias-infer-model`, `type-alias-other`, `zod-object`, `drizzle-table`, `inline-object`, `import`.
 - Swift: `type` (struct/class/enum), `interface` (protocol), `conformance`, `macro_definition`, `macro_application`.
-- Python: `pydantic-model`, `fastapi-route`, `fastapi-dependency`, `dataclass`, `enum`, `pyo3-function`.
+- Python: `pydantic-model`, `fastapi-route`, `fastapi-dependency`, `dataclass`, `enum`.
+- Rust: `pyo3-function` (a Rust function exported across the PyO3 FFI boundary; `language: "rust"`, `language_data.rust.pyo3.{python_qualified_name, attribute_kind, registration_site}`. See the `pyo3-function` row in `docs/pipeline-contract-v2-fixtures.jsonl` for the canonical record shape. Paired with the host-side `external-import` row on the Python side to form the cross-language join — `external-import` is in the cross-language section above; `pyo3-function` lives here because the row's structure is Rust-extractor-emitted.).
 
 #### v2 deliberate scope
 
