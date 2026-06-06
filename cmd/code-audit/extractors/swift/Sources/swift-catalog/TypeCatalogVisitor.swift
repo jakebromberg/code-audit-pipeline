@@ -464,20 +464,42 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     /// Handles the bare-expression form (`{ foo }`) and the `return foo` form.
     /// Multi-statement bodies aren't supported — the wrapper pattern is
     /// always a single-line getter in practice.
+    ///
+    /// Returns the **canonicalized** token concatenation, NOT
+    /// `trimmedDescription`. Canonicalization is load-bearing here: the
+    /// `wraps_notification_name` value flows directly into the cluster_id and
+    /// `group_by` key of `notification-wrapper-grouping.jq`, and SwiftSyntax's
+    /// `trimmedDescription` preserves interior trivia — so a multi-line
+    /// getter body like
+    ///     `{ Notification.Name(\n        "x"\n    ) }`
+    /// would carry newlines into the cluster_id (breaking the markdown
+    /// `###` header invariant) AND would fail to group with a single-line
+    /// sibling `{ Notification.Name("x") }` even though they wrap the same
+    /// name. Joining `.text` across `tokens(viewMode: .sourceAccurate)`
+    /// strips trivia between tokens while preserving the literal content of
+    /// string literal tokens (so `"foo  bar"` keeps its double space).
     private func extractSingleExpression(_ statements: CodeBlockItemListSyntax) -> String? {
         guard statements.count == 1, let first = statements.first else { return nil }
         switch first.item {
         case .expr(let expr):
-            return expr.trimmedDescription
+            return canonicalText(expr)
         case .stmt(let stmt):
             // Handle `return foo` form.
             if let ret = stmt.as(ReturnStmtSyntax.self), let expr = ret.expression {
-                return expr.trimmedDescription
+                return canonicalText(expr)
             }
             return nil
         case .decl:
             return nil
         }
+    }
+
+    /// Concatenate the `.text` of every token in source-accurate order. This
+    /// canonicalizes whitespace and comments between tokens while preserving
+    /// the literal content of string literal tokens. See the docstring on
+    /// `extractSingleExpression` for why this matters.
+    private func canonicalText(_ node: some SyntaxProtocol) -> String {
+        return node.tokens(viewMode: .sourceAccurate).map { $0.text }.joined()
     }
 
     /// Both forms of the field set, returned together so emitShapeBearing can

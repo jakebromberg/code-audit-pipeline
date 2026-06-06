@@ -123,6 +123,18 @@ assert_jq "PlayerRateDidChangeMessage.wraps_notification_name (Foundation MainAc
 assert_jq "PlayerStateAsyncMessage.wraps_notification_name (Foundation AsyncMessage)" '"Notification.Name(\"player.state\")"' \
     '[.[] | select(.name=="PlayerStateAsyncMessage")][0].wraps_notification_name' "$OUT"
 
+# Cases 11 + 12: canonicalization (issue #222 / iter3). Multi-line getter
+# bodies MUST emit the same canonical string as their single-line siblings —
+# otherwise `group_by(.wraps_notification_name)` in notification-wrapper-grouping.jq
+# fails to cluster equivalent wrappers, AND cluster_id picks up raw newlines
+# that break the markdown `###` header invariant. String-literal interior
+# whitespace MUST be preserved verbatim (only between-token trivia is
+# collapsed).
+assert_jq "PlayerRateDidChangeMessageMultiline.wraps_notification_name (canonical = single-line sibling)" '"AVPlayer.rateDidChangeNotification"' \
+    '[.[] | select(.name=="PlayerRateDidChangeMessageMultiline")][0].wraps_notification_name' "$OUT"
+assert_jq "PreservedInteriorSpaces.wraps_notification_name (interior double-space preserved)" '"Notification.Name(\"foo  bar\")"' \
+    '[.[] | select(.name=="PreservedInteriorSpaces")][0].wraps_notification_name' "$OUT"
+
 # Schema: every type row carries extends and conforms_to as arrays (never null).
 # Typealiases are exempt — they have no inheritance clause syntactically.
 non_alias_count="$(echo "$OUT" | jq '[.[] | select(.kind != "type-alias-other")] | length')"

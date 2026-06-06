@@ -124,6 +124,28 @@ struct PlayerStateAsyncMessage: NotificationCenter.AsyncMessage {
     static var name: Notification.Name { Notification.Name("player.state") }
 }
 
+// Multi-line getter body (issue #222 / iter3): the extractor must canonicalize
+// to the same value as a single-line sibling so they cluster correctly under
+// `group_by(.wraps_notification_name)`. Without canonicalization, the multi-line
+// form would carry newlines into cluster_id (breaking the markdown `###`
+// header) AND fail to group with the single-line form even though they wrap
+// the same notification name. The expected wraps_notification_name for this
+// type is `AVPlayer.rateDidChangeNotification` — byte-identical to
+// PlayerRateDidChangeMessage above. Asserted in test_type_catalog_heritage.sh.
+struct PlayerRateDidChangeMessageMultiline: NotificationCenter.MainActorMessage {
+    static var name: Notification.Name {
+        AVPlayer
+            .rateDidChangeNotification
+    }
+}
+
+// String-literal interior whitespace is PRESERVED by the canonicalization:
+// `Notification.Name("foo  bar")` (double space inside the literal) must
+// remain a double space. Only between-token trivia gets collapsed.
+struct PreservedInteriorSpaces: NotificationCenter.AsyncMessage {
+    static var name: Notification.Name { Notification.Name("foo  bar") }
+}
+
 // Placeholder so AVPlayer.rateDidChangeNotification references resolve
 // at parse time for the fixture (we don't import AVFoundation here).
 enum AVPlayer {
