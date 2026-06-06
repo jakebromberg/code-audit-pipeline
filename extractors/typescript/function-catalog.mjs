@@ -20,7 +20,7 @@
 
 import ts from 'typescript';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, realpathSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join, relative, resolve, dirname } from 'node:path';
@@ -50,8 +50,14 @@ function computeSourceSha() {
     timeout: 2000,
     env,
   };
-  const home = homedir();
-  let dir = EXTRACTOR_DIR;
+  // See type-catalog.mjs::computeSourceSha for the long-form rationale.
+  // Both home and EXTRACTOR_DIR must be realpath-resolved so the
+  // dir-equals-home guard fires under macOS /tmp -> /private/tmp,
+  // trailing-slash HOME values, and other symlink scenarios.
+  let home;
+  try { home = realpathSync(homedir()); } catch { home = homedir(); }
+  let dir;
+  try { dir = realpathSync(EXTRACTOR_DIR); } catch { dir = EXTRACTOR_DIR; }
   for (let i = 0; i < 16; i++) {
     if (!dir || dir === home) break;
     try {

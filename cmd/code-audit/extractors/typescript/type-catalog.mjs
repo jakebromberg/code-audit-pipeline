@@ -9,7 +9,7 @@
 // See ../../docs/pipeline-contract.md for the emitted schema.
 
 import ts from 'typescript';
-import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
 import { join, relative, resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -72,8 +72,24 @@ function computeSourceSha() {
     timeout: 2000,
     env,
   };
-  const home = homedir();
-  let dir = EXTRACTOR_DIR;
+  // Both ends must be in the same canonical form for the equality check below
+  // to fire. `import.meta.url` is realpath-resolved by Node when modules load,
+  // but `homedir()` returns $HOME verbatim — which on macOS may be `/tmp/...`
+  // while realpath produces `/private/tmp/...`, or may carry a trailing slash.
+  // Apply realpath to both sides (with a try/catch so a non-existent HOME from
+  // a stripped env doesn't crash the extractor before it can warn).
+  let home;
+  try {
+    home = realpathSync(homedir());
+  } catch {
+    home = homedir();
+  }
+  let dir;
+  try {
+    dir = realpathSync(EXTRACTOR_DIR);
+  } catch {
+    dir = EXTRACTOR_DIR;
+  }
   // Defensive depth bound: no realistic project nests deeper than 16 levels
   // under HOME. Loop also exits at $HOME and at the filesystem root.
   for (let i = 0; i < 16; i++) {
