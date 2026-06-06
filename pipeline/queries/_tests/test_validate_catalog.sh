@@ -214,7 +214,13 @@ cat > "$TMP/uppercase-source-sha.json" <<'EOF'
 }
 EOF
 assert_exit "uppercase source_sha is rejected" "1" "$(run_validator "$TMP/uppercase-source-sha.json")"
-assert_stderr_contains "uppercase-sha error mentions lowercase requirement" "source_sha"
+# Needle is "lowercase" (not "source_sha"): a future refactor that rejects
+# uppercase via a generic "must be hex" message — exit code stays 1, the word
+# "source_sha" still appears in the error context — would have passed the
+# weaker needle while silently dropping the lowercase-only contract. The
+# word "lowercase" appears in the validator's error string at
+# validate-catalog.mjs line 127 specifically to pin this assertion.
+assert_stderr_contains "uppercase-sha error mentions lowercase requirement" "lowercase"
 
 # --- NUL-formula regression: slash-flatten-only ambiguity does NOT collide ---
 # (package="Shared", file="Generated/X.ts") vs (package="Shared/Generated",
