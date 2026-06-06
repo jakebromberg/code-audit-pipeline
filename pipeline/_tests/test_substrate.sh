@@ -186,7 +186,13 @@ echo "=== refresh-index.mjs: rebuild index from a clean mock ==="
 SCRATCH=$(mk_scratch)
 cp -r "$MOCK/." "$SCRATCH/"
 rm -f "$SCRATCH/index.json"
-out=$(node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" 2>&1)
+# Pin a far-future stale threshold so the mock fixtures (dated 2026-05-30)
+# don't tip into the `stale` bucket as wall-clock time advances past the
+# default 7-day window. The dedicated stale-detection test at line ~314
+# already uses a deliberately-2024-aged fixture to exercise the stale path;
+# this assertion just needs the always-ok path regardless of the day the
+# tests are run.
+out=$(CROSS_REPO_STALE_DAYS=36500 node "$PIPELINE/refresh-index.mjs" --bucket-fs "$SCRATCH" 2>&1)
 rc=$?
 assert_eq "0" "$rc" "rebuild exits 0"
 assert_file_exists "$SCRATCH/index.json" "rebuilt index.json present"
