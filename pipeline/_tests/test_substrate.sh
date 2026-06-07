@@ -9,7 +9,7 @@ set -u
 
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$THIS_DIR/../.." && pwd)"
-MOCK="$THIS_DIR/fixtures/mock-substrate"
+FIXTURE_SRC="$THIS_DIR/fixtures/mock-substrate"
 PIPELINE="$REPO_ROOT/pipeline"
 
 PASS=0
@@ -19,6 +19,60 @@ FAIL=0
 mk_scratch() {
   mktemp -d "${TMPDIR:-/tmp}/substrate-test-XXXXXX"
 }
+
+# Materialize the on-disk fixture to a tempdir with `published_at` /
+# `generated_at` rewritten to a recent timestamp. The committed fixture's
+# snapshot-prefix directory names (e.g. `2026-05-30T10-00-00Z_aaa1111/`)
+# stay as-is — they're treated by refresh-index.mjs as opaque sort keys
+# when latest.json's `prefix` field still matches them — but the JSON
+# timestamps are bumped so `refresh-index.mjs`'s `(now - published_at) >
+# CROSS_REPO_STALE_DAYS` check classifies the snapshots as `ok`, not
+# `stale`. Without this rewrite the fixture would expire 7 days after
+# commit and every subsequent CI run would fail with
+# `coverage.ok counts both repos: expected 2, actual 0` (issue #265).
+#
+# We still genuinely exercise the freshness/stale logic: the rewritten
+# `published_at` is in the recent past, so dropping `CROSS_REPO_STALE_DAYS`
+# below the fixture age (e.g. `CROSS_REPO_STALE_DAYS=0`) flips both repos
+# to `stale` exactly as production would.
+materialize_mock() {
+  local dest="$1"
+  cp -r "$FIXTURE_SRC/." "$dest/"
+  # Recent enough to be `ok` under any sane STALE_DAYS, old enough that
+  # CROSS_REPO_STALE_DAYS=0 still flips it to stale (so the stale-detection
+  # code path stays covered).
+  local published_a published_b generated_at
+  published_a=$(node -e 'console.log(new Date(Date.now() - 60*60*1000).toISOString().replace(/\.\d+Z$/, "Z"))')
+  published_b=$(node -e 'console.log(new Date(Date.now() - 59*60*1000).toISOString().replace(/\.\d+Z$/, "Z"))')
+  generated_at=$(node -e 'console.log(new Date(Date.now() - 58*60*1000).toISOString().replace(/\.\d+Z$/, "Z"))')
+
+  jq --arg ts "$published_a" '.published_at = $ts' \
+    "$dest/by-repo/fake-repo-a/latest.json" > "$dest/by-repo/fake-repo-a/latest.json.tmp"
+  mv "$dest/by-repo/fake-repo-a/latest.json.tmp" "$dest/by-repo/fake-repo-a/latest.json"
+
+  jq --arg ts "$published_b" '.published_at = $ts' \
+    "$dest/by-repo/fake-repo-b/latest.json" > "$dest/by-repo/fake-repo-b/latest.json.tmp"
+  mv "$dest/by-repo/fake-repo-b/latest.json.tmp" "$dest/by-repo/fake-repo-b/latest.json"
+
+  # index.json's `published_at` values aren't read by any pipeline tool
+  # (refresh-index.mjs rebuilds them from latest.json on every run), but
+  # the committed file's `status: "ok"` is statically baked — keeping its
+  # timestamps fresh too means a future test that reads index.json
+  # directly won't trip the same time-bomb. `generated_at` similarly:
+  # cosmetic for fetch-catalogs.sh, but consistency matters.
+  jq --arg pa "$published_a" --arg pb "$published_b" --arg ga "$generated_at" '
+      .generated_at = $ga
+      | (.repos[] | select(.repo == "wxyc/fake-repo-a") | .latest.published_at) = $pa
+      | (.repos[] | select(.repo == "wxyc/fake-repo-b") | .latest.published_at) = $pb
+    ' "$dest/index.json" > "$dest/index.json.tmp"
+  mv "$dest/index.json.tmp" "$dest/index.json"
+}
+
+# Live mock dir used by every test below. Materialized once per test-script
+# run; trap-cleaned on exit so failures don't leak tempdirs.
+MOCK="$(mk_scratch)"
+materialize_mock "$MOCK"
+trap 'rm -rf "$MOCK"' EXIT
 
 # `assert_eq EXPECTED ACTUAL LABEL` — fail-fast on string inequality.
 assert_eq() {
