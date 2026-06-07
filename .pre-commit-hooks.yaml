@@ -19,6 +19,10 @@
   language: node
   types: [file]
   pass_filenames: true
-  stages: [commit]
+  # `pre-commit` is the canonical stage name as of pre-commit framework v3.2
+  # (April 2024). The legacy alias `commit` still resolves but emits a
+  # deprecation warning on every run, which would erode user trust in the
+  # integration the first time they install it.
+  stages: [pre-commit]
   verbose: true
   always_run: false
