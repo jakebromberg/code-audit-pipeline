@@ -24,7 +24,9 @@ The anti-pattern is letting agents creep back upstream into the extraction step.
 | `extractors/<lang>/` | One self-contained extractor per language. TypeScript reference: `extractors/typescript/type-catalog.mjs`. |
 | `pipeline/classify.jq` | Bucket PRs by file-path signal. Path patterns are project-specific — adapt per audit. |
 | `pipeline/queries/*.jq` | Cluster queries: exact duplicates, name collisions, cross-package shadows, near-duplicates (Jaccard). |
+| `hooks/pre-commit-audit.mjs` | Local pre-commit hook (#124). Non-blocking digest of cluster signals on staged TypeScript files. Distributed via the `pre-commit` framework using `.pre-commit-hooks.yaml` at the repo root. |
 | `docs/pipeline-contract.md` | The catalog JSON schema. Non-negotiable; downstream queries depend on it. |
+| `docs/integrations/pre-commit-hook.md` | User-facing install + configuration guide for the hook. |
 | `docs/case-study.md` | Origin-story white paper. |
 | `docs/future-directions.md` | Ranked roadmap. |
 
@@ -78,3 +80,4 @@ This repo uses the [Anti-Capitalist Software License v1.4](https://anticapitalis
 - The TypeScript extractor's `node_modules/` is gitignored. `npm install` runs automatically via the manifest's `[runtime].bootstrap` on first `code-audit extract`. Contributors editing extractor source via `code-audit init --from <checkout>` get the same bootstrap pass — no manual `npm install` step.
 - Pipeline outputs (`prs.json`, `prs-classified.json`, `candidates.json`, `catalog.json`, `findings.md`) are gitignored — they are regeneratable and not for version control.
 - Per-run scratch directory convention: `/tmp/wxyc-audit/` (or rename per project). Documented in the case study's reproducibility footer.
+- The pre-commit hook (`hooks/pre-commit-audit.mjs`) keeps its cache under the consumer repo's `.git/audit/` (catalog.json, catalog.meta.json, last-report.md, timing.log). The cache is invalidated by any relevant-file mtime change or a 24h TTL. The hook ALWAYS exits 0 — every defensive path (extractor crash, jq error, wall-clock overrun) collapses to `code-audit: skipped (<reason>)` on stderr. Treat this as a non-negotiable invariant when extending the hook: a blocking warning trains users to `--no-verify`, and the hook stops being read at all. Tests live under `hooks/test/` and run via `npm run test:hooks` (node --test).
