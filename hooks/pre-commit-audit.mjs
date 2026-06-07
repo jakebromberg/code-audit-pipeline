@@ -32,15 +32,15 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
   mkdirSync,
   writeFileSync,
+  appendFileSync,
   readFileSync,
   existsSync,
   statSync,
   unlinkSync,
   renameSync,
 } from 'node:fs';
-import { dirname, join, resolve, relative, basename } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
 
 const HOOK_DIR = dirname(fileURLToPath(import.meta.url));
 const PIPELINE_ROOT = resolve(HOOK_DIR, '..');
@@ -66,10 +66,19 @@ function cleanExit(code = 0) {
 
 const SCHEMA_VERSION = '1.1';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Test seam: override the cold-path-per-file cost estimate. Used by tests
+// that need to force the detached-rebuild branch without seeding a large repo.
+const COLD_PATH_OVERRIDE_MS = process.env.CODE_AUDIT_COLD_PATH_PER_FILE_MS;
+
 // Cold-path cost estimate: ~25ms per file for the type-catalog extractor on
 // a typical repo. If `nFiles * COLD_PATH_PER_FILE_MS > WALL_CLOCK_MS`, defer
-// to a detached rebuild and exit immediately.
-const COLD_PATH_PER_FILE_MS = 25;
+// to a detached rebuild and exit immediately. Overridable by the test seam
+// `CODE_AUDIT_COLD_PATH_PER_FILE_MS` so the detached branch can be exercised
+// against a small fixture repo.
+const COLD_PATH_PER_FILE_MS = COLD_PATH_OVERRIDE_MS
+  ? Number(COLD_PATH_OVERRIDE_MS)
+  : 25;
 
 const EXTRACTOR_DEFAULT = join(
   PIPELINE_ROOT,
@@ -87,6 +96,17 @@ const INCLUDE_TESTS = process.env.CODE_AUDIT_INCLUDE_TESTS === '1';
 // "no .git" defensive branch even when one exists. Used by integration tests
 // to verify the never-block contract.
 const FAKE_BARE = process.env.CODE_AUDIT_FAKE_BARE_REPO === '1';
+
+// `CODE_AUDIT_REBUILD_ONLY=1` is the entrypoint mode used by the detached
+// rebuild subprocess (see spawnDetachedRebuild). When set, the hook does not
+// process a staged file list — it just runs buildCatalog() against the repo
+// root, which writes catalog.json + catalog.meta.json atomically (tmp + rename),
+// then exits. Keeping the rebuild inside this file (instead of invoking the
+// extractor directly from the parent) preserves two invariants the inline
+// extractor invocation cannot: atomic catalog write, and the meta file getting
+// written at all — without which isCacheValid would never accept the rebuild's
+// output and every subsequent commit would re-take the detached branch.
+const REBUILD_ONLY = process.env.CODE_AUDIT_REBUILD_ONLY === '1';
 
 const QUERIES = [
   { id: 'exact-duplicates', path: join(QUERIES_DIR, 'exact-duplicates.jq'), args: [] },
@@ -192,9 +212,10 @@ function logTiming(repoRoot, line) {
     const auditDir = join(gitDir(repoRoot), 'audit');
     mkdirSync(auditDir, { recursive: true });
     const stamp = new Date().toISOString();
-    const fd = join(auditDir, 'timing.log');
-    const prev = existsSync(fd) ? readFileSync(fd, 'utf8') : '';
-    writeFileSync(fd, prev + `${stamp} ${line}\n`);
+    // appendFileSync avoids the O(N) read+rewrite cost as timing.log grows;
+    // a developer running the hook hundreds of times a week would otherwise
+    // pay an increasing per-commit penalty just to record the timing line.
+    appendFileSync(join(auditDir, 'timing.log'), `${stamp} ${line}\n`);
   } catch {
     // Never let timing instrumentation break the hook.
   }
@@ -364,14 +385,23 @@ function buildCatalog(repoRoot, auditDir, relevantFiles, extractorVersion) {
  * Detach a background process that rebuilds the catalog. Used when the
  * estimated cold-path cost exceeds the wall-clock budget. The next commit
  * benefits; this commit goes through without delay.
+ *
+ * The detached process is THIS hook file, re-invoked with
+ * `CODE_AUDIT_REBUILD_ONLY=1`. That branch runs `buildCatalog`, which writes
+ * `catalog.json` and `catalog.meta.json` atomically (tmp + rename) — both
+ * are required so `isCacheValid` will accept the rebuild's output on the
+ * NEXT commit. Spawning the extractor directly with `--output catalog.json`
+ * would skip the meta-write entirely and leave the cache permanently
+ * invalid, defeating the "next commit benefits" promise.
+ *
+ * `cwd` is set to `repoRoot` so the rebuild subprocess's findRepoRoot() lands
+ * on the same repo as the parent.
  */
 function spawnDetachedRebuild(repoRoot) {
   try {
-    const child = spawn('node', [
-      EXTRACTOR_PATH,
-      '--root', repoRoot,
-      '--output', join(gitDir(repoRoot), 'audit', 'catalog.json'),
-    ], {
+    const child = spawn('node', [fileURLToPath(import.meta.url)], {
+      cwd: repoRoot,
+      env: { ...process.env, CODE_AUDIT_REBUILD_ONLY: '1' },
       detached: true,
       stdio: 'ignore',
     });
@@ -489,6 +519,17 @@ async function main() {
   }
   const auditDir = join(gitDir(repoRoot), 'audit');
 
+  // Detached-rebuild entrypoint mode: parent commit decided the cold-path
+  // cost was too high to do inline, and re-invoked this script with
+  // CODE_AUDIT_REBUILD_ONLY=1. Just rebuild the catalog + meta and exit.
+  // No staged-file processing, no jq queries, no digest.
+  if (REBUILD_ONLY) {
+    const extractorVersion = getExtractorVersion();
+    const repoFiles = enumerateRelevantRepoFiles(repoRoot);
+    buildCatalog(repoRoot, auditDir, repoFiles, extractorVersion);
+    return cleanExit(0);
+  }
+
   // argv[2..] is the pre-commit framework's filename list.
   const argvFiles = process.argv.slice(2);
   let staged;
@@ -517,7 +558,6 @@ async function main() {
   const cacheCheck = isCacheValid(meta, repoRoot, repoFiles, extractorVersion);
 
   let catalogPath = join(auditDir, 'catalog.json');
-  let activeMeta = meta;
 
   if (!cacheCheck.valid) {
     // Estimate cold-path cost. If it exceeds the wall-clock budget by a
@@ -533,7 +573,6 @@ async function main() {
     const built = buildCatalog(repoRoot, auditDir, repoFiles, extractorVersion);
     if (!built) return skipped('extractor-build');
     catalogPath = built.catalogPath;
-    activeMeta = built.meta;
   }
 
   if (!existsSync(catalogPath)) return skipped('no-catalog');

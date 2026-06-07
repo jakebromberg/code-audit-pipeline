@@ -169,13 +169,18 @@ test('honors .gitattributes linguist-generated', () => {
 
     const res = runHook(['src/keep.ts', 'src/generated.ts'], { cwd: fx.root });
     assert.equal(res.status, 0, `stderr: ${res.stderr}`);
-    // The duplicate should NOT fire because generated.ts is marked
-    // linguist-generated. (User is the only catalog entry remaining via the
-    // hook's filter — even if the extractor itself doesn't honor the
-    // attribute, the hook must filter the staged list before querying.)
-    const combined = res.stdout + res.stderr;
-    // The "duplicates" digest must not list generated.ts as a touched member.
-    assert.doesNotMatch(combined, /touched.*generated\.ts/i, `generated.ts should not appear as a touched member; got: ${combined}`);
+
+    // The hook MUST filter generated.ts out of the staged-touched set before
+    // querying. The report's "Touched files" header lists the surviving set,
+    // so it's the authoritative check that the filter ran. (The digest
+    // counter on stderr says `exact=1` either way because the catalog still
+    // contains both files — see docs/integrations/pre-commit-hook.md
+    // §"Cache layout".)
+    const report = readReport(fx.root);
+    assert.ok(report, 'last-report.md written');
+    assert.match(report, /Touched files \(1\):/, `touched-set must shrink to 1 after linguist-generated filter; got:\n${report}`);
+    assert.match(report, /- src\/keep\.ts/, 'keep.ts survives the filter');
+    assert.doesNotMatch(report, /- src\/generated\.ts/, `generated.ts must not appear in the touched-files list; got:\n${report}`);
   } finally {
     fx.cleanup();
   }

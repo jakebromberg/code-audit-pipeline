@@ -113,3 +113,44 @@ test('cache meta records schema_version + extractor_version', () => {
     fx.cleanup();
   }
 });
+
+test('detached rebuild writes catalog AND meta so the next commit sees a valid cache', async () => {
+  // Force the cold-path-cost estimate above the 5s wall-clock budget so the
+  // hook takes the detached-rebuild branch (CODE_AUDIT_COLD_PATH_PER_FILE_MS
+  // is a deliberate test seam — see hooks/pre-commit-audit.mjs).
+  const fx = makeFixtureRepo({ 'src/a.ts': SIMPLE_TYPE });
+  try {
+    const r1 = runHook(['src/a.ts'], {
+      cwd: fx.root,
+      env: { CODE_AUDIT_COLD_PATH_PER_FILE_MS: '999999' },
+    });
+    assert.equal(r1.status, 0, `stderr: ${r1.stderr}`);
+    assert.match(r1.stderr, /cache rebuild in background/, 'detached branch advertised');
+
+    // Wait up to 10s for the detached subprocess to land both catalog + meta.
+    const { existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const metaPath = join(fx.root, '.git', 'audit', 'catalog.meta.json');
+    const catalogPath = join(fx.root, '.git', 'audit', 'catalog.json');
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      if (existsSync(metaPath) && existsSync(catalogPath)) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    const meta = readMeta(fx.root);
+    assert.ok(meta, 'detached rebuild MUST write catalog.meta.json (without it, isCacheValid would never accept the rebuild and every commit would re-take the detached branch)');
+    assert.ok(meta.schema_version, 'meta.schema_version recorded');
+    assert.ok(meta.mtimes && 'src/a.ts' in meta.mtimes, 'meta.mtimes covers the staged file');
+
+    // Next commit on the same repo with normal cost estimate should hit the
+    // cache (no rebuild advertised, meta.built_at unchanged).
+    const r2 = runHook(['src/a.ts'], { cwd: fx.root });
+    assert.equal(r2.status, 0, `stderr: ${r2.stderr}`);
+    assert.doesNotMatch(r2.stderr, /cache rebuild in background/, 'second commit must hit the cache the detached rebuild populated');
+    const meta2 = readMeta(fx.root);
+    assert.equal(meta.built_at, meta2.built_at, 'cache-hit: built_at unchanged on second commit');
+  } finally {
+    fx.cleanup();
+  }
+});
