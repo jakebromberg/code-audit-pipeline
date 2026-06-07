@@ -1,0 +1,24 @@
+# Pre-commit framework manifest for the code-audit cluster hook (#124).
+#
+# Distribution: consumers add this repo as a `repo:` entry in their own
+# `.pre-commit-config.yaml`. The framework installs the hook into a managed
+# environment and invokes the entry below with each staged file.
+#
+# Contract: the hook MUST exit 0 on every code path. Non-blocking is the
+# whole point — pre-commit hooks that block get bypassed, non-blocking
+# hooks get read. See docs/integrations/pre-commit-hook.md §"Non-blocking
+# by design" and parent issue #120.
+
+- id: code-audit-clusters
+  name: code-audit cluster check
+  description: >
+    Non-blocking pre-commit hook: warns on cluster signals (exact duplicates,
+    name collisions, near-duplicates) that touch the staged TypeScript file
+    set. Full report at .git/audit/last-report.md. Always exits 0.
+  entry: node hooks/pre-commit-audit.mjs
+  language: node
+  types: [file]
+  pass_filenames: true
+  stages: [commit]
+  verbose: true
+  always_run: false
