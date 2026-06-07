@@ -76,10 +76,17 @@ jobs:
           node --check extractors/typescript/type-catalog.mjs
           node --check extractors/typescript/function-catalog.mjs
           node --check extractors/file-hashes/file-hashes.mjs
+          node --check hooks/pre-commit-audit.mjs
 
       - name: Run TypeScript extractor unit tests
         working-directory: extractors/typescript
         run: npm test
+
+      - name: Run pre-commit hook tests
+        # Hook tests spawn the type-catalog extractor as a subprocess; reuse
+        # the npm-ci'd node_modules under extractors/typescript/ rather than
+        # installing a duplicate at repo root.
+        run: node --test hooks/test/*.test.mjs
 
       - name: Smoke-test TypeScript extractor
         run: extractors/typescript/tests/test_smoke.sh
