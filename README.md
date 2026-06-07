@@ -226,6 +226,13 @@ The binary's design is captured in seven ADRs under [`docs/adr/`](docs/adr/):
 6. [Bundling + discovery](docs/adr/0006-bundling-and-discovery.md) — bundle queries, leave extractors external, lookup-order chain.
 7. [Reconciliation with snapshot family](docs/adr/0007-reconciliation-with-snapshot-family.md) — catalog envelope vs. cluster envelope.
 
+## Dev-flow integrations
+
+Beyond the `code-audit` binary, the pipeline ships two non-binary integrations that surface cluster findings inside contributor workflows:
+
+- **GitHub Action: PR-comment** — posts a "clusters affected by this PR" comment on every pull request. See [`.github/workflows/pr-comment-reusable.yml`](.github/workflows/pr-comment-reusable.yml) and [#123](https://github.com/jakebromberg/code-audit-pipeline/issues/123).
+- **Pre-commit hook** — a non-blocking local hook that runs the three cluster queries against the staged TypeScript file set, scoped against a cached full-repo catalog under `.git/audit/`. Distributed via the [`pre-commit` framework](https://pre-commit.com) — consumers add this repo as a `repo:` entry and run `pre-commit install`. See [`docs/integrations/pre-commit-hook.md`](docs/integrations/pre-commit-hook.md) for setup, configuration, and the "non-blocking by design" rationale. Tracked in [#124](https://github.com/jakebromberg/code-audit-pipeline/issues/124).
+
 ## Future directions
 
 A ranked map of where this project could grow — temporal indexing, broader extractor kinds, queryable substrate, an evolved agent layer, and what to keep out — is in [`docs/future-directions.md`](docs/future-directions.md).
