@@ -451,20 +451,28 @@ assert_eq "wrapper passes when --repos excludes the skewed repo" "0" "$rc"
 assert_contains "filtered query reaches user code" "$out" "NOOP-MARKER"
 rm -rf "$SUBSET_SCRATCH" "$SUBSET_BUCKET"
 
-echo "=== regression(#9): caller OUTPUT_FORMAT=jsonl does not leak into preflight/coverage ==="
-# Run the wrapper with OUTPUT_FORMAT=jsonl in the environment. Coverage's
-# header should still appear in text form (comment-prefixed); the JSONL
-# only applies to the user's query (noop-query.jq, which has no jsonl
-# branch and emits the same text either way).
+echo "=== regression(#9): caller OUTPUT_FORMAT=jsonl gets JSONL coverage on a single #~ line ==="
+# When OUTPUT_FORMAT=jsonl is set in the caller env, coverage runs in
+# JSONL mode too — so the prepended header is a single `#~ {...}` line
+# that a strict JSONL consumer can strip with `grep -v '^#~ '`. (Previous
+# behavior forced text-mode coverage, which broke strict JSONL parsers
+# downstream.) Preflight stays text-mode regardless — its output is a
+# diagnostic stream for the operator, not for downstream parsers.
 OF_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/of-cache-XXXXXX")
 out=$(env OUTPUT_FORMAT=jsonl AUDIT_BUCKET_URL="file://$MOCK" AUDIT_LOCAL_CACHE="$OF_CACHE" \
   bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$NOOP_QUERY" 2>"$OF_CACHE/err")
 rc=$?
 assert_eq "wrapper exits 0 with OUTPUT_FORMAT=jsonl in caller env" "0" "$rc"
-# The coverage header (comment-prefixed) should be human-readable, not a
-# raw JSON object. Look for the text-mode "scope:" prefix.
 first_line=$(printf '%s' "$out" | head -1)
-assert_contains "first stdout line is text-mode coverage header" "$first_line" "scope:"
+assert_eq "first stdout line begins with the #~ coverage marker" "1" "$(printf '%s' "$first_line" | grep -c '^#~ ' || true)"
+# Stripping the prefix should yield parseable JSON with a .scope field.
+stripped_first=$(printf '%s' "$first_line" | sed 's/^#~ //')
+covered=$(printf '%s' "$stripped_first" | jq -r '.scope.covered' 2>/dev/null)
+assert_eq "coverage JSON is parseable after strip" "2" "$covered"
+# `grep -v '^#~ '` strips the coverage header cleanly, leaving the user
+# query's JSONL output (in this case the noop marker).
+stripped_all=$(printf '%s\n' "$out" | grep -v '^#~ ' || true)
+assert_contains "post-strip stream retains user query output" "$stripped_all" "NOOP-MARKER"
 rm -rf "$OF_CACHE"
 
 echo "=== regression(#10): edges/nodes catalog refused, doesn't merge to empty ==="
@@ -523,6 +531,282 @@ else
   PASS=$((PASS + 1)); echo "  ✓ empty-merge exits $rc (distinct from preflight-refusal exit 1)"
 fi
 rm -rf "$EMPTY_CACHE"
+
+# ====================================================================
+# Iteration-2 regression tests (15 findings from /code-review max)
+# ====================================================================
+
+# Synthetic catalog query that emits origin_repo per entry, used by the
+# annotation tests below. Echoes back each entry's repo/name so the test
+# can assert which origin_repo values made it through the merge.
+ORIGIN_QUERY=$(mktemp "${TMPDIR:-/tmp}/origin-query-XXXXXX.jq")
+trap 'rm -f "$ORIGIN_QUERY"' EXIT
+cat > "$ORIGIN_QUERY" <<'EOF'
+#! query: test-origin-readback
+#! shape: cluster
+#! catalog: any
+#! formats: text
+.entries | map("\(.origin_repo // "?")|\(.name // "?")") | sort | .[]
+EOF
+
+echo "=== regression(i2-#2): merged entries carry origin_repo annotation ==="
+# Build a tiny two-repo substrate. Both repos declare `interface Foo`
+# (same name, same file path). Without the origin_repo annotation the
+# rows would be byte-identical after merge — confirmed via readback.
+ANNOT_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/annot-cache-XXXXXX")
+ANNOT_BUCKET=$(mktemp -d "${TMPDIR:-/tmp}/annot-bucket-XXXXXX")
+mkdir -p "$ANNOT_BUCKET/by-repo/wxyc-a/2026-05-31T10-00-00Z_aaa1111"
+mkdir -p "$ANNOT_BUCKET/by-repo/wxyc-b/2026-05-31T11-00-00Z_bbb2222"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"entries":[{"kind":"interface","name":"Foo","package":"main","file":"src/types.ts","line":1}]}' \
+  > "$ANNOT_BUCKET/by-repo/wxyc-a/2026-05-31T10-00-00Z_aaa1111/type-catalog.json"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"entries":[{"kind":"interface","name":"Foo","package":"main","file":"src/types.ts","line":1}]}' \
+  > "$ANNOT_BUCKET/by-repo/wxyc-b/2026-05-31T11-00-00Z_bbb2222/type-catalog.json"
+SHA_AA=$(shasum -a 256 "$ANNOT_BUCKET/by-repo/wxyc-a/2026-05-31T10-00-00Z_aaa1111/type-catalog.json" | awk '{print $1}')
+SHA_BB=$(shasum -a 256 "$ANNOT_BUCKET/by-repo/wxyc-b/2026-05-31T11-00-00Z_bbb2222/type-catalog.json" | awk '{print $1}')
+cat > "$ANNOT_BUCKET/index.json" <<EOF
+{
+  "schema_version": "1.0", "generated_at": "2026-05-31T12:00:00Z",
+  "bucket": "fs:/x", "region": "auto",
+  "repos": [
+    {"repo":"wxyc/a","path_segment":"wxyc-a","latest":{"prefix":"by-repo/wxyc-a/2026-05-31T10-00-00Z_aaa1111/","commit_sha":"a","short_sha":"a","published_at":"2026-05-31T10:00:00Z","catalogs":[{"kind":"type-catalog","key":"by-repo/wxyc-a/2026-05-31T10-00-00Z_aaa1111/type-catalog.json","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":200,"entry_count":1,"sha256":"$SHA_AA"}]},"history_prefixes":[],"status":"ok"},
+    {"repo":"wxyc/b","path_segment":"wxyc-b","latest":{"prefix":"by-repo/wxyc-b/2026-05-31T11-00-00Z_bbb2222/","commit_sha":"b","short_sha":"b","published_at":"2026-05-31T11:00:00Z","catalogs":[{"kind":"type-catalog","key":"by-repo/wxyc-b/2026-05-31T11-00-00Z_bbb2222/type-catalog.json","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":200,"entry_count":1,"sha256":"$SHA_BB"}]},"history_prefixes":[],"status":"ok"}
+  ],
+  "coverage": {"total_known_repos":2,"ok":2,"stale":0,"failed_last_run":0}
+}
+EOF
+out=$(AUDIT_BUCKET_URL="file://$ANNOT_BUCKET" AUDIT_LOCAL_CACHE="$ANNOT_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$ORIGIN_QUERY" 2>"$ANNOT_CACHE/err" \
+  | grep -v '^#~ ')
+assert_contains "merged entry from wxyc/a carries its origin_repo" "$out" "wxyc/a|Foo"
+assert_contains "merged entry from wxyc/b carries its origin_repo" "$out" "wxyc/b|Foo"
+rm -rf "$ANNOT_CACHE" "$ANNOT_BUCKET"
+
+echo "=== regression(i2-#3): coverage scope excludes ok repos that lack --catalog-kind ==="
+# Build an index where one repo publishes only function-catalog (no
+# type-catalog). With --catalog-kind type-catalog the scope must NOT
+# count that repo as covered; it appears under `irrelevant[]`.
+SCOPE_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/scope-cache-XXXXXX")
+SCOPE_BUCKET=$(mktemp -d "${TMPDIR:-/tmp}/scope-bucket-XXXXXX")
+SCOPE_FN_KEY="by-repo/wxyc-only-fn/2026-05-31T10-00-00Z_fff1111/function-catalog.json"
+SCOPE_TY_KEY="by-repo/wxyc-both/2026-05-31T10-00-00Z_bbb2222/type-catalog.json"
+mkdir -p "$SCOPE_BUCKET/by-repo/wxyc-only-fn/2026-05-31T10-00-00Z_fff1111"
+mkdir -p "$SCOPE_BUCKET/by-repo/wxyc-both/2026-05-31T10-00-00Z_bbb2222"
+echo '{"schema_version":"1.1","extractor":{"name":"function-catalog","language":"typescript","version":"1.0.0"},"entries":[]}' \
+  > "$SCOPE_BUCKET/$SCOPE_FN_KEY"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"entries":[]}' \
+  > "$SCOPE_BUCKET/$SCOPE_TY_KEY"
+SHA_FN=$(shasum -a 256 "$SCOPE_BUCKET/$SCOPE_FN_KEY" | awk '{print $1}')
+SHA_TY=$(shasum -a 256 "$SCOPE_BUCKET/$SCOPE_TY_KEY" | awk '{print $1}')
+cat > "$SCOPE_BUCKET/index.json" <<EOF
+{
+  "schema_version": "1.0", "generated_at": "2026-05-31T12:00:00Z",
+  "bucket":"fs:/x","region":"auto",
+  "repos":[
+    {"repo":"wxyc/only-fn","path_segment":"wxyc-only-fn","latest":{"prefix":"by-repo/wxyc-only-fn/2026-05-31T10-00-00Z_fff1111/","commit_sha":"f","short_sha":"f","published_at":"2026-05-31T10:00:00Z","catalogs":[{"kind":"function-catalog","key":"$SCOPE_FN_KEY","extractor":{"name":"function-catalog","language":"typescript","version":"1.0.0"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_FN"}]},"history_prefixes":[],"status":"ok"},
+    {"repo":"wxyc/both","path_segment":"wxyc-both","latest":{"prefix":"by-repo/wxyc-both/2026-05-31T10-00-00Z_bbb2222/","commit_sha":"b","short_sha":"b","published_at":"2026-05-31T10:00:00Z","catalogs":[{"kind":"type-catalog","key":"$SCOPE_TY_KEY","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_TY"}]},"history_prefixes":[],"status":"ok"}
+  ],
+  "coverage":{"total_known_repos":2,"ok":2,"stale":0,"failed_last_run":0}
+}
+EOF
+result=$(env OUTPUT_FORMAT=jsonl AUDIT_BUCKET_URL="file://$SCOPE_BUCKET" AUDIT_LOCAL_CACHE="$SCOPE_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet --catalog-kind type-catalog "$NOOP_QUERY" 2>"$SCOPE_CACHE/err" \
+  | grep '^#~ ' | head -1 | sed 's/^#~ //')
+covered=$(printf '%s' "$result" | jq -r '.scope.covered')
+expected=$(printf '%s' "$result" | jq -r '.scope.expected')
+irrelevant=$(printf '%s' "$result" | jq -r '.irrelevant | length')
+assert_eq "scope.covered = 1 (only wxyc/both publishes type-catalog)" "1" "$covered"
+assert_eq "scope.expected = 2 (both ok repos in scope total)" "2" "$expected"
+assert_eq "irrelevant[] has 1 entry (wxyc/only-fn)" "1" "$irrelevant"
+rm -rf "$SCOPE_CACHE" "$SCOPE_BUCKET"
+
+echo "=== regression(i2-#4): --repos clears .coverage so header reads N/N not N/total ==="
+SUBSET_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/sub2-cache-XXXXXX")
+# Use mock-substrate (3 repos); subset to one. Header should read 1/1.
+result=$(env OUTPUT_FORMAT=jsonl AUDIT_BUCKET_URL="file://$MOCK" AUDIT_LOCAL_CACHE="$SUBSET_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet --repos wxyc/fake-repo-a "$NOOP_QUERY" 2>"$SUBSET_CACHE/err" \
+  | grep '^#~ ' | head -1 | sed 's/^#~ //')
+covered=$(printf '%s' "$result" | jq -r '.scope.covered')
+expected=$(printf '%s' "$result" | jq -r '.scope.expected')
+assert_eq "scope.covered = 1 after --repos subset" "1" "$covered"
+assert_eq "scope.expected = 1 (pre-filter .coverage was stripped)" "1" "$expected"
+rm -rf "$SUBSET_CACHE"
+
+echo "=== regression(i2-#4b): --repos typo aborts with a stderr diagnostic ==="
+TYPO_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/typo-cache-XXXXXX")
+AUDIT_BUCKET_URL="file://$MOCK" AUDIT_LOCAL_CACHE="$TYPO_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet --repos "wxyc/fake-repo-a,wxyc/typo-name" "$NOOP_QUERY" >/dev/null 2>"$TYPO_CACHE/err"
+rc=$?
+err=$(cat "$TYPO_CACHE/err")
+assert_nonzero_exit "$rc" "wrapper refuses on --repos typo"
+assert_contains "stderr names the typo repo" "$err" "wxyc/typo-name"
+rm -rf "$TYPO_CACHE"
+
+echo "=== regression(i2-#5): shape sniff iterates every catalog, not just first ==="
+# First catalog entries-shaped, second is edges/nodes. Wrapper must
+# refuse rather than silently dropping the broken catalog's data.
+MIX_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/mix-cache-XXXXXX")
+MIX_BUCKET=$(mktemp -d "${TMPDIR:-/tmp}/mix-bucket-XXXXXX")
+MIX_G_KEY="by-repo/wxyc-good/2026-05-31T10-00-00Z_g1/type-catalog.json"
+MIX_B_KEY="by-repo/wxyc-bad/2026-05-31T11-00-00Z_b1/type-catalog.json"
+mkdir -p "$MIX_BUCKET/by-repo/wxyc-good/2026-05-31T10-00-00Z_g1"
+mkdir -p "$MIX_BUCKET/by-repo/wxyc-bad/2026-05-31T11-00-00Z_b1"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"entries":[]}' \
+  > "$MIX_BUCKET/$MIX_G_KEY"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"edges":[],"nodes":[]}' \
+  > "$MIX_BUCKET/$MIX_B_KEY"
+SHA_G=$(shasum -a 256 "$MIX_BUCKET/$MIX_G_KEY" | awk '{print $1}')
+SHA_B=$(shasum -a 256 "$MIX_BUCKET/$MIX_B_KEY" | awk '{print $1}')
+cat > "$MIX_BUCKET/index.json" <<EOF
+{"schema_version":"1.0","generated_at":"2026-05-31T12:00:00Z","bucket":"fs:/x","region":"auto","repos":[
+  {"repo":"wxyc/good","path_segment":"wxyc-good","latest":{"prefix":"by-repo/wxyc-good/2026-05-31T10-00-00Z_g1/","commit_sha":"g","short_sha":"g","published_at":"2026-05-31T10:00:00Z","catalogs":[{"kind":"type-catalog","key":"$MIX_G_KEY","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_G"}]},"history_prefixes":[],"status":"ok"},
+  {"repo":"wxyc/bad","path_segment":"wxyc-bad","latest":{"prefix":"by-repo/wxyc-bad/2026-05-31T11-00-00Z_b1/","commit_sha":"b","short_sha":"b","published_at":"2026-05-31T11:00:00Z","catalogs":[{"kind":"type-catalog","key":"$MIX_B_KEY","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_B"}]},"history_prefixes":[],"status":"ok"}
+],"coverage":{"total_known_repos":2,"ok":2,"stale":0,"failed_last_run":0}}
+EOF
+AUDIT_BUCKET_URL="file://$MIX_BUCKET" AUDIT_LOCAL_CACHE="$MIX_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$NOOP_QUERY" 2>"$MIX_CACHE/err" 1>/dev/null
+rc=$?
+err=$(cat "$MIX_CACHE/err")
+assert_nonzero_exit "$rc" "mixed-shape merge refused"
+assert_contains "stderr names the bad-shape catalog" "$err" "wxyc-bad"
+rm -rf "$MIX_CACHE" "$MIX_BUCKET"
+
+echo "=== regression(i2-#6): unknown-shape catalog refused (was silent empty merge) ==="
+# A v1.1 wrapper missing .entries — previously sniff returned "unknown"
+# and the wrapper accepted it, merging to []. Now: refused.
+UNK_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/unk-cache-XXXXXX")
+UNK_BUCKET=$(mktemp -d "${TMPDIR:-/tmp}/unk-bucket-XXXXXX")
+UNK_KEY="by-repo/wxyc-x/2026-05-31T10-00-00Z_x1/type-catalog.json"
+mkdir -p "$UNK_BUCKET/by-repo/wxyc-x/2026-05-31T10-00-00Z_x1"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"}}' \
+  > "$UNK_BUCKET/$UNK_KEY"
+SHA_X=$(shasum -a 256 "$UNK_BUCKET/$UNK_KEY" | awk '{print $1}')
+cat > "$UNK_BUCKET/index.json" <<EOF
+{"schema_version":"1.0","generated_at":"2026-05-31T12:00:00Z","bucket":"fs:/x","region":"auto","repos":[
+  {"repo":"wxyc/x","path_segment":"wxyc-x","latest":{"prefix":"by-repo/wxyc-x/2026-05-31T10-00-00Z_x1/","commit_sha":"x","short_sha":"x","published_at":"2026-05-31T10:00:00Z","catalogs":[{"kind":"type-catalog","key":"$UNK_KEY","extractor":{"name":"type-catalog","language":"typescript","version":"1.3.2"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_X"}]},"history_prefixes":[],"status":"ok"}
+],"coverage":{"total_known_repos":1,"ok":1,"stale":0,"failed_last_run":0}}
+EOF
+AUDIT_BUCKET_URL="file://$UNK_BUCKET" AUDIT_LOCAL_CACHE="$UNK_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$NOOP_QUERY" 2>"$UNK_CACHE/err" 1>/dev/null
+rc=$?
+err=$(cat "$UNK_CACHE/err")
+assert_nonzero_exit "$rc" "unknown-shape catalog refused"
+assert_contains "stderr names the shape category" "$err" "unknown"
+rm -rf "$UNK_CACHE" "$UNK_BUCKET"
+
+echo "=== regression(i2-#7): preflight scoped to --catalog-kind ignores skew in other kinds ==="
+# Two repos: type-catalog versions match (1.0.0), function-catalog has
+# a major skew (1 vs 2). Running with --catalog-kind type-catalog must
+# pass (since the type-catalog versions agree). Every catalog listed in
+# the index must have a real file at its `.key` path — fetch-catalogs
+# pulls them all regardless of which kind the wrapper will merge.
+PRE_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/pre-cache-XXXXXX")
+PRE_BUCKET=$(mktemp -d "${TMPDIR:-/tmp}/pre-bucket-XXXXXX")
+P1T="by-repo/wxyc-p1/2026-05-31T10-00-00Z_p1/type-catalog.json"
+P1F="by-repo/wxyc-p1/2026-05-31T10-00-00Z_p1/function-catalog.json"
+P2T="by-repo/wxyc-p2/2026-05-31T11-00-00Z_p2/type-catalog.json"
+P2F="by-repo/wxyc-p2/2026-05-31T11-00-00Z_p2/function-catalog.json"
+mkdir -p "$PRE_BUCKET/by-repo/wxyc-p1/2026-05-31T10-00-00Z_p1"
+mkdir -p "$PRE_BUCKET/by-repo/wxyc-p2/2026-05-31T11-00-00Z_p2"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.0.0"},"entries":[]}' \
+  > "$PRE_BUCKET/$P1T"
+echo '{"schema_version":"1.1","extractor":{"name":"function-catalog","language":"typescript","version":"1.0.0"},"entries":[]}' \
+  > "$PRE_BUCKET/$P1F"
+echo '{"schema_version":"1.1","extractor":{"name":"type-catalog","language":"typescript","version":"1.0.0"},"entries":[]}' \
+  > "$PRE_BUCKET/$P2T"
+echo '{"schema_version":"1.1","extractor":{"name":"function-catalog","language":"typescript","version":"2.0.0"},"entries":[]}' \
+  > "$PRE_BUCKET/$P2F"
+SHA_P1T=$(shasum -a 256 "$PRE_BUCKET/$P1T" | awk '{print $1}')
+SHA_P1F=$(shasum -a 256 "$PRE_BUCKET/$P1F" | awk '{print $1}')
+SHA_P2T=$(shasum -a 256 "$PRE_BUCKET/$P2T" | awk '{print $1}')
+SHA_P2F=$(shasum -a 256 "$PRE_BUCKET/$P2F" | awk '{print $1}')
+cat > "$PRE_BUCKET/index.json" <<EOF
+{"schema_version":"1.0","generated_at":"2026-05-31T12:00:00Z","bucket":"fs:/x","region":"auto","repos":[
+  {"repo":"wxyc/p1","path_segment":"wxyc-p1","latest":{"prefix":"by-repo/wxyc-p1/2026-05-31T10-00-00Z_p1/","commit_sha":"p","short_sha":"p","published_at":"2026-05-31T10:00:00Z","catalogs":[
+    {"kind":"type-catalog","key":"$P1T","extractor":{"name":"type-catalog","language":"typescript","version":"1.0.0"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_P1T"},
+    {"kind":"function-catalog","key":"$P1F","extractor":{"name":"function-catalog","language":"typescript","version":"1.0.0"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_P1F"}
+  ]},"history_prefixes":[],"status":"ok"},
+  {"repo":"wxyc/p2","path_segment":"wxyc-p2","latest":{"prefix":"by-repo/wxyc-p2/2026-05-31T11-00-00Z_p2/","commit_sha":"p","short_sha":"p","published_at":"2026-05-31T11:00:00Z","catalogs":[
+    {"kind":"type-catalog","key":"$P2T","extractor":{"name":"type-catalog","language":"typescript","version":"1.0.0"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_P2T"},
+    {"kind":"function-catalog","key":"$P2F","extractor":{"name":"function-catalog","language":"typescript","version":"2.0.0"},"size_bytes":0,"entry_count":0,"sha256":"$SHA_P2F"}
+  ]},"history_prefixes":[],"status":"ok"}
+],"coverage":{"total_known_repos":2,"ok":2,"stale":0,"failed_last_run":0}}
+EOF
+out=$(AUDIT_BUCKET_URL="file://$PRE_BUCKET" AUDIT_LOCAL_CACHE="$PRE_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet --catalog-kind type-catalog "$NOOP_QUERY" 2>"$PRE_CACHE/err")
+rc=$?
+assert_eq "type-catalog merge passes preflight despite function-catalog skew" "0" "$rc"
+assert_contains "user query reached" "$out" "NOOP-MARKER"
+# Sanity: without the kind filter, preflight should still refuse on the
+# function-catalog skew. This guards against the env var leaking into a
+# default-kind run.
+PRE_CACHE2=$(mktemp -d "${TMPDIR:-/tmp}/pre-cache2-XXXXXX")
+AUDIT_BUCKET_URL="file://$PRE_BUCKET" AUDIT_LOCAL_CACHE="$PRE_CACHE2" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$NOOP_QUERY" >/dev/null 2>"$PRE_CACHE2/err"
+rc2=$?
+# Default catalog-kind is type-catalog, so this should ALSO pass (since
+# the user explicitly opts out of function-catalog scoping by default).
+assert_eq "default --catalog-kind type-catalog also bypasses function skew" "0" "$rc2"
+rm -rf "$PRE_CACHE" "$PRE_CACHE2" "$PRE_BUCKET"
+
+echo "=== regression(i2-#8): coverage tolerates .repos missing or null ==="
+# Was: 'Cannot iterate over null (null)'; now: scope: 0/0 ...
+for input in '{}' '{"generated_at":"2026-01-01T00:00:00Z"}' '{"generated_at":"2026-01-01T00:00:00Z","repos":null}'; do
+  rc=0
+  out=$(printf '%s' "$input" | jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/coverage.jq" /dev/stdin 2>&1) || rc=$?
+  assert_eq "exit 0 on input '$input'" "0" "$rc"
+  assert_contains "header reports 0/0" "$out" "0/0"
+done
+
+echo "=== regression(i2-#9): coverage parse_iso tolerates non-string fields ==="
+rc=0
+out=$(echo '{"generated_at":1748694600,"repos":[]}' | jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/coverage.jq" /dev/stdin 2>&1) || rc=$?
+assert_eq "non-string generated_at exits 0" "0" "$rc"
+
+echo "=== regression(i2-#10): stale_threshold_days defaults on non-numeric env ==="
+for v in '7d' 'abc' 'true' '-1' '0'; do
+  rc=0
+  out=$(CROSS_REPO_STALE_DAYS="$v" jq -L "$QUERIES_DIR" -n 'include "_canonical"; stale_threshold_days' 2>&1) || rc=$?
+  assert_eq "CROSS_REPO_STALE_DAYS=$v → exit 0" "0" "$rc"
+  assert_eq "CROSS_REPO_STALE_DAYS=$v → returns 7 (default)" "7" "$out"
+done
+
+echo "=== regression(i2-#12): coverage tolerates non-object .latest ==="
+nonobj_index='{
+  "schema_version":"1.0","generated_at":"2026-05-31T12:00:00Z",
+  "bucket":"fs:/x","region":"auto",
+  "repos":[
+    {"repo":"wxyc/pending","path_segment":"p","latest":"pending-publish","status":"ok"},
+    {"repo":"wxyc/ok","path_segment":"o","latest":{"prefix":"x/","commit_sha":"c","short_sha":"c","published_at":"2026-05-31T11:00:00Z","catalogs":[]},"history_prefixes":[],"status":"ok"}
+  ],
+  "coverage":{"total_known_repos":2,"ok":2,"stale":0,"failed_last_run":0}
+}'
+rc=0
+out=$(printf '%s' "$nonobj_index" | jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/coverage.jq" /dev/stdin 2>&1) || rc=$?
+assert_eq "non-object .latest does not crash coverage" "0" "$rc"
+assert_contains "header reports 1/2 covered" "$out" "1/2"
+
+echo "=== regression(i2-#13): coverage header uses #~ marker, survives user # output ==="
+# Build a user query that emits a line starting with `#` — without the
+# new marker, the documented strip recipe `grep -v '^#'` would swallow
+# it. With `#~ ` the strip survives.
+HASH_QUERY=$(mktemp "${TMPDIR:-/tmp}/hash-query-XXXXXX.jq")
+trap 'rm -f "$HASH_QUERY" "$ORIGIN_QUERY"' EXIT
+cat > "$HASH_QUERY" <<'EOF'
+#! query: hash-leading
+#! shape: cluster
+#! catalog: any
+#! formats: text
+"#FFFFFF appears in palette"
+EOF
+HASH_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/hash-cache-XXXXXX")
+out=$(AUDIT_BUCKET_URL="file://$MOCK" AUDIT_LOCAL_CACHE="$HASH_CACHE" \
+  bash "$PIPELINE/run-cross-repo-query.sh" --quiet "$HASH_QUERY" 2>"$HASH_CACHE/err")
+rc=$?
+assert_eq "wrapper exits 0 with #-leading user output" "0" "$rc"
+# After strip with new prefix, the user's `#`-line survives.
+stripped=$(printf '%s\n' "$out" | grep -v '^#~ ' || true)
+assert_contains "user's #-leading line survives grep -v '^#~ '" "$stripped" "#FFFFFF appears in palette"
+rm -rf "$HASH_CACHE"
 
 echo ""
 echo "=== Results ==="
