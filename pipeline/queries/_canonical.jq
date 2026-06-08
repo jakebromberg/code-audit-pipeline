@@ -237,11 +237,12 @@ def is_repo_local:
 # coverage surfaces both index.json's precomputed `status` AND a
 # freshly-recomputed age so any divergence is visible.
 #
-# Empty-string handling: jq's `//` only catches null/false, not "". A
-# `CROSS_REPO_STALE_DAYS=""` (common in CI when a variable is declared
-# but not yet assigned) would otherwise reach `tonumber` on the empty
-# string and crash with `Expected JSON value`. We coerce empty to the
-# default explicitly via `select(length > 0)`.
+# Tolerant of bad env input — `CROSS_REPO_STALE_DAYS=""` (unset in CI),
+# `"7d"` (operator confusing the unit suffix), or `"0"` (operator trying
+# to disable staleness with the wrong knob) all fall back to the default
+# rather than crashing the query or marking every repo divergent. The
+# substrate's publish-side reads this env too, so an invalid value would
+# corrupt both sides — better to ignore it consistently here.
 def stale_threshold_days:
-  (($ENV.CROSS_REPO_STALE_DAYS // "") | select(length > 0) // "7")
-  | tonumber;
+  (($ENV.CROSS_REPO_STALE_DAYS // "") | tonumber? // null) as $parsed
+  | if $parsed == null or $parsed <= 0 then 7 else $parsed end;

@@ -84,17 +84,28 @@ The standard entry point is the cross-repo wrapper (`pipeline/run-cross-repo-que
 AUDIT_BUCKET_URL=https://catalogs.wxyc.org \
   pipeline/run-cross-repo-query.sh pipeline/queries/cross-package-shadows-any.jq
 
-# Subset of repos (forwarded to fetch-catalogs):
+# Subset of repos. Unknown repo names abort with a stderr diagnostic
+# (typos are not silently dropped).
 pipeline/run-cross-repo-query.sh --repos wxyc/dj-site,wxyc/shared \
   pipeline/queries/cross-package-shadows-any.jq
 
-# Different catalog kind (default: type-catalog):
-CROSS_REPO_CATALOG_KIND=function-catalog \
-  pipeline/run-cross-repo-query.sh pipeline/queries/function-duplicates.jq
+# Different catalog kind (default: type-catalog). Threads through to
+# preflight and coverage so unrelated extractor skew doesn't refuse the
+# run, and scope counts only repos that publish the kind. Pass any
+# query-specific args after `--`:
+pipeline/run-cross-repo-query.sh --catalog-kind function-catalog \
+  pipeline/queries/function-duplicates.jq -- --argjson threshold 0.7
 
 # Trust an already-warm cache; skip fetch:
 pipeline/run-cross-repo-query.sh --skip-fetch pipeline/queries/<q>.jq
+
+# JSONL caller — coverage header becomes a single #~ {...} line that
+# strips cleanly for downstream consumers:
+OUTPUT_FORMAT=jsonl pipeline/run-cross-repo-query.sh <q>.jq \
+  | grep -v '^#~ ' | jq -c .
 ```
+
+Every merged entry carries `origin_repo: "<owner>/<name>"`. Cross-repo collision queries can read it to distinguish "same symbol in 2 repos" from "two intra-repo duplicates"; single-repo queries that don't reference the field are unaffected.
 
 The wrapper enforces the operational-safety guardrails from #155: a major-version skew across the merged catalogs aborts the run before the query starts, and a coverage header is prepended to the query's output so the consumer can always see which repos contributed to the result. See [`pipeline-contract.md` § Cross-repo substrate guardrails](pipeline-contract.md#cross-repo-substrate-guardrails-coveragejq-preflight-versionsjq-run-cross-repo-querysh) for the contract.
 

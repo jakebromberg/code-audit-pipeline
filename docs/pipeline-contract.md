@@ -845,7 +845,7 @@ Cluster-id construction lives in `pipeline/queries/_canonical.jq` so the rules a
 - `output_format` — `"text"` (default) or `"jsonl"`, read from `$ENV.OUTPUT_FORMAT`.
 - `is_published` — true when a row's `origin_package` field is a non-empty string. Filters cross-repo collisions down to the published-only subset. Only `kind: "import"` rows currently carry `origin_package` (per PR #196); on type/function rows the predicate returns false.
 - `is_repo_local` — logical complement of `is_published`. True when a row has no `origin_package`, or it's null/empty.
-- `stale_threshold_days` — staleness cutoff in days, sourced from `$ENV.CROSS_REPO_STALE_DAYS` (default 7). Consumed by `coverage.jq` and `preflight-versions.jq`; the same env is read by `refresh-index.mjs` at publish-time when computing each repo's `latest.status`.
+- `stale_threshold_days` — staleness cutoff in days, sourced from `$ENV.CROSS_REPO_STALE_DAYS` (default 7). Tolerant of bad input: empty string, non-numeric values (`"7d"`, `"abc"`), and non-positive values (`"0"`, `"-1"`) all fall back to the default rather than crashing the query or marking every repo as divergent. The same env is read by `refresh-index.mjs` at publish-time when computing each repo's `latest.status`.
 
 Unit tests covering each helper live in `pipeline/queries/_tests/test_canonical.sh`; integration tests covering each query in both modes live in `pipeline/queries/_tests/test_queries_integration.sh`. Both run with no dependencies beyond `jq` and `bash`.
 
@@ -857,14 +857,17 @@ Cross-repo queries — those that merge catalogs across N repos via the substrat
 
 Consumes the substrate's `index.json` directly (single positional argument). Emits a multi-line header in text mode or a structured JSON object in JSONL mode, surfacing:
 
-- `scope: {covered, expected}` — how many repos out of the expected set produced an `ok`-status catalog.
+- `scope: {covered, expected}` — how many repos out of the expected set produced an `ok`-status catalog. When `CROSS_REPO_CATALOG_KIND` is set in the env (the wrapper sets it from its `--catalog-kind` flag), `covered` counts only repos whose `latest.catalogs[]` actually publishes that kind — so a header reading `2/3` accurately reflects how many repos contributed to the merge, not "how many are ok status overall."
+- `catalog_kind` — the value of the kind filter (`null` if unfiltered).
+- `covered[]` — per-repo metadata for the merge set: `{repo, commit_sha, short_sha, published_at, age_hours, age_days}`.
+- `irrelevant[]` — `ok`-status repos that didn't publish `CROSS_REPO_CATALOG_KIND` (so they don't contribute to the merge). Lists each repo and the kinds it does publish. Always empty when no kind filter is set.
 - `missing[]` — repos in `index.json` whose status is `missing` (in `--known-repos` but absent from the bucket).
 - `stale[]` — repos in `index.json` whose status is `stale` (catalog older than `CROSS_REPO_STALE_DAYS`).
 - `divergent_stale[]` — `ok`-status repos whose freshly-recomputed age vs. the *query-time* threshold value would mark them stale. Surfaces drift between the publish-time and query-time reads of the env var.
 - `errored[]` — currently always empty; reserved for when extractors emit a top-level error count on their catalogs (open in the brief; not yet implemented).
 - `threshold_days`, `comparison_at`, `median_age_hours`, `max_age_hours` — context for the age summary.
 
-Exit is always 0; coverage is informational, not a gate.
+Exit is always 0; coverage is informational, not a gate. Defensive against publisher quirks: `parse_iso` returns `null` (instead of crashing) on non-string timestamps, fractional seconds, or non-UTC offsets; `.repos` defaults to `[]` when absent; `.latest` is treated as null when it's a non-object placeholder string.
 
 ### `pipeline/queries/preflight-versions.jq`
 
@@ -874,25 +877,39 @@ Also consumes `index.json` (single positional argument). Groups every `ok`-statu
 - If minors differ but majors match: pass with a `WARNING: minor version skew` line.
 - If any catalog has a missing or unparseable `extractor.version`: refuse (exit 1).
 
-The refusal model is "fail closed on data unsafety" — version skew within a single extractor type would produce silently wrong cross-repo joins (different `shape_sig` normalization rules, different field names). Multi-language merges are fine; only same-extractor skew refuses.
+The refusal model is "fail closed on data unsafety" — version skew within a single extractor type would produce silently wrong cross-repo joins (different `shape_sig` normalization rules, different field names). Multi-language merges are fine; only same-extractor skew refuses. When `CROSS_REPO_CATALOG_KIND` is set, preflight only scopes catalogs of that kind, so a function-catalog skew doesn't block a type-catalog query.
 
 JSONL mode emits `{status: "ok"|"minor-skew"|"refused", reason, extractors[], refusal_details}`. Text mode emits a per-extractor versions table followed by a `STATUS: <verdict>` line. The jq query terminates with `halt_error(1)` on refusal so callers can rely on the exit code.
 
 ### `pipeline/run-cross-repo-query.sh`
 
-The wrapper that runs `fetch-catalogs.sh` → `preflight-versions.jq` → `coverage.jq` → the user's query. Coverage's stdout is prepended to the query's stdout (as `#`-prefixed comment lines so a JSONL consumer can strip them with `grep -v '^#'`). Preflight's exit code propagates as the wrapper's exit code on refusal — the user's query never runs.
+The wrapper that runs `fetch-catalogs.sh` → `preflight-versions.jq` → `coverage.jq` → the user's query. Coverage's stdout is prepended to the query's stdout as `#~ `-prefixed lines (unique enough that a user query emitting `#FFFFFF`, `# of refs: 5`, or any other `#`-leading content survives the documented strip recipe `grep -v '^#~ '`). The legacy `grep -v '^#'` also works for consumers that don't emit `#`-leading content themselves. When `OUTPUT_FORMAT=jsonl` is set, coverage emits a single-line JSON object, so the prepended header becomes one `#~ {...}` line that a JSONL consumer can strip cleanly.
+
+Preflight's exit code propagates as the wrapper's exit code: `halt_error(1)` from the query → wrapper exit 1 (refused). Other non-zero exits from preflight (jq syntax error, malformed input, OOM) → wrapper exit 3 (crash), distinct from refusal so the operator doesn't misread one for the other. The user's query never runs on either refusal or crash.
+
+Every entry in the merged catalog is augmented with `origin_repo: "<owner>/<name>"`. Cross-repo collision queries can use this to tell "same symbol in 2 repos" apart from "two intra-repo duplicates" — without the annotation, the rows would be byte-identical after merge and `unique` would collapse them. Single-repo queries that don't read `origin_repo` are unaffected.
 
 ```bash
 # Standard cross-repo invocation
 AUDIT_BUCKET_URL=https://catalogs.wxyc.org \
   pipeline/run-cross-repo-query.sh pipeline/queries/<your-query>.jq
 
-# Override catalog kind (default: type-catalog)
-CROSS_REPO_CATALOG_KIND=function-catalog \
-  pipeline/run-cross-repo-query.sh pipeline/queries/<func-query>.jq
+# Override catalog kind (default: type-catalog). Threads through to both
+# preflight (so unrelated extractor skew doesn't refuse) and coverage
+# (so scope reflects repos that actually publish the kind).
+pipeline/run-cross-repo-query.sh --catalog-kind function-catalog \
+  pipeline/queries/<func-query>.jq
 
-# Subset of repos
-pipeline/run-cross-repo-query.sh --repos wxyc/dj-site,wxyc/shared <query>.jq
+# Subset of repos. Strips the substrate's `.coverage` block from the
+# filtered view so the header reads e.g. `1/1` instead of `1/3`.
+# Unknown repo names abort with a stderr diagnostic — typos are not
+# silently dropped.
+pipeline/run-cross-repo-query.sh --repos wxyc/dj-site,wxyc/shared \
+  <query>.jq
+
+# JSONL caller — coverage line becomes `#~ {...}`, strippable with grep:
+OUTPUT_FORMAT=jsonl pipeline/run-cross-repo-query.sh <query>.jq \
+  | grep -v '^#~ ' | jq -c .
 ```
 
 The wrapper is the standard cross-repo entry point. Direct invocation of `jq ... | jq ... | jq ...` against the cache is supported for one-off debugging but bypasses the safety net — F1/F2/F3 cross-repo queries should always be wrapped.

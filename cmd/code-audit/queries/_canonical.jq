@@ -199,3 +199,50 @@ def type_of(name):
 # of the substrate plants this is used against.
 def tokens_of:
   split("[^A-Za-z0-9_]+"; "") | map(select(length > 0));
+
+# ─── Cross-repo filter helpers (issue #155) ───────────────────────────────
+#
+# Predicates used by cross-repo queries to separate published-package symbols
+# from repo-local ones. Loaded as part of `_canonical.jq` rather than a
+# parallel `lib/` file because this file already plays the helper-library
+# role (loc_key, output_format, tokens_of, cluster_id_*) and docs/plans/README
+# pins the convention.
+#
+# Caveat: `origin_package` is currently emitted only on `kind: "import"`
+# rows (per PR #196 / issue #152). Type-alias / interface / function rows
+# do not carry it; calling `is_published` on a type row returns false. If
+# a future query wants to filter type rows by their publisher of origin,
+# the right move is a join across import edges, not a row-level predicate.
+
+# is_published — true if this row originated from a published package
+# (its `origin_package` field is a non-empty string). Designed for filtering
+# cross-repo name-collisions down to the published-only subset where the
+# collision is meaningful (two repos importing the same external API rather
+# than two repos coincidentally naming an internal symbol the same thing).
+def is_published:
+  (.origin_package // null) as $p
+  | ($p | type) == "string" and ($p | length) > 0;
+
+# is_repo_local — logical complement of is_published. A row whose origin
+# is the repo itself (no `origin_package`, or empty/null). Useful when the
+# question is "how many of this name's collisions are internal-only?"
+def is_repo_local:
+  is_published | not;
+
+# stale_threshold_days — the staleness cutoff in days. Reads
+# CROSS_REPO_STALE_DAYS env (default 7). The same env is read by
+# refresh-index.mjs at publish-time when computing each repo's
+# `latest.status` field; coverage.jq and preflight-versions.jq use this
+# helper at query-time. If the env changed between publish and query,
+# coverage surfaces both index.json's precomputed `status` AND a
+# freshly-recomputed age so any divergence is visible.
+#
+# Tolerant of bad env input — `CROSS_REPO_STALE_DAYS=""` (unset in CI),
+# `"7d"` (operator confusing the unit suffix), or `"0"` (operator trying
+# to disable staleness with the wrong knob) all fall back to the default
+# rather than crashing the query or marking every repo divergent. The
+# substrate's publish-side reads this env too, so an invalid value would
+# corrupt both sides — better to ignore it consistently here.
+def stale_threshold_days:
+  (($ENV.CROSS_REPO_STALE_DAYS // "") | tonumber? // null) as $parsed
+  | if $parsed == null or $parsed <= 0 then 7 else $parsed end;
