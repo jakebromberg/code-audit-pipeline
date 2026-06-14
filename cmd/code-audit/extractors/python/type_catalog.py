@@ -497,11 +497,9 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
             if _is_type_alias_assignment(node):
                 name = None
                 value = None
-                ann = None
                 if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                     name = node.target.id
                     value = node.value
-                    ann = node.annotation
                 elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
                     name = node.targets[0].id
                     value = node.value
@@ -525,14 +523,17 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
                         "references_count": len(references),
                     })
         elif isinstance(node, getattr(ast, "TypeAlias", type(None))):
-            # PEP 695 `type Foo = X` (Python 3.12+).
+            # PEP 695 `type Foo[T] = X` (Python 3.12+). Excludes the alias's
+            # declared type-parameters from references — same contract rule
+            # as PEP 695 generic classes (`class Foo[T]:`).
             name = node.name.id if isinstance(node.name, ast.Name) else None
             if name:
                 value = node.value
                 kind = _classify_type_alias(value)
                 type_text = annotation_text(value)
-                references = _collect_name_refs(value)
-                out.append({
+                alias_generics = frozenset(_pep695_type_param_names(node))
+                references = _collect_name_refs(value, exclude=alias_generics)
+                row = {
                     **row_defaults,
                     "name": name,
                     "kind": kind,
@@ -546,23 +547,33 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
                     "extends": [],
                     "references": references,
                     "references_count": len(references),
-                })
+                }
+                if alias_generics:
+                    row["generics"] = ",".join(_pep695_type_param_names(node))
+                out.append(row)
 
+    return out
+
+
+def _pep695_type_param_names(node: ast.AST) -> list[str]:
+    """Names of the PEP 695 type-parameters on a ClassDef / TypeAlias.
+
+    Each `type_params` entry is one of `ast.TypeVar` / `ast.TypeVarTuple`
+    / `ast.ParamSpec` whose `.name` is a `str` (per CPython 3.12 ast docs).
+    Returns the empty list if the node has no `type_params` or runs on
+    pre-3.12 Python (where the attribute doesn't exist)."""
+    out: list[str] = []
+    for tp in getattr(node, "type_params", None) or []:
+        name = getattr(tp, "name", None)
+        if isinstance(name, str):
+            out.append(name)
     return out
 
 
 def _collect_generics(cls: ast.ClassDef) -> list[str]:
     """Extract type-parameter names from `Generic[T]` / `Protocol[T]` bases, plus
     PEP 695 `class Foo[T]:` form. Returns names in declaration order."""
-    names: list[str] = []
-    # PEP 695 (Python 3.12+)
-    tparams = getattr(cls, "type_params", None) or []
-    for tp in tparams:
-        name = getattr(tp, "name", None)
-        if isinstance(name, str):
-            names.append(name)
-        elif hasattr(name, "id"):
-            names.append(name.id)
+    names: list[str] = list(_pep695_type_param_names(cls))
     # Generic[T] / Protocol[T] bases
     for b in cls.bases:
         if isinstance(b, ast.Subscript):

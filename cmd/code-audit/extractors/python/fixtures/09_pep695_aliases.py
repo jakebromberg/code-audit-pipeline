@@ -7,3 +7,9 @@ to actually exercise this kind.
 
 type Pep695Union = int | str
 type Pep695Single = int
+
+
+# Generic PEP 695 alias — the declared type-parameter `T` must NOT appear
+# in references (pipeline-contract §references semantics) and the `generics`
+# field on the emitted row should record T.
+type Pep695Generic[T] = list[T]

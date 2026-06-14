@@ -339,6 +339,16 @@ class Pep695Tests(unittest.TestCase):
         self.assertIsNotNone(e)
         self.assertEqual(e["kind"], "type-alias-other")
 
+    def test_pep695_alias_excludes_own_typevars_from_references(self):
+        # `type Pep695Generic[T] = list[T]` must not leak T into references —
+        # same contract rule as PEP 695 generic classes.
+        cat = cached_catalog()
+        e = find_entry(cat, "Pep695Generic")
+        self.assertIsNotNone(e, "PEP 695 generic alias must be extracted")
+        ref_names = {r["name"] for r in e["references"]}
+        self.assertNotIn("T", ref_names)
+        self.assertEqual(e.get("generics"), "T")
+
 
 class RegularClassTests(unittest.TestCase):
     def test_plain_with_annassign_is_object(self):
@@ -496,13 +506,13 @@ class EmptyFunctionalTypedDictTests(unittest.TestCase):
 
     def test_typeddict_with_zero_fields_arg_is_skipped(self):
         import tempfile
-        from pathlib import Path as _Path
         with tempfile.TemporaryDirectory() as td:
-            (Path(td) / "f.py").write_text(
+            root = Path(td)
+            (root / "f.py").write_text(
                 "from typing import TypedDict\n"
                 "Bad = TypedDict('Bad')\n"
             )
-            rc, cat, stderr = run_extractor(root=_Path(td))
+            rc, cat, stderr = run_extractor(root=root)
             self.assertEqual(rc, 0, stderr)
             names = {e["name"] for e in cat["entries"]}
             self.assertNotIn("Bad", names, "malformed TypedDict must be dropped, not emitted empty")
