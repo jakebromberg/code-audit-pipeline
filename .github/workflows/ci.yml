@@ -175,6 +175,46 @@ jobs:
           version: latest
           args: check
 
+  python:
+    name: python extractor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          # 3.12 is the floor that exercises PEP 695 `type X = ...` aliases —
+          # 3.11 silently skips that test class. The extractor itself works on
+          # 3.9+ (declared in manifest.toml); CI just pins the upper end of
+          # the supported matrix so we don't drift.
+          python-version: '3.12'
+
+      - name: Verify toolchain
+        run: |
+          python3 --version
+          jq --version
+
+      - name: Syntax-check extractor entrypoint
+        run: |
+          python3 -m py_compile extractors/python/type_catalog.py
+          python3 -m py_compile extractors/python/_lib.py
+
+      - name: Run Python extractor unit tests
+        working-directory: extractors/python
+        # Stdlib `unittest` discovery; no third-party deps required (the
+        # extractor is itself stdlib-only). function_catalog tests land
+        # with the catalog itself (#277).
+        run: python3 -m unittest discover -s tests -t . -v
+
+      - name: Smoke-test Python extractor against fixtures
+        # Catalog should be non-empty and jq must accept the JSON output —
+        # surfaces any regression in stdout framing or wrapper shape before
+        # the unit-test layer reports it.
+        run: |
+          python3 extractors/python/type_catalog.py \
+              --root extractors/python/fixtures --output /tmp/py-cat.json
+          jq -e '.entries | length > 0' /tmp/py-cat.json > /dev/null
+
   swift:
     name: swift extractor
     runs-on: macos-latest
