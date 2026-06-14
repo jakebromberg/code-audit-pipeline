@@ -1,0 +1,36 @@
+# manifest.toml — registration sidecar for the Python extractor.
+#
+# Read by the `code-audit` binary (per ADR-0002) to discover this extractor's
+# identity, runtime prerequisites, and per-catalog invocation contract.
+#
+# Token grammar in `invocation`:
+#   {root}            required positional, audited repo root
+#   {output}          target file under .audit/catalogs/<output_file>
+#   {shared}          secondary package root
+#   {touched}         path to the JSON array of touched-in-window files
+#
+# Stdlib-only: no bootstrap step. The extractor uses Python's `ast` module.
+#
+# Schema covers only the type-catalog command for now. The function-catalog
+# command lands in a follow-up (tracked under #277).
+
+schema_version = 2
+
+[extractor]
+name = "python"
+language = "python"
+version = "0.1.0"
+description = "Python AST extractor (stdlib ast); emits type catalog."
+
+[[command]]
+catalog = "type-catalog"
+output_file = "type-catalog.json"
+invocation = ["python3", "type_catalog.py", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+]
+
+[runtime]
+requires = ["python >= 3.9"]
+setup_hint = "No additional setup — uses Python stdlib only (ast.unparse requires 3.9+)."
