@@ -141,19 +141,27 @@ jobs:
             sudo apt-get install -y jq
           fi
 
-      - name: Stage scratch root with only go.mod
+      - name: Stage scratch root with only go.mod (plus a dummy.ts so file-hashes has input)
         id: scratch
-        # Controlled marker set: just go.mod. The pipeline repo's own root
-        # carries additional markers (a top-level package.json for the
+        # Controlled marker set: just go.mod, with one inert .ts file so the
+        # file-hashes fallback has something to hash. The pipeline repo's own
+        # root carries additional markers (a top-level package.json for the
         # pre-commit hook framework, extractors/swift/Package.swift in the
-        # tree, etc.) that would steer detect-languages.sh and obscure
-        # the contract this job exists to pin: allowlist-dropping `go`
-        # when no extractor manifest covers it.
+        # tree, etc.) that would steer detect-languages.sh and obscure the
+        # contract this job exists to pin: allowlist-dropping `go` when no
+        # extractor manifest covers it.
+        #
+        # `dummy.ts` does NOT trigger typescript detection — detect-languages.sh
+        # keys on tsconfig.json / package.json, not on source-file extensions
+        # (verified by pipeline/_tests/test_audit_core.sh). It exists only so
+        # the file-hashes extractor finds ≥1 file and doesn't exit non-zero
+        # under its "no files indexed" contract.
         run: |
           set -Eeuo pipefail
           root="$RUNNER_TEMP/audit-core-autodetect-root"
           mkdir -p "$root"
           : > "$root/go.mod"
+          : > "$root/dummy.ts"
           echo "root=$root" >> "$GITHUB_OUTPUT"
 
       - name: Run audit-core composite (auto-detect)
