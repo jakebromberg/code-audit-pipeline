@@ -27,7 +27,7 @@ How Python source constructs map to the catalog `kind` field:
 |---|---|
 | `class X(Protocol):` | `interface` |
 | `class X(TypedDict):` or `X = TypedDict("X", {...})` | `type-alias-object` |
-| `class X(NamedTuple):` | `type-alias-object` |
+| `class X(NamedTuple):` or `X = NamedTuple("X", [("a", int), ("b", str)])` | `type-alias-object` |
 | `class X(BaseModel):` (Pydantic) | `zod-object` |
 | `@dataclass class X:` | `type-alias-object` |
 | `class X(Base):` with `Mapped[…]` columns (SQLAlchemy) | `drizzle-table` |
@@ -35,6 +35,8 @@ How Python source constructs map to the catalog `kind` field:
 | plain `class X:` with AnnAssign fields | `type-alias-object` |
 | `X: TypeAlias = …` or `type X = …` (PEP 695) | `type-alias-union` (when value is `\|` / `Union` / `Literal` / `Optional`) or `type-alias-other` |
 | `X = NewType("X", Y)` | `type-alias-other` |
+
+Marker bases are recognized in both their bare (`TypedDict`, `Mapped`, `ClassVar`, …) and qualified (`typing.TypedDict`, `sqlalchemy.orm.Mapped`, `typing.ClassVar`, …) spellings — the classifier walks the AST rather than string-matching the unparsed annotation.
 
 `def f():` / `async def f():` / methods inside a `ClassDef` belong to the function-catalog half of this extractor and will be emitted under the follow-up tracked by #277.
 
