@@ -242,6 +242,16 @@ class NamedTupleTests(unittest.TestCase):
         self.assertEqual(e["kind"], "type-alias-object")
         self.assertEqual(e["fields"], ["name:str", "score:int"])
 
+    def test_functional_form(self):
+        # `Foo = NamedTuple("Foo", [("a", int), ("b", str)])` legacy spelling
+        # — must classify identically to the class form so cluster queries
+        # cluster the two together.
+        cat = cached_catalog()
+        e = find_entry(cat, "FunctionalNamedTuple")
+        self.assertIsNotNone(e, "functional NamedTuple form should be extracted")
+        self.assertEqual(e["kind"], "type-alias-object")
+        self.assertEqual(e["fields"], ["a:int", "b:str"])
+
 
 class EnumTests(unittest.TestCase):
     def test_enum_maps_to_type_alias_union(self):
@@ -414,6 +424,88 @@ class FlagsTests(unittest.TestCase):
         e = find_entry(cat, "Point")
         self.assertFalse(e["is_test"])
         self.assertFalse(e["generated"])
+
+
+class QualifiedFormsTests(unittest.TestCase):
+    """Qualified-name (`typing.ClassVar`, `sqlalchemy.orm.Mapped`, …) recognition.
+
+    String-prefix checks against the unparsed annotation silently miss the
+    qualified spelling; these tests pin the AST-based detection.
+    """
+
+    def test_qualified_classvar_sets_is_static(self):
+        cat = cached_catalog()
+        e = find_entry(cat, "QualifiedClassVar")
+        self.assertIsNotNone(e)
+        static_field = next(fs for fs in e["fields_structured"] if fs["name"] == "static_field")
+        self.assertTrue(static_field["is_static"], "typing.ClassVar must set is_static")
+        instance_field = next(fs for fs in e["fields_structured"] if fs["name"] == "instance_field")
+        self.assertFalse(instance_field["is_static"])
+
+    def test_qualified_typeddict_functional_form(self):
+        cat = cached_catalog()
+        e = find_entry(cat, "QualifiedFunctionalTypedDict")
+        self.assertIsNotNone(e, "typing.TypedDict('X', {...}) should be extracted")
+        self.assertEqual(e["kind"], "type-alias-object")
+        self.assertEqual(e["fields"], ["a:int", "b:str"])
+
+    def test_qualified_typealias_annotation(self):
+        cat = cached_catalog()
+        e = find_entry(cat, "QualifiedTypeAliasUnion")
+        self.assertIsNotNone(e, "X: typing.TypeAlias = ... should be extracted")
+        self.assertEqual(e["kind"], "type-alias-union")
+
+    def test_qualified_mapped_classifies_as_drizzle_table(self):
+        cat = cached_catalog()
+        e = find_entry(cat, "QualifiedOrmModel")
+        self.assertIsNotNone(e)
+        self.assertEqual(
+            e["kind"], "drizzle-table",
+            "sqlalchemy.orm.Mapped[...] must trip the column heuristic",
+        )
+
+
+class ReferencesContractTests(unittest.TestCase):
+    """Pipeline-contract rules for `references[]`: leftmost-only qualified
+    extraction, generic type-parameter exclusion.
+    """
+
+    def test_generics_excluded_from_references(self):
+        # Per docs/pipeline-contract.md §extends/conforms_to/references:
+        # "Type-parameter names declared by the enclosing declaration are
+        # excluded from references."
+        cat = cached_catalog()
+        e = find_entry(cat, "GenericClass")
+        self.assertIsNotNone(e)
+        ref_names = {r["name"] for r in e["references"]}
+        self.assertNotIn("T", ref_names, "T is a bound generic; must not leak into references")
+        self.assertNotIn("U", ref_names, "U is a bound generic; must not leak into references")
+
+    def test_generic_protocol_no_self_typevar_ref(self):
+        cat = cached_catalog()
+        e = find_entry(cat, "GenericProtocol", file_suffix="11_generics.py")
+        self.assertIsNotNone(e)
+        ref_names = {r["name"] for r in e["references"]}
+        self.assertNotIn("T", ref_names)
+
+
+class EmptyFunctionalTypedDictTests(unittest.TestCase):
+    """A malformed `TypedDict("X")` (missing fields arg) must not pollute
+    the catalog with an empty-shape record that shape_sig would cluster
+    against every other empty record."""
+
+    def test_typeddict_with_zero_fields_arg_is_skipped(self):
+        import tempfile
+        from pathlib import Path as _Path
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "f.py").write_text(
+                "from typing import TypedDict\n"
+                "Bad = TypedDict('Bad')\n"
+            )
+            rc, cat, stderr = run_extractor(root=_Path(td))
+            self.assertEqual(rc, 0, stderr)
+            names = {e["name"] for e in cat["entries"]}
+            self.assertNotIn("Bad", names, "malformed TypedDict must be dropped, not emitted empty")
 
 
 class ShapeSigDeterminismTests(unittest.TestCase):
