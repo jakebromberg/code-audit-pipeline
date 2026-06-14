@@ -156,12 +156,12 @@ jobs:
     if: github.event.pull_request.draft != true
     runs-on: ${{ inputs.runner }}
     outputs:
-      comment-path: ${{ steps.audit.outputs.comment-path }}
-      touched-count: ${{ steps.audit.outputs.touched-count }}
+      comment-path: ${{ steps.render.outputs.comment-path }}
+      touched-count: ${{ steps.touched.outputs.count }}
       languages-detected: ${{ steps.audit.outputs.languages-detected }}
       binary-version-used: ${{ steps.audit.outputs.binary-version-used }}
-      posted: ${{ steps.audit.outputs.posted }}
-      exit-code: ${{ steps.audit.outputs.exit-code }}
+      posted: ${{ steps.post.outcome == 'success' }}
+      exit-code: ${{ steps.render.outputs.exit-code }}
     steps:
       - name: Resolve audit-pr-comment ref
         # Resolve `latest` and major-pins (`v1`/`v2`) to a concrete release
@@ -230,35 +230,197 @@ jobs:
           path: .code-audit-pipeline
           fetch-depth: 1
 
-      - name: Run audit-pr-comment
+      # The steps below mirror the audit-pr-comment composite's body, inlined
+      # at workflow level because GHA composites resolve `uses: ./X` against
+      # GITHUB_WORKSPACE (the caller's repo root) — NOT the composite's own
+      # location. The composite's nested `uses: ./.github/actions/audit-core`
+      # therefore 404s the moment an external consumer invokes it via this
+      # reusable. The selftest still drives the composite directly (where
+      # workspace IS the pipeline, so the relative path resolves), so the
+      # composite stays intact for that path. Follow-up: refactor the
+      # composite to accept audit-core's outputs as inputs, eliminating this
+      # duplication.
+
+      - name: Derive paths
+        id: paths
+        shell: bash
+        env:
+          AUDIT_PR_AUDIT_ROOT_INPUT: ${{ inputs.audit-root }}
+          RUNNER_TEMP_DIR: ${{ runner.temp }}
+        run: |
+          set -Eeuo pipefail
+          if [ -n "$AUDIT_PR_AUDIT_ROOT_INPUT" ]; then
+            audit_root="$AUDIT_PR_AUDIT_ROOT_INPUT"
+          else
+            audit_root="${RUNNER_TEMP_DIR}/audit"
+          fi
+          echo "audit-root=$audit_root" >> "$GITHUB_OUTPUT"
+
+      - name: Run audit-core (HEAD catalogs)
         id: audit
-        uses: ./.code-audit-pipeline/.github/actions/audit-pr-comment
+        # Full `./.code-audit-pipeline/...` path resolves correctly against
+        # the caller's workspace because the pipeline checkout above placed
+        # the action there.
+        uses: ./.code-audit-pipeline/.github/actions/audit-core
         with:
           root: ${{ inputs.root }}
           languages: ${{ inputs.languages }}
-          # Pass the resolved concrete tag, not the input — the composite
-          # will skip its own resolution and use this verbatim.
-          audit-binary-version: ${{ steps.ref.outputs.ref }}
+          # Pass the resolved concrete tag so audit-core doesn't re-resolve
+          # and risk diverging from the pipeline checkout above.
+          binary-version: ${{ steps.ref.outputs.ref }}
           include-tests: ${{ inputs.include-tests }}
           include-file-hashes: ${{ inputs.include-file-hashes }}
-          marker: ${{ inputs.marker }}
-          size-cap-bytes: ${{ inputs.size-cap-bytes }}
-          on-extraction-failure: ${{ inputs.on-extraction-failure }}
-          # Pass the input verbatim; the composite's `Derive paths` step
-          # falls back to `${{ runner.temp }}/audit` when empty, so the
-          # reusable doesn't need to duplicate that default expression.
-          audit-root: ${{ inputs.audit-root }}
+          audit-root: ${{ steps.paths.outputs.audit-root }}
           github-token: ${{ github.token }}
-          skip-comment: ${{ inputs.skip-comment }}
+
+      - name: Resolve touched files
+        id: touched
+        shell: bash
+        env:
+          # The composite uses $github.action_path/../../.. to find the
+          # pipeline root; at workflow level the pipeline checkout sits at a
+          # known path under the workspace.
+          PIPELINE_ROOT: ${{ github.workspace }}/.code-audit-pipeline
+          AUDIT_PR_LANGS: ${{ steps.audit.outputs.languages-detected }}
+          AUDIT_PR_INCLUDE_TESTS: ${{ inputs.include-tests }}
+          AUDIT_PR_AUDIT_ROOT: ${{ steps.paths.outputs.audit-root }}
+          # PR number is empty for non-pull_request events; in that case
+          # resolve-touched.sh fails loud (we explicitly support only the
+          # PR-comment surface, which is pull_request-scoped).
+          AUDIT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$AUDIT_PR_AUDIT_ROOT"
+          touched_path="$AUDIT_PR_AUDIT_ROOT/touched.json"
+
+          PR_NUMBER="$AUDIT_PR_NUMBER" \
+          LANGUAGES_DETECTED="$AUDIT_PR_LANGS" \
+          EXTRACTORS_DIR="$PIPELINE_ROOT/extractors" \
+          INCLUDE_TESTS="$AUDIT_PR_INCLUDE_TESTS" \
+          OUTPUT_PATH="$touched_path" \
+            bash "$PIPELINE_ROOT/.github/actions/audit-pr-comment/scripts/resolve-touched.sh"
+
+          count="$(jq 'length' "$touched_path")"
+          echo "audit-pr-comment: touched-count=$count" >&2
+          echo "touched-path=$touched_path" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Render PR comment
+        id: render
+        shell: bash
+        env:
+          AUDIT_PR_AUDIT_ROOT: ${{ steps.paths.outputs.audit-root }}
+          AUDIT_PR_TOUCHED: ${{ steps.touched.outputs.touched-path }}
+          AUDIT_PR_MARKER: ${{ inputs.marker }}
+          AUDIT_PR_SIZE_CAP: ${{ inputs.size-cap-bytes }}
+          AUDIT_PR_ON_FAILURE: ${{ inputs.on-extraction-failure }}
+          AUDIT_PR_LANGS: ${{ steps.audit.outputs.languages-detected }}
+        run: |
+          set -Eeuo pipefail
+          comment_path="$AUDIT_PR_AUDIT_ROOT/comment.md"
+          set +e
+          code-audit report \
+            --root "$AUDIT_PR_AUDIT_ROOT" \
+            --touched "$AUDIT_PR_TOUCHED" \
+            --mode pr-comment \
+            --marker "$AUDIT_PR_MARKER" \
+            --size-cap-bytes "$AUDIT_PR_SIZE_CAP" \
+            --on-extraction-failure "$AUDIT_PR_ON_FAILURE" \
+            --detected-languages "$AUDIT_PR_LANGS" \
+            --output "$comment_path"
+          exit_code=$?
+          set -e
+
+          if [ ! -s "$comment_path" ]; then
+            # Defensive fallback: if --output produced an empty file, synthesize
+            # a minimal marker-body so marocchino still posts an updateable
+            # comment.
+            {
+              printf '<!-- %s -->\n\n' "$AUDIT_PR_MARKER"
+              printf '> code-audit: report unavailable (renderer exited %d before producing output); see workflow run logs.\n' "$exit_code"
+            } > "$comment_path"
+          fi
+
+          echo "audit-pr-comment: rendered $(wc -c < "$comment_path" | tr -d ' ') bytes to $comment_path" >&2
+          echo "comment-path=$comment_path" >> "$GITHUB_OUTPUT"
+          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          if [ "$AUDIT_PR_ON_FAILURE" = "loud" ] && [ "$exit_code" -ne 0 ]; then
+            echo "audit-pr-comment: render exited $exit_code (on-extraction-failure=loud)" >&2
+            exit "$exit_code"
+          fi
+
+      - name: Post sticky comment
+        id: post
+        # `github.event_name == 'pull_request'` is the load-bearing gate.
+        # The natural-looking `pull_request.number != ''` is unsafe: when
+        # invoked from a non-pull_request event, `pull_request` is null and
+        # `null != ''` evaluates true in GHA expressions — the step would
+        # then post to a wrong issue or fail loud. Pair both checks plus
+        # the explicit `skip-comment` opt-out.
+        if: inputs.skip-comment != 'true' && github.event_name == 'pull_request' && github.event.pull_request.number != ''
+        # `continue-on-error: true` so fork PRs don't redden the consumer's
+        # CI. Fork-raised pull_request events carry a read-only GITHUB_TOKEN
+        # without `pull-requests: write`; marocchino exits 1 with "Resource
+        # not accessible by integration" and we want the surrounding
+        # workflow to stay green.
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          # marocchino's `header:` is a substring match against the body.
+          # Forward the same value to both `header` here and the rendered
+          # body's `<!-- <marker> -->` first line so future runs edit in
+          # place instead of stacking new comments.
+          header: ${{ inputs.marker }}
+          path: ${{ steps.render.outputs.comment-path }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload comment artifact
         # Always upload — even on render-failure paths the artifact carries
         # the fail-quiet body (or the defensive fallback), which is the
         # primary debug signal for "why didn't my comment look right."
-        if: always() && steps.audit.outputs.comment-path != ''
+        if: always() && steps.render.outputs.comment-path != ''
         uses: actions/upload-artifact@v4
         with:
           name: code-audit-pr-comment
-          path: ${{ steps.audit.outputs.comment-path }}
+          path: ${{ steps.render.outputs.comment-path }}
           retention-days: 14
           if-no-files-found: warn
+
+      - name: Emit step summary
+        # `always()` so the diagnostic summary renders on loud-mode render
+        # failures and on marocchino 403s — exactly the cases where the
+        # summary's languages/touched-count/exit-code/comment-file context
+        # is most useful for debugging.
+        if: always()
+        shell: bash
+        env:
+          AUDIT_PR_COMMENT_PATH: ${{ steps.render.outputs.comment-path }}
+          AUDIT_PR_TOUCHED_COUNT: ${{ steps.touched.outputs.count }}
+          AUDIT_PR_LANGS: ${{ steps.audit.outputs.languages-detected }}
+          AUDIT_PR_EXIT: ${{ steps.render.outputs.exit-code }}
+          AUDIT_PR_BIN_VERSION: ${{ steps.audit.outputs.binary-version-used }}
+          AUDIT_PR_POSTED: ${{ steps.post.outcome }}
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "## code-audit PR comment"
+            echo ""
+            echo "| key | value |"
+            echo "| --- | --- |"
+            echo "| Languages detected | \`${AUDIT_PR_LANGS:-<none>}\` |"
+            echo "| Binary version | \`${AUDIT_PR_BIN_VERSION:-<unknown>}\` |"
+            echo "| Touched paths | \`${AUDIT_PR_TOUCHED_COUNT:-0}\` |"
+            echo "| Render exit | \`${AUDIT_PR_EXIT:-?}\` |"
+            echo "| Sticky post | \`${AUDIT_PR_POSTED:-skipped}\` |"
+            echo "| Comment file | \`${AUDIT_PR_COMMENT_PATH:-<none>}\` |"
+            echo ""
+            if [ -s "$AUDIT_PR_COMMENT_PATH" ]; then
+              echo "<details><summary>Rendered comment</summary>"
+              echo ""
+              echo '```markdown'
+              cat "$AUDIT_PR_COMMENT_PATH"
+              echo '```'
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
