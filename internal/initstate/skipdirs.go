@@ -19,6 +19,12 @@ var skipDirsCanonical = []string{
 	"dist",
 	"build",
 	"coverage",
+	// Python: bytecode cache dirs that appear under any module the test
+	// suite (or a contributor's local run) has touched. Excluded so the
+	// embedded extractor tree doesn't bake host-specific .pyc files into
+	// the binary — and so `code-audit init --from <checkout>` doesn't
+	// copy them to ~/.config/audit/extractors/python/.
+	"__pycache__",
 }
 
 // SkipDirs returns a freshly allocated copy of the skip-dir set. Each call
