@@ -26,7 +26,6 @@ from _lib import (  # noqa: E402
     FINGERPRINT_V,
     LANGUAGE,
     SCHEMA_VERSION,
-    annotation_text,
     compute_source_sha,
     is_generated,
     is_test_path,
@@ -35,7 +34,11 @@ from _lib import (  # noqa: E402
     walk_python_files,
     write_catalog,
 )
-from type_catalog import BUILTIN_TYPE_DENYLIST, _collect_name_refs  # noqa: E402
+from type_catalog import (  # noqa: E402
+    BUILTIN_TYPE_DENYLIST,
+    _collect_name_refs,
+    _decorator_names,
+)
 
 DEFAULT_MIN_BODY_LINES = 3
 
@@ -97,21 +100,6 @@ def _single_type_ref(ann: ast.AST | None) -> str | None:
     return None
 
 
-def _decorator_simple_names(decorators: list[ast.expr]) -> set[str]:
-    """Return the rightmost-identifier set of a function's decorator list. Matches
-    the convention used by type_catalog._decorator_names but returns a set for
-    membership checks; handles `@dec` and `@dec(arg)` and `@mod.dec` forms."""
-    out: set[str] = set()
-    for d in decorators:
-        if isinstance(d, ast.Call):
-            d = d.func
-        if isinstance(d, ast.Name):
-            out.add(d.id)
-        elif isinstance(d, ast.Attribute):
-            out.add(d.attr)
-    return out
-
-
 def _has_implicit_self(fn: ast.FunctionDef | ast.AsyncFunctionDef, inside_class: bool) -> bool:
     """True if the function's first positional arg is implicit (`self` / `cls`)
     in Python's calling convention. False for `@staticmethod` and for any
@@ -119,8 +107,7 @@ def _has_implicit_self(fn: ast.FunctionDef | ast.AsyncFunctionDef, inside_class:
     arg (it's `cls`)."""
     if not inside_class:
         return False
-    decs = _decorator_simple_names(fn.decorator_list)
-    return "staticmethod" not in decs
+    return "staticmethod" not in _decorator_names(fn.decorator_list)
 
 
 def _extract_params(
