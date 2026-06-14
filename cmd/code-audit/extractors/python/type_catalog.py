@@ -18,7 +18,6 @@ import ast
 import datetime
 import hashlib
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -72,19 +71,6 @@ MARKER_BASES = frozenset({
     "Base", "DeclarativeBase",
 })
 
-# Per-class field signature for Enum cases that have a raw value (`A = 1`).
-# Renders the value as ast.unparse text prefixed with `=` (e.g. "=1", "='x'").
-# Cases without a value render with type "".
-def _enum_field(name: str, value_node: ast.AST | None) -> str:
-    if value_node is None:
-        return f"{name}:"
-    try:
-        rendered = ast.unparse(value_node)
-        return f"{name}:={rendered}"
-    except Exception:
-        return f"{name}:"
-
-
 def _is_simple_name(node: ast.AST) -> str | None:
     """Return the source spelling of node if it's a Name or attribute-of-Name; else None."""
     if isinstance(node, ast.Name):
@@ -121,7 +107,16 @@ def _base_names(bases: list[ast.expr]) -> list[str]:
 
 
 def _collect_name_refs(node: ast.AST, exclude: frozenset[str] = frozenset()) -> list[dict]:
-    """Walk a type annotation (or any subtree) and yield deduplicated type-ref dicts."""
+    """Walk a type annotation (or any subtree) and yield deduplicated type-ref dicts.
+
+    Only `ast.Name` identifiers are emitted. For qualified names (`module.Foo`),
+    ast.walk reaches the inner Name(`module`) directly — so emitting only Name
+    nodes naturally satisfies the pipeline-contract rule:
+        "for TypeReferenceNode whose typeName is a QualifiedName, the LEFTMOST
+         identifier is emitted as the reference."
+    Emitting `attr` from `Attribute` nodes too would double-count (e.g.
+    `module.Foo` would emit both `module` AND `Foo`).
+    """
     found: dict[str, None] = {}
     for child in ast.walk(node):
         if isinstance(child, ast.Name):
@@ -129,19 +124,28 @@ def _collect_name_refs(node: ast.AST, exclude: frozenset[str] = frozenset()) -> 
             if n in BUILTIN_TYPE_DENYLIST or n in exclude:
                 continue
             found[n] = None
-        elif isinstance(child, ast.Attribute):
-            n = child.attr
-            if n in BUILTIN_TYPE_DENYLIST or n in exclude:
-                continue
-            found[n] = None
     return [{"name": k, "kind": "type-ref"} for k in sorted(found.keys())]
 
 
-def _extract_class_fields(cls: ast.ClassDef) -> tuple[list[str], list[dict], list[dict]]:
+def _is_classvar_annotation(ann: ast.AST | None) -> bool:
+    """True for ClassVar[T] / typing.ClassVar[T] — AST-based so qualified
+    spellings classify identically to the unqualified form."""
+    if isinstance(ann, ast.Subscript):
+        head = _is_simple_name(ann.value)
+        return head == "ClassVar"
+    return False
+
+
+def _extract_class_fields(
+    cls: ast.ClassDef, exclude_refs: frozenset[str] = frozenset(),
+) -> tuple[list[str], list[dict], list[dict]]:
     """Return (fields, fields_structured, references) for a class body.
 
     Looks at AnnAssign statements (PEP 526 `x: int = 1`) — the only structural
-    field form. Skips Assign without annotation; skips method defs."""
+    field form. Skips Assign without annotation; skips method defs.
+
+    `exclude_refs` carries in-scope type-parameter names so generic bindings
+    don't leak into `references` (pipeline-contract §references semantics)."""
     fields: list[str] = []
     fields_structured: list[dict] = []
     ref_acc: dict[str, None] = {}
@@ -151,7 +155,7 @@ def _extract_class_fields(cls: ast.ClassDef) -> tuple[list[str], list[dict], lis
             fname = stmt.target.id
             ftype = annotation_text(stmt.annotation)
             is_optional = _is_optional_annotation(stmt.annotation)
-            is_classvar = ftype.startswith("ClassVar")
+            is_classvar = _is_classvar_annotation(stmt.annotation)
             fields.append(f"{fname}:{ftype}")
             fields_structured.append({
                 "name": fname,
@@ -159,7 +163,7 @@ def _extract_class_fields(cls: ast.ClassDef) -> tuple[list[str], list[dict], lis
                 "is_optional": is_optional,
                 "is_static": is_classvar,
             })
-            for r in _collect_name_refs(stmt.annotation):
+            for r in _collect_name_refs(stmt.annotation, exclude=exclude_refs):
                 ref_acc[r["name"]] = None
 
     # Sort fields lexicographically (per contract) — keep fields_structured in lockstep.
@@ -261,27 +265,38 @@ def _classify_class(cls: ast.ClassDef) -> tuple[str, list[str]]:
 
 
 def _has_mapped_columns(cls: ast.ClassDef) -> bool:
+    """True if any AnnAssign in the body uses `Mapped[T]` (either bare or
+    qualified). AST-based — text-prefix matches against annotation_text
+    silently miss `sqlalchemy.orm.Mapped[T]`."""
     for stmt in cls.body:
-        if isinstance(stmt, ast.AnnAssign) and stmt.annotation is not None:
-            text = annotation_text(stmt.annotation)
-            if text.startswith("Mapped"):
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.annotation, ast.Subscript):
+            head = _is_simple_name(stmt.annotation.value)
+            if head == "Mapped":
                 return True
     return False
 
 
 def _extract_typed_dict_call(node: ast.Assign) -> tuple[str, list[str], list[dict], list[dict]] | None:
-    """`X = TypedDict("X", {...})` functional form."""
-    if not (isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name)
-            and node.value.func.id == "TypedDict"):
+    """`X = TypedDict("X", {...})` functional form (bare or qualified call).
+
+    Accepts both `TypedDict(...)` and `typing.TypedDict(...)` via the rightmost
+    -identifier match on the call's `.func`.
+    """
+    if not isinstance(node.value, ast.Call):
+        return None
+    if _is_simple_name(node.value.func) != "TypedDict":
         return None
     if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
         return None
     name = node.targets[0].id
+    # Need both a name-positional and the fields-dict — anything else is
+    # malformed and would emit a spurious empty-shape record that shape_sig
+    # would cluster against every other empty record. Drop it.
     if len(node.value.args) < 2:
-        return name, [], [], []
+        return None
     dict_arg = node.value.args[1]
     if not isinstance(dict_arg, ast.Dict):
-        return name, [], [], []
+        return None
     fields: list[str] = []
     fields_structured: list[dict] = []
     refs: dict[str, None] = {}
@@ -295,6 +310,53 @@ def _extract_typed_dict_call(node: ast.Assign) -> tuple[str, list[str], list[dic
             "is_optional": _is_optional_annotation(v), "is_static": False,
         })
         for r in _collect_name_refs(v):
+            refs[r["name"]] = None
+    paired = sorted(zip(fields, fields_structured), key=lambda p: p[0])
+    fields = [p[0] for p in paired]
+    fields_structured = [p[1] for p in paired]
+    references = [{"name": k, "kind": "type-ref"} for k in sorted(refs.keys())]
+    return name, fields, fields_structured, references
+
+
+def _extract_named_tuple_call(node: ast.Assign) -> tuple[str, list[str], list[dict], list[dict]] | None:
+    """`X = NamedTuple("X", [("a", int), ("b", str)])` functional form.
+
+    Parallel to _extract_typed_dict_call; the contract treats the class form
+    `class X(NamedTuple)` and this functional form as the same kind
+    (`type-alias-object`) so cluster queries match them together.
+    """
+    if not isinstance(node.value, ast.Call):
+        return None
+    if _is_simple_name(node.value.func) != "NamedTuple":
+        return None
+    if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+        return None
+    name = node.targets[0].id
+    if len(node.value.args) < 2:
+        return None
+    fields_arg = node.value.args[1]
+    # Accept list / tuple of 2-tuples — `[("a", int), ("b", str)]` or
+    # `(("a", int), ("b", str))`. Reject anything else (string-form
+    # `"a b"` is not type-bearing).
+    if not isinstance(fields_arg, (ast.List, ast.Tuple)):
+        return None
+    fields: list[str] = []
+    fields_structured: list[dict] = []
+    refs: dict[str, None] = {}
+    for elt in fields_arg.elts:
+        if not isinstance(elt, ast.Tuple) or len(elt.elts) != 2:
+            continue
+        key_node, type_node = elt.elts
+        if not (isinstance(key_node, ast.Constant) and isinstance(key_node.value, str)):
+            continue
+        fname = key_node.value
+        ftype = annotation_text(type_node)
+        fields.append(f"{fname}:{ftype}")
+        fields_structured.append({
+            "name": fname, "type": ftype,
+            "is_optional": _is_optional_annotation(type_node), "is_static": False,
+        })
+        for r in _collect_name_refs(type_node):
             refs[r["name"]] = None
     paired = sorted(zip(fields, fields_structured), key=lambda p: p[0])
     fields = [p[0] for p in paired]
@@ -319,15 +381,19 @@ def _classify_type_alias(value: ast.AST) -> str:
 
 def _is_type_alias_assignment(node: ast.Assign | ast.AnnAssign) -> bool:
     """True if this assignment is a top-level type alias (`Foo: TypeAlias = X` or
-    `Foo = NewType('Foo', X)` or `Foo = Union[...]`)."""
+    `Foo = NewType('Foo', X)` or `Foo = Union[...]`).
+
+    AnnAssign matches AST-based via the rightmost identifier so qualified
+    spellings (`X: typing.TypeAlias = ...`) classify identically to the bare
+    form (`X: TypeAlias = ...`).
+    """
     if isinstance(node, ast.AnnAssign):
-        ann_text = annotation_text(node.annotation)
-        return ann_text == "TypeAlias" or ann_text.startswith("TypeAlias")
+        return _is_simple_name(node.annotation) == "TypeAlias"
     if isinstance(node, ast.Assign):
         if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
             return False
         v = node.value
-        if isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id in {"NewType", "TypeAliasType"}:
+        if isinstance(v, ast.Call) and _is_simple_name(v.func) in {"NewType", "TypeAliasType"}:
             return True
         # Bare alias like `Foo = Union[int, str]` or `Foo = int | str`.
         if isinstance(v, ast.Subscript):
@@ -365,11 +431,16 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
 
     def emit_class(cls: ast.ClassDef, qual_prefix: str = ""):
         kind, extends = _classify_class(cls)
+        generics = _collect_generics(cls)
         if kind == "type-alias-union":
             fields, fields_structured = _extract_enum_fields(cls)
             references = []
         else:
-            fields, fields_structured, references = _extract_class_fields(cls)
+            # Exclude in-scope generics from references — per the contract,
+            # `interface Foo<T> { x: T }` produces references: [], not [{T}].
+            fields, fields_structured, references = _extract_class_fields(
+                cls, exclude_refs=frozenset(generics),
+            )
         full_name = qual_prefix + cls.name
         sig = shape_sig(fields)
         row = {
@@ -386,8 +457,6 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
             "references": references,
             "references_count": len(references),
         }
-        # generics — collect TypeVar names from base Generic[T, U] / Protocol[T]
-        generics = _collect_generics(cls)
         if generics:
             row["generics"] = ",".join(generics)
         out.append(row)
@@ -402,11 +471,12 @@ def extract_from_file(file_path: Path, pkg_name: str, pkg_root: Path, touched: s
         if isinstance(node, ast.ClassDef):
             emit_class(node)
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
-            # Functional TypedDict: X = TypedDict("X", {...})
+            # Functional TypedDict / NamedTuple — both map to type-alias-object
+            # so the catalog matches the class-form spelling.
             if isinstance(node, ast.Assign):
-                td = _extract_typed_dict_call(node)
-                if td is not None:
-                    name, fields, fields_structured, references = td
+                functional = _extract_typed_dict_call(node) or _extract_named_tuple_call(node)
+                if functional is not None:
+                    name, fields, fields_structured, references = functional
                     sig = shape_sig(fields)
                     out.append({
                         **row_defaults,
