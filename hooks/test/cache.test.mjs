@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { writeFileSync, statSync } from 'node:fs';
+import { writeFileSync, statSync, existsSync } from 'node:fs';
 import {
   makeFixtureRepo,
   runHook,
@@ -128,8 +128,6 @@ test('detached rebuild writes catalog AND meta so the next commit sees a valid c
     assert.match(r1.stderr, /cache rebuild in background/, 'detached branch advertised');
 
     // Wait up to 10s for the detached subprocess to land both catalog + meta.
-    const { existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
     const metaPath = join(fx.root, '.git', 'audit', 'catalog.meta.json');
     const catalogPath = join(fx.root, '.git', 'audit', 'catalog.json');
     const deadline = Date.now() + 10_000;
