@@ -194,26 +194,29 @@ jobs:
           python3 --version
           jq --version
 
-      - name: Syntax-check extractor entrypoint
+      - name: Syntax-check extractor entrypoints
         run: |
           python3 -m py_compile extractors/python/type_catalog.py
+          python3 -m py_compile extractors/python/function_catalog.py
           python3 -m py_compile extractors/python/_lib.py
 
       - name: Run Python extractor unit tests
         working-directory: extractors/python
         # Stdlib `unittest` discovery; no third-party deps required (the
-        # extractor is itself stdlib-only). function_catalog tests land
-        # with the catalog itself (#277).
+        # extractor is itself stdlib-only).
         run: python3 -m unittest discover -s tests -t . -v
 
       - name: Smoke-test Python extractor against fixtures
-        # Catalog should be non-empty and jq must accept the JSON output —
-        # surfaces any regression in stdout framing or wrapper shape before
-        # the unit-test layer reports it.
+        # Both catalogs should be non-empty and jq must accept the JSON
+        # output — surfaces any regression in stdout framing or wrapper
+        # shape before the unit-test layer reports it.
         run: |
           python3 extractors/python/type_catalog.py \
               --root extractors/python/fixtures --output /tmp/py-cat.json
+          python3 extractors/python/function_catalog.py \
+              --root extractors/python/fixtures --output /tmp/py-fn.json
           jq -e '.entries | length > 0' /tmp/py-cat.json > /dev/null
+          jq -e '.entries | length > 0' /tmp/py-fn.json  > /dev/null
 
   swift:
     name: swift extractor

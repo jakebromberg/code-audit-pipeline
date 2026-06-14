@@ -1,0 +1,254 @@
+"""Tests for the Python function-catalog extractor.
+
+Runs `function_catalog.py` as a subprocess against `fixtures/` and asserts on
+the emitted records against the spec in `docs/pipeline-contract.md`.
+
+Run with:
+    python3 -m unittest discover -s extractors/python -t extractors/python
+"""
+
+import json
+import re
+import subprocess
+import sys
+import unittest
+from pathlib import Path
+
+EXTRACTOR_DIR = Path(__file__).resolve().parent.parent
+FIXTURES_ROOT = EXTRACTOR_DIR / "fixtures"
+FUNCTION_CATALOG = EXTRACTOR_DIR / "function_catalog.py"
+
+
+def run_extractor(*extra_args, root=FIXTURES_ROOT):
+    result = subprocess.run(
+        [sys.executable, str(FUNCTION_CATALOG), "--root", str(root), *extra_args],
+        capture_output=True, text=True, timeout=30,
+    )
+    parsed = None
+    if result.stdout:
+        try:
+            parsed = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            parsed = None
+    return result.returncode, parsed, result.stderr
+
+
+_CACHE: dict = {}
+
+
+def cached_catalog():
+    if "catalog" not in _CACHE:
+        rc, catalog, stderr = run_extractor()
+        if rc != 0 or catalog is None:
+            raise RuntimeError(f"extractor failed (rc={rc}): {stderr}")
+        _CACHE["catalog"] = catalog
+    return _CACHE["catalog"]
+
+
+def find_entry(catalog, name, file_suffix=None):
+    matches = [e for e in catalog["entries"] if e["name"] == name]
+    if file_suffix:
+        matches = [e for e in matches if e["file"].endswith(file_suffix)]
+    return matches[0] if matches else None
+
+
+class WrapperTests(unittest.TestCase):
+    def test_extractor_exits_zero(self):
+        rc, _, stderr = run_extractor()
+        self.assertEqual(rc, 0, f"stderr: {stderr}")
+
+    def test_wrapper_shape(self):
+        cat = cached_catalog()
+        self.assertEqual(cat["schema_version"], "2.0")
+        self.assertEqual(cat["extractor"]["language"], "python")
+        self.assertEqual(cat["extractor"]["name"], "function-catalog")
+        self.assertRegex(cat["extractor"]["version"], r"^\d+\.\d+\.\d+")
+        self.assertEqual(cat["fingerprint_v"], "shape_sig:1")
+        self.assertIsInstance(cat["entries"], list)
+        self.assertGreater(len(cat["entries"]), 0)
+
+    def test_every_entry_carries_per_entry_language(self):
+        for e in cached_catalog()["entries"]:
+            self.assertEqual(e["language"], "python")
+
+    def test_every_entry_has_required_fields(self):
+        required = {"name", "kind", "package", "file", "line",
+                    "is_test", "exported", "async", "param_count",
+                    "param_names", "body_hash", "body_lines",
+                    "body_line_count", "body_length",
+                    "params", "return_ref", "references", "references_count",
+                    "signature_index"}
+        for e in cached_catalog()["entries"]:
+            missing = required - e.keys()
+            self.assertEqual(
+                missing, set(),
+                f"function {e['name']} missing fields: {missing}",
+            )
+
+    def test_runs_byte_deterministic(self):
+        rc1, c1, _ = run_extractor()
+        rc2, c2, _ = run_extractor()
+        self.assertEqual(rc1, 0)
+        self.assertEqual(rc2, 0)
+        self.assertEqual(c1["entries"], c2["entries"])
+
+
+class SyncAsyncTests(unittest.TestCase):
+    def test_sync_function(self):
+        e = find_entry(cached_catalog(), "short_sync")
+        self.assertIsNotNone(e)
+        self.assertEqual(e["kind"], "function")
+        self.assertFalse(e["async"])
+
+    def test_async_function(self):
+        e = find_entry(cached_catalog(), "short_async")
+        self.assertIsNotNone(e)
+        self.assertEqual(e["kind"], "function")
+        self.assertTrue(e["async"])
+
+
+class BodyHashGatingTests(unittest.TestCase):
+    """Functions whose normalized body has fewer than --min-body-lines lines
+    emit a row with body_hash / body_lines / body_line_count / body_length null."""
+
+    def test_short_body_yields_null_body_fields(self):
+        e = find_entry(cached_catalog(), "short_sync")
+        # `return x + 1` is 1 line after normalization. Default min=3.
+        self.assertIsNone(e["body_hash"])
+        self.assertIsNone(e["body_lines"])
+        self.assertIsNone(e["body_line_count"])
+        self.assertIsNone(e["body_length"])
+
+    def test_long_body_populates_body_fields(self):
+        e = find_entry(cached_catalog(), "long_function")
+        self.assertIsNotNone(e["body_hash"])
+        self.assertRegex(e["body_hash"], r"^[0-9a-f]{64}$")
+        self.assertGreaterEqual(e["body_line_count"], 3)
+        self.assertIsInstance(e["body_lines"], list)
+        self.assertGreater(len(e["body_lines"]), 0)
+
+    def test_docstring_dropped_from_body(self):
+        e = find_entry(cached_catalog(), "long_function")
+        # The docstring `"This docstring should be skipped..."` must NOT
+        # appear in body_lines.
+        for line in e["body_lines"]:
+            self.assertNotIn("This docstring should be skipped", line)
+
+    def test_min_body_lines_override(self):
+        """With --min-body-lines 1, even the short functions get body fields."""
+        rc, cat, _ = run_extractor("--min-body-lines", "1")
+        self.assertEqual(rc, 0)
+        e = find_entry(cat, "short_sync")
+        self.assertIsNotNone(e["body_hash"])
+        self.assertGreaterEqual(e["body_line_count"], 1)
+
+
+class SelfClsHandlingTests(unittest.TestCase):
+    def test_self_excluded_from_param_count(self):
+        # WithMethods.instance_method(self, n: int)
+        e = find_entry(cached_catalog(), "WithMethods.instance_method")
+        self.assertIsNotNone(e)
+        self.assertEqual(e["kind"], "method")
+        self.assertEqual(e["param_count"], 1)
+        self.assertEqual(e["param_names"], ["n"])
+
+    def test_cls_excluded_from_param_count(self):
+        e = find_entry(cached_catalog(), "WithMethods.class_method")
+        self.assertIsNotNone(e)
+        self.assertEqual(e["param_count"], 1)
+        self.assertEqual(e["param_names"], ["n"])
+
+
+class MethodQualificationTests(unittest.TestCase):
+    def test_method_name_is_qualified(self):
+        # Inside `class WithMethods`, method `instance_method` should be
+        # emitted as `WithMethods.instance_method`.
+        cat = cached_catalog()
+        names = {e["name"] for e in cat["entries"]}
+        self.assertIn("WithMethods.instance_method", names)
+        # And not the bare name.
+        self.assertNotIn("instance_method", names)
+
+    def test_method_kind(self):
+        e = find_entry(cached_catalog(), "WithMethods.instance_method")
+        self.assertEqual(e["kind"], "method")
+
+    def test_top_level_kind(self):
+        e = find_entry(cached_catalog(), "long_function")
+        self.assertEqual(e["kind"], "function")
+
+
+class NestedFunctionTests(unittest.TestCase):
+    def test_nested_function_qualified(self):
+        cat = cached_catalog()
+        names = {e["name"] for e in cat["entries"]}
+        # `def outer():` contains `def inner():` -> qualified as `outer.inner`.
+        self.assertIn("outer.inner", names)
+        self.assertIn("outer", names)
+
+
+class ReferencesTests(unittest.TestCase):
+    def test_user_type_in_references(self):
+        # `takes_and_returns(arg: CustomReturn) -> CustomReturn`
+        e = find_entry(cached_catalog(), "takes_and_returns")
+        self.assertIsNotNone(e)
+        ref_names = {r["name"] for r in e["references"]}
+        self.assertIn("CustomReturn", ref_names)
+
+    def test_builtins_filtered_from_references(self):
+        e = find_entry(cached_catalog(), "short_sync")
+        ref_names = {r["name"] for r in e["references"]}
+        self.assertNotIn("int", ref_names)
+        self.assertNotIn("str", ref_names)
+
+    def test_references_count_matches(self):
+        for e in cached_catalog()["entries"]:
+            self.assertEqual(e["references_count"], len(e["references"]))
+
+    def test_return_ref_single_identifier(self):
+        e = find_entry(cached_catalog(), "takes_and_returns")
+        self.assertEqual(e["return_ref"], "CustomReturn")
+
+    def test_return_ref_none_for_primitive(self):
+        e = find_entry(cached_catalog(), "short_sync")
+        self.assertIsNone(e["return_ref"])
+
+
+class ExportedFlagTests(unittest.TestCase):
+    def test_public_function_exported(self):
+        e = find_entry(cached_catalog(), "long_function")
+        self.assertTrue(e["exported"])
+
+    def test_underscore_prefix_not_exported(self):
+        # The fixture tree has no top-level `_func` to assert against; this
+        # exercises the path indirectly by checking that nothing private
+        # leaks. (Adding a `_private_helper` fixture if a regression is
+        # ever observed is cheap; for now the convention is held by the
+        # `not name.split('.')[-1].startswith('_')` rule in the extractor.)
+        cat = cached_catalog()
+        for e in cat["entries"]:
+            last = e["name"].split(".")[-1]
+            if last.startswith("_"):
+                self.assertFalse(
+                    e["exported"],
+                    f"{e['name']}: underscore-prefixed name should be exported=false",
+                )
+
+
+class FlagsPropagationTests(unittest.TestCase):
+    def test_tests_dir_function_flagged_is_test(self):
+        # The tests/ fixture dir is empty of functions today; the
+        # type-catalog test covers the same code path. Defensive: if a
+        # function ever lands under tests/, it must be flagged.
+        for e in cached_catalog()["entries"]:
+            if e["file"].startswith("tests/"):
+                self.assertTrue(e["is_test"], f"{e['file']}: should be is_test")
+
+    def test_generated_dir_function_flagged_generated(self):
+        for e in cached_catalog()["entries"]:
+            if e["file"].startswith("generated/"):
+                self.assertTrue(e["generated"], f"{e['file']}: should be generated")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -8,11 +8,9 @@
 #   {output}          target file under .audit/catalogs/<output_file>
 #   {shared}          secondary package root
 #   {touched}         path to the JSON array of touched-in-window files
+#   {min_body_lines}  function-catalog-only threshold knob
 #
 # Stdlib-only: no bootstrap step. The extractor uses Python's `ast` module.
-#
-# Schema covers only the type-catalog command for now. The function-catalog
-# command lands in a follow-up (tracked under #277).
 
 schema_version = 2
 
@@ -20,7 +18,7 @@ schema_version = 2
 name = "python"
 language = "python"
 version = "0.1.0"
-description = "Python AST extractor (stdlib ast); emits type catalog."
+description = "Python AST extractor (stdlib ast); emits type and function catalogs."
 
 [[command]]
 catalog = "type-catalog"
@@ -29,6 +27,16 @@ invocation = ["python3", "type_catalog.py", "--root", "{root}", "--output", "{ou
 optional_args = [
   { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
   { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+]
+
+[[command]]
+catalog = "function-catalog"
+output_file = "function-catalog.json"
+invocation = ["python3", "function_catalog.py", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+  { flag = "--min-body-lines", placeholder = "{min_body_lines}", when = "min_body_lines_set" },
 ]
 
 [runtime]
