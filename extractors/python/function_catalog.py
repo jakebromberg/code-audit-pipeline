@@ -35,14 +35,19 @@ from _lib import (  # noqa: E402
     walk_python_files,
     write_catalog,
 )
-from type_catalog import BUILTIN_TYPE_DENYLIST, _collect_name_refs, _is_simple_name  # noqa: E402
+from type_catalog import BUILTIN_TYPE_DENYLIST, _collect_name_refs  # noqa: E402
 
 DEFAULT_MIN_BODY_LINES = 3
 
 
-def _symbol_id(package: str, file: str, name: str, kind: str) -> str:
+def _symbol_id(package: str, file: str, name: str, kind: str, signature_index: int) -> str:
+    """sha1 over (package, file, name, kind, signature_index) joined by NUL
+    bytes. `signature_index` is included so `@typing.overload` heads (each a
+    separate FunctionDef sharing one name + kind) get distinct ids."""
     h = hashlib.sha1()
-    h.update(f"{package}\x00{file}\x00{name}\x00{kind}".encode("utf-8"))
+    h.update(
+        f"{package}\x00{file}\x00{name}\x00{kind}\x00{signature_index}".encode("utf-8")
+    )
     return h.hexdigest()
 
 
@@ -92,14 +97,46 @@ def _single_type_ref(ann: ast.AST | None) -> str | None:
     return None
 
 
-def _extract_params(fn: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[list[dict], list[str]]:
-    """Return (params_payload, param_names)."""
+def _decorator_simple_names(decorators: list[ast.expr]) -> set[str]:
+    """Return the rightmost-identifier set of a function's decorator list. Matches
+    the convention used by type_catalog._decorator_names but returns a set for
+    membership checks; handles `@dec` and `@dec(arg)` and `@mod.dec` forms."""
+    out: set[str] = set()
+    for d in decorators:
+        if isinstance(d, ast.Call):
+            d = d.func
+        if isinstance(d, ast.Name):
+            out.add(d.id)
+        elif isinstance(d, ast.Attribute):
+            out.add(d.attr)
+    return out
+
+
+def _has_implicit_self(fn: ast.FunctionDef | ast.AsyncFunctionDef, inside_class: bool) -> bool:
+    """True if the function's first positional arg is implicit (`self` / `cls`)
+    in Python's calling convention. False for `@staticmethod` and for any
+    function declared outside a class. `@classmethod` keeps the implicit first
+    arg (it's `cls`)."""
+    if not inside_class:
+        return False
+    decs = _decorator_simple_names(fn.decorator_list)
+    return "staticmethod" not in decs
+
+
+def _extract_params(
+    fn: ast.FunctionDef | ast.AsyncFunctionDef,
+    has_implicit_self: bool,
+) -> tuple[list[dict], list[str]]:
+    """Return (params_payload, param_names).
+
+    When `has_implicit_self` is True, the FIRST positional arg (`self` / `cls`
+    by convention) is dropped from both the payload and the names list so
+    `param_count` matches the TS arity convention (caller-perspective)."""
     args = fn.args
     out: list[dict] = []
     names: list[str] = []
-    seen_self = False
 
-    # The full ordered arg list, in spec order: posonly, args, vararg, kwonly, kwarg
+    # The full ordered arg list, in spec order: posonly, args, vararg, kwonly, kwarg.
     all_args: list[ast.arg] = []
     all_args.extend(args.posonlyargs)
     all_args.extend(args.args)
@@ -110,9 +147,10 @@ def _extract_params(fn: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[list[di
         all_args.append(args.kwarg)
 
     for i, a in enumerate(all_args):
-        # Skip the leading `self` / `cls` so param_count matches the TS arity convention.
-        if i == 0 and not seen_self and a.arg in {"self", "cls"}:
-            seen_self = True
+        # Strip the implicit first arg (whatever the author named it) on
+        # methods that have one; never strip on functions, staticmethods,
+        # or after the first positional.
+        if i == 0 and has_implicit_self:
             continue
         names.append(a.arg)
         type_ref = _single_type_ref(a.annotation)
@@ -126,8 +164,11 @@ def _extract_params(fn: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[list[di
 
 
 def _walk_functions(tree: ast.Module):
-    """Yield (qual_name, FunctionDef|AsyncFunctionDef, kind) for every function
-    declaration in the module. Class methods are qualified as Class.method."""
+    """Yield (qual_name, FunctionDef|AsyncFunctionDef, kind, inside_class) for
+    every function declaration in the module. Class methods are qualified as
+    Class.method. `inside_class` tells the caller whether the function's first
+    positional arg is implicit-self by Python's calling convention (modulo
+    `@staticmethod`)."""
     def walk(node: ast.AST, qual_prefix: str = "", inside_class: bool = False):
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef):
@@ -136,7 +177,7 @@ def _walk_functions(tree: ast.Module):
             elif isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 qual = qual_prefix + child.name
                 kind = "method" if inside_class else "function"
-                yield qual, child, kind
+                yield qual, child, kind, inside_class
                 # Walk into nested defs for closures; the prefix follows the dotted form.
                 yield from walk(child, qual_prefix=qual + ".", inside_class=False)
     yield from walk(tree)
@@ -166,8 +207,14 @@ def extract_from_file(
         "synthetic": False,
     }
     out: list[dict] = []
-    for qual, fn, kind in _walk_functions(tree):
-        params, param_names = _extract_params(fn)
+    # Per-(file, name) counter so two FunctionDefs sharing a name in the same
+    # file -- @typing.overload heads above an implementation, or nested
+    # same-name defs -- get signature_index 0, 1, 2, ... in source order.
+    # Mirrors the TS function-catalog convention so (name, package, file)
+    # dedupe + signature_index ordering both work uniformly.
+    sig_index: dict[str, int] = {}
+    for qual, fn, kind, inside_class in _walk_functions(tree):
+        params, param_names = _extract_params(fn, _has_implicit_self(fn, inside_class))
 
         body_lines = _normalize_body_lines(fn.body)
         if len(body_lines) >= min_body_lines:
@@ -198,13 +245,15 @@ def extract_from_file(
         async_flag = isinstance(fn, ast.AsyncFunctionDef)
         exported = not qual.split(".")[-1].startswith("_")
 
+        idx = sig_index.get(qual, 0)
+        sig_index[qual] = idx + 1
+
         row = {
             **row_defaults,
             "name": qual,
             "kind": kind,
             "line": fn.lineno,
-            "symbol_id": _symbol_id(pkg_name, rel, qual, kind),
-            "generated": row_defaults["generated"],
+            "symbol_id": _symbol_id(pkg_name, rel, qual, kind, idx),
             "exported": exported,
             "async": async_flag,
             "param_count": len(params),
@@ -218,7 +267,7 @@ def extract_from_file(
             "return_ref": return_ref,
             "references": references,
             "references_count": len(references),
-            "signature_index": 0,
+            "signature_index": idx,
         }
         out.append(row)
     return out

@@ -158,6 +158,44 @@ class SelfClsHandlingTests(unittest.TestCase):
         self.assertEqual(e["param_count"], 1)
         self.assertEqual(e["param_names"], ["n"])
 
+    def test_staticmethod_keeps_first_arg_even_when_named_self(self):
+        # @staticmethod has NO implicit first arg, even if the author
+        # unfortunately named the first parameter `self`. param_count must
+        # reflect the caller-perspective arity (2), and `self` must remain in
+        # param_names.
+        e = find_entry(cached_catalog(), "WithMethods.static_method")
+        self.assertIsNotNone(e)
+        self.assertEqual(e["kind"], "method")
+        self.assertEqual(e["param_count"], 2)
+        self.assertEqual(e["param_names"], ["self", "n"])
+
+
+class OverloadSignatureIndexTests(unittest.TestCase):
+    def test_overload_heads_get_distinct_signature_indices(self):
+        # Three FunctionDefs all named `WithOverloads.value`: two @overload
+        # heads + one implementation. signature_index must run 0, 1, 2 in
+        # source order so downstream queries can dedupe by (name, package,
+        # file) and order by signature_index.
+        cat = cached_catalog()
+        entries = [
+            e for e in cat["entries"] if e["name"] == "WithOverloads.value"
+        ]
+        self.assertEqual(len(entries), 3)
+        # Catalog is sorted by (package, file, line, name); the source order
+        # of @overload heads then implementation gives ascending lines.
+        entries.sort(key=lambda e: e["line"])
+        self.assertEqual([e["signature_index"] for e in entries], [0, 1, 2])
+
+    def test_overload_heads_get_distinct_symbol_ids(self):
+        # symbol_id folds in signature_index, so collisions across overload
+        # heads are impossible.
+        cat = cached_catalog()
+        entries = [
+            e for e in cat["entries"] if e["name"] == "WithOverloads.value"
+        ]
+        ids = [e["symbol_id"] for e in entries]
+        self.assertEqual(len(set(ids)), len(ids), f"symbol_id collision: {ids}")
+
 
 class MethodQualificationTests(unittest.TestCase):
     def test_method_name_is_qualified(self):
