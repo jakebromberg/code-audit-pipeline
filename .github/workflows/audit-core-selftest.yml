@@ -12,10 +12,15 @@ name: audit-core selftest
 #  * `selftest-override` — caller passes languages: typescript explicitly,
 #    isolating the toolchain-install + extract path from detection.
 #  * `selftest-autodetect` — caller leaves languages empty so the composite
-#    runs detect-languages.sh + the allowlist filter. The repo root has
-#    only go.mod at the root, so without the allowlist the composite would
-#    crash on "extractor not found"; with it, detection drops the unknown
-#    language and the file-hashes fallback alone produces output.
+#    runs detect-languages.sh + the allowlist filter. A scratch root with
+#    only go.mod is staged so the contract under test ("detection emits
+#    `go`, allowlist drops it because no extractors/go/manifest.toml exists,
+#    languages-detected resolves to empty, file-hashes fallback alone
+#    produces output") is isolated from whatever marker files the repo
+#    root happens to carry. (Prior to issue #270 this job ran against the
+#    repo root and started failing once PR #124 added a top-level
+#    package.json — the autodetect contract has nothing to do with the
+#    pipeline's own packaging, so the test root is now controlled.)
 
 on:
   pull_request:
@@ -136,15 +141,29 @@ jobs:
             sudo apt-get install -y jq
           fi
 
+      - name: Stage scratch root with only go.mod
+        id: scratch
+        # Controlled marker set: just go.mod. The pipeline repo's own root
+        # carries additional markers (a top-level package.json for the
+        # pre-commit hook framework, extractors/swift/Package.swift in the
+        # tree, etc.) that would steer detect-languages.sh and obscure
+        # the contract this job exists to pin: allowlist-dropping `go`
+        # when no extractor manifest covers it.
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/audit-core-autodetect-root"
+          mkdir -p "$root"
+          : > "$root/go.mod"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+
       - name: Run audit-core composite (auto-detect)
         id: audit
         uses: ./.github/actions/audit-core
         with:
-          root: .
+          root: ${{ steps.scratch.outputs.root }}
           binary-version: build-from-source
           # No `languages:` override — the composite runs detect-languages.sh
-          # against the repo root. The root has only go.mod (no
-          # tsconfig.json/Package.swift at the top level), so:
+          # against the scratch root (only go.mod), so:
           #   - bare detect would emit 'go'
           #   - allowlist (--extractors-dir) drops it because no
           #     extractors/go/manifest.toml exists
