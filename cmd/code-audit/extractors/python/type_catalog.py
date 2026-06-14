@@ -23,7 +23,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _lib import (  # noqa: E402
-    EXTRACTOR_VERSION,
     FINGERPRINT_V,
     LANGUAGE,
     SCHEMA_VERSION,
