@@ -22,6 +22,19 @@ fn run_catalog() -> Value {
     serde_json::from_slice(&out.stdout).expect("valid JSON on stdout")
 }
 
+fn run_catalog_raw() -> String {
+    let out = Command::new(env!("CARGO_BIN_EXE_rust-catalog"))
+        .args(["type", "--root", &fixtures_dir()])
+        .output()
+        .expect("spawn rust-catalog");
+    assert!(
+        out.status.success(),
+        "extractor exited non-zero: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout).expect("utf-8 stdout")
+}
+
 fn find<'a>(cat: &'a Value, name: &str) -> &'a Value {
     cat["entries"]
         .as_array()
@@ -116,7 +129,24 @@ fn trait_is_interface_with_supertrait_conformance() {
     let cat = run_catalog();
     let label = find(&cat, "ClassificationLabel");
     assert_eq!(label["kind"], "interface");
-    assert_eq!(label["fields"], Value::Null);
+    // A trait's requirement set IS its shape: each method becomes a
+    // `name:(recv, args) -> ret` field so the interface record carries a
+    // non-empty fields[]/shape_sig. Without this the `is_already_abstracted`
+    // demote (which requires a target interface with >= 2 fields) can never fire
+    // for a Rust catalog. Mirrors the Swift extractor's includeMethodSignatures.
+    assert_eq!(
+        label["fields"],
+        json!(["label:(&self) -> &'static str", "priority:(&self) -> u8"])
+    );
+    assert_eq!(
+        label["shape_sig"],
+        json!("label:(&self) -> &'static str|priority:(&self) -> u8")
+    );
+    // fields_structured stays in lockstep and is now emitted for traits.
+    let first = &label["fields_structured"][0];
+    assert_eq!(first["name"], "label");
+    assert_eq!(first["is_static"], false);
+    assert_eq!(first["is_optional"], false);
 
     let reportable = find(&cat, "Reportable");
     // Send is denylisted; ClassificationLabel survives.
@@ -136,6 +166,19 @@ fn trait_is_interface_with_supertrait_conformance() {
     assert_eq!(
         repo["references"],
         json!([{"name": "Id", "kind": "type-ref"}])
+    );
+    // Associated types and generic methods also become fields: `type Item;` →
+    // `Item:` (no bounds); `fn save<T>(&self, value: T) -> T` →
+    // `save:(&self, T) -> T`. So the trait has >= 2 fields (non-trivial). The
+    // `Self::Item` projection in `fetch`'s return is kept verbatim in the field
+    // shape but (correctly) does not leak into `references` above.
+    assert_eq!(
+        repo["fields"],
+        json!([
+            "Item:",
+            "fetch:(&self, Id) -> Self::Item",
+            "save:(&self, T) -> T"
+        ])
     );
 
     // ...but an external type sharing a name with an associated type is NOT
@@ -257,8 +300,18 @@ fn generated_flag_from_path() {
 
 #[test]
 fn output_is_deterministic() {
-    let a = run_catalog();
-    let b = run_catalog();
-    // generated_at may differ between runs; entries must be byte-stable.
-    assert_eq!(a["entries"], b["entries"]);
+    // Byte-for-byte: the contract guarantees byte-identical output, so compare
+    // raw stdout rather than parsed `Value` (which normalizes object key order
+    // and whitespace and would miss a formatting or key-order regression). Only
+    // the `generated_at` timestamp line legitimately varies between runs, so it
+    // is stripped before comparison.
+    let strip_ts = |s: String| {
+        s.lines()
+            .filter(|l| !l.trim_start().starts_with("\"generated_at\""))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let a = strip_ts(run_catalog_raw());
+    let b = strip_ts(run_catalog_raw());
+    assert_eq!(a, b, "catalog output is not byte-deterministic");
 }

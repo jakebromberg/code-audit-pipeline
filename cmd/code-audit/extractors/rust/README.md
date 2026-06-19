@@ -24,7 +24,7 @@ The extractor:
 - Skips dotdirs (`.git`, `.cargo`, `.claude`, etc.) and `node_modules`, `dist`, `build`, `coverage`, and `target` (Rust build output — not a dotdir, so it is named explicitly).
 - Tags every record with `is_test: bool` from path patterns (universal `tests/`, `spec/`, `__fixtures__/`, `e2e/` dir segments; `*.test.rs` / `*.spec.rs` / `*.fixture(s).rs` / `*.mock(s).rs` filenames) **plus** AST-based detection of declarations annotated `#[cfg(test)]` directly or nested inside a `#[cfg(test)]` module (the predicate is walked, so `#[cfg(not(test))]` and features whose name merely contains `test` do not count).
 - Tags `generated: true` for files under a `generated/` path segment.
-- Emits byte-deterministic output (`entries[]` sorted by `package, file, line, name`); only the `generated_at` timestamp varies between runs.
+- Emits byte-deterministic output (`entries[]` sorted by `package, file, line, name, kind`); only the `generated_at` timestamp varies between runs.
 
 ## Kind mapping
 
@@ -37,11 +37,13 @@ How Rust source constructs map to the catalog `kind` field:
 | `struct S;` (unit) | `type-alias-object` | `[]` |
 | `union U { … }` | `type-alias-object` | like a named struct |
 | `enum E { A, B(T), C { x: T } }` | `type-alias-union` | one entry per variant: `A:""`, `B:"(T)"`, `C:"{ x: T }"`, discriminant `D = 1` → `D:"=1"` |
-| `trait T: Q { … }` | `interface` | `fields: null` — a trait's method set is not a struct shape |
+| `trait T: Q { … }` | `interface` | one field per requirement — method → `name:(recv, args) -> ret`, assoc const → `name:Type` (`is_static`), assoc type → `name:bounds` |
 | `type X<T> = Y;` | `type-alias-other` | `fields: null`; emits `type_text` + `type_sig` |
 | `macro_rules!` | *(skipped in v1)* | — |
 
-`is_optional` in `fields_structured` is set for `Option<…>` fields. `fields_structured` is omitted for non-shape kinds (traits, type aliases).
+`is_optional` in `fields_structured` is set for `Option<…>` fields. `fields_structured` is omitted only for the non-shape `type-alias-other` kind; structs, unions, enums, and traits all carry it.
+
+A trait's requirement set is emitted as its shape (rather than `fields: null`) so the cluster queries' *already-abstracted* demote — which treats an `interface` target with `fields | length >= 2` as a non-trivial protocol — can fire on Rust catalogs. This mirrors the Swift extractor's `includeMethodSignatures: true`; without it the `conforms_to` axis below would have no working consumer.
 
 ## Heritage: `conforms_to` and `extends`
 
