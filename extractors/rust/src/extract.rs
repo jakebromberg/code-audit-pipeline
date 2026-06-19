@@ -66,7 +66,12 @@ fn process_items(
             syn::Item::Enum(e) => entries.push(enum_entry(e, ctx, item_test(&e.attrs))),
             syn::Item::Trait(t) => entries.push(trait_entry(t, ctx, item_test(&t.attrs))),
             syn::Item::Type(t) => entries.push(type_alias_entry(t, ctx, item_test(&t.attrs))),
-            syn::Item::Impl(i) => record_impl(i, impl_map),
+            // A `#[cfg(test)]` impl (annotated directly or nested in a
+            // `#[cfg(test)] mod`) is a test-only conformance — recording it
+            // would leak the trait into the production type's `conforms_to`,
+            // since the package impl-map is merged by name onto every entry.
+            syn::Item::Impl(i) if !item_test(&i.attrs) => record_impl(i, impl_map),
+            syn::Item::Impl(_) => {}
             syn::Item::Mod(m) => {
                 if let Some((_, inner)) = &m.content {
                     let nested_test = in_cfg_test || attrs_have_cfg_test(&m.attrs);

@@ -16,11 +16,14 @@ pub struct Wrapper<T> {
     pub label: String,
 }
 
-/// Trait names in `dyn`/bound positions must surface as references; the
-/// ubiquitous `Send` marker is denylisted. `Box` is a builtin.
+/// Trait names in `dyn`/bound positions surface as references; ubiquitous
+/// markers (`Send`) and structural std traits (`Fn`, `Iterator`) are
+/// denylisted, but a binding value (`Event`) and domain traits survive.
 pub struct Registry {
     pub handler: Box<dyn Handler>,
     pub sink: Box<dyn Encoder + Send>,
+    pub callback: Box<dyn Fn(u32) -> u32>,
+    pub stream: Box<dyn Iterator<Item = Event>>,
 }
 
 /// Tuple struct.

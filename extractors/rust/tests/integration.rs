@@ -150,12 +150,15 @@ fn trait_is_interface_with_supertrait_conformance() {
 
 #[test]
 fn trait_object_and_bound_references() {
-    // Trait names in `dyn`/bound positions are collected; `Send` is denylisted.
+    // Trait names in `dyn`/bound positions are collected; `Send` (marker) and
+    // `Fn`/`Iterator` (structural std traits) are denylisted, but the
+    // `Iterator<Item = Event>` binding value `Event` survives.
     let cat = run_catalog();
     assert_eq!(
         find(&cat, "Registry")["references"],
         json!([
             {"name": "Encoder", "kind": "type-ref"},
+            {"name": "Event", "kind": "type-ref"},
             {"name": "Handler", "kind": "type-ref"},
         ])
     );
@@ -214,6 +217,11 @@ fn conforms_to_merges_derive_and_impl_blocks() {
     );
     // All derives denylisted.
     assert_eq!(find(&cat, "PlainCounts")["conforms_to"], json!([]));
+
+    // A `#[cfg(test)]` impl must not leak conformance into the production type.
+    let client = find(&cat, "ProductionClient");
+    assert_eq!(client["is_test"], false);
+    assert_eq!(client["conforms_to"], json!([]));
 }
 
 #[test]

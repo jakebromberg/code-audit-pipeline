@@ -66,6 +66,16 @@ pub fn is_builtin_type(name: &str) -> bool {
             | "PathBuf" | "Path" | "OsString" | "OsStr" | "CString" | "CStr"
             // common std markers / aliases seen in signatures
             | "Self" | "Sized"
+            // ubiquitous std *traits* seen in dyn/impl/bound positions — these
+            // are structural, never domain types, so they must not flood the
+            // reference graph when collected from trait bounds. (Marker derives
+            // like Send/Sync/Clone are filtered separately via is_std_derive.)
+            | "Fn" | "FnMut" | "FnOnce"
+            | "Iterator" | "IntoIterator" | "DoubleEndedIterator" | "ExactSizeIterator"
+            | "Future" | "IntoFuture"
+            | "Into" | "From" | "TryInto" | "TryFrom"
+            | "AsRef" | "AsMut" | "Borrow" | "BorrowMut" | "ToOwned"
+            | "Deref" | "DerefMut" | "Any" | "Unpin"
     )
 }
 
