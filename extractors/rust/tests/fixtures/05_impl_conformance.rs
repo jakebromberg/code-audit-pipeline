@@ -22,3 +22,17 @@ impl std::fmt::Display for BranchScanResult {
         write!(f, "scan")
     }
 }
+
+/// Production type whose ONLY `DataSource` conformance comes from a
+/// `#[cfg(test)]` impl (a test-double). That edge must NOT leak into the
+/// production `conforms_to` — it doesn't exist in release builds.
+pub struct ProductionClient {
+    pub endpoint: String,
+}
+
+#[cfg(test)]
+impl DataSource for ProductionClient {
+    fn load(&self) -> Vec<u8> {
+        Vec::new()
+    }
+}

@@ -62,7 +62,7 @@ Both live as single functions in `src/util.rs` — extend them there.
 
 ## References
 
-`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — including trait names in `dyn Trait` / `impl Trait` / generic-bound positions (ubiquitous markers like `Send`/`Sync` are denylisted via `is_std_derive`) — minus in-scope generic parameters (each trait method's own type parameters form a child scope) and the builtin denylist. A `Self::Assoc` projection is dropped (it names the enclosing type's own associated type, not an external type); other self-references are kept (per contract). Trait bounds written in a `where` clause are not yet walked (see Known limitations).
+`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — including trait names in `dyn Trait` / `impl Trait` / generic-bound positions (ubiquitous marker derives like `Send`/`Sync`/`Clone` are denylisted via `is_std_derive`, and structural std traits like `Fn`/`Iterator`/`Future`/`Into` via `is_builtin_type`) — minus in-scope generic parameters (each trait method's own type parameters form a child scope) and the builtin denylist. A `Self::Assoc` projection is dropped (it names the enclosing type's own associated type, not an external type); other self-references are kept (per contract). Trait bounds written in a `where` clause are not yet walked (see Known limitations).
 
 ## Tests
 
