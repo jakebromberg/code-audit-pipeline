@@ -13,7 +13,12 @@ use sha1::{Digest, Sha1};
 pub const SCHEMA_VERSION: &str = "2.0";
 pub const FINGERPRINT_V: &str = "shape_sig:1";
 pub const LANGUAGE: &str = "rust";
-pub const EXTRACTOR_NAME: &str = "rust";
+/// The catalog KIND, not the language — `extractor.name` identifies which
+/// catalog produced the file (`type-catalog` vs `function-catalog` vs …),
+/// while the language lives in `extractor.language`. Mirrors the contract
+/// (docs/pipeline-contract.md §"Type catalog") and the Python/TS extractors,
+/// which both emit `name: "type-catalog"`.
+pub const EXTRACTOR_NAME: &str = "type-catalog";
 pub const EXTRACTOR_VERSION: &str = "0.1.0";
 
 /// Directories pruned on every walk. Mirrors the substrate convention in
@@ -165,27 +170,73 @@ pub fn symbol_id(package: &str, file: &str, name: &str, kind: &str) -> String {
         .collect()
 }
 
-/// Resolve the SHA of the extractor's source tree by shelling out to git in
-/// the current working directory (which is the extractor dir under both
-/// `cargo run` and the laid-down code-audit layout). Returns "unknown" with a
-/// stderr warning when not in a git checkout. Mirrors `_lib.compute_source_sha`.
+/// Resolve the SHA of the extractor's *source tree*, mirroring
+/// `_lib.compute_source_sha`: anchor at the extractor's own directory (the
+/// compile-time `CARGO_MANIFEST_DIR` — the Rust analog of Python's `__file__`),
+/// walk up to the first ancestor that is a git repo root (its
+/// `git rev-parse --show-toplevel` equals itself), and return that repo's HEAD.
+/// Stops at `$HOME` or the filesystem root.
+///
+/// Anchoring at the source dir rather than the process CWD is what makes the
+/// value mean "which extractor build produced this catalog," independent of
+/// where the binary is invoked from; the `--show-toplevel == dir` guard keeps
+/// an unrelated *enclosing* repo's HEAD from being misattributed. Returns
+/// "unknown" (with a stderr warning) when the source tree is not in a git
+/// checkout (e.g. the embed-extracted, laid-down layout).
 pub fn source_sha() -> String {
-    let out = Command::new("git")
-        .args(["rev-parse", "HEAD"])
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .output();
-    if let Ok(o) = out {
-        if o.status.success() {
-            let sha = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            if sha.len() == 40 && sha.bytes().all(|b| b.is_ascii_hexdigit()) {
-                return sha;
-            }
+    let home = std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .map(|h| std::fs::canonicalize(&h).unwrap_or(h));
+    let start = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let mut cur = std::fs::canonicalize(&start).unwrap_or(start);
+    for _ in 0..16 {
+        if home.as_deref() == Some(cur.as_path()) {
+            break;
+        }
+        if let Some(sha) = git_head_if_toplevel(&cur) {
+            return sha;
+        }
+        match cur.parent() {
+            Some(p) if p != cur => cur = p.to_path_buf(),
+            _ => break,
         }
     }
     eprintln!(
         "warning: extractor source not in a git checkout; source_sha recorded as \"unknown\""
     );
     "unknown".to_string()
+}
+
+/// HEAD SHA of the git repo rooted *exactly* at `dir`, or `None` if `dir` is
+/// not itself a repo top-level (or git is unavailable). The `--show-toplevel`
+/// equality check is what prevents attributing an enclosing repo's HEAD to the
+/// extractor when its source dir is nested inside an unrelated checkout.
+fn git_head_if_toplevel(dir: &Path) -> Option<String> {
+    let top = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(dir)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .output()
+        .ok()?;
+    if !top.status.success() {
+        return None;
+    }
+    let top_path = PathBuf::from(String::from_utf8_lossy(&top.stdout).trim());
+    let top_path = std::fs::canonicalize(&top_path).unwrap_or(top_path);
+    if top_path != *dir {
+        return None;
+    }
+    let head = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(dir)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .output()
+        .ok()?;
+    if !head.status.success() {
+        return None;
+    }
+    let sha = String::from_utf8_lossy(&head.stdout).trim().to_string();
+    (sha.len() == 40 && sha.bytes().all(|b| b.is_ascii_hexdigit())).then_some(sha)
 }
 
 /// Format Unix seconds as ISO-8601 UTC (`YYYY-MM-DDThh:mm:ssZ`), dependency-free.
