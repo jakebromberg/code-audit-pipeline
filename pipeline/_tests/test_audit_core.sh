@@ -17,8 +17,8 @@ set -u
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$THIS_DIR/../.." && pwd)"
 DETECT="$REPO_ROOT/.github/actions/audit-core/scripts/detect-languages.sh"
-# Real extractors dir for the allowlist tests — only typescript / swift /
-# file-hashes manifests ship here; go / python / rust manifests do not.
+# Real extractors dir for the allowlist tests — typescript / swift / python /
+# rust / file-hashes manifests ship here; go does not.
 EXTRACTORS_DIR="$REPO_ROOT/extractors"
 
 PASS=0
@@ -210,8 +210,8 @@ echo "=== detect-languages.sh — --extractors-dir allowlist ==="
 
 # Without --extractors-dir, every detected language is emitted (legacy
 # behavior). With --extractors-dir pointing at the real extractors/ tree,
-# only typescript / swift survive because no go / python / rust manifests
-# exist.
+# go is dropped (no extractors/go/manifest.toml); typescript / swift / rust
+# survive (python is not a marker in this repo).
 
 t=$(mk_scratch)
 : > "$t/go.mod"
@@ -226,7 +226,7 @@ t=$(mk_scratch)
 : > "$t/go.mod"
 : > "$t/Cargo.toml"
 got=$("$DETECT" "$t" --extractors-dir "$EXTRACTORS_DIR")
-assert_eq "typescript,swift" "$got" "polyglot repo filtered to languages with manifest.toml present"
+assert_eq "typescript,swift,rust" "$got" "polyglot repo filtered to languages with manifest.toml present"
 
 # A synthetic extractors-dir containing only python proves that the allowlist
 # is checked per-language and adds 'python' once a manifest appears.
