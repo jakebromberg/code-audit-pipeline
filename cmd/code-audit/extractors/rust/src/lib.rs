@@ -59,9 +59,14 @@ pub fn run(args: &Args) -> i32 {
         entries.extend(shared_entries);
     }
 
-    // Stable sort: (package, file, line, name) — byte-deterministic output.
+    // Stable sort: (package, file, line, name, kind) — byte-deterministic
+    // output. `kind` is the final tiebreak so two items declared at the same
+    // line under the same name (e.g. `struct S` and `enum S` collapsed onto one
+    // line, or any same-name macro-adjacent pair) order deterministically
+    // rather than relying on AST-traversal insertion order plus sort stability.
     entries.sort_by(|a, b| {
-        (&a.package, &a.file, a.line, &a.name).cmp(&(&b.package, &b.file, b.line, &b.name))
+        (&a.package, &a.file, a.line, &a.name, &a.kind)
+            .cmp(&(&b.package, &b.file, b.line, &b.name, &b.kind))
     });
 
     let now_secs = SystemTime::now()

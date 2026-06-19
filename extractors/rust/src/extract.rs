@@ -96,6 +96,13 @@ fn record_impl(item: &syn::ItemImpl, impl_map: &mut ImplMap) {
         return;
     }
     if let Some(type_name) = type_base_name(&item.self_ty) {
+        // Skip blanket impls over a bare type parameter (`impl<T> Trait for T`):
+        // `type_base_name` returns the parameter name ("T"), which would
+        // otherwise attach the trait to any concrete type that happens to share
+        // that name.
+        if generic_set(&item.generics).contains(&type_name) {
+            return;
+        }
         impl_map.entry(type_name).or_default().insert(trait_name);
     }
 }
@@ -273,6 +280,14 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
         .collect();
     conforms.extend(derive_traits(&t.attrs));
 
+    // A trait's requirement set IS its shape: each method / associated const /
+    // associated type becomes a `fields[]` entry so the interface record carries
+    // a non-empty shape. The `is_already_abstracted_cluster` demote treats an
+    // interface with >= 2 fields as a non-trivial protocol; without this every
+    // Rust trait resolves to zero fields and the demote (the sole consumer of
+    // `conforms_to`) can never fire. Mirrors the Swift extractor's
+    // `includeMethodSignatures: true`.
+    //
     // references: types named in method signatures, minus in-scope generics.
     // Each method's own type parameters form a child scope (contract
     // §references: "function types introduce their own scopes ... so nested
@@ -280,25 +295,83 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
     // types are not excluded by name (that would also drop an unrelated
     // external type of the same name); the `Self::Assoc` projection is dropped
     // structurally in `RefVisitor` instead.
+    let mut pairs: Vec<(String, FieldStruct)> = Vec::new();
     let mut ref_names: BTreeSet<String> = BTreeSet::new();
     for it in &t.items {
-        if let syn::TraitItem::Fn(m) = it {
-            let mut method_exclude = exclude.clone();
-            method_exclude.extend(generic_names(&m.sig.generics));
-            let mut sig_types: Vec<&syn::Type> = Vec::new();
-            for input in &m.sig.inputs {
-                if let syn::FnArg::Typed(pt) = input {
-                    sig_types.push(&pt.ty);
+        match it {
+            syn::TraitItem::Fn(m) => {
+                let name = m.sig.ident.to_string();
+                let sig = method_sig_text(&m.sig);
+                pairs.push((
+                    format!("{name}:{sig}"),
+                    FieldStruct {
+                        name,
+                        ty: sig,
+                        is_optional: false,
+                        is_static: false,
+                    },
+                ));
+
+                let mut method_exclude = exclude.clone();
+                method_exclude.extend(generic_names(&m.sig.generics));
+                let mut sig_types: Vec<&syn::Type> = Vec::new();
+                for input in &m.sig.inputs {
+                    if let syn::FnArg::Typed(pt) = input {
+                        sig_types.push(&pt.ty);
+                    }
+                }
+                if let syn::ReturnType::Type(_, ty) = &m.sig.output {
+                    sig_types.push(ty);
+                }
+                for r in collect_refs(&sig_types, &method_exclude) {
+                    ref_names.insert(r.name);
                 }
             }
-            if let syn::ReturnType::Type(_, ty) = &m.sig.output {
-                sig_types.push(ty);
+            // An associated const is a type-level requirement (`is_static`).
+            syn::TraitItem::Const(c) => {
+                let name = c.ident.to_string();
+                let ty = util::normalize_type(&c.ty);
+                pairs.push((
+                    format!("{name}:{ty}"),
+                    FieldStruct {
+                        name,
+                        ty,
+                        is_optional: false,
+                        is_static: true,
+                    },
+                ));
             }
-            for r in collect_refs(&sig_types, &method_exclude) {
-                ref_names.insert(r.name);
+            // An associated type is a requirement too; encode its trait bounds
+            // (minus the std-derive denylist) so two traits requiring
+            // differently-bounded assoc types don't collapse to one shape.
+            syn::TraitItem::Type(at) => {
+                let name = at.ident.to_string();
+                let bounds = at
+                    .bounds
+                    .iter()
+                    .filter_map(|b| match b {
+                        syn::TypeParamBound::Trait(tb) => last_segment(&tb.path),
+                        _ => None,
+                    })
+                    .filter(|n| !util::is_std_derive(n))
+                    .collect::<Vec<_>>()
+                    .join("+");
+                pairs.push((
+                    format!("{name}:{bounds}"),
+                    FieldStruct {
+                        name,
+                        ty: bounds,
+                        is_optional: false,
+                        is_static: false,
+                    },
+                ));
             }
+            _ => {}
         }
     }
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+    let flat: Vec<String> = pairs.iter().map(|p| p.0.clone()).collect();
+    let structured: Vec<FieldStruct> = pairs.into_iter().map(|p| p.1).collect();
     let refs: Vec<Reference> = ref_names.into_iter().map(Reference::type_ref).collect();
 
     make_entry(EntryParts {
@@ -308,8 +381,8 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
         kind: "interface",
         line: t.ident.span().start().line,
         exported: is_pub(&t.vis),
-        fields: None, // a trait's method set is not a struct shape
-        structured: None,
+        fields: Some(flat),
+        structured: Some(structured),
         type_text: None,
         generics: generic_string(&t.generics),
         conforms_to: conforms,
@@ -407,17 +480,19 @@ impl RefVisitor<'_> {
 
 impl<'ast> Visit<'ast> for RefVisitor<'_> {
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        // `Self::Assoc` is a projection onto the enclosing type's own
-        // associated type, not a use of an external type named `Assoc` — skip
-        // it (but still recurse, in case it carries generic arguments).
-        let is_self_projection = node.qself.is_none()
-            && node.path.segments.len() >= 2
-            && node
-                .path
-                .segments
-                .first()
-                .is_some_and(|s| s.ident == "Self");
-        if !is_self_projection {
+        // `Self::Assoc` (and `T::Assoc` where `T` is an in-scope generic) is a
+        // projection onto an associated type of the enclosing type or a generic
+        // parameter, not a use of an external type named `Assoc` — skip the leaf
+        // (but still recurse, in case it carries generic arguments). A qualified
+        // path whose head is an external type (`crate::module::Type`,
+        // `inventory::Item`) is NOT a projection and its last segment is kept.
+        let is_assoc_projection =
+            node.qself.is_none()
+                && node.path.segments.len() >= 2
+                && node.path.segments.first().is_some_and(|s| {
+                    s.ident == "Self" || self.exclude.contains(&s.ident.to_string())
+                });
+        if !is_assoc_projection {
             if let Some(seg) = node.path.segments.last() {
                 self.record(seg.ident.to_string());
             }
@@ -540,6 +615,27 @@ fn type_base_name(ty: &syn::Type) -> Option<String> {
         syn::Type::Reference(r) => type_base_name(&r.elem),
         _ => None,
     }
+}
+
+/// Render a trait method's signature as deterministic shape text:
+/// `(receiver, arg-types) -> ret`. Used only to give an `interface` record a
+/// `fields[]` shape; the leading `fn name` and the body are intentionally
+/// dropped (the field's name already carries the method name).
+fn method_sig_text(sig: &syn::Signature) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    for input in &sig.inputs {
+        match input {
+            syn::FnArg::Receiver(r) => parts.push(util::normalize_token_string(
+                &r.to_token_stream().to_string(),
+            )),
+            syn::FnArg::Typed(pt) => parts.push(util::normalize_type(&pt.ty)),
+        }
+    }
+    let ret = match &sig.output {
+        syn::ReturnType::Default => String::new(),
+        syn::ReturnType::Type(_, ty) => format!(" -> {}", util::normalize_type(ty)),
+    };
+    format!("({}){ret}", parts.join(", "))
 }
 
 /// Type + const generic parameter names (lifetimes dropped), in declaration order.

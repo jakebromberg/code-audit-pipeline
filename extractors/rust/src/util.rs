@@ -6,6 +6,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Duration;
 
 use quote::ToTokens;
 use sha1::{Digest, Sha1};
@@ -222,31 +223,46 @@ pub fn source_sha() -> String {
 /// equality check is what prevents attributing an enclosing repo's HEAD to the
 /// extractor when its source dir is nested inside an unrelated checkout.
 fn git_head_if_toplevel(dir: &Path) -> Option<String> {
-    let top = Command::new("git")
-        .args(["rev-parse", "--show-toplevel"])
-        .current_dir(dir)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .output()
-        .ok()?;
-    if !top.status.success() {
-        return None;
-    }
-    let top_path = PathBuf::from(String::from_utf8_lossy(&top.stdout).trim());
+    const GIT_TIMEOUT: Duration = Duration::from_secs(2);
+    let top = git_capture(dir, &["rev-parse", "--show-toplevel"], GIT_TIMEOUT)?;
+    let top_path = PathBuf::from(top);
     let top_path = std::fs::canonicalize(&top_path).unwrap_or(top_path);
     if top_path != *dir {
         return None;
     }
-    let head = Command::new("git")
-        .args(["rev-parse", "HEAD"])
-        .current_dir(dir)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .output()
-        .ok()?;
-    if !head.status.success() {
-        return None;
-    }
-    let sha = String::from_utf8_lossy(&head.stdout).trim().to_string();
+    let sha = git_capture(dir, &["rev-parse", "HEAD"], GIT_TIMEOUT)?;
     (sha.len() == 40 && sha.bytes().all(|b| b.is_ascii_hexdigit())).then_some(sha)
+}
+
+/// Run `git <args>` in `dir` with a wall-clock `timeout`, returning trimmed
+/// stdout on success (or `None` on non-zero exit, spawn failure, or timeout).
+///
+/// The invocation runs on a helper thread; if it does not finish within
+/// `timeout` — a hung credential helper, a stalled network filesystem — we
+/// abandon it (the orphaned child is reaped when this short-lived process
+/// exits) and return `None`. Mirrors the Python reference's `timeout=2.0`;
+/// `GIT_TERMINAL_PROMPT=0` additionally stops interactive prompts from blocking
+/// in the first place. Without the timeout, `source_sha` (which calls this up
+/// to 16× up the ancestor chain, before any output is written) could hang the
+/// whole pipeline at startup.
+fn git_capture(dir: &Path, args: &[&'static str], timeout: Duration) -> Option<String> {
+    let dir = dir.to_path_buf();
+    let args = args.to_vec();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let out = Command::new("git")
+            .args(&args)
+            .current_dir(&dir)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .output();
+        let _ = tx.send(out);
+    });
+    match rx.recv_timeout(timeout) {
+        Ok(Ok(out)) if out.status.success() => {
+            Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        }
+        _ => None,
+    }
 }
 
 /// Format Unix seconds as ISO-8601 UTC (`YYYY-MM-DDThh:mm:ssZ`), dependency-free.
