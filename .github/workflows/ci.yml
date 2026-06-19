@@ -218,6 +218,42 @@ jobs:
           jq -e '.entries | length > 0' /tmp/py-cat.json > /dev/null
           jq -e '.entries | length > 0' /tmp/py-fn.json  > /dev/null
 
+  rust:
+    name: rust extractor
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extractors/rust
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify toolchain
+        # ubuntu-latest ships a current stable Rust via rustup; refresh it so
+        # the manifest's rust-version (1.93) floor is satisfied even if the
+        # runner image lags. rustfmt + clippy are default components.
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustc --version
+          cargo --version
+          jq --version
+
+      - name: Format check
+        run: cargo fmt --check
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Unit + integration tests
+        run: cargo test
+
+      - name: Smoke-test against fixtures
+        # The catalog must be non-empty and jq must accept the JSON — surfaces
+        # any regression in stdout framing or wrapper shape.
+        run: |
+          cargo run --release -- type --root tests/fixtures --output /tmp/rust-cat.json
+          jq -e '.entries | length > 0' /tmp/rust-cat.json > /dev/null
+
   swift:
     name: swift extractor
     runs-on: macos-latest
