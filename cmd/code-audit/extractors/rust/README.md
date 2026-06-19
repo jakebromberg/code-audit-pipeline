@@ -1,6 +1,6 @@
 # Rust extractor
 
-`syn`-based Rust AST extractor for the code-audit pipeline. Walks `.rs` source files under `--root` (and optionally `--shared`) and emits `type-catalog.json` matching the JSON shape in [`docs/pipeline-contract.md`](../../docs/pipeline-contract.md).
+`syn`-based Rust AST extractor for the code-audit pipeline. Walks `.rs` source files under `--root` (and optionally `--shared`) and emits `type-catalog.json` (the `type` subcommand) and `function-catalog.json` (the `func` subcommand), matching the JSON shapes in [`docs/pipeline-contract.md`](../../docs/pipeline-contract.md).
 
 A standalone Cargo binary (`rust-catalog`) — **not** a member of any workspace, so an audited repo's own `Cargo.toml` never sees it. Like the Swift extractor it is compiled: the `code-audit` binary runs `[runtime].bootstrap` (`cargo build --release`) once per laid-down source tree, then `cargo run --release` finds the binary up to date. Requires a Rust toolchain (cargo) 1.93+.
 
@@ -13,10 +13,16 @@ cargo build --release
 # Type catalog
 cargo run --release -- type --root /path/to/repo --output type-catalog.json
 
+# Function catalog (body-hash clustering + signature projection)
+cargo run --release -- func --root /path/to/repo --output function-catalog.json
+
+# Treat bodies under N normalized lines as null (default 3)
+cargo run --release -- func --root /path/to/repo --min-body-lines 5 --output function-catalog.json
+
 # Cross-package shadow detection (main vs shared)
 cargo run --release -- type --root /path/to/crate --shared /path/to/shared --output type-catalog.json
 
-# Via the code-audit binary (auto-bootstraps on first run)
+# Via the code-audit binary (auto-bootstraps on first run; emits both catalogs)
 code-audit extract rust --root /path/to/repo
 ```
 
@@ -66,17 +72,28 @@ Both live as single functions in `src/util.rs` — extend them there.
 
 `references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — including trait names in `dyn Trait` / `impl Trait` / generic-bound positions (ubiquitous marker derives like `Send`/`Sync`/`Clone` are denylisted via `is_std_derive`, and structural std traits like `Fn`/`Iterator`/`Future`/`Into` via `is_builtin_type`) — minus in-scope generic parameters (each trait method's own type parameters form a child scope) and the builtin denylist. A `Self::Assoc` projection is dropped (it names the enclosing type's own associated type, not an external type); other self-references are kept (per contract). Trait bounds written in a `where` clause are not yet walked (see Known limitations).
 
+## Function catalog (`func`)
+
+The `func` subcommand emits `function-catalog.json`: one row per free function (`kind: function`), inherent / trait-impl method, and trait method (`kind: method`). Methods are name-qualified `SelfType.method` / `Trait.method`. Alongside the signature projection (typed `params`, `return_ref`, function-level `references` — same resolution rules as the type catalog), each row carries body-level data for duplication clustering.
+
+- **Body normalization — token-stream per statement.** Each statement is rendered through `syn`'s token stream and normalized with the same `normalize_token_string` the type catalog uses, then the lines are blank-filtered, sorted, and deduped; `body_hash` is the sha256 of the joined lines. Token streams carry no comments and no formatting, so two copy-pasted bodies that were `rustfmt`'d differently still hash identically — the property that makes cross-crate copy-paste detection robust. The trade-off: granularity is per-*statement*, not per-source-line, so a multi-line statement counts as one body line.
+- **Body gating (`--min-body-lines`, default 3).** A body with fewer distinct normalized lines than the threshold — and every signature-only trait method — emits `body_hash` / `body_lines` / `body_line_count` / `body_length` as `null` (the row is still emitted so signature-level queries like `public-api-leaks` see it).
+- **`exported`.** Free functions and inherent-impl methods use the declared visibility (`pub`). Trait default / required methods inherit the enclosing trait's visibility. **Trait-impl methods** (`impl Trait for Type`) carry `Inherited` visibility in `syn` but are reachable wherever the trait + type are in scope, so they are conservatively marked `exported: true` — a deliberate over-report that keeps `public-api-leaks.jq` from missing real leaks.
+- **`signature_index` is always `0`.** Rust has no function overloading.
+- **`symbol_id`** reuses the type catalog's 4-tuple `(package, file, name, kind)` sha1. (The Python function catalog hashes a 5-tuple including `signature_index`; since Rust's is always `0` the 4-tuple is collision-free here and matches `symbol-id-collisions.jq`'s grouping.)
+- **Nested fns are not extracted** (mirrors the type catalog's no-fn-body-items limitation).
+
 ## Tests
 
 ```bash
 cargo test
 ```
 
-Unit tests cover the pure helpers (`shape_sig`, denylists, path classification, ISO-8601). The integration test (`tests/integration.rs`) runs the built binary against the `tests/fixtures/` `.rs` files and asserts the emitted catalog, including determinism (two runs produce identical `entries`).
+Unit tests cover the pure helpers (`shape_sig`, denylists, path classification, ISO-8601, `sha256_hex`). Two integration tests run the built binary against the `tests/fixtures/` `.rs` files and assert the emitted catalogs, including determinism (two runs produce identical `entries`): `tests/integration.rs` for the `type` catalog and `tests/func_integration.rs` for the `func` catalog.
 
 ## Known limitations (v0.1.0)
 
-- **Type-catalog only.** `function-catalog` (body-hash clustering for duplicate function bodies) is a planned follow-up, mirroring the Swift `func` command.
+- **Function bodies cluster at statement granularity.** `body_lines` is one normalized line per statement (token-rendered), not per source line — see [Function catalog](#function-catalog-func). Exact-clone detection is unaffected; near-duplicate Jaccard is marginally coarser.
 - **`macro_rules!` skipped.** Macro-generated types are invisible until macro expansion is wired in. Rare in practice; documented rather than silently dropped.
 - **Name-based `conforms_to` join.** `impl Trait for Type` edges are attached by the type's bare name within a package, with no path resolution — two distinct types sharing a name in one package would both receive the edge. Rare; matches the contract's name-based join philosophy.
 - **Bare (unqualified) declaration names.** Items nested in modules are emitted under their bare identifier (not module-qualified), so two same-named types in one file share a `symbol_id`. The dominant top-level case is unaffected.

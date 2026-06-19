@@ -3,7 +3,7 @@
 # Standalone binary crate (NOT a member of any workspace) so the audited
 # repo's own workspace never sees it. The `code-audit` binary lays this tree
 # down and runs `[runtime].bootstrap` (`cargo build --release`) once, then
-# invokes `cargo run --release -- type ...` per the manifest.
+# invokes `cargo run --release -- <type|func> ...` per the manifest.
 #
 # See ../../docs/pipeline-contract.md for the emitted schema.
 [package]
@@ -29,7 +29,11 @@ quote = "1"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Dual-hash split, both contract-mandated: sha1 for `symbol_id` (the 4-tuple
+# identity hash, shared with the type catalog), sha256 for the function
+# catalog's `body_hash` (docs/pipeline-contract.md §"Function catalog").
 sha1 = "0.10"
+sha2 = "0.10"
 
 [profile.release]
 # Favor fast compile (bootstrap latency) over runtime micro-optimization —
