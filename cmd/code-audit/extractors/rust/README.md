@@ -62,7 +62,7 @@ Both live as single functions in `src/util.rs` — extend them there.
 
 ## References
 
-`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — minus in-scope generic parameters (including each trait method's own type parameters and the trait's associated types) and the builtin denylist. Self-references are kept (per contract).
+`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — including trait names in `dyn Trait` / `impl Trait` / generic-bound positions (ubiquitous markers like `Send`/`Sync` are denylisted via `is_std_derive`) — minus in-scope generic parameters (each trait method's own type parameters form a child scope) and the builtin denylist. A `Self::Assoc` projection is dropped (it names the enclosing type's own associated type, not an external type); other self-references are kept (per contract). Trait bounds written in a `where` clause are not yet walked (see Known limitations).
 
 ## Tests
 
@@ -80,3 +80,5 @@ Unit tests cover the pure helpers (`shape_sig`, denylists, path classification, 
 - **Bare (unqualified) declaration names.** Items nested in modules are emitted under their bare identifier (not module-qualified), so two same-named types in one file share a `symbol_id`. The dominant top-level case is unaffected.
 - **No fn-body items.** Structs/enums declared inside a function body are not extracted (only module-level items and items inside inline `mod` blocks). Cross-cutting analysis rarely needs locals.
 - **Lifetimes dropped from `generics`.** `generics` lists type and const parameters only.
+- **`where`-clause bounds not walked.** Trait bounds in inline positions (`dyn Trait`, `impl Trait`, `fn f<T: Bound>`) feed `references`, but bounds moved into a `where` clause (`where T: Bound`) are not yet collected. Rare for cross-cutting analysis; the inline forms cover the common cases.
+- **Raw identifiers keep the `r#` prefix.** A `r#type` struct/field is catalogued verbatim (`r#type`), so it won't cluster with a plainly-spelled `type` elsewhere. Raw idents are rare in type/field positions.

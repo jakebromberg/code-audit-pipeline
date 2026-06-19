@@ -268,22 +268,17 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
         .collect();
     conforms.extend(derive_traits(&t.attrs));
 
-    // references: types named in method signatures, minus in-scope names. The
-    // trait's associated types (`type Item;`) are names it declares, not
-    // external refs, and each method's own type parameters form a child scope
-    // (contract §references: "function types introduce their own scopes ... so
-    // nested generics shadow correctly") — both are excluded so they don't
-    // surface as phantom single-letter / associated-type reference nodes.
-    let mut base_exclude = exclude;
-    for it in &t.items {
-        if let syn::TraitItem::Type(at) = it {
-            base_exclude.insert(at.ident.to_string());
-        }
-    }
+    // references: types named in method signatures, minus in-scope generics.
+    // Each method's own type parameters form a child scope (contract
+    // §references: "function types introduce their own scopes ... so nested
+    // generics shadow correctly"), so they're excluded per method. Associated
+    // types are not excluded by name (that would also drop an unrelated
+    // external type of the same name); the `Self::Assoc` projection is dropped
+    // structurally in `RefVisitor` instead.
     let mut ref_names: BTreeSet<String> = BTreeSet::new();
     for it in &t.items {
         if let syn::TraitItem::Fn(m) = it {
-            let mut method_exclude = base_exclude.clone();
+            let mut method_exclude = exclude.clone();
             method_exclude.extend(generic_names(&m.sig.generics));
             let mut sig_types: Vec<&syn::Type> = Vec::new();
             for input in &m.sig.inputs {
@@ -395,16 +390,48 @@ struct RefVisitor<'a> {
     found: BTreeSet<String>,
 }
 
+impl RefVisitor<'_> {
+    /// Record `name` as a reference unless it is a builtin or an in-scope
+    /// (generic/Self) name.
+    fn record(&mut self, name: String) {
+        if !util::is_builtin_type(&name) && !self.exclude.contains(&name) {
+            self.found.insert(name);
+        }
+    }
+}
+
 impl<'ast> Visit<'ast> for RefVisitor<'_> {
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        if let Some(seg) = node.path.segments.last() {
-            let name = seg.ident.to_string();
-            if !util::is_builtin_type(&name) && !self.exclude.contains(&name) {
-                self.found.insert(name);
+        // `Self::Assoc` is a projection onto the enclosing type's own
+        // associated type, not a use of an external type named `Assoc` — skip
+        // it (but still recurse, in case it carries generic arguments).
+        let is_self_projection = node.qself.is_none()
+            && node.path.segments.len() >= 2
+            && node
+                .path
+                .segments
+                .first()
+                .is_some_and(|s| s.ident == "Self");
+        if !is_self_projection {
+            if let Some(seg) = node.path.segments.last() {
+                self.record(seg.ident.to_string());
             }
         }
         // Recurse so generic arguments (Vec<Classification>) are visited.
         syn::visit::visit_type_path(self, node);
+    }
+
+    fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
+        // Trait names in bound positions — `dyn Handler`, `impl Encoder`,
+        // `T: DomainTrait` — are real usage edges that `visit_type_path` never
+        // sees. Ubiquitous marker traits (Send, Sync, …) are denylisted the
+        // same way they are in `conforms_to` so they don't flood the graph.
+        if let Some(name) = last_segment(&node.path) {
+            if !util::is_std_derive(&name) {
+                self.record(name);
+            }
+        }
+        syn::visit::visit_trait_bound(self, node);
     }
 }
 

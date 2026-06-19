@@ -16,6 +16,13 @@ pub struct Wrapper<T> {
     pub label: String,
 }
 
+/// Trait names in `dyn`/bound positions must surface as references; the
+/// ubiquitous `Send` marker is denylisted. `Box` is a builtin.
+pub struct Registry {
+    pub handler: Box<dyn Handler>,
+    pub sink: Box<dyn Encoder + Send>,
+}
+
 /// Tuple struct.
 pub struct Pair(pub String, pub usize);
 
