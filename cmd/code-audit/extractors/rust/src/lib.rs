@@ -84,7 +84,9 @@ pub fn run(args: &Args) -> i32 {
     };
 
     eprintln!("\nTotal entries: {total}");
-    write_output(args.output.as_deref(), &catalog);
+    if !write_output(args.output.as_deref(), &catalog) {
+        return 1; // a requested --output that could not be written is a failure
+    }
 
     if main_count > 0 {
         0
@@ -142,17 +144,29 @@ fn relpath(file: &Path, root: &Path) -> String {
     rel.to_string_lossy().replace('\\', "/")
 }
 
-fn write_output(output: Option<&Path>, catalog: &Catalog) {
+/// Write the catalog to `--output` (or stdout when absent). Returns `false`
+/// only when a requested `--output` path could not be written — the caller
+/// turns that into a non-zero exit so a pipeline never mistakes a failed write
+/// for a fresh catalog. A failed `--output` write is NOT mirrored to stdout:
+/// the caller asked for a file, and dumping JSON to a stdout nobody is reading
+/// would just mask the error.
+fn write_output(output: Option<&Path>, catalog: &Catalog) -> bool {
     let mut text = serde_json::to_string_pretty(catalog).expect("serialize catalog");
     text.push('\n');
     match output {
         Some(path) => match std::fs::write(path, &text) {
-            Ok(()) => eprintln!("Wrote {}", path.display()),
+            Ok(()) => {
+                eprintln!("Wrote {}", path.display());
+                true
+            }
             Err(e) => {
                 eprintln!("error: could not write {}: {e}", path.display());
-                print!("{text}");
+                false
             }
         },
-        None => print!("{text}"),
+        None => {
+            print!("{text}");
+            true
+        }
     }
 }

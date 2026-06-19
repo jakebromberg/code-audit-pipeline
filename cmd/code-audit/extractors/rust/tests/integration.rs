@@ -130,13 +130,58 @@ fn trait_is_interface_with_supertrait_conformance() {
         ])
     );
 
-    // Method-level generic `T` and the trait's own associated type `Item` are
-    // in-scope names, not external refs (contract §references); only `Id`
-    // survives.
+    // Method-level generic `T` and the `Self::Item` projection are in-scope
+    // names, not external refs (contract §references); only `Id` survives.
     let repo = find(&cat, "Repository");
     assert_eq!(
         repo["references"],
         json!([{"name": "Id", "kind": "type-ref"}])
+    );
+
+    // ...but an external type sharing a name with an associated type is NOT
+    // over-excluded: `inventory::Item` survives even though `Item` is also the
+    // associated-type name.
+    let externals = find(&cat, "Externals");
+    assert_eq!(
+        externals["references"],
+        json!([{"name": "Item", "kind": "type-ref"}])
+    );
+}
+
+#[test]
+fn trait_object_and_bound_references() {
+    // Trait names in `dyn`/bound positions are collected; `Send` is denylisted.
+    let cat = run_catalog();
+    assert_eq!(
+        find(&cat, "Registry")["references"],
+        json!([
+            {"name": "Encoder", "kind": "type-ref"},
+            {"name": "Handler", "kind": "type-ref"},
+        ])
+    );
+}
+
+#[test]
+fn unwritable_output_exits_nonzero() {
+    // A requested --output that cannot be written is a failure, not a
+    // success-with-stdout-dump (regression for the silent exit-0 path).
+    let out = Command::new(env!("CARGO_BIN_EXE_rust-catalog"))
+        .args([
+            "type",
+            "--root",
+            &fixtures_dir(),
+            "--output",
+            "/nonexistent-dir-xyz-983/cat.json",
+        ])
+        .output()
+        .expect("spawn rust-catalog");
+    assert!(
+        !out.status.success(),
+        "expected non-zero exit when --output is unwritable"
+    );
+    assert!(
+        out.stdout.is_empty(),
+        "catalog must not be dumped to stdout when --output fails"
     );
 }
 
