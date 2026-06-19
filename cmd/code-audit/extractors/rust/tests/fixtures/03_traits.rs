@@ -25,3 +25,12 @@ pub trait Externals {
     type Item;
     fn get(&self) -> inventory::Item;
 }
+
+/// `build` is a static (no-`self`) requirement → `is_static: true`; `run` is an
+/// instance method whose own generic bound `<H: Handler>` is an inline usage
+/// edge that must surface in `references` (only `Handler` does — `H` and `Self`
+/// are in-scope/builtin names).
+pub trait Factory {
+    fn build() -> Self;
+    fn run<H: Handler>(&self, handler: H);
+}

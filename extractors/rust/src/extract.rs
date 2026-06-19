@@ -95,16 +95,30 @@ fn record_impl(item: &syn::ItemImpl, impl_map: &mut ImplMap) {
     if util::is_std_derive(&trait_name) {
         return;
     }
+    // Skip blanket impls over a bare type parameter (`impl<T> Trait for T`):
+    // the self type is then the parameter itself, and recording it would attach
+    // the trait to any concrete type sharing that name. The check requires a
+    // single-segment unqualified path so a qualified concrete target whose last
+    // segment merely matches a generic name (`impl<Renderer> Bar for
+    // crate::Renderer`) is NOT mistaken for a blanket impl.
+    if is_bare_generic_self(&item.self_ty, &item.generics) {
+        return;
+    }
     if let Some(type_name) = type_base_name(&item.self_ty) {
-        // Skip blanket impls over a bare type parameter (`impl<T> Trait for T`):
-        // `type_base_name` returns the parameter name ("T"), which would
-        // otherwise attach the trait to any concrete type that happens to share
-        // that name.
-        if generic_set(&item.generics).contains(&type_name) {
-            return;
-        }
         impl_map.entry(type_name).or_default().insert(trait_name);
     }
+}
+
+/// True when `ty` is exactly a bare, single-segment, unqualified path naming one
+/// of `generics`' type parameters — i.e. the `T` in `impl<T> Trait for T`.
+fn is_bare_generic_self(ty: &syn::Type, generics: &syn::Generics) -> bool {
+    let syn::Type::Path(tp) = ty else {
+        return false;
+    };
+    if tp.qself.is_some() || tp.path.leading_colon.is_some() || tp.path.segments.len() != 1 {
+        return false;
+    }
+    generic_set(generics).contains(&tp.path.segments[0].ident.to_string())
 }
 
 // ---- struct / union ---------------------------------------------------------
@@ -302,30 +316,43 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
             syn::TraitItem::Fn(m) => {
                 let name = m.sig.ident.to_string();
                 let sig = method_sig_text(&m.sig);
+                // A method with no `self` receiver is an associated (static,
+                // type-level) function — tag it `is_static`, like an associated
+                // const, rather than as an instance member.
+                let is_static = !m
+                    .sig
+                    .inputs
+                    .iter()
+                    .any(|a| matches!(a, syn::FnArg::Receiver(_)));
                 pairs.push((
                     format!("{name}:{sig}"),
                     FieldStruct {
                         name,
                         ty: sig,
                         is_optional: false,
-                        is_static: false,
+                        is_static,
                     },
                 ));
 
                 let mut method_exclude = exclude.clone();
                 method_exclude.extend(generic_names(&m.sig.generics));
-                let mut sig_types: Vec<&syn::Type> = Vec::new();
+                let mut v = RefVisitor {
+                    exclude: &method_exclude,
+                    found: BTreeSet::new(),
+                };
                 for input in &m.sig.inputs {
                     if let syn::FnArg::Typed(pt) = input {
-                        sig_types.push(&pt.ty);
+                        v.visit_type(&pt.ty);
                     }
                 }
                 if let syn::ReturnType::Type(_, ty) = &m.sig.output {
-                    sig_types.push(ty);
+                    v.visit_type(ty);
                 }
-                for r in collect_refs(&sig_types, &method_exclude) {
-                    ref_names.insert(r.name);
-                }
+                // Inline generic-parameter bounds (`fn run<H: Handler>`) are
+                // usage edges `visit_type` never sees — feed them to the same
+                // visitor so they land in `references` too.
+                visit_generic_bounds(&mut v, &m.sig.generics);
+                ref_names.extend(v.found);
             }
             // An associated const is a type-level requirement (`is_static`).
             syn::TraitItem::Const(c) => {
@@ -480,19 +507,23 @@ impl RefVisitor<'_> {
 
 impl<'ast> Visit<'ast> for RefVisitor<'_> {
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        // `Self::Assoc` (and `T::Assoc` where `T` is an in-scope generic) is a
-        // projection onto an associated type of the enclosing type or a generic
-        // parameter, not a use of an external type named `Assoc` — skip the leaf
-        // (but still recurse, in case it carries generic arguments). A qualified
-        // path whose head is an external type (`crate::module::Type`,
-        // `inventory::Item`) is NOT a projection and its last segment is kept.
-        let is_assoc_projection =
-            node.qself.is_none()
-                && node.path.segments.len() >= 2
-                && node.path.segments.first().is_some_and(|s| {
-                    s.ident == "Self" || self.exclude.contains(&s.ident.to_string())
-                });
-        if !is_assoc_projection {
+        // `Self::Assoc` is a projection onto the enclosing type's own
+        // associated type, not a use of an external type named `Assoc` — skip
+        // the leaf (but still recurse, in case it carries generic arguments).
+        // The check is deliberately limited to a literal `Self` head: a generic
+        // projection like `T::Output` is rare, whereas widening the guard to
+        // "head is any in-scope generic" would false-drop a real external path
+        // whose head merely shares a name with a generic param (`serde::Value`
+        // under `trait X<serde>`). A qualified external path (`crate::Type`,
+        // `inventory::Item`) is kept by its last segment.
+        let is_self_projection = node.qself.is_none()
+            && node.path.segments.len() >= 2
+            && node
+                .path
+                .segments
+                .first()
+                .is_some_and(|s| s.ident == "Self");
+        if !is_self_projection {
             if let Some(seg) = node.path.segments.last() {
                 self.record(seg.ident.to_string());
             }
@@ -526,6 +557,23 @@ fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Referenc
     v.found.into_iter().map(Reference::type_ref).collect()
 }
 
+/// Drive `v` over the trait-bound paths on `generics`' type parameters so
+/// `<T: Bound>` inline bounds become references (the same usage edges that
+/// `dyn Bound` / `impl Bound` in type positions already produce). `where`-clause
+/// bounds and item-header (struct/enum/trait) generics are not walked — see the
+/// README's "Known limitations".
+fn visit_generic_bounds(v: &mut RefVisitor<'_>, generics: &syn::Generics) {
+    for param in &generics.params {
+        if let syn::GenericParam::Type(tp) = param {
+            for bound in &tp.bounds {
+                if let syn::TypeParamBound::Trait(tb) = bound {
+                    v.visit_trait_bound(tb);
+                }
+            }
+        }
+    }
+}
+
 fn attrs_have_cfg_test(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|a| {
         a.path().is_ident("cfg")
@@ -536,41 +584,64 @@ fn attrs_have_cfg_test(attrs: &[syn::Attribute]) -> bool {
     })
 }
 
-/// True when a `#[cfg(...)]` predicate activates a `test` configuration in a
-/// *positive* position — a bare `test` identifier that is not inside a
-/// `not(...)`. Walking the token tree (rather than substring-matching the
-/// printed predicate) avoids three false positives the naive `.contains("test")`
-/// hit: `cfg(not(test))` (production-only — the inverted case), and any feature
-/// whose name merely contains the substring, e.g. `feature = "fastest"` or
-/// `feature = "test-utils"` (feature names are string literals, never `test`
-/// identifiers).
+/// True when a `#[cfg(...)]` predicate is active *only* in `test` builds — i.e.
+/// the predicate logically implies `test` (it cannot hold when `test` is off).
+/// Walking the token tree (rather than substring-matching the printed predicate)
+/// is what lets it distinguish the combinators precisely. `test` and
+/// `all(test, X)` gate; `any(test, X)` does NOT (its `X` branch activates the
+/// item in a non-test build — the case a naive "`test` appears positively" walk
+/// and a `.contains("test")` match both get wrong); `not(...)` is production;
+/// and `feature = "fastest"` / `unix` are non-test flags (feature names are
+/// string literals, never `test` idents).
 fn cfg_predicate_gates_on_test(tokens: proc_macro2::TokenStream) -> bool {
     use proc_macro2::TokenTree;
-    let mut iter = tokens.into_iter().peekable();
-    while let Some(tt) = iter.next() {
-        match tt {
-            TokenTree::Ident(id) => {
-                if id == "test" {
-                    return true;
-                }
-                if id == "not" {
-                    // Skip the negated group entirely: `not(test)` must NOT gate.
-                    if matches!(iter.peek(), Some(TokenTree::Group(_))) {
-                        iter.next();
-                    }
-                }
-                // `all(...)` / `any(...)` idents fall through; their group is
-                // recursed into by the `Group` arm below.
+    let trees: Vec<TokenTree> = tokens.into_iter().collect();
+    match trees.as_slice() {
+        // A combinator: `ident( <inner> )`.
+        [TokenTree::Ident(op), TokenTree::Group(g)] => match op.to_string().as_str() {
+            // `not(...)` never *implies* test. Double negation (`not(not(test))`)
+            // is intentionally not unwound — treated as non-test.
+            "not" => false,
+            // A conjunction implies test if ANY operand does.
+            "all" => split_top_level_commas(g.stream())
+                .into_iter()
+                .any(cfg_predicate_gates_on_test),
+            // A disjunction implies test only if EVERY operand does.
+            "any" => {
+                let operands = split_top_level_commas(g.stream());
+                !operands.is_empty() && operands.into_iter().all(cfg_predicate_gates_on_test)
             }
-            TokenTree::Group(g) => {
-                if cfg_predicate_gates_on_test(g.stream()) {
-                    return true;
+            _ => false,
+        },
+        // A bare `test` flag.
+        [TokenTree::Ident(id)] => *id == "test",
+        // `feature = "…"`, other bare flags, or anything unrecognized.
+        _ => false,
+    }
+}
+
+/// Split a cfg predicate-list token stream on its top-level commas, dropping
+/// empty operands so a trailing comma (`any(test,)`) doesn't synthesize a phantom
+/// always-false operand. Commas nested inside an operand's own `(...)` are part
+/// of a single `TokenTree::Group` and so are never seen at this level.
+fn split_top_level_commas(tokens: proc_macro2::TokenStream) -> Vec<proc_macro2::TokenStream> {
+    use proc_macro2::{TokenStream, TokenTree};
+    let mut out: Vec<TokenStream> = Vec::new();
+    let mut cur: Vec<TokenTree> = Vec::new();
+    for tt in tokens {
+        match &tt {
+            TokenTree::Punct(p) if p.as_char() == ',' => {
+                if !cur.is_empty() {
+                    out.push(cur.drain(..).collect());
                 }
             }
-            _ => {}
+            _ => cur.push(tt),
         }
     }
-    false
+    if !cur.is_empty() {
+        out.push(cur.into_iter().collect());
+    }
+    out
 }
 
 /// Derived trait names minus the std-derive denylist (last path segment).
