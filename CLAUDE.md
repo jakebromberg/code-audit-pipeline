@@ -44,6 +44,12 @@ The anti-pattern is letting agents creep back upstream into the extraction step.
 4. CLI contract: `--root <path>`, optional `--shared <path>`, optional `--touched <json>`, optional `--output <path>`, optional `--include-tests`. Match the TypeScript reference's flags.
 5. Skip dotdirs by default (`.git`, `.claude`, `.next`, `.cursor`, `.idea`, `.vscode`, and similar IDE/agent state). These commonly contain worktree clones that inflate catalogs with near-duplicate copies of the same repo.
 6. Summary stats to stderr; JSON catalog to stdout (or `--output`). Exit non-zero if no files were successfully indexed.
+7. Register and wire it (these are enforced by CI, and easy to miss):
+   - Add `extractors/<lang>/manifest.toml` (per ADR-0002; schema 2 if it needs a `[runtime].bootstrap` build step, like the Swift/Rust compiled extractors). The first `requires` token is the binary `doctor` probes on `PATH` — use the tool the invocation actually runs (e.g. `cargo`, not `rust`).
+   - If the extractor has a build-output dir that is **not** a dotdir (Rust's `target/`, etc.), add it to `internal/initstate/skipdirs.go` **and** the `genembed` `-skip` list in `cmd/code-audit/embed.go`. A drift test (`internal/genembed`) enforces that the two stay in sync.
+   - Run `go generate ./...` and commit the regenerated `cmd/code-audit/extractors/<lang>/` tree in the same PR (CI gate: `git status --porcelain` over the embed dirs).
+   - Bump the expected allowlist in `pipeline/_tests/test_audit_core.sh` — `detect-languages.sh --extractors-dir` now sees the new manifest, so the polyglot-filter assertion changes.
+   - Add a per-extractor CI job in `.github/workflows/ci.yml` (mirror the `python` / `swift` / `rust` jobs) so the extractor's own tests run.
 
 ## Adding a new cluster query
 
