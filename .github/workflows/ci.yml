@@ -248,11 +248,16 @@ jobs:
         run: cargo test
 
       - name: Smoke-test against fixtures
-        # The catalog must be non-empty and jq must accept the JSON — surfaces
-        # any regression in stdout framing or wrapper shape.
+        # Both catalogs must be non-empty and jq must accept the JSON — surfaces
+        # any regression in stdout framing or wrapper shape. The function catalog
+        # is additionally piped through a consumer query (function-duplicates) to
+        # confirm the emitted schema is queryable.
         run: |
           cargo run --release -- type --root tests/fixtures --output /tmp/rust-cat.json
           jq -e '.entries | length > 0' /tmp/rust-cat.json > /dev/null
+          cargo run --release -- func --root tests/fixtures --output /tmp/rust-fn.json
+          jq -e '.entries | length > 0' /tmp/rust-fn.json > /dev/null
+          jq -L ../../pipeline/queries -r --argjson threshold 0.7 -f ../../pipeline/queries/function-duplicates.jq /tmp/rust-fn.json > /dev/null
 
   swift:
     name: swift extractor

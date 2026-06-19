@@ -552,7 +552,7 @@ impl<'ast> Visit<'ast> for RefVisitor<'_> {
     }
 }
 
-fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Reference> {
+pub(crate) fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Reference> {
     let mut v = RefVisitor {
         exclude,
         found: BTreeSet::new(),
@@ -580,7 +580,7 @@ fn visit_generic_bounds(v: &mut RefVisitor<'_>, generics: &syn::Generics) {
     }
 }
 
-fn attrs_have_cfg_test(attrs: &[syn::Attribute]) -> bool {
+pub(crate) fn attrs_have_cfg_test(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|a| {
         a.path().is_ident("cfg")
             && match &a.meta {
@@ -673,7 +673,7 @@ fn derive_traits(attrs: &[syn::Attribute]) -> Vec<String> {
     out
 }
 
-fn is_pub(vis: &syn::Visibility) -> bool {
+pub(crate) fn is_pub(vis: &syn::Visibility) -> bool {
     matches!(vis, syn::Visibility::Public(_))
 }
 
@@ -682,11 +682,11 @@ fn is_option(ty: &syn::Type) -> bool {
         if tp.path.segments.last().map(|s| s.ident == "Option").unwrap_or(false))
 }
 
-fn last_segment(path: &syn::Path) -> Option<String> {
+pub(crate) fn last_segment(path: &syn::Path) -> Option<String> {
     path.segments.last().map(|s| s.ident.to_string())
 }
 
-fn type_base_name(ty: &syn::Type) -> Option<String> {
+pub(crate) fn type_base_name(ty: &syn::Type) -> Option<String> {
     match ty {
         syn::Type::Path(tp) => last_segment(&tp.path),
         syn::Type::Reference(r) => type_base_name(&r.elem),
@@ -716,7 +716,7 @@ fn method_sig_text(sig: &syn::Signature) -> String {
 }
 
 /// Type + const generic parameter names (lifetimes dropped), in declaration order.
-fn generic_names(g: &syn::Generics) -> Vec<String> {
+pub(crate) fn generic_names(g: &syn::Generics) -> Vec<String> {
     g.params
         .iter()
         .filter_map(|p| match p {
@@ -727,7 +727,7 @@ fn generic_names(g: &syn::Generics) -> Vec<String> {
         .collect()
 }
 
-fn generic_set(g: &syn::Generics) -> HashSet<String> {
+pub(crate) fn generic_set(g: &syn::Generics) -> HashSet<String> {
     generic_names(g).into_iter().collect()
 }
 

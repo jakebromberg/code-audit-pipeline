@@ -20,6 +20,9 @@ pub const LANGUAGE: &str = "rust";
 /// (docs/pipeline-contract.md §"Type catalog") and the Python/TS extractors,
 /// which both emit `name: "type-catalog"`.
 pub const EXTRACTOR_NAME: &str = "type-catalog";
+/// `extractor.name` for the function catalog — the sibling catalog KIND emitted
+/// by the `func` subcommand (mirrors the Python/TS `function-catalog`).
+pub const FUNCTION_EXTRACTOR_NAME: &str = "function-catalog";
 pub const EXTRACTOR_VERSION: &str = "0.1.0";
 
 /// Directories pruned on every walk. Mirrors the substrate convention in
@@ -174,6 +177,21 @@ pub fn is_generated(rel: &str) -> bool {
 pub fn symbol_id(package: &str, file: &str, name: &str, kind: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(format!("{package}\0{file}\0{name}\0{kind}").as_bytes());
+    hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+/// sha256 of `s`, lowercase hex. Used for the function catalog's `body_hash`
+/// (the contract mandates sha256 there, distinct from `symbol_id`'s sha1).
+/// `sha2::Digest` is imported anonymously (`as _`) so its trait methods are in
+/// scope without colliding with the module-level `sha1::Digest`.
+pub fn sha256_hex(s: &str) -> String {
+    use sha2::Digest as _;
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(s.as_bytes());
     hasher
         .finalize()
         .iter()
@@ -357,5 +375,19 @@ mod tests {
     fn normalize_tightens_generics() {
         let ty: syn::Type = syn::parse_str("Vec<Option<String>>").unwrap();
         assert_eq!(normalize_type(&ty), "Vec<Option<String>>");
+    }
+
+    #[test]
+    fn sha256_hex_known_vector() {
+        // NIST/RFC test vector: sha256("abc").
+        assert_eq!(
+            sha256_hex("abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        // Empty string vector.
+        assert_eq!(
+            sha256_hex(""),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
     }
 }

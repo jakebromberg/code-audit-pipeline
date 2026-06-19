@@ -15,8 +15,8 @@
 # cwd to this extractor dir so Cargo.toml is found (the same reason the Swift
 # manifest uses `swift run` rather than a relative binary path).
 #
-# Schema covers only the type-catalog command for now. The function-catalog
-# command lands in a follow-up.
+# Two commands: the `type` catalog and the `func` (function) catalog. Both run
+# the same compiled binary with different subcommands.
 
 schema_version = 2
 
@@ -24,7 +24,7 @@ schema_version = 2
 name = "rust"
 language = "rust"
 version = "0.1.0"
-description = "Rust AST extractor (syn); emits type catalog."
+description = "Rust AST extractor (syn); emits type and function catalogs."
 
 [[command]]
 catalog = "type-catalog"
@@ -34,6 +34,17 @@ optional_args = [
   { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
   { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
   { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+]
+
+[[command]]
+catalog = "function-catalog"
+output_file = "function-catalog.json"
+invocation = ["cargo", "run", "--release", "--quiet", "--", "func", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+  { flag = "--min-body-lines", placeholder = "{min_body_lines}", when = "min_body_lines_set" },
 ]
 
 # `requires` first token is the binary `doctor` probes on PATH — it must be the
