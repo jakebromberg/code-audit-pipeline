@@ -124,9 +124,9 @@ The flat `fields[]` form is preserved unchanged for V6-era queries; new queries 
 
 | Kind | Source construct (TypeScript) | Source construct (other languages) |
 |---|---|---|
-| `interface` | `interface X { … }` | Python: `Protocol`; Go: `type X interface { … }` |
-| `type-alias-object` | `type X = { … }` | Python: `TypedDict`; Go: `type X struct { … }` |
-| `type-alias-union` | `type X = A \| B \| C` | Python: `Union[…]`; Rust: enum variants |
+| `interface` | `interface X { … }` | Python: `Protocol`; Go: `type X interface { … }`; Rust: `trait` |
+| `type-alias-object` | `type X = { … }` | Python: `TypedDict`; Go: `type X struct { … }`; Rust: `struct` / `union` |
+| `type-alias-union` | `type X = A \| B \| C` | Python: `Union[…]`; Rust: `enum` variants |
 | `type-alias-intersection` | `type X = A & B` | (rare elsewhere) |
 | `type-alias-infer-model` | `type X = InferSelectModel<typeof T>` or `type X = typeof T.$inferSelect` | SQLAlchemy: `Mapped[…]`; Django: model classes |
 | `type-alias-other` | other utility types | mapped/conditional types |

@@ -7,7 +7,7 @@ import (
 
 //go:generate go run ../../internal/genembed -src ../../pipeline/queries -dst ./queries -flatten -ext .jq
 
-//go:generate go run ../../internal/genembed -src ../../extractors -dst ./extractors -skip node_modules,.build,.swiftpm,DerivedData,Pods,dist,build,coverage,__pycache__
+//go:generate go run ../../internal/genembed -src ../../extractors -dst ./extractors -skip node_modules,.build,.swiftpm,DerivedData,Pods,dist,build,coverage,__pycache__,target
 
 //go:embed queries/*.jq
 //go:embed queries/_canonical.jq
