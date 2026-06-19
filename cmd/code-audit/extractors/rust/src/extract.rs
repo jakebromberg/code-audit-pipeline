@@ -399,9 +399,50 @@ fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Referenc
 }
 
 fn attrs_have_cfg_test(attrs: &[syn::Attribute]) -> bool {
-    attrs
-        .iter()
-        .any(|a| a.path().is_ident("cfg") && a.to_token_stream().to_string().contains("test"))
+    attrs.iter().any(|a| {
+        a.path().is_ident("cfg")
+            && match &a.meta {
+                syn::Meta::List(list) => cfg_predicate_gates_on_test(list.tokens.clone()),
+                _ => false,
+            }
+    })
+}
+
+/// True when a `#[cfg(...)]` predicate activates a `test` configuration in a
+/// *positive* position — a bare `test` identifier that is not inside a
+/// `not(...)`. Walking the token tree (rather than substring-matching the
+/// printed predicate) avoids three false positives the naive `.contains("test")`
+/// hit: `cfg(not(test))` (production-only — the inverted case), and any feature
+/// whose name merely contains the substring, e.g. `feature = "fastest"` or
+/// `feature = "test-utils"` (feature names are string literals, never `test`
+/// identifiers).
+fn cfg_predicate_gates_on_test(tokens: proc_macro2::TokenStream) -> bool {
+    use proc_macro2::TokenTree;
+    let mut iter = tokens.into_iter().peekable();
+    while let Some(tt) = iter.next() {
+        match tt {
+            TokenTree::Ident(id) => {
+                if id == "test" {
+                    return true;
+                }
+                if id == "not" {
+                    // Skip the negated group entirely: `not(test)` must NOT gate.
+                    if matches!(iter.peek(), Some(TokenTree::Group(_))) {
+                        iter.next();
+                    }
+                }
+                // `all(...)` / `any(...)` idents fall through; their group is
+                // recursed into by the `Group` arm below.
+            }
+            TokenTree::Group(g) => {
+                if cfg_predicate_gates_on_test(g.stream()) {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 /// Derived trait names minus the std-derive denylist (last path segment).

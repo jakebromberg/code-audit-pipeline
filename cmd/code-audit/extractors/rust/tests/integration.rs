@@ -37,7 +37,8 @@ fn wrapper_metadata() {
     assert_eq!(cat["schema_version"], "2.0");
     assert_eq!(cat["fingerprint_v"], "shape_sig:1");
     assert_eq!(cat["extractor"]["language"], "rust");
-    assert_eq!(cat["extractor"]["name"], "rust");
+    // `name` is the catalog KIND, not the language (contract + Python/TS siblings).
+    assert_eq!(cat["extractor"]["name"], "type-catalog");
 }
 
 #[test]
@@ -166,6 +167,16 @@ fn is_test_via_cfg_test_module() {
     let cat = run_catalog();
     assert_eq!(find(&cat, "RealType")["is_test"], false);
     assert_eq!(find(&cat, "TestOnly")["is_test"], true);
+}
+
+#[test]
+fn cfg_predicate_not_test_and_test_substring_are_not_test() {
+    // `#[cfg(not(test))]` is production-only and `feature = "fastest"` merely
+    // contains the substring "test"; neither may flip is_test (regression for
+    // the prior `.contains("test")` predicate match).
+    let cat = run_catalog();
+    assert_eq!(find(&cat, "ProdOnly")["is_test"], false);
+    assert_eq!(find(&cat, "FastPath")["is_test"], false);
 }
 
 #[test]
