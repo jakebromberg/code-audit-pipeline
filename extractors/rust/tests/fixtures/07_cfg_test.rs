@@ -36,3 +36,19 @@ mod fast {
 pub struct ItemLevelTestOnly {
     pub v: u32,
 }
+
+/// Regression: `#[cfg(any(test, ...))]` is also active in NON-test builds
+/// whenever the other branch holds, so it must NOT gate as test-only —
+/// `is_test` must be false. (A bare-`test`-appears-positively walk got this
+/// wrong.)
+#[cfg(any(test, feature = "fastest"))]
+pub struct AnyTestOrFeature {
+    pub a: u32,
+}
+
+/// `#[cfg(all(test, unix))]` genuinely requires `test`, so it gates as
+/// test-only — `is_test` must be true.
+#[cfg(all(test, unix))]
+pub struct AllTestAndUnix {
+    pub b: u32,
+}

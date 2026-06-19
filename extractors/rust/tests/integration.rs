@@ -208,6 +208,35 @@ fn trait_object_and_bound_references() {
 }
 
 #[test]
+fn trait_assoc_fn_is_static_and_generic_bound_is_a_reference() {
+    let cat = run_catalog();
+    let factory = find(&cat, "Factory");
+    // `build()` has no receiver → static; `run(&self, ..)` is an instance method.
+    assert_eq!(
+        factory["fields"],
+        json!(["build:() -> Self", "run:(&self, H)"])
+    );
+    let by_name = |n: &str| {
+        factory["fields_structured"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["name"] == n)
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(by_name("build")["is_static"], true);
+    assert_eq!(by_name("run")["is_static"], false);
+    // The method's own generic bound `<H: Handler>` is an inline usage edge:
+    // `Handler` surfaces in references; `H` (in-scope) and `Self` (builtin) do
+    // not.
+    assert_eq!(
+        factory["references"],
+        json!([{"name": "Handler", "kind": "type-ref"}])
+    );
+}
+
+#[test]
 fn unwritable_output_exits_nonzero() {
     // A requested --output that cannot be written is a failure, not a
     // success-with-stdout-dump (regression for the silent exit-0 path).
@@ -290,6 +319,15 @@ fn is_test_via_item_level_cfg_test() {
     // is_test — declarations written beside production code are covered.
     let cat = run_catalog();
     assert_eq!(find(&cat, "ItemLevelTestOnly")["is_test"], true);
+}
+
+#[test]
+fn cfg_any_test_does_not_gate_but_all_test_does() {
+    // `any(test, X)` is active in non-test builds (via X), so it must NOT be
+    // tagged test-only; `all(test, X)` genuinely requires test, so it is.
+    let cat = run_catalog();
+    assert_eq!(find(&cat, "AnyTestOrFeature")["is_test"], false);
+    assert_eq!(find(&cat, "AllTestAndUnix")["is_test"], true);
 }
 
 #[test]
