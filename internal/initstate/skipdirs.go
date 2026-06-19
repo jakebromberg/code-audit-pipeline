@@ -25,6 +25,10 @@ var skipDirsCanonical = []string{
 	// the binary — and so `code-audit init --from <checkout>` doesn't
 	// copy them to ~/.config/audit/extractors/python/.
 	"__pycache__",
+	// Rust: cargo build output under extractors/rust/. Not a dotdir, so it
+	// must be named explicitly; excluded so multi-hundred-MB build artifacts
+	// are neither embedded in the binary nor copied by `init --from`.
+	"target",
 }
 
 // SkipDirs returns a freshly allocated copy of the skip-dir set. Each call

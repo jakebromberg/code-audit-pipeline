@@ -1,0 +1,45 @@
+# manifest.toml — registration sidecar for the Rust extractor.
+#
+# Read by the `code-audit` binary (per ADR-0002) to discover this extractor's
+# identity, runtime prerequisites, and per-catalog invocation contract.
+#
+# Token grammar in `invocation`:
+#   {root}    required positional, audited repo root
+#   {output}  target file under .audit/catalogs/<output_file>
+#   {shared}  secondary package root (tagged package="shared")
+#   {touched} path to the JSON array of touched-in-window files
+#
+# Compiled extractor (like Swift): `[runtime].bootstrap` runs `cargo build
+# --release` once per laid-down source tree; `cargo run --release` then finds
+# the binary up to date. argv[0]=`cargo` resolves on PATH, and the runner sets
+# cwd to this extractor dir so Cargo.toml is found (the same reason the Swift
+# manifest uses `swift run` rather than a relative binary path).
+#
+# Schema covers only the type-catalog command for now. The function-catalog
+# command lands in a follow-up.
+
+schema_version = 2
+
+[extractor]
+name = "rust"
+language = "rust"
+version = "0.1.0"
+description = "Rust AST extractor (syn); emits type catalog."
+
+[[command]]
+catalog = "type-catalog"
+output_file = "type-catalog.json"
+invocation = ["cargo", "run", "--release", "--quiet", "--", "type", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--touched", placeholder = "{touched}", when = "touched_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
+]
+
+# `requires` first token is the binary `doctor` probes on PATH — it must be the
+# tool the invocation actually runs (`cargo`), not the language name. cargo and
+# rustc share the Rust release version, so 1.93 is the Rust toolchain floor.
+[runtime]
+requires = ["cargo >= 1.93"]
+setup_hint = "Install Rust 1.93+ via rustup (provides cargo). First cargo build invocation fetches dependencies and compiles the extractor."
+bootstrap = ["cargo", "build", "--release"]
