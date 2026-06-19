@@ -109,16 +109,22 @@ fn record_impl(item: &syn::ItemImpl, impl_map: &mut ImplMap) {
     }
 }
 
-/// True when `ty` is exactly a bare, single-segment, unqualified path naming one
-/// of `generics`' type parameters — i.e. the `T` in `impl<T> Trait for T`.
+/// True when `ty` is a bare, single-segment, unqualified path naming one of
+/// `generics`' type parameters — i.e. the `T` in `impl<T> Trait for T` — looking
+/// through references so reference-target blankets (`impl<T> Trait for &T`) are
+/// also caught. This mirrors `type_base_name`'s reference unwrapping, so the two
+/// agree on what the self type's base name is.
 fn is_bare_generic_self(ty: &syn::Type, generics: &syn::Generics) -> bool {
-    let syn::Type::Path(tp) = ty else {
-        return false;
-    };
-    if tp.qself.is_some() || tp.path.leading_colon.is_some() || tp.path.segments.len() != 1 {
-        return false;
+    match ty {
+        syn::Type::Reference(r) => is_bare_generic_self(&r.elem, generics),
+        syn::Type::Path(tp) => {
+            tp.qself.is_none()
+                && tp.path.leading_colon.is_none()
+                && tp.path.segments.len() == 1
+                && generic_set(generics).contains(&tp.path.segments[0].ident.to_string())
+        }
+        _ => false,
     }
-    generic_set(generics).contains(&tp.path.segments[0].ident.to_string())
 }
 
 // ---- struct / union ---------------------------------------------------------
@@ -731,5 +737,42 @@ fn generic_string(g: &syn::Generics) -> Option<String> {
         None
     } else {
         Some(names.join(","))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn impl_self(src: &str) -> (syn::Type, syn::Generics) {
+        let item: syn::ItemImpl = syn::parse_str(src).unwrap();
+        ((*item.self_ty).clone(), item.generics)
+    }
+
+    #[test]
+    fn bare_generic_self_covers_plain_and_reference_blankets() {
+        // `impl<T> Trait for T` and its reference-wrapped forms are blanket
+        // impls over a type parameter and must be skipped.
+        for src in [
+            "impl<T> Tr for T {}",
+            "impl<T> Tr for &T {}",
+            "impl<T> Tr for &mut T {}",
+        ] {
+            let (ty, g) = impl_self(src);
+            assert!(is_bare_generic_self(&ty, &g), "{src} is a blanket impl");
+        }
+        // A qualified concrete target whose last segment merely matches a generic
+        // name, and a concrete generic instantiation, are NOT blanket impls.
+        for src in [
+            "impl<Renderer> Tr for crate::Renderer {}",
+            "impl<T> Tr for Vec<T> {}",
+            "impl Tr for Concrete {}",
+        ] {
+            let (ty, g) = impl_self(src);
+            assert!(
+                !is_bare_generic_self(&ty, &g),
+                "{src} is NOT a blanket impl"
+            );
+        }
     }
 }
