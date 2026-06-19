@@ -29,3 +29,10 @@ mod fast {
         pub w: u32,
     }
 }
+
+/// Regression: `#[cfg(test)]` applied directly to an item (not a `mod`) must
+/// still set `is_test` — item-level detection, not only module-level.
+#[cfg(test)]
+pub struct ItemLevelTestOnly {
+    pub v: u32,
+}

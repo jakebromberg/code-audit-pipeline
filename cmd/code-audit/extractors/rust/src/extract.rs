@@ -56,12 +56,16 @@ fn process_items(
     impl_map: &mut ImplMap,
 ) {
     for item in items {
+        // `#[cfg(test)]` on the item itself counts the same as nesting it inside
+        // a `#[cfg(test)] mod` — a test-only declaration written beside
+        // production code (`#[cfg(test)] struct Fixture`) must still be tagged.
+        let item_test = |attrs: &[syn::Attribute]| in_cfg_test || attrs_have_cfg_test(attrs);
         match item {
-            syn::Item::Struct(s) => entries.push(struct_entry(s, ctx, in_cfg_test)),
-            syn::Item::Union(u) => entries.push(union_entry(u, ctx, in_cfg_test)),
-            syn::Item::Enum(e) => entries.push(enum_entry(e, ctx, in_cfg_test)),
-            syn::Item::Trait(t) => entries.push(trait_entry(t, ctx, in_cfg_test)),
-            syn::Item::Type(t) => entries.push(type_alias_entry(t, ctx, in_cfg_test)),
+            syn::Item::Struct(s) => entries.push(struct_entry(s, ctx, item_test(&s.attrs))),
+            syn::Item::Union(u) => entries.push(union_entry(u, ctx, item_test(&u.attrs))),
+            syn::Item::Enum(e) => entries.push(enum_entry(e, ctx, item_test(&e.attrs))),
+            syn::Item::Trait(t) => entries.push(trait_entry(t, ctx, item_test(&t.attrs))),
+            syn::Item::Type(t) => entries.push(type_alias_entry(t, ctx, item_test(&t.attrs))),
             syn::Item::Impl(i) => record_impl(i, impl_map),
             syn::Item::Mod(m) => {
                 if let Some((_, inner)) = &m.content {
@@ -264,10 +268,24 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
         .collect();
     conforms.extend(derive_traits(&t.attrs));
 
-    // references: types mentioned in method signatures.
-    let mut sig_types: Vec<&syn::Type> = Vec::new();
+    // references: types named in method signatures, minus in-scope names. The
+    // trait's associated types (`type Item;`) are names it declares, not
+    // external refs, and each method's own type parameters form a child scope
+    // (contract §references: "function types introduce their own scopes ... so
+    // nested generics shadow correctly") — both are excluded so they don't
+    // surface as phantom single-letter / associated-type reference nodes.
+    let mut base_exclude = exclude;
+    for it in &t.items {
+        if let syn::TraitItem::Type(at) = it {
+            base_exclude.insert(at.ident.to_string());
+        }
+    }
+    let mut ref_names: BTreeSet<String> = BTreeSet::new();
     for it in &t.items {
         if let syn::TraitItem::Fn(m) = it {
+            let mut method_exclude = base_exclude.clone();
+            method_exclude.extend(generic_names(&m.sig.generics));
+            let mut sig_types: Vec<&syn::Type> = Vec::new();
             for input in &m.sig.inputs {
                 if let syn::FnArg::Typed(pt) = input {
                     sig_types.push(&pt.ty);
@@ -276,9 +294,12 @@ fn trait_entry(t: &syn::ItemTrait, ctx: &FileCtx, in_cfg_test: bool) -> Entry {
             if let syn::ReturnType::Type(_, ty) = &m.sig.output {
                 sig_types.push(ty);
             }
+            for r in collect_refs(&sig_types, &method_exclude) {
+                ref_names.insert(r.name);
+            }
         }
     }
-    let refs = collect_refs(&sig_types, &exclude);
+    let refs: Vec<Reference> = ref_names.into_iter().map(Reference::type_ref).collect();
 
     make_entry(EntryParts {
         ctx,

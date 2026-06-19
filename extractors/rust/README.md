@@ -22,7 +22,7 @@ code-audit extract rust --root /path/to/repo
 
 The extractor:
 - Skips dotdirs (`.git`, `.cargo`, `.claude`, etc.) and `node_modules`, `dist`, `build`, `coverage`, and `target` (Rust build output — not a dotdir, so it is named explicitly).
-- Tags every record with `is_test: bool` from path patterns (universal `tests/`, `spec/`, `__fixtures__/`, `e2e/` dir segments; `*.test.rs` / `*.spec.rs` / `*.fixture(s).rs` / `*.mock(s).rs` filenames) **plus** AST-based detection of declarations inside a `#[cfg(test)]` module.
+- Tags every record with `is_test: bool` from path patterns (universal `tests/`, `spec/`, `__fixtures__/`, `e2e/` dir segments; `*.test.rs` / `*.spec.rs` / `*.fixture(s).rs` / `*.mock(s).rs` filenames) **plus** AST-based detection of declarations annotated `#[cfg(test)]` directly or nested inside a `#[cfg(test)]` module (the predicate is walked, so `#[cfg(not(test))]` and features whose name merely contains `test` do not count).
 - Tags `generated: true` for files under a `generated/` path segment.
 - Emits byte-deterministic output (`entries[]` sorted by `package, file, line, name`); only the `generated_at` timestamp varies between runs.
 
@@ -62,7 +62,7 @@ Both live as single functions in `src/util.rs` — extend them there.
 
 ## References
 
-`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — minus in-scope generic parameters and the builtin denylist. Self-references are kept (per contract).
+`references[]` collects the last identifier of each type path appearing in field types, enum-variant payloads, the aliased type of a `type` alias, and trait method signatures — minus in-scope generic parameters (including each trait method's own type parameters and the trait's associated types) and the builtin denylist. Self-references are kept (per contract).
 
 ## Tests
 
