@@ -129,6 +129,15 @@ fn trait_is_interface_with_supertrait_conformance() {
             {"name": "Summary", "kind": "type-ref"},
         ])
     );
+
+    // Method-level generic `T` and the trait's own associated type `Item` are
+    // in-scope names, not external refs (contract §references); only `Id`
+    // survives.
+    let repo = find(&cat, "Repository");
+    assert_eq!(
+        repo["references"],
+        json!([{"name": "Id", "kind": "type-ref"}])
+    );
 }
 
 #[test]
@@ -177,6 +186,14 @@ fn cfg_predicate_not_test_and_test_substring_are_not_test() {
     let cat = run_catalog();
     assert_eq!(find(&cat, "ProdOnly")["is_test"], false);
     assert_eq!(find(&cat, "FastPath")["is_test"], false);
+}
+
+#[test]
+fn is_test_via_item_level_cfg_test() {
+    // `#[cfg(test)]` directly on a type item (not wrapped in a `mod`) flips
+    // is_test — declarations written beside production code are covered.
+    let cat = run_catalog();
+    assert_eq!(find(&cat, "ItemLevelTestOnly")["is_test"], true);
 }
 
 #[test]

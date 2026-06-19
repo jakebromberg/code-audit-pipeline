@@ -9,3 +9,11 @@ pub trait ClassificationLabel {
 pub trait Reportable: ClassificationLabel + Send {
     fn report(&self, ctx: &ReportCtx) -> Summary;
 }
+
+/// Method-level generic `T` (a per-method scope) and the trait's own associated
+/// type `Item` must NOT appear in `references` — only the external `Id` does.
+pub trait Repository {
+    type Item;
+    fn save<T>(&self, value: T) -> T;
+    fn fetch(&self, id: Id) -> Self::Item;
+}
