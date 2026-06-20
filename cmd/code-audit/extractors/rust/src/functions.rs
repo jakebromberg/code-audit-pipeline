@@ -250,16 +250,12 @@ fn single_type_ref(ty: &syn::Type, exclude: &HashSet<String>) -> Option<String> 
 }
 
 /// True when `ty` (looking through references, like `type_base_name`) is a
-/// `Self::Assoc`-style projection: an unqualified path of >= 2 segments headed
-/// by a literal `Self`. Matches `RefVisitor::visit_type_path`'s rule.
+/// `Self::Assoc` projection. Defers to [`extract::is_self_projection_path`] so
+/// the rule has a single home shared with `RefVisitor`.
 fn is_self_projection(ty: &syn::Type) -> bool {
     match ty {
         syn::Type::Reference(r) => is_self_projection(&r.elem),
-        syn::Type::Path(tp) => {
-            tp.qself.is_none()
-                && tp.path.segments.len() >= 2
-                && tp.path.segments.first().is_some_and(|s| s.ident == "Self")
-        }
+        syn::Type::Path(tp) => crate::extract::is_self_projection_path(tp),
         _ => false,
     }
 }
@@ -294,7 +290,10 @@ fn body_fields(block: &syn::Block, min: usize) -> BodyFields {
         .collect();
     lines.sort();
     lines.dedup();
-    if lines.len() < min {
+    // An empty body carries no duplication signal, so it stays null regardless
+    // of `min` — without this guard `--min-body-lines 0` would cluster every
+    // empty-bodied fn on the sha256 of the empty string.
+    if lines.is_empty() || lines.len() < min {
         return BodyFields::default();
     }
     let joined = lines.join("\n");

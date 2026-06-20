@@ -11,8 +11,12 @@ fn fixtures_dir() -> String {
 }
 
 fn run_func() -> Value {
+    run_func_args(&["func", "--root", &fixtures_dir()])
+}
+
+fn run_func_args(args: &[&str]) -> Value {
     let out = Command::new(env!("CARGO_BIN_EXE_rust-catalog"))
-        .args(["func", "--root", &fixtures_dir()])
+        .args(args)
         .output()
         .expect("spawn rust-catalog");
     assert!(
@@ -204,6 +208,18 @@ fn raw_identifier_param_name_is_unrawed() {
     let f = find(&cat, "raw_param");
     assert_eq!(f["param_names"], json!(["type"]));
     assert_eq!(f["params"][0]["name"], "type");
+}
+
+#[test]
+fn empty_body_is_null_even_at_min_body_lines_zero() {
+    // `--min-body-lines 0` must not cluster every empty-bodied fn on the sha256
+    // of the empty string — an empty body carries no duplication signal.
+    let cat = run_func_args(&["func", "--root", &fixtures_dir(), "--min-body-lines", "0"]);
+    let empty = find(&cat, "truly_empty");
+    assert!(empty["body_hash"].is_null());
+    assert!(empty["body_lines"].is_null());
+    // A real multi-line body is still emitted at min 0.
+    assert!(find(&cat, "assemble_widget")["body_hash"].is_string());
 }
 
 #[test]

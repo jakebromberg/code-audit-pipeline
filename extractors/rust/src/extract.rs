@@ -513,23 +513,10 @@ impl RefVisitor<'_> {
 
 impl<'ast> Visit<'ast> for RefVisitor<'_> {
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        // `Self::Assoc` is a projection onto the enclosing type's own
-        // associated type, not a use of an external type named `Assoc` — skip
-        // the leaf (but still recurse, in case it carries generic arguments).
-        // The check is deliberately limited to a literal `Self` head: a generic
-        // projection like `T::Output` is rare, whereas widening the guard to
-        // "head is any in-scope generic" would false-drop a real external path
-        // whose head merely shares a name with a generic param (`serde::Value`
-        // under `trait X<serde>`). A qualified external path (`crate::Type`,
-        // `inventory::Item`) is kept by its last segment.
-        let is_self_projection = node.qself.is_none()
-            && node.path.segments.len() >= 2
-            && node
-                .path
-                .segments
-                .first()
-                .is_some_and(|s| s.ident == "Self");
-        if !is_self_projection {
+        // `Self::Assoc` projections name the enclosing type's own associated
+        // type, not an external type — skip the leaf (but still recurse for any
+        // generic arguments). See `is_self_projection_path`.
+        if !is_self_projection_path(node) {
             if let Some(seg) = node.path.segments.last() {
                 self.record(seg.ident.to_string());
             }
@@ -552,15 +539,27 @@ impl<'ast> Visit<'ast> for RefVisitor<'_> {
     }
 }
 
+/// True when `tp` is a `Self::Assoc`-style projection: an unqualified path of
+/// at least 2 segments headed by a literal `Self`. The single home for this rule,
+/// shared by `RefVisitor` (which drops it from `references`) and the function
+/// catalog's `single_type_ref` (which drops it from `type_ref`/`return_ref`) so
+/// the two can't disagree.
+///
+/// The check is deliberately limited to a literal `Self` head: a generic
+/// projection like `T::Output` is rare, whereas widening the guard to "head is
+/// any in-scope generic" would false-drop a real external path whose head
+/// merely shares a name with a generic param (`serde::Value` under
+/// `trait X<serde>`). A qualified external path (`crate::Type`) is kept by its
+/// last segment.
+pub(crate) fn is_self_projection_path(tp: &syn::TypePath) -> bool {
+    tp.qself.is_none()
+        && tp.path.segments.len() >= 2
+        && tp.path.segments.first().is_some_and(|s| s.ident == "Self")
+}
+
 pub(crate) fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Reference> {
-    let mut v = RefVisitor {
-        exclude,
-        found: BTreeSet::new(),
-    };
-    for t in types {
-        v.visit_type(t);
-    }
-    v.found.into_iter().map(Reference::type_ref).collect()
+    // No generics to walk -> identical to a bounds walk over an empty set.
+    collect_refs_with_bounds(types, &syn::Generics::default(), exclude)
 }
 
 /// Like [`collect_refs`], but also walks the inline trait bounds on `generics`'
