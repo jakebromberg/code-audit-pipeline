@@ -172,6 +172,10 @@ fn is_test_tagged_for_cfg_test_functions() {
     assert_eq!(find(&cat, "item_level_test_fn")["is_test"], true);
     // Fn nested in a `#[cfg(test)]` module -> true.
     assert_eq!(find(&cat, "nested_test_fn")["is_test"], true);
+    // Method-level `#[cfg(test)]` inside a production impl -> only that method
+    // is test-only; its sibling stays production.
+    assert_eq!(find(&cat, "MixedImpl.prod_method")["is_test"], false);
+    assert_eq!(find(&cat, "MixedImpl.test_method")["is_test"], true);
 }
 
 #[test]

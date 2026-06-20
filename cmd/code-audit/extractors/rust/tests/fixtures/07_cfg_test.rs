@@ -76,3 +76,19 @@ pub struct AnyTestOrFeature {
 pub struct AllTestAndUnix {
     pub b: u32,
 }
+
+/// A production type whose impl carries a `#[cfg(test)]` METHOD directly (not a
+/// `#[cfg(test)]` impl or mod). The function catalog must tag that one method
+/// `is_test` true while the sibling production method stays false.
+pub struct MixedImpl;
+
+impl MixedImpl {
+    pub fn prod_method(&self) -> u32 {
+        1
+    }
+
+    #[cfg(test)]
+    pub fn test_method(&self) -> u32 {
+        2
+    }
+}
