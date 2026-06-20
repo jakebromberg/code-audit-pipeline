@@ -563,6 +563,26 @@ pub(crate) fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> V
     v.found.into_iter().map(Reference::type_ref).collect()
 }
 
+/// Like [`collect_refs`], but also walks the inline trait bounds on `generics`'
+/// type parameters (`<T: Bound>` -> `Bound`). The function catalog uses this so
+/// a callable constrained by a domain trait via an inline bound records it, the
+/// same way `trait_entry` does for trait-method signatures.
+pub(crate) fn collect_refs_with_bounds(
+    types: &[&syn::Type],
+    generics: &syn::Generics,
+    exclude: &HashSet<String>,
+) -> Vec<Reference> {
+    let mut v = RefVisitor {
+        exclude,
+        found: BTreeSet::new(),
+    };
+    for t in types {
+        v.visit_type(t);
+    }
+    visit_generic_bounds(&mut v, generics);
+    v.found.into_iter().map(Reference::type_ref).collect()
+}
+
 /// Drive `v` over the trait-bound paths on `generics`' type parameters so
 /// `<T: Bound>` inline bounds become references (the same usage edges that
 /// `dyn Bound` / `impl Bound` in type positions already produce). `where`-clause

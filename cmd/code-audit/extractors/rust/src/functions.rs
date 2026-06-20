@@ -14,9 +14,11 @@
 use std::collections::HashSet;
 
 use quote::ToTokens;
+use syn::ext::IdentExt;
 
 use crate::extract::{
-    attrs_have_cfg_test, collect_refs, generic_names, generic_set, is_pub, type_base_name, FileCtx,
+    attrs_have_cfg_test, collect_refs, collect_refs_with_bounds, generic_names, generic_set,
+    is_pub, type_base_name, FileCtx,
 };
 use crate::func_model::{FnEntry, Param};
 use crate::util;
@@ -47,10 +49,15 @@ fn walk_items(
     entries: &mut Vec<FnEntry>,
 ) {
     for item in items {
+        // `#[cfg(test)]` on the item itself counts the same as nesting it inside
+        // a `#[cfg(test)] mod` — a test-only callable written beside production
+        // code (`#[cfg(test)] fn helper`) must still be tagged. Mirrors the type
+        // extractor's per-item handling in `extract::process_items`.
+        let item_test = |attrs: &[syn::Attribute]| in_cfg_test || attrs_have_cfg_test(attrs);
         match item {
-            syn::Item::Fn(f) => entries.push(free_fn(f, ctx, in_cfg_test, min)),
-            syn::Item::Impl(i) => impl_methods(i, ctx, in_cfg_test, min, entries),
-            syn::Item::Trait(t) => trait_methods(t, ctx, in_cfg_test, min, entries),
+            syn::Item::Fn(f) => entries.push(free_fn(f, ctx, item_test(&f.attrs), min)),
+            syn::Item::Impl(i) => impl_methods(i, ctx, item_test(&i.attrs), min, entries),
+            syn::Item::Trait(t) => trait_methods(t, ctx, item_test(&t.attrs), min, entries),
             syn::Item::Mod(m) => {
                 if let Some((_, inner)) = &m.content {
                     let nested_test = in_cfg_test || attrs_have_cfg_test(&m.attrs);
@@ -85,17 +92,18 @@ fn impl_methods(
     entries: &mut Vec<FnEntry>,
 ) {
     let self_base = type_base_name(&i.self_ty);
-    // Trait-impl methods carry `Inherited` visibility in syn but are reachable
-    // wherever the trait + type are in scope; conservatively mark them exported
-    // so `public-api-leaks.jq` never under-reports (documented approximation).
-    let is_trait_impl = i.trait_.is_some();
     for it in &i.items {
         if let syn::ImplItem::Fn(m) = it {
             let name = match &self_base {
                 Some(t) => format!("{t}.{}", m.sig.ident),
                 None => m.sig.ident.to_string(),
             };
-            let exported = if is_trait_impl { true } else { is_pub(&m.vis) };
+            // `exported` reflects the method's own declared visibility. Trait-impl
+            // methods carry `Inherited` vis (Rust forbids `pub` on them), so they
+            // report exported=false; reachability through a public trait is not
+            // modeled (no method-aware consumer exists — public-api-leaks.jq skips
+            // method rows). This keeps `exported` honest rather than emitting
+            // exported=true for a private-trait impl on a private type.
             entries.push(build_entry(BuildParts {
                 ctx,
                 in_cfg_test,
@@ -106,7 +114,7 @@ fn impl_methods(
                 sig: &m.sig,
                 outer_generics: Some(&i.generics),
                 block: Some(&m.block),
-                exported,
+                exported: is_pub(&m.vis),
             }));
         }
     }
@@ -188,7 +196,10 @@ fn build_entry(p: BuildParts) -> FnEntry {
         syn::ReturnType::Default => None,
     };
 
-    let references = collect_refs(&sig_types, &exclude);
+    // Walk the param/return types *and* the fn's own inline generic bounds
+    // (`fn f<T: Trait>` -> Trait), matching the type catalog's trait-method
+    // handling so a domain trait reached only through a bound isn't dropped.
+    let references = collect_refs_with_bounds(&sig_types, &p.sig.generics, &exclude);
     let references_count = references.len();
     let body = p.block.map(|b| body_fields(b, p.min)).unwrap_or_default();
 
@@ -222,19 +233,43 @@ fn build_entry(p: BuildParts) -> FnEntry {
 }
 
 /// Single-identifier type reference, or `None` for primitives, in-scope
-/// generics, and anonymous shapes (tuples, closures, `impl Trait`).
+/// generics, anonymous shapes (tuples, closures, `impl Trait`), and `Self::Assoc`
+/// projections.
 fn single_type_ref(ty: &syn::Type, exclude: &HashSet<String>) -> Option<String> {
+    // A `Self::Assoc` projection names the enclosing type's own associated type,
+    // not an external type called `Assoc` — mirror `RefVisitor`'s guard so this
+    // field agrees with `references` (which correctly drops it) rather than
+    // emitting a phantom identifier.
+    if is_self_projection(ty) {
+        return None;
+    }
     match type_base_name(ty) {
         Some(n) if !util::is_builtin_type(&n) && !exclude.contains(&n) => Some(n),
         _ => None,
     }
 }
 
+/// True when `ty` (looking through references, like `type_base_name`) is a
+/// `Self::Assoc`-style projection: an unqualified path of >= 2 segments headed
+/// by a literal `Self`. Matches `RefVisitor::visit_type_path`'s rule.
+fn is_self_projection(ty: &syn::Type) -> bool {
+    match ty {
+        syn::Type::Reference(r) => is_self_projection(&r.elem),
+        syn::Type::Path(tp) => {
+            tp.qself.is_none()
+                && tp.path.segments.len() >= 2
+                && tp.path.segments.first().is_some_and(|s| s.ident == "Self")
+        }
+        _ => false,
+    }
+}
+
 /// Param name from its pattern: the bound identifier for the common case,
-/// else a normalized token rendering of the pattern (e.g. `(a, b)`).
+/// else a normalized token rendering of the pattern (e.g. `(a, b)`). Raw
+/// identifiers are unraw'd so a `r#type` param surfaces as the semantic `type`.
 fn pat_name(pat: &syn::Pat) -> String {
     match pat {
-        syn::Pat::Ident(pi) => pi.ident.to_string(),
+        syn::Pat::Ident(pi) => pi.ident.unraw().to_string(),
         other => util::normalize_token_string(&other.to_token_stream().to_string()),
     }
 }

@@ -3,11 +3,35 @@ pub struct RealType {
     pub x: u32,
 }
 
+/// Production free fn — the function catalog's `is_test` must be false.
+pub fn real_helper(x: u32) -> u32 {
+    let a = x + 1;
+    let b = a + 1;
+    b
+}
+
+/// Item-level `#[cfg(test)]` on a FREE FN — `is_test` must be true. Regression
+/// for the function walker only consulting `mod` attrs (the type catalog tags
+/// the sibling item-level `#[cfg(test)]` struct; the func catalog must match).
+#[cfg(test)]
+pub fn item_level_test_fn() -> u32 {
+    let a = 1;
+    let b = a + 1;
+    b
+}
+
 #[cfg(test)]
 mod tests {
     /// Declared inside a `#[cfg(test)]` module — `is_test` must be true.
     pub struct TestOnly {
         pub y: u32,
+    }
+
+    /// Fn inside a `#[cfg(test)]` module — `is_test` must be true (nested path).
+    pub fn nested_test_fn() -> u32 {
+        let a = 1;
+        let b = a + 1;
+        b
     }
 }
 
