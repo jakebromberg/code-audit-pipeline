@@ -14,6 +14,9 @@ pub trait Projector {
     /// type, not an external type called `Output`. `return_ref` must be null and
     /// `references` must not contain `Output`.
     fn project(&self, seed: usize) -> Self::Output;
+    /// The qualified form `<Self as Projector>::Output` — also a Self-projection,
+    /// so it too must NOT surface `Output` as a phantom reference.
+    fn project_qualified(&self) -> <Self as Projector>::Output;
 }
 
 trait PrivateTrait {
@@ -48,9 +51,10 @@ impl PublicType {
 }
 
 /// Trait impl over a PRIVATE trait + PRIVATE type. syn gives these methods
-/// `Inherited` visibility, but they're reachable wherever the trait + type are
-/// in scope, so the extractor marks them exported = true (the documented
-/// over-report that keeps `public-api-leaks.jq` from under-reporting).
+/// `Inherited` visibility (Rust forbids `pub` on trait-impl methods), so the
+/// extractor reports `exported = false` — honest about the declaration rather
+/// than over-reporting `exported = true` for a method nobody outside the module
+/// can name.
 impl PrivateTrait for PrivateType {
     fn secret(&self) -> usize {
         let a = 1;

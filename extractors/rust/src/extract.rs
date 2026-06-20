@@ -539,22 +539,39 @@ impl<'ast> Visit<'ast> for RefVisitor<'_> {
     }
 }
 
-/// True when `tp` is a `Self::Assoc`-style projection: an unqualified path of
-/// at least 2 segments headed by a literal `Self`. The single home for this rule,
-/// shared by `RefVisitor` (which drops it from `references`) and the function
-/// catalog's `single_type_ref` (which drops it from `type_ref`/`return_ref`) so
-/// the two can't disagree.
+/// True when `tp` is a `Self::Assoc` projection — onto the enclosing type's own
+/// associated type, not an external type. Both spellings are covered: the
+/// unqualified `Self::Assoc` (a path of at least 2 segments headed by a literal
+/// `Self`) and the disambiguated `<Self as Trait>::Assoc` (a `qself` rooted at
+/// `Self`). The single home for this rule, shared by `RefVisitor` (which drops
+/// it from `references`) and the function catalog's `single_type_ref` (which
+/// drops it from `type_ref`/`return_ref`) so the two can't disagree.
 ///
-/// The check is deliberately limited to a literal `Self` head: a generic
-/// projection like `T::Output` is rare, whereas widening the guard to "head is
-/// any in-scope generic" would false-drop a real external path whose head
-/// merely shares a name with a generic param (`serde::Value` under
-/// `trait X<serde>`). A qualified external path (`crate::Type`) is kept by its
-/// last segment.
+/// The check is deliberately limited to a literal `Self` root: a generic
+/// projection like `T::Output` / `<T as Trait>::Output` is rare, whereas
+/// widening the guard to "root is any in-scope generic" would false-drop a real
+/// external path whose head merely shares a name with a generic param
+/// (`serde::Value` under `trait X<serde>`). A qualified external path
+/// (`crate::Type`) is kept by its last segment.
 pub(crate) fn is_self_projection_path(tp: &syn::TypePath) -> bool {
-    tp.qself.is_none()
-        && tp.path.segments.len() >= 2
-        && tp.path.segments.first().is_some_and(|s| s.ident == "Self")
+    match &tp.qself {
+        // `<Self as Trait>::Assoc` — a projection rooted at the `qself` type.
+        Some(qself) => type_is_bare_self(&qself.ty),
+        // `Self::Assoc` — unqualified, at least 2 segments headed by `Self`.
+        None => {
+            tp.path.segments.len() >= 2
+                && tp.path.segments.first().is_some_and(|s| s.ident == "Self")
+        }
+    }
+}
+
+/// True when `ty` is exactly the bare `Self` type (no qself, single unqualified
+/// `Self` segment) — the root of a `<Self as Trait>::Assoc` projection.
+fn type_is_bare_self(ty: &syn::Type) -> bool {
+    matches!(ty, syn::Type::Path(tp)
+        if tp.qself.is_none()
+            && tp.path.segments.len() == 1
+            && tp.path.segments[0].ident == "Self")
 }
 
 pub(crate) fn collect_refs(types: &[&syn::Type], exclude: &HashSet<String>) -> Vec<Reference> {
