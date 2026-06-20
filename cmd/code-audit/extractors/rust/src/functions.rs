@@ -98,6 +98,9 @@ fn impl_methods(
                 Some(t) => format!("{t}.{}", m.sig.ident),
                 None => m.sig.ident.to_string(),
             };
+            // A `#[cfg(test)]` on the method itself (inside an otherwise-
+            // production impl) tags it test-only, same as a `#[cfg(test)]` impl.
+            let method_test = in_cfg_test || attrs_have_cfg_test(&m.attrs);
             // `exported` reflects the method's own declared visibility. Trait-impl
             // methods carry `Inherited` vis (Rust forbids `pub` on them), so they
             // report exported=false; reachability through a public trait is not
@@ -106,7 +109,7 @@ fn impl_methods(
             // exported=true for a private-trait impl on a private type.
             entries.push(build_entry(BuildParts {
                 ctx,
-                in_cfg_test,
+                in_cfg_test: method_test,
                 min,
                 kind: "method",
                 name,
@@ -131,9 +134,10 @@ fn trait_methods(
     let exported = is_pub(&t.vis);
     for it in &t.items {
         if let syn::TraitItem::Fn(m) = it {
+            let method_test = in_cfg_test || attrs_have_cfg_test(&m.attrs);
             entries.push(build_entry(BuildParts {
                 ctx,
-                in_cfg_test,
+                in_cfg_test: method_test,
                 min,
                 kind: "method",
                 name: format!("{}.{}", t.ident, m.sig.ident),
