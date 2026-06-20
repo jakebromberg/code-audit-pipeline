@@ -72,20 +72,12 @@ pub fn run(args: &Args) -> i32 {
             .cmp(&(&b.package, &b.file, b.line, &b.name, &b.kind))
     });
 
-    let now_secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
+    let now_secs = now_unix_secs();
 
     let total = entries.len();
     let catalog = Catalog {
         schema_version: util::SCHEMA_VERSION,
-        extractor: ExtractorBlock {
-            language: util::LANGUAGE,
-            name: util::EXTRACTOR_NAME,
-            version: util::EXTRACTOR_VERSION,
-            source_sha: util::source_sha(),
-        },
+        extractor: extractor_block(util::EXTRACTOR_NAME),
         fingerprint_v: util::FINGERPRINT_V,
         generated_at: util::unix_to_iso8601(now_secs),
         entries,
@@ -169,20 +161,12 @@ pub fn run_func(args: &Args) -> i32 {
             .cmp(&(&b.package, &b.file, b.line, &b.name, &b.kind))
     });
 
-    let now_secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
+    let now_secs = now_unix_secs();
 
     let total = entries.len();
     let catalog = FnCatalog {
         schema_version: util::SCHEMA_VERSION,
-        extractor: ExtractorBlock {
-            language: util::LANGUAGE,
-            name: util::FUNCTION_EXTRACTOR_NAME,
-            version: util::EXTRACTOR_VERSION,
-            source_sha: util::source_sha(),
-        },
+        extractor: extractor_block(util::FUNCTION_EXTRACTOR_NAME),
         fingerprint_v: util::FINGERPRINT_V,
         generated_at: util::unix_to_iso8601(now_secs),
         entries,
@@ -255,6 +239,26 @@ fn read_touched(path: Option<&Path>) -> HashSet<String> {
 
 fn canonical(p: &Path) -> PathBuf {
     std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
+}
+
+/// Seconds since the Unix epoch (0 if the clock is before it). Shared by both
+/// catalogs so their `generated_at` derivation can't drift.
+fn now_unix_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// The `extractor` provenance block, identical across catalogs except the
+/// catalog-kind `name`.
+fn extractor_block(name: &'static str) -> ExtractorBlock {
+    ExtractorBlock {
+        language: util::LANGUAGE,
+        name,
+        version: util::EXTRACTOR_VERSION,
+        source_sha: util::source_sha(),
+    }
 }
 
 /// Path of `file` relative to `root`, with `/` separators.

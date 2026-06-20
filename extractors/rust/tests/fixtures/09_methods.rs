@@ -1,11 +1,20 @@
 //! Methods and trait methods, exercising the `exported` rules:
 //!   - inherent impl method    -> exported = method visibility
-//!   - trait-impl method       -> exported = true (documented over-report)
+//!   - trait-impl method       -> exported = method visibility (Inherited => false)
 //!   - trait default method    -> exported = enclosing trait visibility
 //!   - signature-only trait fn -> null body fields
+//! plus a `Self::Assoc` projection that must NOT surface as a phantom type ref.
 
 struct PrivateType;
 pub struct PublicType;
+
+pub trait Projector {
+    type Output;
+    /// Returns `Self::Output` — a projection onto this trait's own associated
+    /// type, not an external type called `Output`. `return_ref` must be null and
+    /// `references` must not contain `Output`.
+    fn project(&self, seed: usize) -> Self::Output;
+}
 
 trait PrivateTrait {
     fn secret(&self) -> usize;

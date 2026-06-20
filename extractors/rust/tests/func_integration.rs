@@ -118,12 +118,16 @@ fn inherent_method_visibility() {
 }
 
 #[test]
-fn trait_impl_method_is_over_reported_exported() {
+fn trait_impl_method_exported_is_declared_visibility() {
     let cat = run_func();
-    // Private trait + private type, yet marked exported (documented approximation).
+    // Trait-impl methods carry `Inherited` visibility (Rust forbids `pub` on
+    // them), so `exported` is false — honest about the declaration rather than
+    // an over-report. `public-api-leaks.jq` skips method rows, so nothing relies
+    // on the old `true`; this avoids claiming a private-trait/private-type method
+    // is exported.
     let m = find(&cat, "PrivateType.secret");
     assert_eq!(m["kind"], "method");
-    assert_eq!(m["exported"], true);
+    assert_eq!(m["exported"], false);
     assert!(m["body_hash"].is_string());
 }
 
@@ -152,6 +156,54 @@ fn duplicate_bodies_share_hash() {
     assert_eq!(a["body_hash"], b["body_hash"]);
     // Distinct identity despite the shared body.
     assert_ne!(a["symbol_id"], b["symbol_id"]);
+}
+
+#[test]
+fn is_test_tagged_for_cfg_test_functions() {
+    let cat = run_func();
+    // Production free fn -> false.
+    assert_eq!(find(&cat, "real_helper")["is_test"], false);
+    // Item-level `#[cfg(test)]` on a free fn -> true (regression: the walker
+    // must consult each item's own attrs, not only `mod` attrs).
+    assert_eq!(find(&cat, "item_level_test_fn")["is_test"], true);
+    // Fn nested in a `#[cfg(test)]` module -> true.
+    assert_eq!(find(&cat, "nested_test_fn")["is_test"], true);
+}
+
+#[test]
+fn generated_flag_propagates_to_functions() {
+    let cat = run_func();
+    assert_eq!(find(&cat, "generated_fn")["generated"], true);
+}
+
+#[test]
+fn inline_generic_bound_is_recorded_in_references() {
+    let cat = run_func();
+    let f = find(&cat, "run_with_handler");
+    assert_eq!(f["generics"], "H");
+    // `DomainHandler` appears only as the bound on `H`, never in a param/return
+    // type position — it must still surface as a reference.
+    assert_eq!(
+        f["references"],
+        json!([{"name": "DomainHandler", "kind": "type-ref"}])
+    );
+}
+
+#[test]
+fn self_projection_is_not_a_phantom_reference() {
+    let cat = run_func();
+    let p = find(&cat, "Projector.project");
+    // `Self::Output` is the trait's own associated type, not an external ref.
+    assert!(p["return_ref"].is_null());
+    assert_eq!(p["references"], json!([]));
+}
+
+#[test]
+fn raw_identifier_param_name_is_unrawed() {
+    let cat = run_func();
+    let f = find(&cat, "raw_param");
+    assert_eq!(f["param_names"], json!(["type"]));
+    assert_eq!(f["params"][0]["name"], "type");
 }
 
 #[test]

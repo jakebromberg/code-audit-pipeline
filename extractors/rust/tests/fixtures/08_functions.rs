@@ -1,10 +1,34 @@
 //! Free functions: plain (long body), async, generic (T excluded from refs),
-//! and a short body that gates body fields to null.
+//! and a short body that gates body fields to null. Also exercises inline
+//! generic-bound references and raw-identifier parameter names.
 
 use std::collections::HashMap;
 
 pub struct Widget;
 pub struct Gadget;
+
+/// A domain trait used only as an inline bound below.
+pub trait DomainHandler {}
+
+/// Inline generic BOUND -> `DomainHandler` must appear in `references` even
+/// though it occurs only on the type parameter, never in a param/return type.
+/// `H` (the param's type) is excluded as a generic.
+pub fn run_with_handler<H: DomainHandler>(handler: H) {
+    let started = true;
+    let count = 0;
+    let _ = handler;
+    let _ = started;
+    let _ = count;
+}
+
+/// Raw-identifier parameter -> `param_names` must be the semantic `type`, not
+/// the lexical `r#type`.
+pub fn raw_param(r#type: Widget) -> Widget {
+    let held = r#type;
+    let tag = 1;
+    let _ = tag;
+    held
+}
 
 /// Long body (>= 3 distinct normalized lines) -> body fields populated.
 /// Params reference Widget (kept) and usize (builtin, dropped); returns Gadget.
