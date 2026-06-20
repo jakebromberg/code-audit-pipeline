@@ -196,10 +196,14 @@ fn inline_generic_bound_is_recorded_in_references() {
 #[test]
 fn self_projection_is_not_a_phantom_reference() {
     let cat = run_func();
-    let p = find(&cat, "Projector.project");
     // `Self::Output` is the trait's own associated type, not an external ref.
+    let p = find(&cat, "Projector.project");
     assert!(p["return_ref"].is_null());
     assert_eq!(p["references"], json!([]));
+    // The qualified form `<Self as Projector>::Output` must also be dropped.
+    let q = find(&cat, "Projector.project_qualified");
+    assert!(q["return_ref"].is_null());
+    assert_eq!(q["references"], json!([]));
 }
 
 #[test]
