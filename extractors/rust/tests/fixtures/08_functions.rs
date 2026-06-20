@@ -62,6 +62,11 @@ pub fn tiny() -> usize {
     1
 }
 
+/// Empty body -> body fields stay null even at `--min-body-lines 0` (an empty
+/// body has no duplication signal; the guard stops every empty fn clustering on
+/// the sha256 of the empty string).
+pub fn truly_empty() {}
+
 /// Private free fn -> exported = false.
 fn private_helper(map: HashMap<String, usize>) -> usize {
     map.len()

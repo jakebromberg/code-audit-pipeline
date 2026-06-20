@@ -573,7 +573,7 @@ The function catalog is a top-level **wrapper object** (schema v2.0) carrying sc
         }
       ],
       "return_ref": "AuthenticationData",          // single ident or null
-      "references": [                              // sorted union of params[].type_refs + return_ref
+      "references": [                              // sorted union of params[].type_refs + return_ref + own generic-bound trait names
         { "name": "AuthenticationData", "kind": "type-ref" },
         { "name": "BetterAuthSession",  "kind": "type-ref" }
       ],
@@ -591,7 +591,7 @@ The function catalog is a top-level **wrapper object** (schema v2.0) carrying sc
 
 **Body-fields gating.** Functions whose normalized body has fewer than `--min-body-lines` (default 3) lines emit a row with `body_hash` / `body_lines` / `body_line_count` / `body_length` all `null`. Body-level cluster queries (`function-duplicates.jq`, `generic-function-candidates.jq`, `default-impl-candidates.jq`) early-filter with `select(.body_hash != null)`. Signature-level queries (`public-api-leaks.jq`) consume rows regardless of body presence — exported one-liner functions still need leak detection.
 
-**Signature-level fields.** `type_ref` is the single-identifier form of a `TypeReferenceNode`; `null` for primitives, unions, anonymous inline shapes. `type_refs` is the full deduped set of references inside the param's type (handles `Foo | Bar`, generics expansion). The function-level `references` is the sorted-deduped union of all `params[].type_refs` plus the `return_ref` identifier (when non-null), with generics-bound names filtered out — so `function f<T>(x: T): T` records zero refs, not three. Resolution semantics match the type-catalog's `references[]`: name-only, unqualified, resolved by downstream queries against the type-catalog index.
+**Signature-level fields.** `type_ref` is the single-identifier form of a `TypeReferenceNode`; `null` for primitives, unions, anonymous inline shapes. `type_refs` is the full deduped set of references inside the param's type (handles `Foo | Bar`, generics expansion). The function-level `references` is the sorted-deduped union of all `params[].type_refs`, the `return_ref` identifier (when non-null), **and** the trait names named in the callable's own generic-parameter bounds (`<T: Encoder>` → `Encoder`; TypeScript constraints and Rust inline bounds alike) — with the generic *parameter* names themselves filtered out. So `function f<T>(x: T): T` records zero refs, but `function f<T: Encoder>(x: T): T` records `Encoder`. Because bound trait names need not appear in any `params[].type_refs`, `references` is a *superset* of `union(params[].type_refs) ∪ {return_ref}`, not exactly that union. Resolution semantics match the type-catalog's `references[]`: name-only, unqualified, resolved by downstream queries against the type-catalog index.
 
 **Overloaded signatures.** TypeScript allows multiple declaration heads sharing one implementation body. Each head emits its own row with `signature_index` 0..N (0 = first declared head). The implementation head is the one with non-null `body_hash`. Overload-naive queries can ignore `signature_index`; overload-aware queries can dedupe by `(name, package, file)`.
 
