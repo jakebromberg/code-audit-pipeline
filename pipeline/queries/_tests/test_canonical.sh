@@ -242,7 +242,10 @@ CONF_FIXTURE='[
   {"name":"CachedFeed","kind":"type-alias-object","conforms_to":["FeedRepresentable"]},
   {"name":"Dup","kind":"type-alias-object","conforms_to":["P"]},
   {"name":"Dup","kind":"extension","conforms_to":["P","Q"]},
-  {"name":"Plain","kind":"type-alias-object"}
+  {"name":"Plain","kind":"type-alias-object"},
+  {"name":"Facade","kind":"type-alias-object","conforms_to":["Sendable"]},
+  {"name":"Facade","kind":"interface","conforms_to":["Renderable"]},
+  {"name":"PureProto","kind":"interface","conforms_to":["BaseProto"]}
 ]'
 
 assert_eq "merges conforms_to across same-name records (decl + extension)" \
@@ -260,6 +263,17 @@ assert_eq "duplicate protocol across decl + extension de-duplicates" \
 assert_eq "record without conforms_to is absent from the index" \
   'null' \
   "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .Plain // null | tojson')"
+
+# An interface's conforms_to is protocol INHERITANCE, not concrete
+# conformance — merging it would credit a same-name concrete type with the
+# protocol's parents and falsely demote pairs involving that type.
+assert_eq "interface records' inheritance is NOT merged into a same-name type" \
+  '["Sendable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .Facade | tojson')"
+
+assert_eq "a name declared only as an interface is absent from the index" \
+  'null' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .PureProto // null | tojson')"
 
 echo "=== is_already_abstracted_cluster ==="
 # Hand-crafted index: MusicService is a non-trivial protocol (3 fields);

@@ -10,11 +10,17 @@
 #                -f pipeline/queries/shared-interface-candidates.jq catalog.json
 #
 # This is the third shape relationship, distinct from the two the suite already
-# names, and the residue pattern is what routes each pair to its lane:
+# names, and the residue pattern is what picks each pair's recommendation:
 #
-#   near-duplicates(-any)   jacc ≥ threshold, tiny residue   → merge/dedupe
+#   near-duplicates(-any)   jacc ≥ threshold                 → merge/dedupe
 #   subset-pairs            one-sided residue (A ⊂ B)        → composition / Pick / lift
 #   THIS QUERY              mutual residue, big intersection → shared interface, keep both
+#
+# The lanes are lenses, not a partition: a mutual-residue pair with jacc in
+# [threshold, 0.9) appears BOTH here and in near-duplicates(-any), which has
+# no residue gate. When a pair double-reports, the mutual residue is the
+# tiebreaker — it argues for extract-interface over merge even when the
+# similarity clears the merge bar.
 #
 # Canonical instance (wxyc-ios-64): `Playcut` (flowsheet entry) and
 # `LikedSongSnapshot` (persisted favorite) share ~13 display fields but each
@@ -25,7 +31,7 @@
 #
 # Gates (and why):
 #   * intersection ≥ $min_intersection — ABSOLUTE size, not just Jaccard: a
-#     13-field shared surface is a strong signal even at 59% similarity.
+#     13-field shared surface is a strong signal even at 50% similarity.
 #   * mutual residue — both sides keep fields the other lacks. One-sided
 #     residue is subset-pairs' lane; no residue is exact-duplicates'.
 #   * 0.25 ≤ jacc < 0.9 — above 0.9 the right recommendation is a merge
@@ -53,7 +59,11 @@
 #     QualityOptimizationLoop) and PlaycutMetadata(streaming: StreamingLinks).
 #     Forwarding-accessor facades WITHOUT a stored reference still slip
 #     through — catching those needs a stored-vs-computed flag in
-#     fields_structured (extractor extension, not yet emitted).
+#     fields_structured (extractor extension, not yet emitted). Known
+#     false-drop class in the other direction: a genuine parallel model that
+#     merely holds a typed REFERENCE to its sibling (Album.featuredTrack:
+#     Track) is indistinguishable from a wrapper here and is dropped;
+#     collection references (tracks:[Track]) do not trigger the gate.
 #
 # Slot comparison is TYPE-AWARE where the flat `fields[]` strings allow:
 # each "name:Type" entry splits at the first ':' (function-signature members
@@ -104,43 +114,44 @@ def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "
 . as $catalog
 | ($catalog | protocols_index) as $protocols_idx
 | ($catalog | conformance_index) as $conf_idx
+# Parse each candidate's flat fields ONCE here — "name:Type" → {n, t}; name
+# drops a trailing '?' (TS optional marker), type keeps everything after the
+# first ':' verbatim. The O(n²) pair loop below only reads the precomputed
+# projections (slots, names, name→type map).
 | [ entries[]
     | select((.generated // false) != true)
     | select(.kind == "type-alias-object" or .kind == "interface" or .kind == "zod-object")
     # Strictly MORE fields than the intersection floor: mutual residue needs
     # at least one leftover per side, so smaller rows can never qualify.
     | select(.fields != null and (.fields | length) > $min_intersection)
+    | {rec: .,
+       slots: (.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n))}
+    | .names = (.slots | map(.n))
+    | .types = (.slots | map({key: .n, value: .t}) | from_entries)
   ] as $bs
 | [
     range(0; $bs | length) as $i
     | range($i + 1; $bs | length) as $j
-    | $bs[$i] as $a | $bs[$j] as $b
+    | $bs[$i] as $A | $bs[$j] as $B
+    | $A.rec as $a | $B.rec as $b
     | select(($a.kind == "interface" and $b.kind == "interface") | not)
     | select($a.name != $b.name)
-    # Parse "name:Type" → {n, t}; name drops a trailing '?' (TS optional
-    # marker), type keeps everything after the first ':' verbatim.
-    | ($a.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n)) as $aslots
-    | ($b.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n)) as $bslots
-    | ($aslots | map(.n)) as $af
-    | ($bslots | map(.n)) as $bf
-    | ([$af[] | select(. as $x | $bf | index($x) != null)]) as $shared_names
+    | $A.names as $af
+    | $B.names as $bf
+    | ([$af[] | . as $x | select($B.types | has($x))]) as $shared_names
     | ($shared_names | length) as $ic
     | select($ic >= $min_intersection)
     # Mutual residue: BOTH sides must keep fields the other lacks.
     | select(($af | length) > $ic and ($bf | length) > $ic)
-    | ($af + $bf | unique | length) as $u
+    # Names are unique per side, so |A ∪ B| = |A| + |B| − |A ∩ B|.
+    | (($af | length) + ($bf | length) - $ic) as $u
     | ($ic / $u) as $jacc
     | select($jacc >= 0.25 and $jacc < 0.9)
     # Containment: either side holding a field typed as the other side marks
     # the pair as wrapper-over-composition, not parallel models.
-    | select((any($aslots[]; (.t | bare_type_name) == $b.name)
-              or any($bslots[]; (.t | bare_type_name) == $a.name)) | not)
-    | ($bslots | map({key: .n, value: .t}) | from_entries) as $btypes
-    | [ $shared_names[] | . as $n
-        | {name: $n,
-           left_type: ($aslots | map(select(.n == $n)) | .[0].t),
-           right_type: $btypes[$n]}
-      ] as $matched
+    | select((any($A.slots[]; (.t | bare_type_name) == $b.name)
+              or any($B.slots[]; (.t | bare_type_name) == $a.name)) | not)
+    | [ $shared_names[] | {name: ., left_type: $A.types[.], right_type: $B.types[.]} ] as $matched
     | ([$matched[] | select(.left_type == .right_type)] | sort_by(.name)) as $agreeing
     # An all-conflicting intersection is an authored-override vs resolved-value
     # pair: no requirement candidates, so no protocol to extract.
@@ -152,13 +163,17 @@ def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "
         intersection: $ic,
         union: $u,
         jacc: $jacc,
-        demoted: ([($a + {conforms_to: ($conf_idx[$a.name] // [])}),
-                   ($b + {conforms_to: ($conf_idx[$b.name] // [])})]
+        # Union the record's own conforms_to into the lookup: the index
+        # excludes interface records (protocol inheritance ≠ conformance),
+        # so a mixed concrete↔interface pair keeps the interface side's
+        # inheritance signal from its own record.
+        demoted: ([($a + {conforms_to: ((($conf_idx[$a.name] // []) + ($a.conforms_to // [])) | unique)}),
+                   ($b + {conforms_to: ((($conf_idx[$b.name] // []) + ($b.conforms_to // [])) | unique)})]
                   | is_already_abstracted_cluster($protocols_idx)),
         shared_slots: ($agreeing | map({name, type: .left_type})),
         conflicting_slots: ([$matched[] | select(.left_type != .right_type)] | sort_by(.name)),
-        left_only:  ([$af[] | select(. as $x | ($bf | index($x)) == null)] | sort),
-        right_only: ([$bf[] | select(. as $x | ($af | index($x)) == null)] | sort),
+        left_only:  ([$af[] | . as $x | select(($B.types | has($x)) | not)] | sort),
+        right_only: ([$bf[] | . as $x | select(($A.types | has($x)) | not)] | sort),
         left: $a, right: $b,
         left_fields: ($af | sort), right_fields: ($bf | sort)
       }
