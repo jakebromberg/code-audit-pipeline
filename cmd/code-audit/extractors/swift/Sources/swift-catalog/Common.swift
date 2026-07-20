@@ -166,6 +166,39 @@ struct FunctionRecord: Encodable {
     var bodyLines: [String]
 }
 
+/// One literal-catalog record (occurrence catalog, not a declaration catalog —
+/// no `name`/`kind`/`is_test`/`language`; see the contract's literal-catalog
+/// section for the exemption rationale). `form` discriminates the two v1
+/// emission positions: `"binding"` (a `let`/`var` initializer that is a bare
+/// numeric literal) carries `bindingName`/`isStatic`/`access`; `"argument"`
+/// (a numeric literal passed directly to a function call) carries
+/// `callee`/`argLabel`. Fields of the other form stay nil and are omitted
+/// from the JSON.
+///
+/// `value` is the literal verbatim as written (prefix minus folded in:
+/// `-4` not `4`). `valueNorm` is the cross-spelling join key: underscores
+/// stripped, hex/octal/binary re-based to decimal, floats trimmed of a
+/// trailing `.0` and scientific notation expanded — so `6.0`, `0x6`, and
+/// `6` all normalize to `"6"`. `line` is the literal's line, not the
+/// enclosing declaration's.
+struct LiteralRecord: Encodable {
+    var value: String
+    var valueNorm: String
+    var valueKind: String
+    var form: String
+    var package: String
+    var file: String
+    var line: Int
+    var generated: Bool
+    var bindingName: String?
+    var isStatic: Bool?
+    var access: String?
+    var callee: String?
+    var argLabel: String?
+    var enclosingType: String?
+    var enclosingCallable: String?
+}
+
 let catalogJSONEncoder: JSONEncoder = {
     let encoder = JSONEncoder()
     encoder.keyEncodingStrategy = .convertToSnakeCase
