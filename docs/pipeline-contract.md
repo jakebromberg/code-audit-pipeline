@@ -671,6 +671,55 @@ When `file-hashes.mjs` is invoked with `--scan-marks` (a Swift-calibrated conven
 
 Used by `pipeline/queries/mark-section-density.jq`, which surfaces long files with high MARK density as maintainer-pre-labeled refactor candidates.
 
+## Literal catalog (`literal-catalog.json`)
+
+The literal catalog records where numeric literals appear, to surface "a copy that must track another value" drift — two declarations independently spelling the same constant (the motivating audit case: a view's private `placeholderCornerRadius = 6.0` silently mirroring another type's private `cornerRadius: CGFloat = 6.0`; when one changes, the other doesn't). Currently emitted by the Swift extractor (`swift-catalog literal`).
+
+Like `file-hashes.json`, this is an **occurrence catalog**, not a declaration catalog: a single JSON array whose rows deliberately omit `name` / `kind` / `is_test` / `language`. A literal occurrence has no declaration identity — the discriminator is `form`, and each form carries its own context fields.
+
+```jsonc
+[
+  {
+    // Core projection (shared with every catalog).
+    "package": "RowKit",
+    "file": "Sources/RowKit/SongRowContent.swift",
+    "line": 14,                          // the LITERAL's line, not the enclosing declaration's
+    "generated": false,
+
+    // Value triple.
+    "value": "6.0",                      // verbatim as written; prefix minus folded in ("-4", not "4")
+    "value_norm": "6",                   // cross-spelling join key — see Normalization
+    "value_kind": "float",               // "int" | "float"
+
+    // Position discriminator.
+    "form": "binding",                   // "binding" | "argument"
+
+    // binding-form fields (omitted on argument rows).
+    "binding_name": "cornerRadius",
+    "is_static": true,
+    // "access": "private",              // access modifier as written; omitted when none
+
+    // argument-form fields (omitted on binding rows).
+    // "callee": "RoundedRectangle",     // base name of the called expression
+    // "arg_label": "cornerRadius",      // omitted for unlabeled arguments
+
+    // Enclosing context (either form; omitted when absent).
+    "enclosing_type": "ArtworkStyle"     // dotted nesting-stack qualification, extensions push the extended type
+    // "enclosing_callable": "body"      // innermost func/init/deinit/subscript/computed-property name
+  }
+]
+```
+
+**v1 emission positions — exactly two.** (1) `let` / `var` binding initializers whose initializer expression is a bare numeric literal (optionally wrapped in one prefix `-`), and (2) numeric literals passed directly as function-call arguments. Positions deliberately **not** emitted: enum raw values (already carried by the type catalog's enum-case `fields`), `return` statements, tuple elements, attribute/macro arguments, string literals, and literals nested inside arithmetic expressions (`6.0 * 2` emits nothing). Widening the position set is a version-bump, not a silent change — cluster thresholds are calibrated against this scope.
+
+**Callee resolution.** `callee` is the base name of the called expression: `Spacer(minLength: 8)` → `"Spacer"`; `.padding(.horizontal, 16)` / `view.padding(16)` → `"padding"`; `Cache<Int>(capacity: 8)` → `"Cache"`. Calls whose callee has no base name (closures, subscripts) are not cataloged — a row without a callee has no cluster label. Non-literal arguments in an otherwise-matching call emit nothing (`.padding(.horizontal, 16)` produces exactly one row, for `16`).
+
+**Normalization (`value_norm`).** The join key that makes `6`, `6.0`, and `0x6` cluster: underscore separators stripped (`1_000` → `1000`); hex / octal / binary integers re-based to decimal (`0xFF` → `255`); floats parsed and re-serialized — integral floats collapse to the integer spelling (`6.0` → `6`, `1e3` → `1000`), trailing zeros trimmed (`0.50` → `0.5`). `value_kind` still records the source-level type family, so queries can require like-for-like kinds when clustering. Unparseable input (e.g. an integer literal overflowing 64 bits) falls back to the stripped, lowercased text.
+
+**Skip rules.** The Swift walker's standard skips (dotdirs, `node_modules` / `build` / `dist` / `coverage` / `DerivedData` / `Pods`, `Tests/` directories and `*Tests.swift` unless `--include-tests`). Note the polarity: tests are *excluded by default* here — this catalog predates per-row `is_test` tagging, matching file-hashes' documented pending alignment.
+
+Consumed by the copied-literal query lane (`pipeline/queries/copied-literal-candidates.jq`).
+
 ## Package graph (`package-graph.json`)
 
 V7 §6.5 enrichment. Cross-package dependency edges so an agent can name the *correct* extraction target package (one already upstream of both consumers) rather than recommending an arbitrary "common" package. The graph is a single JSON object, not an array, because two parallel collections (nodes and edges) are the natural representation and re-deriving one from the other on every query would be wasteful.
