@@ -325,16 +325,24 @@ def protocols_index:
 # Interface records are EXCLUDED: a protocol's conforms_to is inheritance
 # (`protocol X: P`), not concrete conformance, and merging it would credit a
 # same-name concrete type with the protocol's parents — a false demotion.
-# Interface members keep their inheritance signal because consumers union
-# the record's own conforms_to into the lookup result.
+# Interface members keep their inheritance signal because consumers apply
+# with_conformance (below), which unions the record's own conforms_to back in.
 #
 # Consumed via:  (. | conformance_index) as $conf_idx
-# then per decl: ((($conf_idx[$decl.name] // []) + ($decl.conforms_to // [])) | unique)
+# then per decl: $decl | with_conformance($conf_idx)
 def conformance_index:
   [ entries[] | select(.kind != "interface") | select(.conforms_to != null) | {name, conforms_to} ]
   | group_by(.name)
   | map({key: .[0].name, value: (map(.conforms_to) | add | unique)})
   | from_entries;
+
+# Augment a decl with its full conformance surface: the conformance_index
+# lookup (inline + extension-declared, minus interface records) unioned with
+# the decl's own conforms_to (restoring an interface's inheritance signal).
+# The companion to conformance_index — apply per decl before demotion checks
+# so the union step can't be forgotten.
+def with_conformance($idx):
+  . + {conforms_to: ((($idx[.name] // []) + (.conforms_to // [])) | unique)};
 
 # Predicate over a cluster's member list. Returns true when the cluster
 # is "already abstracted" — all members share at least one `conforms_to`

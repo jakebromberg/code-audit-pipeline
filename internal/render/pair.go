@@ -75,39 +75,40 @@ var pairHeaderKeys = []string{
 // Either line is omitted when its array is absent or empty; queries without
 // slot payloads produce no block at all.
 func pairSlotBlock(r Row) string {
-	var b strings.Builder
-	if arr, ok := r["shared_slots"].([]any); ok {
-		var parts []string
-		for _, item := range arr {
-			m, ok := item.(map[string]any)
-			if !ok {
-				continue
-			}
-			name, _ := m["name"].(string)
-			typ, _ := m["type"].(string)
-			parts = append(parts, name+":"+typ)
-		}
-		if len(parts) > 0 {
-			fmt.Fprintf(&b, "- shared slots:      %s\n", strings.Join(parts, ", "))
+	shared := slotLine(r, "shared_slots", "- shared slots:      ", func(m map[string]any) string {
+		name, _ := m["name"].(string)
+		typ, _ := m["type"].(string)
+		return name + ":" + typ
+	})
+	conflicting := slotLine(r, "conflicting_slots", "- conflicting slots: ", func(m map[string]any) string {
+		name, _ := m["name"].(string)
+		lt, _ := m["left_type"].(string)
+		rt, _ := m["right_type"].(string)
+		return fmt.Sprintf("%s (%s vs %s)", name, lt, rt)
+	})
+	return shared + conflicting
+}
+
+// slotLine renders one labeled slot line from r[key], an array of objects
+// formatted per-element by format. Returns "" when the key is absent, not an
+// array, or yields no object elements. Labels are pre-aligned literals: the
+// slot block has exactly two fixed-width labels, so static spacing beats the
+// dynamic pad machinery pairCompanionBlock needs for its variable keys.
+func slotLine(r Row, key, label string, format func(map[string]any) string) string {
+	arr, ok := r[key].([]any)
+	if !ok {
+		return ""
+	}
+	var parts []string
+	for _, item := range arr {
+		if m, ok := item.(map[string]any); ok {
+			parts = append(parts, format(m))
 		}
 	}
-	if arr, ok := r["conflicting_slots"].([]any); ok {
-		var parts []string
-		for _, item := range arr {
-			m, ok := item.(map[string]any)
-			if !ok {
-				continue
-			}
-			name, _ := m["name"].(string)
-			lt, _ := m["left_type"].(string)
-			rt, _ := m["right_type"].(string)
-			parts = append(parts, fmt.Sprintf("%s (%s vs %s)", name, lt, rt))
-		}
-		if len(parts) > 0 {
-			fmt.Fprintf(&b, "- conflicting slots: %s\n", strings.Join(parts, ", "))
-		}
+	if len(parts) == 0 {
+		return ""
 	}
-	return b.String()
+	return fmt.Sprintf("%s%s\n", label, strings.Join(parts, ", "))
 }
 
 // pairCompanionBlock produces an aligned key-pair block for every left_<X>
