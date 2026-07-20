@@ -30,7 +30,9 @@ jobs:
             .github/actions/audit-core/scripts/detect-languages.sh \
             extractors/swift/tests/test_package_graph.sh \
             extractors/swift/tests/test_type_catalog_heritage.sh \
-            extractors/typescript/tests/test_smoke.sh
+            extractors/typescript/tests/test_smoke.sh \
+            install.sh \
+            pipeline/_tests/test_install.sh
 
   pipeline:
     name: pipeline + typescript extractor
@@ -152,6 +154,11 @@ jobs:
 
       - name: Go build
         run: go build -o /tmp/code-audit ./cmd/code-audit
+
+      - name: install.sh tests
+        # Exercises the from-source install path (flag handling, scratch
+        # $GOBIN install, git-describe version stamp, missing-go preflight).
+        run: bash pipeline/_tests/test_install.sh
 
       - name: Verify ldflags Version override is wired
         # The release pipeline injects the tag via `-ldflags -X cli.Version=...`.

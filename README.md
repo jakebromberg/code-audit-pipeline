@@ -26,6 +26,14 @@ go install github.com/jakebromberg/code-audit-pipeline/cmd/code-audit@latest
 
 Or download a tarball from [Releases](https://github.com/jakebromberg/code-audit-pipeline/releases).
 
+From a checkout (contributors, branch testing), use the install script instead of raw `go install`:
+
+```bash
+./install.sh
+```
+
+It regenerates the embedded query/extractor trees from the checkout's canonical sources, stamps the binary with `git describe` of the checkout (the Go toolchain's own VCS stamp misattributes builds made inside linked worktrees to the parent checkout's HEAD), and installs to `$GOBIN` (or `$GOPATH/bin`). Pass `--no-generate` to install exactly what the committed embed trees contain.
+
 The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow. All three install paths (brew, `go install`, tarball) ship the same embedded query + extractor set.
 
 ## Quick start
