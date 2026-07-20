@@ -15,15 +15,20 @@
 #
 # Two-section output:
 #   [copied-literal clusters]   same (value_norm, label) at ≥ min_sites sites
-#                               spanning ≥ min_files files. label is the knob
-#                               the literal is attached to: binding_name for
-#                               bindings, arg_label (falling back to callee)
-#                               for call arguments. Bindings and arguments
-#                               sharing a label deliberately co-cluster — a
-#                               named constant plus raw call sites of the same
-#                               label+value is a partially-extracted constant.
+#                               spanning ≥ min_files files. Files are counted
+#                               package-qualified (package:file) — two package
+#                               roots can carry the same relative path, per
+#                               the contract's file-duplicates rationale.
+#                               label is the knob the literal is attached to:
+#                               binding_name for bindings, arg_label (falling
+#                               back to callee) for call arguments. Bindings
+#                               and arguments sharing a label deliberately
+#                               co-cluster — a named constant plus raw call
+#                               sites of the same label+value is a partially-
+#                               extracted constant.
 #   [copied-binding pairs]      bindings only: equal value_norm, different
-#                               file OR different enclosing_type, and names
+#                               package-qualified file OR different
+#                               enclosing_type, and names
 #                               that contain one another case-insensitively
 #                               (contained name ≥ 4 chars, so "cap"/"capacity"
 #                               stays quiet). Catches the single mirrored
@@ -88,6 +93,13 @@ def lit_name:
 def lit_member:
   {name: lit_name, kind: .form, package, file, line};
 
+# Distinct files spanned by a group of occurrences, package-qualified. Bare
+# `.file` under-counts: `file` is relative to its walked root, and two package
+# roots can carry the same relative path (`Sources/Utils.swift`) — the same
+# reason file-duplicates package-qualifies its path keys.
+def pkg_file_count:
+  [.[] | "\(.package):\(.file)"] | unique | length;
+
 entries as $all
 | ([ $all[]
      | select((.generated // false) != true)
@@ -100,7 +112,7 @@ entries as $all
     | group_by([.value_norm, lit_label])
     | map(select(
         length >= $min_sites
-        and ([.[].file] | unique | length) >= $min_files))
+        and pkg_file_count >= $min_files))
   ) as $fired
 | ( $fired
     | map(. as $grp
@@ -109,7 +121,7 @@ entries as $all
           shape: "cluster",
           value_norm: $grp[0].value_norm,
           label: ($grp[0] | lit_label),
-          file_count: ([$grp[].file] | unique | length),
+          file_count: ($grp | pkg_file_count),
           members: ($grp | sort_by(.package, .file, .line) | map(lit_member))
         })
     | sort_by(-(.members | length), .cluster_id)
@@ -128,7 +140,10 @@ entries as $all
       | $bindings[$i] as $a | $bindings[$j] as $b
       | select($a.value_norm == $b.value_norm)
       # Same file AND same type = locally visible siblings; not a copy smell.
-      | select($a.file != $b.file
+      # File identity is package-qualified: two package roots can carry the
+      # same relative path, and those files are NOT mutually visible.
+      | select($a.package != $b.package
+               or $a.file != $b.file
                or ($a.enclosing_type // "") != ($b.enclosing_type // ""))
       | ($a.binding_name | ascii_downcase) as $an
       | ($b.binding_name | ascii_downcase) as $bn
