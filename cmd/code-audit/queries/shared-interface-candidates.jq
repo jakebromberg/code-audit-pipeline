@@ -164,10 +164,8 @@ def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "
         intersection: $ic,
         union: $u,
         jacc: $jacc,
-        # with_conformance unions each record's own conforms_to into the
-        # index lookup: the index excludes interface records (protocol
-        # inheritance ≠ conformance), so a mixed concrete↔interface pair
-        # keeps the interface side's inheritance signal from its own record.
+        # with_conformance restores each side's own conforms_to over the
+        # index lookup (interface inheritance — rationale in _canonical.jq).
         demoted: ([($a | with_conformance($conf_idx)), ($b | with_conformance($conf_idx))]
                   | is_already_abstracted_cluster($protocols_idx)),
         shared_slots: ($agreeing | map({name, type: .left_type})),

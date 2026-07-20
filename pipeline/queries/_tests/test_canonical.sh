@@ -275,6 +275,31 @@ assert_eq "a name declared only as an interface is absent from the index" \
   'null' \
   "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .PureProto // null | tojson')"
 
+echo "=== with_conformance ==="
+# Companion applied per decl when consuming conformance_index: unions the
+# index lookup with the decl's own conforms_to, restoring the interface
+# inheritance the index excludes.
+
+assert_eq "interface decl restores its inheritance over the index lookup" \
+  '["Renderable","Sendable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index as $idx | {name:"Facade",kind:"interface",conforms_to:["Renderable"]} | with_conformance($idx) | .conforms_to | tojson')"
+
+assert_eq "decl with empty conforms_to takes the merged index entry" \
+  '["FeedRepresentable","Sendable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index as $idx | {name:"LiveFeed",kind:"type-alias-object",conforms_to:[]} | with_conformance($idx) | .conforms_to | tojson')"
+
+assert_eq "name absent from the index falls back to the decl's own conforms_to" \
+  '["BaseProto"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index as $idx | {name:"PureProto",kind:"interface",conforms_to:["BaseProto"]} | with_conformance($idx) | .conforms_to | tojson')"
+
+assert_eq "no index entry and no own conforms_to yields empty array" \
+  '[]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index as $idx | {name:"Plain",kind:"type-alias-object"} | with_conformance($idx) | .conforms_to | tojson')"
+
+assert_eq "index entry duplicating the decl's own conforms_to de-duplicates" \
+  '["FeedRepresentable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index as $idx | {name:"CachedFeed",kind:"type-alias-object",conforms_to:["FeedRepresentable"]} | with_conformance($idx) | .conforms_to | tojson')"
+
 echo "=== is_already_abstracted_cluster ==="
 # Hand-crafted index: MusicService is a non-trivial protocol (3 fields);
 # Sendable is a marker (0 fields).
