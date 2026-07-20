@@ -1,0 +1,146 @@
+# shared-interface-candidates.jq — find type pairs whose field sets share a large
+# MUTUAL intersection: ≥ min_intersection common field names with leftover fields
+# on BOTH sides. The recommendation shape is "extract an interface/protocol over
+# the intersection and keep both types" — NOT a merge.
+#
+# Run:  jq -L pipeline/queries -r --argjson min_intersection 5 -f pipeline/queries/shared-interface-candidates.jq catalog.json
+#        (-r for raw text output)
+#
+# JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -r --argjson min_intersection 5 \
+#                -f pipeline/queries/shared-interface-candidates.jq catalog.json
+#
+# This is the third shape relationship, distinct from the two the suite already
+# names, and the residue pattern is what routes each pair to its lane:
+#
+#   near-duplicates(-any)   jacc ≥ threshold, tiny residue   → merge/dedupe
+#   subset-pairs            one-sided residue (A ⊂ B)        → composition / Pick / lift
+#   THIS QUERY              mutual residue, big intersection → shared interface, keep both
+#
+# Canonical instance (wxyc-ios-64): `Playcut` (flowsheet entry) and
+# `LikedSongSnapshot` (persisted favorite) share ~13 display fields but each
+# carries lifecycle-specific extras — the fix was a `SongDisplayable` protocol
+# over the intersection, not a merged model. See
+# docs/swift-refactoring-pattern-corpus.md § "Parallel models → shared
+# presentation protocol".
+#
+# Gates (and why):
+#   * intersection ≥ $min_intersection — ABSOLUTE size, not just Jaccard: a
+#     13-field shared surface is a strong signal even at 59% similarity.
+#   * mutual residue — both sides keep fields the other lacks. One-sided
+#     residue is subset-pairs' lane; no residue is exact-duplicates'.
+#   * 0.25 ≤ jacc < 0.9 — above 0.9 the right recommendation is a merge
+#     (near-duplicates-any's lane); below 0.25 the shared names are usually
+#     incidental entity boilerplate (id/name/createdAt) on two large types.
+#   * both endpoints kind:interface excluded — two overlapping protocols are
+#     protocol-inheritance-candidates' lane (same-package today; a cross-
+#     package extension of that query is the right home for the gap, not
+#     this one). Mixed concrete↔interface pairs DO surface: "this type
+#     already nearly satisfies that protocol" is an adjacent finding.
+#   * same-name pairs excluded (cross-package-shadows' lane); extensions and
+#     enum kinds excluded (partial surfaces / case names aren't field
+#     surfaces); generated rows excluded.
+#
+# Slot comparison is TYPE-AWARE where the flat `fields[]` strings allow:
+# each "name:Type" entry splits at the first ':' (function-signature members
+# like "fetch(id:String):Track" split inside the parens — same accepted
+# convention as every other field-name query). Shared names with EQUAL type
+# text become `shared_slots` (the protocol-requirement candidates); shared
+# names with DIFFERENT type text become `conflicting_slots`. Conflicting
+# slots are the machine-visible merge blockers — `id:UInt64` vs `id:String`
+# is deterministic evidence that the pair cannot merge and the extracted
+# protocol must not refine Identifiable. Restraint evidence, emitted per row.
+#
+# Demotion (issue #217 convention, extended): a pair whose two types already
+# share a non-trivial protocol carries `demoted: true` and sorts to the tail —
+# the abstraction exists, the query self-extinguishes after the refactor it
+# recommends. Unlike exact-duplicates, the check reads conformance through
+# `conformance_index`, so `extension Foo: P {}` retroactive conformances
+# count. Limitation (shared with is_already_abstracted_cluster): the shared
+# protocol's requirement set is not checked against THIS pair's intersection,
+# so a pair sharing 10 fields but only a small 2-requirement protocol still
+# demotes.
+#
+# `--argjson min_intersection N` is REQUIRED for raw jq (compile-time error
+# otherwise); the binary supplies the front-matter default (5).
+#
+# cluster_id format:  shared-interface-candidates:LocA+LocB
+#                     (sorted location keys — package:file:line:name)
+#
+#! query: shared-interface-candidates
+#! shape: pair
+#! catalog: type-catalog
+#! arg: min_intersection number 5
+#! formats: text, jsonl
+#! desc: Mutual-residue field intersection — extract-an-interface (not merge) candidates.
+
+include "_canonical";
+
+. as $catalog
+| ($catalog | protocols_index) as $protocols_idx
+| ($catalog | conformance_index) as $conf_idx
+| [ entries[]
+    | select((.generated // false) != true)
+    | select(.kind == "type-alias-object" or .kind == "interface" or .kind == "zod-object")
+    # Strictly MORE fields than the intersection floor: mutual residue needs
+    # at least one leftover per side, so smaller rows can never qualify.
+    | select(.fields != null and (.fields | length) > $min_intersection)
+  ] as $bs
+| [
+    range(0; $bs | length) as $i
+    | range($i + 1; $bs | length) as $j
+    | $bs[$i] as $a | $bs[$j] as $b
+    | select(($a.kind == "interface" and $b.kind == "interface") | not)
+    | select($a.name != $b.name)
+    # Parse "name:Type" → {n, t}; name drops a trailing '?' (TS optional
+    # marker), type keeps everything after the first ':' verbatim.
+    | ($a.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n)) as $aslots
+    | ($b.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n)) as $bslots
+    | ($aslots | map(.n)) as $af
+    | ($bslots | map(.n)) as $bf
+    | ([$af[] | select(. as $x | $bf | index($x) != null)]) as $shared_names
+    | ($shared_names | length) as $ic
+    | select($ic >= $min_intersection)
+    # Mutual residue: BOTH sides must keep fields the other lacks.
+    | select(($af | length) > $ic and ($bf | length) > $ic)
+    | ($af + $bf | unique | length) as $u
+    | ($ic / $u) as $jacc
+    | select($jacc >= 0.25 and $jacc < 0.9)
+    | ($bslots | map({key: .n, value: .t}) | from_entries) as $btypes
+    | [ $shared_names[] | . as $n
+        | {name: $n,
+           left_type: ($aslots | map(select(.n == $n)) | .[0].t),
+           right_type: $btypes[$n]}
+      ] as $matched
+    | {
+        cluster_id: cluster_id_sorted_pair("shared-interface-candidates"; loc_key($a); loc_key($b)),
+        query: "shared-interface-candidates",
+        shape: "pair",
+        intersection: $ic,
+        union: $u,
+        jacc: $jacc,
+        demoted: ([($a + {conforms_to: ($conf_idx[$a.name] // [])}),
+                   ($b + {conforms_to: ($conf_idx[$b.name] // [])})]
+                  | is_already_abstracted_cluster($protocols_idx)),
+        shared_slots: ([$matched[] | select(.left_type == .right_type) | {name, type: .left_type}] | sort_by(.name)),
+        conflicting_slots: ([$matched[] | select(.left_type != .right_type)] | sort_by(.name)),
+        left_only:  ([$af[] | select(. as $x | ($bf | index($x)) == null)] | sort),
+        right_only: ([$bf[] | select(. as $x | ($af | index($x)) == null)] | sort),
+        left: $a, right: $b,
+        left_fields: ($af | sort), right_fields: ($bf | sort)
+      }
+  ]
+# Un-demoted first; within each band, biggest shared surface first.
+| sort_by(.demoted, -(.intersection), -(.jacc), .left.name, .right.name)
+| .[]
+| if output_format == "jsonl" then
+    @json
+  else
+    "\(if .demoted then "[DEMOTED — already abstracted] " else "" end)"
+    + "[∩=\(.intersection) ∪=\(.union) \((.jacc * 100) | floor)%] \(.left.package):\(.left.name)  <->  \(.right.package):\(.right.name) cid=\(.cluster_id)\n"
+    + "    left:  \(.left.kind) — \(.left.file):\(.left.line)\n"
+    + "    right: \(.right.kind) — \(.right.file):\(.right.line)\n"
+    + "    shared slots:      \(.shared_slots | map("\(.name):\(.type)") | join(", "))\n"
+    + "    conflicting slots: \(if (.conflicting_slots | length) == 0 then "(none)" else (.conflicting_slots | map("\(.name) (\(.left_type) vs \(.right_type))") | join(", ")) end)\n"
+    + "    left only:         \(.left_only | join(", "))\n"
+    + "    right only:        \(.right_only | join(", "))"
+  end

@@ -231,6 +231,36 @@ assert_eq "non-interface kinds are excluded from the index" \
   'null' \
   "$(echo "$PROTOS_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; protocols_index | .NotAProtocol // null | tojson')"
 
+echo "=== conformance_index ==="
+# Swift declares conformance both inline (`struct Foo: P`) and retroactively
+# via extensions (`extension Foo: P {}`) — separate catalog records sharing a
+# name. The index merges conforms_to[] across all same-name records so a
+# demotion check sees extension-declared conformances too.
+CONF_FIXTURE='[
+  {"name":"LiveFeed","kind":"type-alias-object","conforms_to":[]},
+  {"name":"LiveFeed","kind":"extension","conforms_to":["FeedRepresentable","Sendable"]},
+  {"name":"CachedFeed","kind":"type-alias-object","conforms_to":["FeedRepresentable"]},
+  {"name":"Dup","kind":"type-alias-object","conforms_to":["P"]},
+  {"name":"Dup","kind":"extension","conforms_to":["P","Q"]},
+  {"name":"Plain","kind":"type-alias-object"}
+]'
+
+assert_eq "merges conforms_to across same-name records (decl + extension)" \
+  '["FeedRepresentable","Sendable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .LiveFeed | tojson')"
+
+assert_eq "single-record name passes through unchanged" \
+  '["FeedRepresentable"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .CachedFeed | tojson')"
+
+assert_eq "duplicate protocol across decl + extension de-duplicates" \
+  '["P","Q"]' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .Dup | tojson')"
+
+assert_eq "record without conforms_to is absent from the index" \
+  'null' \
+  "$(echo "$CONF_FIXTURE" | jq -L "$QUERIES_DIR" -r 'include "_canonical"; conformance_index | .Plain // null | tojson')"
+
 echo "=== is_already_abstracted_cluster ==="
 # Hand-crafted index: MusicService is a non-trivial protocol (3 fields);
 # Sendable is a marker (0 fields).

@@ -54,6 +54,7 @@ INDEX_FIXTURE="$FIXTURES_DIR/cross-repo-ops/all-ok.index.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 NOTIFICATION_WRAPPERS_FIXTURE="$FIXTURES_DIR/notification-wrappers.input.json"
+SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -165,6 +166,7 @@ both_modes subset-pairs                              "$QUERIES_DIR/subset-pairs.
 both_modes protocol-inheritance-candidates           "$QUERIES_DIR/protocol-inheritance-candidates.jq"           "$TYPES_FIXTURE" --argjson min_overlap 2
 both_modes pat-candidates                            "$QUERIES_DIR/pat-candidates.jq"                            "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 both_modes generic-struct-candidates                 "$QUERIES_DIR/generic-struct-candidates.jq"                 "$TYPES_FIXTURE" --argjson max_slot_diffs 1
+both_modes shared-interface-candidates               "$QUERIES_DIR/shared-interface-candidates.jq"               "$SHARED_INTERFACE_FIXTURE" --argjson min_intersection 5
 both_modes symbol-id-collisions                      "$QUERIES_DIR/symbol-id-collisions.jq"                      "$TYPES_FIXTURE"
 # Hit-path coverage for symbol-id-collisions (planted 4-tuple collision + a
 # slash-flatten-only ambiguity that the pre-NUL formula would have falsely

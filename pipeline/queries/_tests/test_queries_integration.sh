@@ -31,6 +31,7 @@ VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
+SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 
 PASS=0
 FAIL=0
@@ -150,6 +151,88 @@ assert_jsonl_has_prefix subset-pairs.jq "$TYPES_FIXTURE" "subset-pairs:"
 assert_jsonl_has_prefix protocol-inheritance-candidates.jq "$TYPES_FIXTURE" "protocol-inheritance-candidates:" --argjson min_overlap 2
 assert_jsonl_has_prefix pat-candidates.jq "$TYPES_FIXTURE" "pat-candidates:" --argjson max_slot_diffs 1
 assert_jsonl_has_prefix generic-struct-candidates.jq "$TYPES_FIXTURE" "generic-struct-candidates:" --argjson max_slot_diffs 1
+assert_jsonl_has_prefix shared-interface-candidates.jq "$SHARED_INTERFACE_FIXTURE" "shared-interface-candidates:" --argjson min_intersection 5
+
+# Semantic checks for shared-interface-candidates. Fixture is hand-tuned so
+# exactly TWO pairs fire and every exclusion rule is exercised by a pair that
+# would otherwise qualify:
+#   FIRES  Playcut <-> LikedSongSnapshot   ∩=7 ∪=10 jacc=0.7, conflicting id
+#          slot (UInt64 vs String), demoted:false (Sendable is a marker)
+#   FIRES  CachedFeed <-> LiveFeed         ∩=5 ∪=7, demoted:true — shared
+#          FeedRepresentable conformance, declared via EXTENSION on LiveFeed
+#          (pins the conformance_index merge)
+#   ---    UserSummary ⊂ UserDetail        no left residue → subset-pairs lane
+#   ---    BoundaryLeft/BoundaryRight      jacc exactly 0.9 → near-duplicates lane
+#   ---    GodModelA/GodModelB             ∩=5 but jacc≈0.24 < 0.25 floor
+#   ---    MediaPlayable/StreamPlayable    both kind:interface → protocol-inheritance lane
+#   ---    SettingsModel/SettingsModel     same name → cross-package-shadows lane
+#   ---    GeneratedSnapshotDTO            generated:true filtered
+assert_shared_interface_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson min_intersection 5 \
+    -f "$QUERIES_DIR/shared-interface-candidates.jq" "$SHARED_INTERFACE_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count expected=2
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "$expected" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): expected %d rows, got %d\n%s\n" "$expected" "$count" "$jsonl"
+    return
+  fi
+  # Un-demoted rows sort first: row 1 must be the Playcut pair.
+  local first_ok
+  first_ok="$(printf '%s\n' "$jsonl" | head -1 | jq -r \
+    '(.left.name == "Playcut" and .right.name == "LikedSongSnapshot" and .demoted == false
+      and .intersection == 7 and .union == 10 and .jacc == 0.7) | tostring')"
+  if [[ "$first_ok" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): row 1 is not the un-demoted Playcut pair\n%s\n" "$jsonl"
+    return
+  fi
+  # The conflicting id slot is the machine-visible merge blocker.
+  local conflict
+  conflict="$(printf '%s\n' "$jsonl" | head -1 | jq -c '.conflicting_slots')"
+  if [[ "$conflict" != '[{"name":"id","left_type":"UInt64","right_type":"String"}]' ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): expected conflicting id slot, got %s\n" "$conflict"
+    return
+  fi
+  # Agreeing slots exclude the conflicting one.
+  local shared_names
+  shared_names="$(printf '%s\n' "$jsonl" | head -1 | jq -c '[.shared_slots[].name]')"
+  if [[ "$shared_names" != '["artistName","artworkURL","labelName","releaseTitle","songTitle","spotifyURL"]' ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): unexpected shared_slots names: %s\n" "$shared_names"
+    return
+  fi
+  # Row 2: the feed pair, demoted via extension-declared conformance.
+  local second_ok
+  second_ok="$(printf '%s\n' "$jsonl" | sed -n 2p | jq -r \
+    '(.left.name == "CachedFeed" and .right.name == "LiveFeed" and .demoted == true
+      and .intersection == 5 and (.conflicting_slots | length == 0)) | tostring')"
+  if [[ "$second_ok" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): row 2 is not the demoted feed pair\n%s\n" "$jsonl"
+    return
+  fi
+  # None of the excluded names may appear on any endpoint.
+  local leaked
+  leaked="$(printf '%s\n' "$jsonl" | jq -r '.left.name, .right.name' \
+    | grep -x -e UserSummary -e UserDetail -e BoundaryLeft -e BoundaryRight \
+      -e GodModelA -e GodModelB -e MediaPlayable -e StreamPlayable \
+      -e SettingsModel -e GeneratedSnapshotDTO -e FeedRepresentable || true)"
+  if [[ -n "$leaked" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ shared-interface-candidates (semantic): excluded rows leaked into output: %s\n" "$leaked"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ shared-interface-candidates (semantic): 2 rows; Playcut pair first with conflicting id slot; feed pair demoted via extension conformance; all 6 exclusion lanes clean\n"
+}
+assert_shared_interface_semantic
 
 # symbol-id-collisions hit-path semantic test: the fixture is hand-tuned to
 # exercise (a) a real 4-tuple collision (two Y rows with identical package /
@@ -1333,6 +1416,7 @@ assert_text_has_cid subset-pairs.jq "$TYPES_FIXTURE"
 assert_text_has_cid protocol-inheritance-candidates.jq "$TYPES_FIXTURE" --argjson min_overlap 2
 assert_text_has_cid pat-candidates.jq "$TYPES_FIXTURE" --argjson max_slot_diffs 1
 assert_text_has_cid generic-struct-candidates.jq "$TYPES_FIXTURE" --argjson max_slot_diffs 1
+assert_text_has_cid shared-interface-candidates.jq "$SHARED_INTERFACE_FIXTURE" --argjson min_intersection 5
 assert_text_has_cid function-duplicates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5
 assert_text_has_cid default-impl-candidates.jq "$FUNCS_FIXTURE" --argjson min_conformers 2
 assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson threshold 0.5 --argjson max_subs 2

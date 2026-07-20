@@ -1067,6 +1067,7 @@ Each query precomputes its cluster_id via helpers in `pipeline/queries/_canonica
 | `near-duplicates` | `near-duplicates:LocA+LocB` | sorted location keys |
 | `near-duplicates-any` | `near-duplicates-any:LocA+LocB` | sorted location keys |
 | `subset-pairs` | `subset-pairs:LocSub__LocSup` | directed (sub then sup); swap changes the id |
+| `shared-interface-candidates` | `shared-interface-candidates:LocA+LocB` | sorted location keys |
 | `function-duplicates` (exact section) | `function-duplicates-exact:Loc+Loc+...` | sorted location keys |
 | `function-duplicates` (near section) | `function-duplicates-near:Loc+Loc` | sorted location keys |
 | `file-duplicates` (exact section) | `file-duplicates-exact:pkg:path+pkg:path+...` | sorted package-qualified repo-relative paths |
