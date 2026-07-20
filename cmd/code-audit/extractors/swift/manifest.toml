@@ -16,8 +16,8 @@ schema_version = 1
 [extractor]
 name = "swift"
 language = "swift"
-version = "0.5.0"
-description = "Swift AST extractor (SwiftSyntax); emits type, function, and package-graph catalogs."
+version = "0.6.0"
+description = "Swift AST extractor (SwiftSyntax); emits type, function, literal, and package-graph catalogs."
 
 [[command]]
 catalog = "type-catalog"
@@ -36,6 +36,15 @@ optional_args = [
   { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
   { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
   { flag = "--min-body-lines", placeholder = "{min_body_lines}", when = "min_body_lines_set" },
+]
+
+[[command]]
+catalog = "literal-catalog"
+output_file = "literal-catalog.json"
+invocation = ["swift", "run", "swift-catalog", "literal", "--root", "{root}", "--output", "{output}"]
+optional_args = [
+  { flag = "--shared", placeholder = "{shared}", when = "shared_set" },
+  { flag = "--include-tests", placeholder = "", when = "include_tests_set" },
 ]
 
 [[command]]

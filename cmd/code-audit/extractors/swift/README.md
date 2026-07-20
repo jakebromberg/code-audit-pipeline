@@ -2,12 +2,13 @@
 
 SwiftSyntax-based extractor that emits substrate JSON conforming to [`../../docs/pipeline-contract.md`](../../docs/pipeline-contract.md). Mirrors the TypeScript extractors at [`../typescript`](../typescript) for shape compatibility — the same cluster queries in `pipeline/queries/` consume either output.
 
-One executable, three subcommands:
+One executable, four subcommands:
 
 ```bash
 swift build
 ./.build/debug/swift-catalog type --root <path> [--shared <path>] [--output <path>] [--include-tests]
 ./.build/debug/swift-catalog func --root <path> [--shared <path>] [--output <path>] [--include-tests] [--min-body-lines N]
+./.build/debug/swift-catalog literal --root <path> [--shared <path>] [--output <path>] [--include-tests]
 ./.build/debug/swift-catalog package-graph --root <path> [--output <path>]
 ```
 
@@ -36,6 +37,14 @@ Emits one record per function-like construct that has a body: top-level `func`, 
 Method names are qualified by the nesting stack: a method `foo` on `class Bar` emits `name:"Bar.foo"`. Init names include parameter labels: `"Bar.init(name:age:)"`. Computed-property accessors emit as `"Bar.propName.get"` and `"Bar.propName.set"`.
 
 Body normalization strips `/* */` and `//` comments, collapses whitespace, drops blank lines. `body_hash` is sha256 of the sorted-unique lines joined with `\n`. `body_lines` is the same sorted-unique set, so it can serve directly as Jaccard input.
+
+### `literal` — literal-catalog
+
+Emits one record per numeric literal in the two v1 positions: `let`/`var` binding initializers (`static let cornerRadius: CGFloat = 6.0`) and function-call arguments (`RoundedRectangle(cornerRadius: 12)`). This is an *occurrence* catalog like `file-hashes.json` — rows have no `name`/`kind`; the discriminator is `form` (`"binding"` | `"argument"`), and each form carries its own context fields (`binding_name`/`is_static`/`access` vs `callee`/`arg_label`) plus `enclosing_type`/`enclosing_callable`.
+
+`value` is the literal verbatim (prefix minus folded in); `value_norm` is the cross-spelling join key — underscores stripped, hex/octal/binary re-based to decimal, `6.0`/`1e3` collapsed to `6`/`1000`, `0.50` trimmed to `0.5`. Positions deliberately *not* emitted: enum raw values (already on the type catalog), `return` statements, tuple elements, attribute arguments, string literals. Consumed by the copied-literal query lane to surface "a copy that must track another value" drift (the motivating case: a private `placeholderCornerRadius = 6.0` silently mirroring another type's private `cornerRadius: CGFloat = 6.0`).
+
+Schema documented at [`../../docs/pipeline-contract.md`](../../docs/pipeline-contract.md) § "Literal catalog". Tested via [`tests/test_literal_catalog.sh`](tests/test_literal_catalog.sh) against [`tests/fixtures/literal-catalog/`](tests/fixtures/literal-catalog/).
 
 ### `package-graph` — inter-package dependency graph (V7 §6.5)
 

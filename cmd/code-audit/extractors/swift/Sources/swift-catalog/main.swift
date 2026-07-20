@@ -2,13 +2,13 @@
 //  main.swift
 //  swift-catalog
 //
-//  CLI entry point. Three subcommands: `type`, `func`, and `package-graph`.
-//  `type` and `func` each walk a root directory (with optional --shared for a
-//  second package root), parse Swift files via SwiftSyntax, and emit JSON
-//  conforming to docs/pipeline-contract.md. `package-graph` walks the root for
-//  Package.swift files (parsed via SwiftSyntax) and project.pbxproj files
-//  (parsed via brace-counting text scan, per V7 §6.5) and emits an
-//  inter-package dependency graph.
+//  CLI entry point. Four subcommands: `type`, `func`, `literal`, and
+//  `package-graph`. `type`, `func`, and `literal` each walk a root directory
+//  (with optional --shared for a second package root), parse Swift files via
+//  SwiftSyntax, and emit JSON conforming to docs/pipeline-contract.md.
+//  `package-graph` walks the root for Package.swift files (parsed via
+//  SwiftSyntax) and project.pbxproj files (parsed via brace-counting text
+//  scan, per V7 §6.5) and emits an inter-package dependency graph.
 //
 
 import Foundation
@@ -61,18 +61,19 @@ func parseArgs() -> Args? {
 
 func printUsage() {
     let usage = """
-    Usage: swift-catalog <type|func|package-graph> --root <path> [--shared <path>] [--output <path>] [--include-tests] [--min-body-lines N]
+    Usage: swift-catalog <type|func|literal|package-graph> --root <path> [--shared <path>] [--output <path>] [--include-tests] [--min-body-lines N]
 
     Subcommands:
       type           Emit type-catalog (struct/class/protocol/enum/extension/typealias/actor).
       func           Emit function-catalog (func/method/initializer/computed-property).
+      literal        Emit literal-catalog (numeric literals in binding initializers and call arguments).
       package-graph  Emit inter-package dependency graph (Package.swift + project.pbxproj).
 
     Flags:
       --root            Required. Root of the codebase to scan.
       --shared          Optional. Second package root, walked in addition to --root.
       --output          Optional. Write JSON to this path. Default: stdout.
-      --include-tests   type|func only. Don't skip Tests/ directories or *Tests.swift files.
+      --include-tests   type|func|literal only. Don't skip Tests/ directories or *Tests.swift files.
       --min-body-lines  func only. Skip functions with fewer normalized body lines. Default 3.
     """
     logErr(usage)
@@ -148,6 +149,29 @@ case "func":
         }
     }
     logErr("emitted \(allRecords.count) function records (parse errors: \(parseErrors))")
+    do {
+        try writeJSON(allRecords, to: args.output)
+    } catch {
+        logErr("failed to write output: \(error)")
+        exit(1)
+    }
+
+case "literal":
+    var allRecords: [LiteralRecord] = []
+    var parseErrors = 0
+    for file in files {
+        do {
+            let source = try String(contentsOfFile: file.absolutePath, encoding: .utf8)
+            let tree = Parser.parse(source: source)
+            let visitor = LiteralCatalogVisitor(file: file, tree: tree)
+            visitor.walk(tree)
+            allRecords.append(contentsOf: visitor.records)
+        } catch {
+            parseErrors += 1
+            logErr("parse error in \(file.relativePath): \(error)")
+        }
+    }
+    logErr("emitted \(allRecords.count) literal records (parse errors: \(parseErrors))")
     do {
         try writeJSON(allRecords, to: args.output)
     } catch {
