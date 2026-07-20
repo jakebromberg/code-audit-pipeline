@@ -535,28 +535,39 @@ assert_jsonl_has_prefix copied-literal-candidates.jq "$COPIED_LITERAL_FIXTURE" "
   --argjson min_sites 3 --argjson min_files 2
 
 # Semantic checks for copied-literal-candidates. The fixture is hand-tuned so
-# exactly TWO clusters and TWO pairs fire at defaults, and every gate is
+# exactly THREE clusters and THREE pairs fire at defaults, and every gate is
 # exercised by a group that would otherwise qualify:
 #
-# Cluster section (group by value_norm + label; ≥3 sites across ≥2 files):
+# Cluster section (group by value_norm + label; ≥3 sites across ≥2
+# package-qualified files):
 #   FIRES  padding = 12            3 sites / 3 files; one site spelled "12.0"
 #                                  (value_norm collapses spellings)
 #   FIRES  animationDuration = 0.3 3 binding sites / 3 files; one spelled "0.30"
+#   FIRES  iconSize = 20           3 sites over main:Sources/UI/Icons.swift and
+#                                  shared:Sources/UI/Icons.swift — same relative
+#                                  path in two packages counts as TWO files
+#                                  (min_files counting is package-qualified)
 #   ---    frame(width:) = 44      3 sites but 1 file → min_files gate
 #   ---    opacity = 0.8           2 sites → min_sites gate (fires at min_sites 2)
 #   ---    spacing = 2             3 sites / 3 files but value_norm "2" is denied
 #   ---    lineLimit = 3           3rd site is generated:true → only 2 counted
 #
-# Pair section (bindings only, equal value_norm, different file or enclosing
-# type, lowercased-substring name match with contained length ≥ 4):
+# Pair section (bindings only, equal value_norm, different package-qualified
+# file or enclosing type, lowercased-substring name match with contained
+# length ≥ 4):
 #   FIRES  cornerRadius (6.0, ArtworkStyle) <-> placeholderCornerRadius (6)
 #          — the wxyc-ios-64 PR #565 motivating case
 #   FIRES  gutterWidth <-> contentGutterWidth (16) — same file, different
 #          enclosing types
+#   FIRES  panelCornerRadius (main) <-> panelCornerRadius (shared) — same
+#          relative path AND same enclosing_type but different packages: the
+#          copied-file case; only the package distinguishes the two files
 #   ---    animationDuration bindings   covered by their fired cluster
+#   ---    iconSize bindings            covered by their fired cluster
 #   ---    maxRetries = 6               name unrelated to cornerRadius
 #   ---    cornerRadius = 8 (CardStyle) value_norm differs from the 6s
 #   ---    badgeSize/badgeSizeCompact   same file AND same enclosing_type
+#                                       (and same package) → suppressed
 #   ---    cap/capacity                 contained name "cap" shorter than 4
 #   ---    retryCount/maxRetryCount     value_norm "1" is denied
 assert_copied_literal_semantic() {
@@ -570,17 +581,28 @@ assert_copied_literal_semantic() {
   }
   local count
   count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
-  if [[ "$count" != "4" ]]; then
+  if [[ "$count" != "6" ]]; then
     FAIL=$((FAIL + 1))
-    printf "  ✗ copied-literal-candidates (semantic): expected 4 rows, got %d\n%s\n" "$count" "$jsonl"
+    printf "  ✗ copied-literal-candidates (semantic): expected 6 rows, got %d\n%s\n" "$count" "$jsonl"
     return
   fi
 
   local cluster_ids
   cluster_ids="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.shape == "cluster") | .cluster_id] | sort | join(",")')"
-  if [[ "$cluster_ids" != "copied-literal-cluster:animationDuration=0.3,copied-literal-cluster:padding=12" ]]; then
+  if [[ "$cluster_ids" != "copied-literal-cluster:animationDuration=0.3,copied-literal-cluster:iconSize=20,copied-literal-cluster:padding=12" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ copied-literal-candidates (semantic): unexpected cluster set: %s\n%s\n" "$cluster_ids" "$jsonl"
+    return
+  fi
+
+  # Package-qualified min_files: the iconSize cluster spans one relative path
+  # in two packages and must report file_count 2, not 1.
+  local icon_file_count
+  icon_file_count="$(printf '%s\n' "$jsonl" | jq -rs \
+    '[.[] | select(.cluster_id == "copied-literal-cluster:iconSize=20")][0].file_count')"
+  if [[ "$icon_file_count" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): iconSize file_count was %s, expected 2 (package-qualified)\n%s\n" "$icon_file_count" "$jsonl"
     return
   fi
 
@@ -594,11 +616,12 @@ assert_copied_literal_semantic() {
     return
   fi
 
-  # Pair section: exactly the cornerRadius mirror and the gutter pair.
+  # Pair section: the cornerRadius mirror, the gutter pair, and the
+  # cross-package same-relative-path panelCornerRadius pair.
   local pair_names
   pair_names="$(printf '%s\n' "$jsonl" | jq -rs \
     '[.[] | select(.shape == "pair") | [.left.binding_name, .right.binding_name] | sort | join("+")] | sort | join(",")')"
-  if [[ "$pair_names" != "contentGutterWidth+gutterWidth,cornerRadius+placeholderCornerRadius" ]]; then
+  if [[ "$pair_names" != "contentGutterWidth+gutterWidth,cornerRadius+placeholderCornerRadius,panelCornerRadius+panelCornerRadius" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ copied-literal-candidates (semantic): unexpected pair set: %s\n%s\n" "$pair_names" "$jsonl"
     return
@@ -616,7 +639,7 @@ assert_copied_literal_semantic() {
     return
   fi
   PASS=$((PASS + 1))
-  printf "  ✓ copied-literal-candidates (semantic): 2 clusters + 2 pairs at defaults; all gates hold; min_sites=2 surfaces opacity\n"
+  printf "  ✓ copied-literal-candidates (semantic): 3 clusters + 3 pairs at defaults; all gates hold; min_sites=2 surfaces opacity\n"
 }
 assert_copied_literal_semantic
 
