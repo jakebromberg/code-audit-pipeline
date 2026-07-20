@@ -124,10 +124,11 @@ def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "
     # Strictly MORE fields than the intersection floor: mutual residue needs
     # at least one leftover per side, so smaller rows can never qualify.
     | select(.fields != null and (.fields | length) > $min_intersection)
+    | (.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n)) as $slots
     | {rec: .,
-       slots: (.fields | map(split(":") | {n: (.[0] | sub("\\?$"; "")), t: (.[1:] | join(":"))}) | unique_by(.n))}
-    | .names = (.slots | map(.n))
-    | .types = (.slots | map({key: .n, value: .t}) | from_entries)
+       slots: $slots,
+       names: ($slots | map(.n)),
+       types: ($slots | map({key: .n, value: .t}) | from_entries)}
   ] as $bs
 | [
     range(0; $bs | length) as $i
@@ -163,12 +164,11 @@ def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "
         intersection: $ic,
         union: $u,
         jacc: $jacc,
-        # Union the record's own conforms_to into the lookup: the index
-        # excludes interface records (protocol inheritance ≠ conformance),
-        # so a mixed concrete↔interface pair keeps the interface side's
-        # inheritance signal from its own record.
-        demoted: ([($a + {conforms_to: ((($conf_idx[$a.name] // []) + ($a.conforms_to // [])) | unique)}),
-                   ($b + {conforms_to: ((($conf_idx[$b.name] // []) + ($b.conforms_to // [])) | unique)})]
+        # with_conformance unions each record's own conforms_to into the
+        # index lookup: the index excludes interface records (protocol
+        # inheritance ≠ conformance), so a mixed concrete↔interface pair
+        # keeps the interface side's inheritance signal from its own record.
+        demoted: ([($a | with_conformance($conf_idx)), ($b | with_conformance($conf_idx))]
                   | is_already_abstracted_cluster($protocols_idx)),
         shared_slots: ($agreeing | map({name, type: .left_type})),
         conflicting_slots: ([$matched[] | select(.left_type != .right_type)] | sort_by(.name)),
