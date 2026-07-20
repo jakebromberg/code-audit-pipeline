@@ -336,11 +336,11 @@ def conformance_index:
   | map({key: .[0].name, value: (map(.conforms_to) | add | unique)})
   | from_entries;
 
-# Augment a decl with its full conformance surface: the conformance_index
-# lookup (inline + extension-declared, minus interface records) unioned with
-# the decl's own conforms_to (restoring an interface's inheritance signal).
-# The companion to conformance_index — apply per decl before demotion checks
-# so the union step can't be forgotten.
+# Companion to conformance_index: augment a decl with its full conformance
+# surface — the index lookup unioned with the decl's own conforms_to (see
+# the index doc above for why interfaces need their signal restored here).
+# Apply per decl wherever conformance_index is consumed; demotion checks
+# that don't build the index keep passing raw decls unchanged.
 def with_conformance($idx):
   . + {conforms_to: ((($idx[.name] // []) + (.conforms_to // [])) | unique)};
 
