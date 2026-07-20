@@ -309,6 +309,27 @@ def protocols_index:
                  fields: (map(.fields // []) | add | unique)}})
   | from_entries;
 
+# Build a name → merged conforms_to[] lookup across ALL records sharing a
+# name. Swift declares conformance both inline (`struct Foo: P`) and
+# retroactively via extensions (`extension Foo: P {}`) — each is a separate
+# catalog record, so reading `conforms_to` off a type's own record misses
+# extension-declared conformances. Queries that demote already-abstracted
+# pairs should look decls up here instead of trusting the record's own field.
+#
+# Name-level merge (not loc-keyed) is intentional and mirrors
+# protocols_index: retroactive conformance can be declared in any package or
+# file, so there is no reliable structural join back to one declaration.
+# Same-name types in different packages over-merge; documented limitation
+# shared with protocols_index (PR review 5763acba convention).
+#
+# Consumed via:  (. | conformance_index) as $conf_idx
+# then per decl: ($conf_idx[$decl.name] // [])
+def conformance_index:
+  [ entries[] | select(.conforms_to != null) | {name, conforms_to} ]
+  | group_by(.name)
+  | map({key: .[0].name, value: (map(.conforms_to) | add | unique)})
+  | from_entries;
+
 # Predicate over a cluster's member list. Returns true when the cluster
 # is "already abstracted" — all members share at least one `conforms_to`
 # entry, AND that shared entry resolves to a non-trivial protocol in

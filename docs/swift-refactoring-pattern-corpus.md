@@ -201,6 +201,28 @@ Substrate facts the tiers rest on (verified against `extractors/swift/Sources/sw
 
 ---
 
+## Pattern 10 — Parallel models → shared presentation protocol
+
+**Tier 1 — implemented** as [`shared-interface-candidates.jq`](../pipeline/queries/shared-interface-candidates.jq); the first corpus entry to graduate to a shipped query. Two model types with different lifecycles accumulate a large common field surface because they describe the same real-world thing; the fix is a protocol over the intersection consumed by shared rendering code — emphatically *not* a merge.
+
+| Source | Role |
+|---|---|
+| [Extract Interface — Refactoring Guru](https://refactoring.guru/extract-interface) ([archive](https://web.archive.org/web/20260531145938/https://refactoring.guru/extract-interface)) | Canonical statement: two classes sharing identical interface portions → move the commonality into an interface. Diagrams only, no worked code — cite as rationale, not spec. Explicitly notes the refactor addresses common *interfaces*, not duplicated code, which is exactly the keep-both-types framing. |
+| [Protocol-Oriented Programming in Swift — WWDC 2015 session 408](https://developer.apple.com/videos/play/wwdc2015/408/) ([archive](https://web.archive.org/web/20230605145323/https://developer.apple.com/videos/play/wwdc2015/408/)) | The Swift grounding for sharing a surface across value types via protocol rather than merging or subclassing. Transcript and slides on the session page. |
+| [Protocols — Swift by Sundell, Basics](https://www.swiftbysundell.com/basics/protocols/) ([archive](https://web.archive.org/web/20260711094409/https://www.swiftbysundell.com/basics/protocols/)) | Worked code in exactly this shape: `Song` and `Album` conform to one protocol and a single `Player.play()` consumes either. Two parallel music-model types, one shared consumer — the pattern in miniature. |
+
+**Before-signal:** two non-protocol types share ≥ `min_intersection` field names (default 5, absolute — not just a ratio) AND each side keeps fields the other lacks. The *mutual residue* is what routes the pair here rather than to a merge lane: [`near-duplicates(-any)`](../pipeline/queries/near-duplicates-any.jq) owns high-Jaccard/tiny-residue pairs (merge), [`subset-pairs`](../pipeline/queries/subset-pairs.jq) owns one-sided residue (composition / lift), and this detector owns mutual residue over a big absolute intersection (extract interface, keep both types).
+
+**Detector** (implemented; gates and rationale in the [query header](../pipeline/queries/shared-interface-candidates.jq)): intersection ≥ `min_intersection`, mutual residue on both sides, 0.25 ≤ Jaccard < 0.9, both-protocol pairs excluded (protocol-inheritance-candidates' lane), same-name pairs excluded (shadows' lane). Slot comparison is type-aware: shared names split into `shared_slots` (type text agrees — the protocol-requirement candidates) and `conflicting_slots` (type text differs — machine-visible merge blockers). Pairs whose types already share a non-trivial protocol demote to the tail via `conformance_index`, which merges `extension Foo: P {}` retroactive conformances into the lookup — so a finding self-extinguishes once the refactor it recommends lands as one-line conformance extensions.
+
+**Field instance (wxyc-ios-64):** `Playlist:Playcut` (ephemeral flowsheet entry) vs `LikedSongs:LikedSongSnapshot` (durable favorite) — ∩=13 of ∪=26, Jaccard 0.50: twelve type-agreeing display slots (`songTitle`, `artistName`, `releaseTitle`, `labelName`, `artistId`, `artworkURL`, plus six streaming-link URLs) and one conflicting slot, `id` (`UInt64` vs `String`). The twelve shared slots are the `SongDisplayable` protocol requirement set nearly verbatim, and the conflicting `id` slot is deterministic evidence for both restraints the human-authored refactor plan reasoned its way to: the types cannot merge, and the protocol must not refine `Identifiable`.
+
+**Restraint:** the large shared surface is *why* the two types exist separately — they describe the same domain object across different lifecycles, and the storage duplication is intentional; only the read surface should unify. The recommendation is therefore bounded: protocol over the intersection, conformance via one-line extensions, both types keep their stored fields. Below the 0.25 Jaccard floor the shared names are usually incidental entity boilerplate (`id` / `name` / `createdAt`) on two large unrelated types — no protocol wanted, hence the floor. And the protocol needs a home package visible to both conformers; dependency direction is a fact the type catalog alone cannot see, so protocol homing stays with the human (pairing the query with the files-catalog import graph is the natural follow-up).
+
+**V7 hook:** the recommendation shape is [V7 §4's](refactor-recommendation-experiment-methodology.md#why-harder) "protocol-of-shared-fields with both types conforming" ([Cat. 2](refactor-recommendation-experiment-methodology.md#cat-2-protocol-inheritance)); `conflicting_slots` is the deterministic discriminator that rules out the extract-to-common merge alternative ([Cat. 1](refactor-recommendation-experiment-methodology.md#cat-1-extract-to-common)) and feeds the restraint scoring ([§9](refactor-recommendation-experiment-methodology.md#restraint)).
+
+---
+
 ## Summary matrix
 
 | # | Pattern | Tier | Catalog(s) | Blocking fields | Proposed query | Related existing queries |
@@ -214,6 +236,7 @@ Substrate facts the tiers rest on (verified against `extractors/swift/Sources/sw
 | 7 | Scattered enum switches | 2 | function + type | `switch_case_sets` | `scattered-enum-switches.jq` | — |
 | 8 | Pyramid of doom | rejected | — | — | — | `mark-section-density.jq` (aggregate framing only) |
 | 9 | Generalize via generics | 3 | — | — | — | `near-duplicates.jq`, `generic-*-candidates.jq`, `pat-candidates.jq` |
+| 10 | Parallel models → shared presentation protocol | 1 (implemented) | type | — | `shared-interface-candidates.jq` (shipped) | `subset-pairs.jq`, `near-duplicates-any.jq`, `cross-package-shape-near-duplicates-any.jq`, `protocol-inheritance-candidates.jq` |
 
 ## Proposed extractor extensions
 

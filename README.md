@@ -118,6 +118,7 @@ All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FOR
 | `cross-package-shadows.jq` | Type in `main` whose name exists in `shared` | type |
 | `near-duplicates.jq` | Pairs with Jaccard ≥ threshold on field-name sets (default `0.7`) | type |
 | `subset-pairs.jq` | Pairs (A, B) where A's field-name set is a strict subset of B's | type |
+| `shared-interface-candidates.jq` | Pairs sharing a large field intersection with leftover fields on BOTH sides — extract-an-interface (not merge) candidates | type |
 | `cross-package-shape-near-duplicates.jq` | main↔shared pairs with different names but Jaccard ≥ threshold | type |
 | `function-duplicates.jq` | Exact body-hash clusters + pairwise Jaccard near-duplicates on function bodies | function |
 | `file-duplicates.jq` | Exact byte-equal files + whitespace-normalized-only matches | file-hash |

@@ -99,6 +99,7 @@ assert_query_clean subset-pairs.jq "$WORK_DIR/type-catalog.json"
 assert_query_clean protocol-inheritance-candidates.jq "$WORK_DIR/type-catalog.json" --argjson min_overlap 2
 assert_query_clean pat-candidates.jq "$WORK_DIR/type-catalog.json" --argjson max_slot_diffs 1
 assert_query_clean generic-struct-candidates.jq "$WORK_DIR/type-catalog.json" --argjson max_slot_diffs 1
+assert_query_clean shared-interface-candidates.jq "$WORK_DIR/type-catalog.json" --argjson min_intersection 5
 
 echo ""
 echo "=== Function-catalog query ==="
