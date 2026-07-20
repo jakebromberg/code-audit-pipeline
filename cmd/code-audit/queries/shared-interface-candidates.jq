@@ -39,6 +39,21 @@
 #   * same-name pairs excluded (cross-package-shadows' lane); extensions and
 #     enum kinds excluded (partial surfaces / case names aren't field
 #     surfaces); generated rows excluded.
+#   * ≥1 type-agreeing shared slot — a pair whose ENTIRE intersection is
+#     type-conflicting has nothing to put in a protocol requirement list.
+#     That shape is an authored-override vs resolved-value pair (optional
+#     override fields against their resolved non-optional forms, e.g. a
+#     theme-override struct vs the resolved appearance) — a distinct
+#     relationship, not an interface candidate.
+#   * containment pairs excluded — a side declaring a field whose type IS the
+#     other side is a wrapper/facade over composition (a controller mirroring
+#     its wrapped model's published state, a struct with forwarding
+#     accessors), not two parallel models of one concept. Field-tested on
+#     wxyc-ios-64: catches AdaptiveQualityController(loop:
+#     QualityOptimizationLoop) and PlaycutMetadata(streaming: StreamingLinks).
+#     Forwarding-accessor facades WITHOUT a stored reference still slip
+#     through — catching those needs a stored-vs-computed flag in
+#     fields_structured (extractor extension, not yet emitted).
 #
 # Slot comparison is TYPE-AWARE where the flat `fields[]` strings allow:
 # each "name:Type" entry splits at the first ':' (function-signature members
@@ -60,6 +75,12 @@
 # so a pair sharing 10 fields but only a small 2-requirement protocol still
 # demotes.
 #
+# Known limitation: the kind filter cannot distinguish SwiftUI View structs
+# from data models, so view-chrome duplication (two Views sharing styling
+# constants) surfaces here too. The evidence is real, but the right fix there
+# is usually a shared view component or modifier, not a protocol — judgment
+# stays with the reader.
+#
 # `--argjson min_intersection N` is REQUIRED for raw jq (compile-time error
 # otherwise); the binary supplies the front-matter default (5).
 #
@@ -74,6 +95,11 @@
 #! desc: Mutual-residue field intersection — extract-an-interface (not merge) candidates.
 
 include "_canonical";
+
+# Normalize a slot's type text for the containment check: drop an existential
+# `any ` prefix and trailing optional/IUO markers, so `core:EngineCore?` and
+# `engine:any EngineCore` both read as `EngineCore`.
+def bare_type_name: sub("^\\s*"; "") | sub("^any\\s+"; "") | sub("[?!]+\\s*$"; "");
 
 . as $catalog
 | ($catalog | protocols_index) as $protocols_idx
@@ -105,12 +131,20 @@ include "_canonical";
     | ($af + $bf | unique | length) as $u
     | ($ic / $u) as $jacc
     | select($jacc >= 0.25 and $jacc < 0.9)
+    # Containment: either side holding a field typed as the other side marks
+    # the pair as wrapper-over-composition, not parallel models.
+    | select((any($aslots[]; (.t | bare_type_name) == $b.name)
+              or any($bslots[]; (.t | bare_type_name) == $a.name)) | not)
     | ($bslots | map({key: .n, value: .t}) | from_entries) as $btypes
     | [ $shared_names[] | . as $n
         | {name: $n,
            left_type: ($aslots | map(select(.n == $n)) | .[0].t),
            right_type: $btypes[$n]}
       ] as $matched
+    | ([$matched[] | select(.left_type == .right_type)] | sort_by(.name)) as $agreeing
+    # An all-conflicting intersection is an authored-override vs resolved-value
+    # pair: no requirement candidates, so no protocol to extract.
+    | select(($agreeing | length) > 0)
     | {
         cluster_id: cluster_id_sorted_pair("shared-interface-candidates"; loc_key($a); loc_key($b)),
         query: "shared-interface-candidates",
@@ -121,7 +155,7 @@ include "_canonical";
         demoted: ([($a + {conforms_to: ($conf_idx[$a.name] // [])}),
                    ($b + {conforms_to: ($conf_idx[$b.name] // [])})]
                   | is_already_abstracted_cluster($protocols_idx)),
-        shared_slots: ([$matched[] | select(.left_type == .right_type) | {name, type: .left_type}] | sort_by(.name)),
+        shared_slots: ($agreeing | map({name, type: .left_type})),
         conflicting_slots: ([$matched[] | select(.left_type != .right_type)] | sort_by(.name)),
         left_only:  ([$af[] | select(. as $x | ($bf | index($x)) == null)] | sort),
         right_only: ([$bf[] | select(. as $x | ($af | index($x)) == null)] | sort),

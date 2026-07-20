@@ -223,14 +223,15 @@ assert_shared_interface_semantic() {
   leaked="$(printf '%s\n' "$jsonl" | jq -r '.left.name, .right.name' \
     | grep -x -e UserSummary -e UserDetail -e BoundaryLeft -e BoundaryRight \
       -e GodModelA -e GodModelB -e MediaPlayable -e StreamPlayable \
-      -e SettingsModel -e GeneratedSnapshotDTO -e FeedRepresentable || true)"
+      -e SettingsModel -e GeneratedSnapshotDTO -e FeedRepresentable \
+      -e ThemeOverride -e ThemeResolved -e EngineCore -e EngineController || true)"
   if [[ -n "$leaked" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ shared-interface-candidates (semantic): excluded rows leaked into output: %s\n" "$leaked"
     return
   fi
   PASS=$((PASS + 1))
-  printf "  ✓ shared-interface-candidates (semantic): 2 rows; Playcut pair first with conflicting id slot; feed pair demoted via extension conformance; all 6 exclusion lanes clean\n"
+  printf "  ✓ shared-interface-candidates (semantic): 2 rows; Playcut pair first with conflicting id slot; feed pair demoted via extension conformance; all 8 exclusion lanes clean\n"
 }
 assert_shared_interface_semantic
 
