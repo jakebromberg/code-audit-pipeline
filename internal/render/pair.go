@@ -29,8 +29,8 @@ func Pair(r Row) (string, error) {
 	}
 	fmt.Fprintf(&b, "- left:  %s\n", renderMember(left))
 	fmt.Fprintf(&b, "- right: %s\n", renderMember(right))
-	if comp := pairCompanionBlock(r); comp != "" {
-		fmt.Fprintf(&b, "\n%s", comp)
+	if extras := pairSlotBlock(r) + pairCompanionBlock(r); extras != "" {
+		fmt.Fprintf(&b, "\n%s", extras)
 	}
 	return b.String(), nil
 }
@@ -57,19 +57,64 @@ func pairHeaderSummary(r Row) string {
 }
 
 // pairHeaderKeys is the ordered allow-list of payload fields surfaced on the
-// pair header (after jacc, which is special-cased to percent form).
+// pair header (after jacc, which is special-cased to percent form). demoted
+// renders only when true (see formatHeaderValue) — mirroring the cluster
+// header and the jq text mode's [DEMOTED] prefix.
 var pairHeaderKeys = []string{
 	"intersection",
 	"union",
 	"overlap",
 	"slot_diff_count",
+	"demoted",
+}
+
+// pairSlotBlock renders the type-aware slot payload emitted by
+// shared-interface-candidates: shared_slots ({name, type} — the
+// protocol-requirement candidates) and conflicting_slots
+// ({name, left_type, right_type} — the machine-visible merge blockers).
+// Either line is omitted when its array is absent or empty; queries without
+// slot payloads produce no block at all.
+func pairSlotBlock(r Row) string {
+	var b strings.Builder
+	if arr, ok := r["shared_slots"].([]any); ok {
+		var parts []string
+		for _, item := range arr {
+			m, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			name, _ := m["name"].(string)
+			typ, _ := m["type"].(string)
+			parts = append(parts, name+":"+typ)
+		}
+		if len(parts) > 0 {
+			fmt.Fprintf(&b, "- shared slots:      %s\n", strings.Join(parts, ", "))
+		}
+	}
+	if arr, ok := r["conflicting_slots"].([]any); ok {
+		var parts []string
+		for _, item := range arr {
+			m, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			name, _ := m["name"].(string)
+			lt, _ := m["left_type"].(string)
+			rt, _ := m["right_type"].(string)
+			parts = append(parts, fmt.Sprintf("%s (%s vs %s)", name, lt, rt))
+		}
+		if len(parts) > 0 {
+			fmt.Fprintf(&b, "- conflicting slots: %s\n", strings.Join(parts, ", "))
+		}
+	}
+	return b.String()
 }
 
 // pairCompanionBlock produces an aligned key-pair block for every left_<X>
 // field that has a matching right_<X>. The block looks like:
 //
-//	- left fields:   a, b, c
-//	- right fields:  a, b, d
+//   - left fields:   a, b, c
+//   - right fields:  a, b, d
 //
 // Label spelling: underscores in <X> render as spaces ("left_swap_tokens" →
 // "left swap tokens"). Width is padded so the colon column aligns within the

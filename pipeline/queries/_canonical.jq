@@ -322,10 +322,16 @@ def protocols_index:
 # Same-name types in different packages over-merge; documented limitation
 # shared with protocols_index (PR review 5763acba convention).
 #
+# Interface records are EXCLUDED: a protocol's conforms_to is inheritance
+# (`protocol X: P`), not concrete conformance, and merging it would credit a
+# same-name concrete type with the protocol's parents — a false demotion.
+# Interface members keep their inheritance signal because consumers union
+# the record's own conforms_to into the lookup result.
+#
 # Consumed via:  (. | conformance_index) as $conf_idx
-# then per decl: ($conf_idx[$decl.name] // [])
+# then per decl: ((($conf_idx[$decl.name] // []) + ($decl.conforms_to // [])) | unique)
 def conformance_index:
-  [ entries[] | select(.conforms_to != null) | {name, conforms_to} ]
+  [ entries[] | select(.kind != "interface") | select(.conforms_to != null) | {name, conforms_to} ]
   | group_by(.name)
   | map({key: .[0].name, value: (map(.conforms_to) | add | unique)})
   | from_entries;

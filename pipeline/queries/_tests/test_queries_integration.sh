@@ -167,6 +167,10 @@ assert_jsonl_has_prefix shared-interface-candidates.jq "$SHARED_INTERFACE_FIXTUR
 #   ---    MediaPlayable/StreamPlayable    both kind:interface → protocol-inheritance lane
 #   ---    SettingsModel/SettingsModel     same name → cross-package-shadows lane
 #   ---    GeneratedSnapshotDTO            generated:true filtered
+#   ---    ThemeOverride/ThemeResolved     every shared slot type-conflicts →
+#          all-conflicting (authored-override vs resolved-value) gate
+#   ---    EngineCore/EngineController     controller holds core:EngineCore? →
+#          containment (wrapper-over-composition) gate
 assert_shared_interface_semantic() {
   local jsonl
   jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson min_intersection 5 \
@@ -176,7 +180,9 @@ assert_shared_interface_semantic() {
     return
   }
   local count expected=2
-  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  # `|| true`: grep -c exits 1 on zero matches, which under `set -e` would
+  # abort the whole script instead of reaching the row-count diagnostic below.
+  count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
   if [[ "$count" != "$expected" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ shared-interface-candidates (semantic): expected %d rows, got %d\n%s\n" "$expected" "$count" "$jsonl"
