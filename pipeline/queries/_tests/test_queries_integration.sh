@@ -32,6 +32,7 @@ COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
+COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 
 PASS=0
 FAIL=0
@@ -527,6 +528,97 @@ assert_mark_section_density_argjson_required() {
   printf "  ✓ mark-section-density (argjson-required): raw jq without --argjson correctly fails at compile time\n"
 }
 assert_mark_section_density_argjson_required
+
+echo ""
+echo "=== Literal-catalog query ==="
+assert_jsonl_has_prefix copied-literal-candidates.jq "$COPIED_LITERAL_FIXTURE" "copied-literal-" \
+  --argjson min_sites 3 --argjson min_files 2
+
+# Semantic checks for copied-literal-candidates. The fixture is hand-tuned so
+# exactly TWO clusters and TWO pairs fire at defaults, and every gate is
+# exercised by a group that would otherwise qualify:
+#
+# Cluster section (group by value_norm + label; ≥3 sites across ≥2 files):
+#   FIRES  padding = 12            3 sites / 3 files; one site spelled "12.0"
+#                                  (value_norm collapses spellings)
+#   FIRES  animationDuration = 0.3 3 binding sites / 3 files; one spelled "0.30"
+#   ---    frame(width:) = 44      3 sites but 1 file → min_files gate
+#   ---    opacity = 0.8           2 sites → min_sites gate (fires at min_sites 2)
+#   ---    spacing = 2             3 sites / 3 files but value_norm "2" is denied
+#   ---    lineLimit = 3           3rd site is generated:true → only 2 counted
+#
+# Pair section (bindings only, equal value_norm, different file or enclosing
+# type, lowercased-substring name match with contained length ≥ 4):
+#   FIRES  cornerRadius (6.0, ArtworkStyle) <-> placeholderCornerRadius (6)
+#          — the wxyc-ios-64 PR #565 motivating case
+#   FIRES  gutterWidth <-> contentGutterWidth (16) — same file, different
+#          enclosing types
+#   ---    animationDuration bindings   covered by their fired cluster
+#   ---    maxRetries = 6               name unrelated to cornerRadius
+#   ---    cornerRadius = 8 (CardStyle) value_norm differs from the 6s
+#   ---    badgeSize/badgeSizeCompact   same file AND same enclosing_type
+#   ---    cap/capacity                 contained name "cap" shorter than 4
+#   ---    retryCount/maxRetryCount     value_norm "1" is denied
+assert_copied_literal_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_sites 3 --argjson min_files 2 \
+    -f "$QUERIES_DIR/copied-literal-candidates.jq" "$COPIED_LITERAL_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
+  if [[ "$count" != "4" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): expected 4 rows, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+
+  local cluster_ids
+  cluster_ids="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.shape == "cluster") | .cluster_id] | sort | join(",")')"
+  if [[ "$cluster_ids" != "copied-literal-cluster:animationDuration=0.3,copied-literal-cluster:padding=12" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): unexpected cluster set: %s\n%s\n" "$cluster_ids" "$jsonl"
+    return
+  fi
+
+  # Spelling collapse: the padding cluster must contain the "12.0" site.
+  local has_float_spelling
+  has_float_spelling="$(printf '%s\n' "$jsonl" | jq -rs \
+    '[.[] | select(.cluster_id == "copied-literal-cluster:padding=12") | .members[] | select(.name == "padding(12.0)")] | length')"
+  if [[ "$has_float_spelling" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): padding cluster lost the 12.0-spelled site\n%s\n" "$jsonl"
+    return
+  fi
+
+  # Pair section: exactly the cornerRadius mirror and the gutter pair.
+  local pair_names
+  pair_names="$(printf '%s\n' "$jsonl" | jq -rs \
+    '[.[] | select(.shape == "pair") | [.left.binding_name, .right.binding_name] | sort | join("+")] | sort | join(",")')"
+  if [[ "$pair_names" != "contentGutterWidth+gutterWidth,cornerRadius+placeholderCornerRadius" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): unexpected pair set: %s\n%s\n" "$pair_names" "$jsonl"
+    return
+  fi
+
+  # Loosening min_sites to 2 must surface the opacity cluster (2 sites / 2 files).
+  local low_has_opacity
+  low_has_opacity="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_sites 2 --argjson min_files 2 \
+    -f "$QUERIES_DIR/copied-literal-candidates.jq" "$COPIED_LITERAL_FIXTURE" \
+    | jq -rs '[.[] | select(.cluster_id == "copied-literal-cluster:opacity=0.8")] | length')"
+  if [[ "$low_has_opacity" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (semantic): min_sites=2 did not surface the opacity cluster\n"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ copied-literal-candidates (semantic): 2 clusters + 2 pairs at defaults; all gates hold; min_sites=2 surfaces opacity\n"
+}
+assert_copied_literal_semantic
 
 echo ""
 echo "=== Migration-progress queries ==="
@@ -1430,6 +1522,7 @@ assert_text_has_cid generic-function-candidates.jq "$FUNCS_FIXTURE" --argjson th
 assert_text_has_cid file-duplicates.jq "$FILES_FIXTURE"
 assert_text_has_cid copied-from-header.jq "$COPIED_FROM_HEADER_FIXTURE"
 assert_text_has_cid mark-section-density.jq "$MARK_SECTION_DENSITY_FIXTURE" --argjson min_marks 6 --argjson min_lines 400
+assert_text_has_cid copied-literal-candidates.jq "$COPIED_LITERAL_FIXTURE" --argjson min_sites 3 --argjson min_files 2
 assert_text_has_cid migration-progress.jq "$MIGRATION_FIXTURE" \
   --arg old_sig "id:number" --arg new_sig "id:string" --arg label "Id-migration"
 assert_text_has_cid shape-sig-frequency.jq "$MIGRATION_FIXTURE"

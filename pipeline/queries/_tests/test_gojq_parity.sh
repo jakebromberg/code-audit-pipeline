@@ -55,6 +55,7 @@ COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 NOTIFICATION_WRAPPERS_FIXTURE="$FIXTURES_DIR/notification-wrappers.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
+COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -186,6 +187,10 @@ echo "=== File-hash queries ==="
 both_modes file-duplicates                           "$QUERIES_DIR/file-duplicates.jq"                           "$FILES_FIXTURE"
 both_modes copied-from-header                        "$QUERIES_DIR/copied-from-header.jq"                        "$COPIED_FROM_HEADER_FIXTURE"
 both_modes mark-section-density                      "$QUERIES_DIR/mark-section-density.jq"                      "$MARK_SECTION_DENSITY_FIXTURE" --argjson min_marks 6 --argjson min_lines 400
+
+echo ""
+echo "=== Literal-catalog query ==="
+both_modes copied-literal-candidates                 "$QUERIES_DIR/copied-literal-candidates.jq"                 "$COPIED_LITERAL_FIXTURE" --argjson min_sites 3 --argjson min_files 2
 
 echo ""
 echo "=== Migration-progress queries ==="
