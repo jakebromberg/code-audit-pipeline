@@ -223,6 +223,27 @@ Substrate facts the tiers rest on (verified against `extractors/swift/Sources/sw
 
 ---
 
+## Pattern 11 — Copied numeric literals → shared named constant
+
+**Tier 1 — implemented** as [`copied-literal-candidates.jq`](../pipeline/queries/copied-literal-candidates.jq) over the literal catalog ([`literal-catalog.json`](pipeline-contract.md#literal-catalog-literal-catalogjson), the occurrence-catalog lane added in PR #291). A numeric value that must agree with another value is a *link*, and a copy of it breaks silently — the copy compiles, renders correctly today, and drifts the first time the original moves. Two detectable shapes: the same normalized value recurring across files under the same knob name (a constant that was never extracted), and a private binding mirroring another type's private constant (the copy exists because access control made the original unreachable, so the workaround was to retype it).
+
+| Source | Role |
+|---|---|
+| [Replace Magic Number with Symbolic Constant — Refactoring Guru](https://refactoring.guru/replace-magic-number-with-symbolic-constant) ([archive](https://web.archive.org/web/20260624074144/https://refactoring.guru/replace-magic-number-with-symbolic-constant)) | Canonical statement with worked before/after in six languages (`9.81` → `GRAVITATIONAL_CONSTANT`). Two load-bearing caveats travel into the detector: find-and-replace is risky because identical numbers may serve different purposes — hence clustering on (value, label) rather than value alone — and "not all numbers are magical" (loop indices, structural 0/1) — hence the deny-list. |
+| [`no_magic_numbers` — SwiftLint rule directory](https://realm.github.io/SwiftLint/no_magic_numbers.html) ([archive](https://web.archive.org/web/20260312112806/https://realm.github.io/SwiftLint/no_magic_numbers.html)) | The per-site cousin: an opt-in intra-file rule flagging bare numeric literals, with 0/1/100 and test targets exempted. Its existence marks the lane boundary — per-site magic-number nagging is SwiftLint's job, done statefully and in-editor; the in-lane signal here is *cross-file repetition of the same value under the same name*, which needs the whole catalog as input. |
+
+**Before-signal:** two predicates over literal-catalog rows, joined on `value_norm` (spellings collapsed: `6.0` / `0xFF` / `1_000` → `6` / `255` / `1000`). Cluster: same (`value_norm`, label) at ≥ `min_sites` occurrences spanning ≥ `min_files` files, where the label is the knob the literal is attached to (`binding_name`, or `arg_label` falling back to `callee`). Pair: two bindings with equal `value_norm`, different file or enclosing type, whose names contain one another case-insensitively (contained name ≥ 4 chars) — the single mirrored constant a site-count gate can't see.
+
+**Detector** (implemented; the full gate list, thresholds, and rationale live in the [query header](../pipeline/queries/copied-literal-candidates.jq) — the single source of truth): generated-file filter, −1/0/1/2 deny-list, `min_sites` 3 / `min_files` 2 floors on the cluster lane, and bindings already reported by a fired cluster are excluded from the pair lane.
+
+**Field instance (wxyc-ios-64):** the PR #565 review — the PR that acted on Pattern 10's shared-interface recommendation — found a private `placeholderCornerRadius: CGFloat = 6.0` silently mirroring another type's private `cornerRadius: CGFloat = 6.0` (copied because the original is `private`), plus hand-copied 12pt content insets drifting against the header's 16pt gutter. Both are invisible to declaration catalogs — no type or function changes shape when a literal is retyped — which is why the literal catalog exists as its own lane.
+
+**Restraint:** encoded in the detector rather than left to the reader. The deny-list drops −1/0/1/2 (structure — indices, toggles, halves — per Refactoring Guru's "not all numbers are magical"). The label join refuses to equate `12` as padding with `12` as a line limit — same spelling, different decisions — accepting misses to avoid the find-and-replace trap. The floors treat two occurrences as coincidence and three-across-two-files as convention. And the deepest restraint is what the query does not say: it surfaces the link, but whether the fix is a shared constant, a design-token set, or accepting the duplication stays with the human — same-value-today is not same-decision.
+
+**V7 hook:** outside the V7 plant taxonomy — it consolidates *values*, not type structure (see the [taxonomy note](#relationship-to-the-v7-taxonomy)). The PR #565 review serves as field-report grounding for restraint scoring: the reviewer flagged the copies; judging which fix applied stayed human.
+
+---
+
 ## Summary matrix
 
 | # | Pattern | Tier | Catalog(s) | Blocking fields | Proposed query | Related existing queries |
@@ -237,17 +258,35 @@ Substrate facts the tiers rest on (verified against `extractors/swift/Sources/sw
 | 8 | Pyramid of doom | rejected | — | — | — | `mark-section-density.jq` (aggregate framing only) |
 | 9 | Generalize via generics | 3 | — | — | — | `near-duplicates.jq`, `generic-*-candidates.jq`, `pat-candidates.jq` |
 | 10 | Parallel models → shared presentation protocol | 1 (implemented) | type | — | `shared-interface-candidates.jq` (shipped) | `subset-pairs.jq`, `near-duplicates-any.jq`, `cross-package-shape-near-duplicates-any.jq`, `protocol-inheritance-candidates.jq` |
+| 11 | Copied literals → named constant | 1 (implemented) | literal | — | `copied-literal-candidates.jq` (shipped) | — |
+
+## Verifying a refactor (zero-residue workflow)
+
+When a graduated detector's recommendation lands, the same detector verifies the landing: re-run extraction and the query against the merged checkout, and the refactor is complete when the finding is gone — any residue row names the exact `file:line` still carrying a copy.
+
+```sh
+code-audit extract swift --root <checkout>
+code-audit query copied-literal-candidates
+```
+
+Detectors self-extinguish through different mechanisms, and the mechanism defines what "done" looks like:
+
+- [`shared-interface-candidates.jq`](../pipeline/queries/shared-interface-candidates.jq) *demotes* rather than disappears: once the recommended conformances land as `extension Foo: P {}` one-liners, `conformance_index` sees the shared protocol and the pair drops to the tail flagged `demoted` (Pattern 10).
+- [`copied-literal-candidates.jq`](../pipeline/queries/copied-literal-candidates.jq) disappears *structurally*: when a call site references the extracted constant, the argument is a name reference rather than a numeric literal, so the occurrence leaves the literal catalog entirely. Zero rows for the value means zero remaining copies, not merely zero detected ones.
+
+Worked instance: wxyc-ios-64 PR #565 — the Pattern 10 recommendation acted on — introduced fresh copies *during the refactor itself*: the `6.0` corner-radius mirror and the 12pt/16pt inset drift described in Pattern 11. Verified against the repo's history: on the PR's pre-review commit the query fires exactly the pair the human review caught (`cornerRadius = 6.0` in `ArtworkStyle` ↔ `placeholderCornerRadius = 6.0` in `SongRowContent`), and on the post-review merge the pair is structurally gone while the surviving `padding=12` / `padding=16` clusters still name the repo-wide inset drift. A zero-residue pass on the branch is the check that surfaces both mechanically, before a reviewer has to. The workflow generalizes: any refactor that centralizes copies should end with a re-run of the detector that found them.
 
 ## Proposed extractor extensions
 
-Two additive extensions to the Swift function catalog unlock every Tier 2 detector above; both must go through the [pipeline contract](pipeline-contract.md) first per the schema-first rule.
+The first two are additive extensions to the Swift function catalog that unlock every Tier 2 detector above; the third extends the literal lane opened by Pattern 11. All must go through the [pipeline contract](pipeline-contract.md) first per the schema-first rule.
 
 1. **Signature-level parity** (unlocks 2, 3-upgrade, 4-robust, 6): `params[]` with `name` and verbatim `type_text` (plus `is_closure` / `is_escaping` structural flags — same rationale as `is_optional`: verbatim text for display, structural flags for matching), and `return_type_text`. The TypeScript and Rust function catalogs already carry signature-level fields; this closes a known parity gap rather than inventing schema.
 2. **`switch_case_sets`** (unlocks 7): per-function array of leading-dot case-name sets, one per `switch` statement. Cheap to emit from SwiftSyntax; the enum join stays in the query where it belongs.
+3. **SwiftUI modifier-chain shapes** (generalizes 11): a per-chain record of the ordered modifier callee names hanging off a view expression (`.padding(12).background(.thinMaterial).cornerRadius(6)` → `["padding", "background", "cornerRadius"]`), keyed like literal rows (package / file / line / enclosing context). PR #565's hand-copied panel chrome was three modifiers copied *as a unit* — the literal catalog sees the `12` and the `6` but not the chain, so chrome copied with different values is invisible to Pattern 11. Same-sequence clustering (≥ N sites) is the natural `modifier-chain-shapes.jq`. Extraction stays deterministic: SwiftSyntax sees the chain as nested `FunctionCallExpr` / `MemberAccessExpr` pairs.
 
 ## Relationship to the V7 taxonomy
 
-V7's eight plant categories are *structure-consolidation* refactors — merging things that rhyme (extract-to-common, protocol inheritance, default impl, PAT, generic parameterization, subclass lift, macro synthesis, composition). Corpus patterns 1–4 form a second axis: *type-strengthening* refactors, where nothing is duplicated — a representation is too permissive and a language feature tightens it. Pattern 5 is a third direction: *de-abstraction*.
+V7's eight plant categories are *structure-consolidation* refactors — merging things that rhyme (extract-to-common, protocol inheritance, default impl, PAT, generic parameterization, subclass lift, macro synthesis, composition). Corpus patterns 1–4 form a second axis: *type-strengthening* refactors, where nothing is duplicated — a representation is too permissive and a language feature tightens it. Pattern 5 is a third direction: *de-abstraction*. Pattern 11 adds a fourth: *value-consolidation* — nothing about the types is wrong; a value is duplicated and the copies must track each other.
 
 [V7 §5's taxonomy note](refactor-recommendation-experiment-methodology.md#plant-design) already establishes that the plant set is a subset of the recommendation taxonomy, not a partition — `extension-consolidation` is a recommendation category with no plants. New categories from this corpus (`state-enum-consolidation`, `type-safe-id-introduction`, `async-migration`, `protocol-removal`) extend the agent prompt's enumeration the same additive way. Whether they get plant rounds of their own is a V8+ scoping question; the detector work stands on its own either way.
 
