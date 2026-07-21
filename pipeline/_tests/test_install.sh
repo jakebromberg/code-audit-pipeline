@@ -154,9 +154,9 @@ echo "=== install.sh — truthful version stamp ==="
 # miss them). Every git call is guarded so a non-git tree lands on the
 # same "unknown" fallback install.sh uses instead of aborting the suite
 # under set -e.
-if [ "$(cd "$REPO_ROOT" && git rev-parse --show-toplevel 2>/dev/null || true)" = "$(cd "$REPO_ROOT" && pwd -P)" ]; then
-  expected=$(cd "$REPO_ROOT" && git describe --tags --always 2>/dev/null || echo unknown)
-  if [ "$expected" != "unknown" ] && [ -n "$(cd "$REPO_ROOT" && git status --porcelain 2>/dev/null)" ]; then
+if [ "$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null || true)" = "$(cd "$REPO_ROOT" && pwd -P)" ]; then
+  expected=$(git -C "$REPO_ROOT" describe --tags --always 2>/dev/null || echo unknown)
+  if [ "$expected" != "unknown" ] && [ -n "$(git -C "$REPO_ROOT" status --porcelain 2>/dev/null)" ]; then
     expected="${expected}-dirty"
   fi
 else
@@ -175,7 +175,7 @@ echo "=== install.sh — default install regenerates embeds ==="
 # the tracked embed trees (byte-identical only when canonical sources and
 # embeds are in sync). Run it only when the relevant paths are clean so
 # the suite never rewrites uncommitted work.
-embed_status=$(cd "$REPO_ROOT" && git status --porcelain -- pipeline/queries extractors cmd/code-audit internal/genembed 2>/dev/null || true)
+embed_status=$(git -C "$REPO_ROOT" status --porcelain -- pipeline/queries extractors cmd/code-audit internal/genembed 2>/dev/null || true)
 if [ -n "$embed_status" ]; then
   echo "  - skipped: embed-relevant paths have local changes; a default-mode install would rewrite them"
 else
