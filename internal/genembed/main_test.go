@@ -253,6 +253,30 @@ func TestRun_EmptyDirsNotCopied(t *testing.T) {
 	}
 }
 
+// A stale destination (from a previous generation) and a stale temp
+// sibling (from a crashed run) must both be replaced: dst ends up exactly
+// mirroring src, and the temp sibling is gone after a successful run.
+func TestRun_ReplacesStaleDstAndRemovesTmpSibling(t *testing.T) {
+	src := t.TempDir()
+	dst := filepath.Join(t.TempDir(), "out")
+	mkTree(t, src, map[string]string{"fresh.txt": "f"})
+	mkTree(t, dst, map[string]string{"stale.txt": "s"})
+	mkTree(t, dst+".genembed-tmp", map[string]string{"crashed.txt": "c"})
+
+	if _, err := Run(Options{Src: src, Dst: dst}); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	got := listFiles(t, dst)
+	want := []string{"fresh.txt"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("stale dst replace: got %v, want %v", got, want)
+	}
+	if _, err := os.Stat(dst + ".genembed-tmp"); !os.IsNotExist(err) {
+		t.Fatalf("temp sibling should be removed after a successful run: stat err = %v", err)
+	}
+}
+
 func TestRun_RefusesMissingSrc(t *testing.T) {
 	dst := filepath.Join(t.TempDir(), "out")
 	_, err := Run(Options{Src: "/definitely/does/not/exist/ohlordy", Dst: dst})

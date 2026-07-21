@@ -84,9 +84,12 @@ func parseSet(s string) map[string]bool {
 	return out
 }
 
-// Run walks opts.Src and copies matching regular files into opts.Dst. dst is
-// fully cleared before the walk. Symlinks (file or directory) are not
-// followed. Empty source directories are not preserved.
+// Run walks opts.Src and copies matching regular files into opts.Dst. The
+// copy is staged in a temporary sibling of dst and swapped in only after a
+// fully successful walk, so an interrupted or failed run leaves either the
+// old tree or the complete new one — never a partial tree, which //go:embed
+// patterns like `all:extractors` would silently accept. Symlinks (file or
+// directory) are not followed. Empty source directories are not preserved.
 func Run(opts Options) (int, error) {
 	srcAbs, err := filepath.Abs(opts.Src)
 	if err != nil {
@@ -106,11 +109,13 @@ func Run(opts Options) (int, error) {
 		return 0, fmt.Errorf("dst %s resolves inside src %s", dstAbs, srcAbs)
 	}
 
-	if err := os.RemoveAll(dstAbs); err != nil {
-		return 0, fmt.Errorf("clear dst: %w", err)
+	tmpDst := dstAbs + ".genembed-tmp"
+	if err := os.RemoveAll(tmpDst); err != nil {
+		return 0, fmt.Errorf("clear stale tmp dst: %w", err)
 	}
-	if err := os.MkdirAll(dstAbs, 0o755); err != nil {
-		return 0, fmt.Errorf("mkdir dst: %w", err)
+	defer os.RemoveAll(tmpDst)
+	if err := os.MkdirAll(tmpDst, 0o755); err != nil {
+		return 0, fmt.Errorf("mkdir tmp dst: %w", err)
 	}
 
 	copied := 0
@@ -164,9 +169,9 @@ func Run(opts Options) (int, error) {
 
 		var outPath string
 		if opts.Flatten {
-			outPath = filepath.Join(dstAbs, base)
+			outPath = filepath.Join(tmpDst, base)
 		} else {
-			outPath = filepath.Join(dstAbs, filepath.FromSlash(rel))
+			outPath = filepath.Join(tmpDst, filepath.FromSlash(rel))
 			if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 				return fmt.Errorf("mkdir intermediate: %w", err)
 			}
@@ -190,6 +195,12 @@ func Run(opts Options) (int, error) {
 	})
 	if walkErr != nil {
 		return copied, fmt.Errorf("walk: %w", walkErr)
+	}
+	if err := os.RemoveAll(dstAbs); err != nil {
+		return copied, fmt.Errorf("clear dst: %w", err)
+	}
+	if err := os.Rename(tmpDst, dstAbs); err != nil {
+		return copied, fmt.Errorf("swap tmp dst into place: %w", err)
 	}
 	return copied, nil
 }

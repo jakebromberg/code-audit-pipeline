@@ -6,25 +6,31 @@
 #      sources (`go generate ./...`), so the installed binary always embeds
 #      what this checkout's extractors/ and pipeline/queries/ actually
 #      contain — not whatever was last committed under cmd/code-audit/.
-#   2. Stamps internal/cli.Version with `git describe --tags --always
-#      --dirty` from THIS checkout. The Go toolchain's own VCS stamp locates
-#      the repo by looking for a .git directory, so a build inside a linked
-#      worktree (whose .git is a file) gets attributed to the parent
-#      checkout's HEAD and marked dirty by its untracked files. git
+#      This rewrites the TRACKED trees under cmd/code-audit/{queries,
+#      extractors}/ in place; on a clean checkout the rewrite is
+#      byte-identical.
+#   2. Stamps internal/cli.Version with `git describe --tags --always` from
+#      THIS checkout, appending -dirty when `git status --porcelain`
+#      reports anything. Porcelain counts untracked files, which `git
+#      describe --dirty` ignores even though step 1 happily embeds them.
+#      The Go toolchain's own VCS stamp locates the repo by looking for a
+#      .git directory, so a build inside a linked worktree (whose .git is
+#      a file) gets attributed to the parent checkout's HEAD; git
 #      describe, run here, sees the worktree's true state.
-#   3. `go install ./cmd/code-audit` into $GOBIN (or $GOPATH/bin), then
-#      verifies the binary landed and warns if that directory is not on
-#      PATH.
-#
-# Usage: ./install.sh [--no-generate] [-h|--help]
-#
-#   --no-generate   Skip step 1 and install with the committed embed trees
-#                   as-is (what a release build of this commit would embed).
+#   3. `go install ./cmd/code-audit`, then verifies the binary landed and
+#      warns if its directory is not on PATH.
 
 set -euo pipefail
 
 usage() {
-  sed -n '/^# Usage:/,/as-is/s/^#[ ]\{0,1\}//p' "${BASH_SOURCE[0]}"
+  cat <<'EOF'
+Usage: ./install.sh [--no-generate] [-h|--help]
+
+  --no-generate   Skip the go-generate step and install the embed trees
+                  currently on disk, without regenerating them from the
+                  canonical sources.
+  -h, --help      Show this help and exit.
+EOF
 }
 
 GENERATE=1
@@ -57,17 +63,41 @@ if [ "$GENERATE" -eq 1 ]; then
   go generate ./...
 fi
 
-STAMP="$(git describe --tags --always --dirty 2>/dev/null || true)"
+# Trust git describe only when this checkout is itself the top of a git
+# repo. Without the toplevel check, a non-git checkout (release-tarball
+# extract) nested anywhere under a git-tracked tree would inherit the
+# ENCLOSING repo's describe output — a plausible-looking foreign version.
+STAMP=""
+if [ "$(git rev-parse --show-toplevel 2>/dev/null || true)" = "$(pwd -P)" ]; then
+  STAMP="$(git describe --tags --always 2>/dev/null || true)"
+  if [ -n "$STAMP" ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    STAMP="${STAMP}-dirty"
+  fi
+fi
 if [ -z "$STAMP" ]; then
   STAMP="unknown"
 fi
 
+MODULE="$(go list -m)"
 echo "code-audit install: building ${STAMP}"
-go install -ldflags "-X github.com/jakebromberg/code-audit-pipeline/internal/cli.Version=${STAMP}" ./cmd/code-audit
+go install -ldflags "-X ${MODULE}/internal/cli.Version=${STAMP}" ./cmd/code-audit
 
 BIN_DIR="$(go env GOBIN)"
+CROSS=0
 if [ -z "$BIN_DIR" ]; then
-  BIN_DIR="$(go env GOPATH)/bin"
+  # `go env GOPATH` returns the full colon-separated list for a
+  # multi-element GOPATH; `go install` writes to the FIRST element's bin.
+  BIN_DIR="$(go env GOPATH)"
+  BIN_DIR="${BIN_DIR%%:*}/bin"
+  # With GOBIN unset, cross-compiled binaries land in a per-platform
+  # subdir. (With GOBIN set, `go install` refuses cross-compilation
+  # outright and set -e has already stopped the script.)
+  TARGET_OS="$(go env GOOS)"
+  TARGET_ARCH="$(go env GOARCH)"
+  if [ "$TARGET_OS" != "$(go env GOHOSTOS)" ] || [ "$TARGET_ARCH" != "$(go env GOHOSTARCH)" ]; then
+    CROSS=1
+    BIN_DIR="${BIN_DIR}/${TARGET_OS}_${TARGET_ARCH}"
+  fi
 fi
 BIN="$BIN_DIR/code-audit"
 
@@ -77,7 +107,14 @@ if [ ! -x "$BIN" ]; then
 fi
 
 echo "code-audit install: installed $BIN"
-echo "code-audit install: version $("$BIN" version)"
+if [ "$CROSS" -eq 1 ]; then
+  echo "code-audit install: cross-compiled for ${TARGET_OS}/${TARGET_ARCH}; skipping version check"
+else
+  # Assignment, not interpolation inside echo: a broken binary must fail
+  # the install under set -e instead of being masked by echo's exit 0.
+  VERSION_OUT="$("$BIN" version)"
+  echo "code-audit install: version ${VERSION_OUT}"
+fi
 
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
