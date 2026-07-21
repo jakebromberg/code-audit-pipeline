@@ -32,9 +32,9 @@ From a checkout (contributors, branch testing), use the install script instead o
 ./install.sh
 ```
 
-It regenerates the embedded query/extractor trees from the checkout's canonical sources, stamps the binary with `git describe` of the checkout (the Go toolchain's own VCS stamp misattributes builds made inside linked worktrees to the parent checkout's HEAD), and installs to `$GOBIN` (or `$GOPATH/bin`). Pass `--no-generate` to install exactly what the committed embed trees contain.
+It regenerates the embedded query/extractor trees from the checkout's canonical sources — rewriting the tracked trees under `cmd/code-audit/` in place, a byte-level no-op when the checkout is clean — stamps the binary with `git describe` of the checkout plus a `-dirty` marker for any uncommitted or untracked changes (the Go toolchain's own VCS stamp misattributes builds made inside linked worktrees to the parent checkout's HEAD), and installs to `$GOBIN` (or the first `$GOPATH` entry's `bin`). Pass `--no-generate` to skip regeneration and install the embed trees currently on disk.
 
-The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow. All three install paths (brew, `go install`, tarball) ship the same embedded query + extractor set.
+The binary embeds the full `pipeline/queries/*.jq` set AND the extractor source. Each extractor's runtime (Node, Swift toolchain, future Python) stays external — extractor source is laid down to `~/.config/audit/extractors/<name>/` on first use, and any per-extractor bootstrap (e.g., `npm install`) runs automatically. No `code-audit init` step is required for the brew flow. All three release install paths (brew, `go install`, tarball) ship the same embedded query + extractor set; a from-source `./install.sh` build embeds the checkout's current sources instead.
 
 ## Quick start
 
