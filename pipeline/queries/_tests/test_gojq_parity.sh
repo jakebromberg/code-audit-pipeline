@@ -56,6 +56,7 @@ MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
 NOTIFICATION_WRAPPERS_FIXTURE="$FIXTURES_DIR/notification-wrappers.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
+PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE="$FIXTURES_DIR/persistence-store-field-density.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -175,6 +176,7 @@ both_modes symbol-id-collisions                      "$QUERIES_DIR/symbol-id-col
 # Parity contract here is "jq and gojq agree on the empty-result fixture,"
 # which is sufficient because the engine doesn't care about input shape.
 both_modes notification-wrapper-grouping             "$QUERIES_DIR/notification-wrapper-grouping.jq"             "$NOTIFICATION_WRAPPERS_FIXTURE"
+both_modes persistence-store-field-density           "$QUERIES_DIR/persistence-store-field-density.jq"           "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" --argjson threshold 3
 
 echo ""
 echo "=== Function-catalog queries ==="

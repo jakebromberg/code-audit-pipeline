@@ -30,6 +30,7 @@ TEST_PROD_DRIFT_FIXTURE="$FIXTURES_DIR/test-prod-drift.input.json"
 VERSIONED_TYPE_PAIRS_FIXTURE="$FIXTURES_DIR/versioned-type-pairs.input.json"
 COPIED_FROM_HEADER_FIXTURE="$FIXTURES_DIR/copied-from-header.input.json"
 MARK_SECTION_DENSITY_FIXTURE="$FIXTURES_DIR/mark-section-density.input.json"
+PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE="$FIXTURES_DIR/persistence-store-field-density.input.json"
 ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
@@ -642,6 +643,111 @@ assert_copied_literal_semantic() {
   printf "  ✓ copied-literal-candidates (semantic): 3 clusters + 3 pairs at defaults; all gates hold; min_sites=2 surfaces opacity\n"
 }
 assert_copied_literal_semantic
+
+echo ""
+echo "=== persistence-store-field-density query (Detector A) ==="
+# Fixture has 5 type-alias-object rows:
+#   (a) main:AppSettings          — DefaultsStorage? store field + 3 stored props (HIT)
+#   (b) main:SessionCache         — UserDefaults store field + 2 stored props (below threshold)
+#   (c1) main:GeneratedSettings   — store field + 3 props but generated:true (filtered)
+#   (c2) main:SettingsStoreTests  — store field + 3 props but is_test:true    (filtered)
+#   (d) main:PlainModel           — 4 stored props but no store field         (no store)
+# At the default threshold of 3, exactly one row is flagged: AppSettings.
+assert_jsonl_has_prefix persistence-store-field-density.jq "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" \
+  "persistence-store-field-density:" --argjson threshold 3
+assert_envelope_shape    persistence-store-field-density.jq "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" \
+  --argjson threshold 3
+assert_text_has_cid      persistence-store-field-density.jq "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" \
+  --argjson threshold 3
+
+assert_persistence_store_field_density_semantic() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 3 \
+    -f "$QUERIES_DIR/persistence-store-field-density.jq" \
+    "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): expected exactly 1 flagged row, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+  # The single flagged type must be AppSettings, with stored_property_count 3
+  # (the store field and the static `shared` member are both excluded).
+  local name spc
+  name="$(printf '%s\n' "$jsonl" | jq -r '.name')"
+  spc="$(printf '%s\n' "$jsonl" | jq -r '.stored_property_count')"
+  if [[ "$name" != "AppSettings" || "$spc" != "3" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): expected AppSettings/spc=3, got %s/spc=%s\n%s\n" "$name" "$spc" "$jsonl"
+    return
+  fi
+  # The optional store field (DefaultsStorage?) must be recognised after
+  # trailing-`?` stripping and surfaced by name.
+  if ! printf '%s\n' "$jsonl" | jq -e '.store_fields | any(.name == "defaults")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): optional store field not recognised:\n%s\n" "$jsonl"
+    return
+  fi
+  # The store field must NOT appear among the candidate stored members.
+  if printf '%s\n' "$jsonl" | jq -e '.stored_members | any(.name == "defaults")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): store field leaked into stored_members:\n%s\n" "$jsonl"
+    return
+  fi
+  # touched_in_window must flow through.
+  if [[ "$(printf '%s\n' "$jsonl" | jq -r '.touched_in_window')" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): touched_in_window not carried through:\n%s\n" "$jsonl"
+    return
+  fi
+  # None of the filtered/negative types may leak into any output row.
+  if printf '%s\n' "$jsonl" | jq -e '.name | . == "SessionCache" or . == "GeneratedSettings" or . == "SettingsStoreTests" or . == "PlainModel"' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): a below-threshold/filtered/no-store type leaked:\n%s\n" "$jsonl"
+    return
+  fi
+  # Lowering the threshold to 2 must now also flag SessionCache (2 props).
+  local low_jsonl low_count
+  low_jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 2 \
+    -f "$QUERIES_DIR/persistence-store-field-density.jq" \
+    "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" 2>&1)"
+  low_count="$(printf '%s\n' "$low_jsonl" | grep -c .)"
+  if [[ "$low_count" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic, threshold=2): expected 2 rows, got %d\n%s\n" "$low_count" "$low_jsonl"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ persistence-store-field-density (semantic): default threshold flags only AppSettings; threshold=2 also flags SessionCache\n"
+}
+assert_persistence_store_field_density_semantic
+
+# Contract-lock: the query parameterizes its numeric threshold the same way
+# mark-section-density does, so raw jq without --argjson threshold must fail at
+# compile time (jq rejects undefined variables before execution). Guards against
+# a future fragile in-jq fallback.
+assert_persistence_store_field_density_argjson_required() {
+  local err
+  if err="$(jq -L "$QUERIES_DIR" -rf "$QUERIES_DIR/persistence-store-field-density.jq" \
+    "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (argjson-required): expected compile error, got success\n%s\n" "$err"
+    return
+  fi
+  if ! printf '%s' "$err" | grep -q "is not defined"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (argjson-required): expected 'is not defined' error, got:\n%s\n" "$err"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ persistence-store-field-density (argjson-required): raw jq without --argjson threshold correctly fails at compile time\n"
+}
+assert_persistence_store_field_density_argjson_required
 
 echo ""
 echo "=== Migration-progress queries ==="
