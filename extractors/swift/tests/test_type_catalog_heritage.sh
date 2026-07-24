@@ -135,6 +135,24 @@ assert_jq "PlayerRateDidChangeMessageMultiline.wraps_notification_name (canonica
 assert_jq "PreservedInteriorSpaces.wraps_notification_name (interior double-space preserved)" '"Notification.Name(\"foo  bar\")"' \
     '[.[] | select(.name=="PreservedInteriorSpaces")][0].wraps_notification_name' "$OUT"
 
+# Case: FieldKinds — the is_computed flag distinguishes stored from computed
+# properties. Stored props (including those carrying a didSet observer) are
+# false; computed getters (shorthand or explicit `get`) are true.
+assert_jq "FieldKinds.title stored (is_computed false)" 'false' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="title") | .is_computed' "$OUT"
+assert_jq "FieldKinds.count with didSet stored (is_computed false)" 'false' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="count") | .is_computed' "$OUT"
+assert_jq "FieldKinds.slug shorthand getter computed (is_computed true)" 'true' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="slug") | .is_computed' "$OUT"
+assert_jq "FieldKinds.fullName explicit get computed (is_computed true)" 'true' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="fullName") | .is_computed' "$OUT"
+assert_jq "FieldKinds.level with willSet stored (is_computed false)" 'false' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="level") | .is_computed' "$OUT"
+assert_jq "FieldKinds.display explicit get+set computed (is_computed true)" 'true' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="display") | .is_computed' "$OUT"
+assert_jq "FieldKinds.readModify coroutine accessors computed (is_computed true)" 'true' \
+    '[.[] | select(.name=="FieldKinds")][0].fields_structured[] | select(.name=="readModify") | .is_computed' "$OUT"
+
 # Schema: every type row carries extends and conforms_to as arrays (never null).
 # Typealiases are exempt — they have no inheritance clause syntactically.
 non_alias_count="$(echo "$OUT" | jq '[.[] | select(.kind != "type-alias-other")] | length')"

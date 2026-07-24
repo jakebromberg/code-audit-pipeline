@@ -646,12 +646,18 @@ assert_copied_literal_semantic
 
 echo ""
 echo "=== persistence-store-field-density query (Detector A) ==="
-# Fixture has 5 type-alias-object rows:
-#   (a) main:AppSettings          — DefaultsStorage? store field + 3 stored props (HIT)
-#   (b) main:SessionCache         — UserDefaults store field + 2 stored props (below threshold)
-#   (c1) main:GeneratedSettings   — store field + 3 props but generated:true (filtered)
-#   (c2) main:SettingsStoreTests  — store field + 3 props but is_test:true    (filtered)
-#   (d) main:PlainModel           — 4 stored props but no store field         (no store)
+# Fixture has 7 type-alias-object rows:
+#   (a) main:AppSettings        — DefaultsStorage? store + 3 stored props + 1 COMPUTED
+#                                 (`summary`) + 1 static: spc=3, computed excluded (HIT)
+#   (b) main:SessionCache       — UserDefaults store + 2 stored props (threshold-2 only)
+#   (c1) main:GeneratedSettings — store + 3 props but generated:true (filtered)
+#   (c2) main:SettingsStoreTests— store + 3 props but is_test:true    (filtered)
+#   (d) main:PlainModel         — 4 stored props but no store field   (no store)
+#   (e) main:ExistentialCache   — `any DefaultsStorage` store + 2 stored props
+#                                 (threshold-2 only; proves existential store matches)
+#   (f) main:ComputedStoreModel — COMPUTED `defaults: UserDefaults` + 3 stored props:
+#                                 the store-typed member is computed, so it is NOT a
+#                                 handle and the type is never flagged.
 # At the default threshold of 3, exactly one row is flagged: AppSettings.
 assert_jsonl_has_prefix persistence-store-field-density.jq "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" \
   "persistence-store-field-density:" --argjson threshold 3
@@ -699,31 +705,48 @@ assert_persistence_store_field_density_semantic() {
     printf "  ✗ persistence-store-field-density (semantic): store field leaked into stored_members:\n%s\n" "$jsonl"
     return
   fi
+  # The computed property 'summary' must NOT be counted as persisted state
+  # (is_computed excluded), so spc stays 3 and it never reaches stored_members.
+  if printf '%s\n' "$jsonl" | jq -e '.stored_members | any(.name == "summary")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic): computed property leaked into stored_members:\n%s\n" "$jsonl"
+    return
+  fi
   # touched_in_window must flow through.
   if [[ "$(printf '%s\n' "$jsonl" | jq -r '.touched_in_window')" != "true" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ persistence-store-field-density (semantic): touched_in_window not carried through:\n%s\n" "$jsonl"
     return
   fi
-  # None of the filtered/negative types may leak into any output row.
-  if printf '%s\n' "$jsonl" | jq -e '.name | . == "SessionCache" or . == "GeneratedSettings" or . == "SettingsStoreTests" or . == "PlainModel"' >/dev/null 2>&1; then
+  # None of the filtered/negative types may leak into any output row. This
+  # includes ComputedStoreModel (its only store-typed member is computed, so it
+  # has no real handle) and ExistentialCache (below threshold at 3).
+  if printf '%s\n' "$jsonl" | jq -e '.name | . == "SessionCache" or . == "GeneratedSettings" or . == "SettingsStoreTests" or . == "PlainModel" or . == "ExistentialCache" or . == "ComputedStoreModel"' >/dev/null 2>&1; then
     FAIL=$((FAIL + 1))
     printf "  ✗ persistence-store-field-density (semantic): a below-threshold/filtered/no-store type leaked:\n%s\n" "$jsonl"
     return
   fi
-  # Lowering the threshold to 2 must now also flag SessionCache (2 props).
+  # Lowering the threshold to 2 now flags SessionCache (2 props) and
+  # ExistentialCache ('any DefaultsStorage' store + 2 props) alongside AppSettings.
   local low_jsonl low_count
   low_jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 2 \
     -f "$QUERIES_DIR/persistence-store-field-density.jq" \
     "$PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE" 2>&1)"
   low_count="$(printf '%s\n' "$low_jsonl" | grep -c .)"
-  if [[ "$low_count" != "2" ]]; then
+  if [[ "$low_count" != "3" ]]; then
     FAIL=$((FAIL + 1))
-    printf "  ✗ persistence-store-field-density (semantic, threshold=2): expected 2 rows, got %d\n%s\n" "$low_count" "$low_jsonl"
+    printf "  ✗ persistence-store-field-density (semantic, threshold=2): expected 3 rows, got %d\n%s\n" "$low_count" "$low_jsonl"
+    return
+  fi
+  # The existential-typed store handle ('any DefaultsStorage') must be
+  # recognised after leading-keyword stripping and surfaced verbatim.
+  if ! printf '%s\n' "$low_jsonl" | jq -e 'select(.name == "ExistentialCache") | .store_fields | any(.type == "any DefaultsStorage")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ persistence-store-field-density (semantic, threshold=2): existential store not recognised:\n%s\n" "$low_jsonl"
     return
   fi
   PASS=$((PASS + 1))
-  printf "  ✓ persistence-store-field-density (semantic): default threshold flags only AppSettings; threshold=2 also flags SessionCache\n"
+  printf "  ✓ persistence-store-field-density (semantic): threshold 3 flags only AppSettings (computed excluded, spc=3); threshold=2 also flags SessionCache + ExistentialCache (existential store matched)\n"
 }
 assert_persistence_store_field_density_semantic
 

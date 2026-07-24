@@ -33,6 +33,15 @@ struct FieldStructured: Encodable {
     var type: String
     var isOptional: Bool
     var isStatic: Bool
+    /// True when the member is a *computed* property — one whose accessor block
+    /// declares a `get`/`set` (or `_read`/`_modify`/address) accessor — rather
+    /// than stored state. Stored properties, including those with `willSet` /
+    /// `didSet` observers, and enum cases and methods, are `false`. Consumers
+    /// that reason about per-instance persisted state (e.g.
+    /// `persistence-store-field-density.jq`) filter on this so derived
+    /// properties do not inflate stored-property counts. Defaults to `false` so
+    /// non-property construction sites (enum cases, methods) need no change.
+    var isComputed: Bool = false
 }
 
 /// One type-catalog record. Mirrors the schema in
