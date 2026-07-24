@@ -543,8 +543,39 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         return (
             flat: "\(name):\(typeText)",
             structured: FieldStructured(
-                name: name, type: typeText, isOptional: isOptional, isStatic: isStatic)
+                name: name, type: typeText, isOptional: isOptional, isStatic: isStatic,
+                isComputed: isComputedBinding(binding))
         )
+    }
+
+    /// True when a variable binding is a *computed* property. A binding with no
+    /// accessor block is stored. Otherwise it is computed UNLESS its only
+    /// accessors are the stored-property observers `willSet` / `didSet`. This is
+    /// a denylist (name the two observer kinds) rather than an allowlist of
+    /// computed-accessor kinds: accessor kinds we don't enumerate — coroutine
+    /// `_read` / `_modify`, addressors, and any future kind — are then treated
+    /// as computed instead of being silently misread as stored. The shorthand
+    /// getter form (`var x: T { <expr> }`) has no accessor list and is always
+    /// computed. Mirrors the accessor-block switch in `extractNotificationName`.
+    private func isComputedBinding(_ binding: PatternBindingSyntax) -> Bool {
+        guard let accessor = binding.accessorBlock else { return false }
+        switch accessor.accessors {
+        case .getter:
+            // `var x: T { <expr> }` shorthand getter — always computed.
+            return true
+        case .accessors(let accessorList):
+            for acc in accessorList {
+                switch acc.accessorSpecifier.text {
+                case "willSet", "didSet":
+                    // Stored-property observers keep the property stored.
+                    continue
+                default:
+                    // get / set / _read / _modify / addressors / future kinds.
+                    return true
+                }
+            }
+            return false
+        }
     }
 
     private func methodSignatureField(funcDecl: FunctionDeclSyntax)

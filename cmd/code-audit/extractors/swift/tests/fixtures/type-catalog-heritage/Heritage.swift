@@ -151,3 +151,33 @@ struct PreservedInteriorSpaces: NotificationCenter.AsyncMessage {
 enum AVPlayer {
     static let rateDidChangeNotification = Notification.Name("AVPlayerItemDidPlayToEndTime")
 }
+
+// FieldKinds — exercises the `is_computed` flag on fields_structured.
+// Asserted in test_type_catalog_heritage.sh:
+//   title      stored (annotated)               → is_computed false
+//   count      stored with a `didSet` observer  → is_computed false (still stored)
+//   level      stored with a `willSet` observer → is_computed false (still stored)
+//   slug       computed, shorthand getter       → is_computed true
+//   fullName   computed, explicit `get`         → is_computed true
+//   display    computed, explicit `get` + `set` → is_computed true
+//   readModify computed, `_read` / `_modify`    → is_computed true (denylist:
+//              coroutine accessors are not observers, so they read as computed)
+struct FieldKinds {
+    var title: String = ""
+    var count: Int = 0 {
+        didSet { }
+    }
+    var level: Int = 0 {
+        willSet { }
+    }
+    var slug: String { title.lowercased() }
+    var fullName: String { get { title } }
+    var display: String {
+        get { title }
+        set { title = newValue }
+    }
+    var readModify: Int {
+        _read { yield count }
+        _modify { yield &count }
+    }
+}

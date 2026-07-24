@@ -52,6 +52,24 @@
 # than used to suppress — an agent reads it to judge whether an existing
 # protocol is already the consolidation seam.
 #
+# COUNTING SEMANTICS (stored vs computed vs inferred):
+#   - Computed properties are EXCLUDED. The Swift extractor tags each
+#     fields_structured member with `is_computed`; this query drops is_computed
+#     members before counting, so derived accessors neither inflate
+#     stored_property_count nor get mistaken for an injected store handle.
+#     CAVEAT: `is_computed` is Swift-extractor-only for now (see the pipeline
+#     contract). For a catalog from an extractor that does not emit it, an
+#     absent flag reads as stored — so if `persistence_store_types` is extended
+#     to a store wrapper from such a language, that language's computed getters
+#     will be counted as stored again. The exclusion is effectively Swift-only
+#     until the other extractors emit the flag.
+#   - Stored properties written WITHOUT a type annotation (`var volume = 0.5`,
+#     type inferred) are absent from fields_structured entirely — the Swift
+#     extractor only emits members whose type is written explicitly — so they
+#     are NOT counted. A settings type whose persisted properties are mostly
+#     inferred-typed is under-counted and may fall below the threshold. This is
+#     a recall gap with no in-catalog fix; explicit annotation is the tradeoff.
+#
 # KNOWN RECALL GAP (by design for Tier 1): types that persist via *inline*
 # `UserDefaults.standard.set(_, forKey: "literal")` calls in accessor bodies —
 # with no injected store *field* on the type — are INVISIBLE to this detector.
@@ -80,12 +98,18 @@ include "_canonical";
 # as an injected persistence-store handle rather than persisted state.
 def persistence_store_types: ["DefaultsStorage", "UserDefaults", "NSUserDefaults"];
 
-# Strip a trailing optional / implicitly-unwrapped-optional marker and any
-# surrounding whitespace from a verbatim type string, so `DefaultsStorage?` and
-# `UserDefaults!` both compare equal to their bare spelling. Optional-sugar
-# stripping only — deeper normalization (e.g. `Optional<UserDefaults>`) is out
-# of scope; the injected-store convention writes the sugared form.
-def bare_type: (. // "") | sub("^\\s+"; "") | sub("\\s+$"; "") | sub("[?!]+$"; "");
+# Normalize a verbatim type string for store-name comparison: strip surrounding
+# whitespace, a leading existential/opaque keyword (`any` / `some`), and a
+# trailing optional / implicitly-unwrapped-optional marker. So `DefaultsStorage?`,
+# `UserDefaults!`, and `any DefaultsStorage` all compare equal to their bare
+# spelling. The `any` / `some` cases matter because a protocol-typed store handle
+# is idiomatically written `let defaults: any DefaultsStorage` in Swift 6.
+# Sugar/keyword stripping only — deeper normalization (e.g. `Optional<UserDefaults>`)
+# is out of scope; the injected-store convention writes the sugared form.
+def bare_type: (. // "")
+  | sub("^\\s+"; "") | sub("\\s+$"; "")
+  | sub("^(any|some)\\s+"; "")
+  | sub("[?!]+$"; "");
 
 # $threshold must be supplied externally (--argjson for raw jq, auto-injected by
 # `code-audit query` from the #! arg default above). jq rejects undefined
@@ -96,7 +120,12 @@ def bare_type: (. // "") | sub("^\\s+"; "") | sub("\\s+$"; "") | sub("[?!]+$"; "
   | select((.is_test // false) != true)
   # Positive kind filter — stored-field-bearing record kinds only (see header).
   | select(.kind == "type-alias-object" or .kind == "zod-object" or .kind == "drizzle-table")
-  | (.fields_structured // []) as $members
+  # Members participating in the count: stored properties only. Computed
+  # properties (is_computed) are derived, not per-instance persisted state, so
+  # they must neither inflate the count nor be mistaken for an injected store
+  # handle. Absent/false is_computed ⇒ stored (back-compat with catalogs
+  # predating the flag, and with non-Swift extractors that don't emit it).
+  | [ (.fields_structured // [])[] | select((.is_computed // false) != true) ] as $members
   # Store fields: members whose optional-stripped type is a persistence store.
   | [ $members[] | select((.type | bare_type) as $t | (persistence_store_types | any(. == $t))) ] as $store_fields
   | select(($store_fields | length) > 0)
@@ -122,18 +151,17 @@ def bare_type: (. // "") | sub("^\\s+"; "") | sub("\\s+$"; "") | sub("[?!]+$"; "
       stored_property_count: $stored_property_count,
       stored_members: ($stored_members | map({name, type})),
       # Single-member cluster: the candidate type IS the cluster. members[] wraps
-      # it so the shape-aware markdown renderer prints a meaningful row.
+      # it so the shape-aware markdown renderer prints a meaningful row. Only the
+      # per-member identity the renderer reads (name/kind/package/file/line/
+      # touched_in_window) lives here; the cluster-level aggregates above are not
+      # duplicated into the member.
       members: [{
         name: .name,
         kind: .kind,
         package,
         file,
         line,
-        touched_in_window: (.touched_in_window // false),
-        conforms_to: (.conforms_to // []),
-        store_fields: ($store_fields | map({name, type})),
-        stored_property_count: $stored_property_count,
-        stored_members: ($stored_members | map({name, type}))
+        touched_in_window: (.touched_in_window // false)
       }]
     }
 ]

@@ -83,6 +83,7 @@ Parallel to `fields`, with each member split into its components. Emitted on eve
 | `type` | verbatim type annotation as written in source. Swift preserves syntactic sugar (`Int?` stays `Int?`, `Optional<Int>` stays `Optional<Int>`); TypeScript preserves declared union form (`string \| null`). |
 | `is_optional` | structural flag: `true` for Swift `T?` / `T!` / `Optional<T>` / `Swift.Optional<T>` and TS `T \| null` / `T \| undefined` / `T?` syntax |
 | `is_static` | `true` for Swift `static` / `class` modifiers; TS `static` |
+| `is_computed` | `true` when the member is a *computed* property — one whose accessor block declares a `get` / `set` (or `_read` / `_modify` / address) accessor — rather than stored state. Stored properties, including those carrying `willSet` / `didSet` observers, are `false`; so are enum cases and methods. **Additive, Swift extractor only for now.** Consumers must treat an absent key as `false` (`.is_computed // false`) so catalogs predating the flag, and extractors that do not yet emit it, keep working. Lets queries that reason about per-instance persisted state (e.g. `persistence-store-field-density`) exclude derived properties. |
 
 `is_optional` is the load-bearing flag — string-matching trailing `?` on `type` is unreliable across the spelling variants (`Int?` vs `Optional<Int>` differ on trailing-`?` but are semantically equal), but the structural flag is consistent. Carrying both `type` (verbatim) and `is_optional` (structural) is intentional redundancy: `type` is ergonomic for display, `is_optional` is reliable for structural matching.
 
@@ -94,7 +95,7 @@ Parallel to `fields`, with each member split into its components. Emitted on eve
 | `case foo(Int, String)` (associated values) | `"(Int, String)"` (the parameter clause verbatim) |
 | `case foo = 1` or `case foo = "x"` (raw value) | `"=1"` or `"=\"x\""` (leading `=` then raw-value text) |
 
-Enum cases always emit `is_optional: false` and `is_static: false`.
+Enum cases always emit `is_optional: false`, `is_static: false`, and `is_computed: false`.
 
 **Status.** Populated by the Swift extractor (V7 §6.1). TypeScript extractor parity follows the same schema and is tracked separately.
 
@@ -104,9 +105,10 @@ The flat `fields[]` form is preserved unchanged for V6-era queries; new queries 
 
 ```jsonc
 "fields_structured": [
-  { "name": "cacheLifespan", "type": "TimeInterval",       "is_optional": false, "is_static": true  },
-  { "name": "cacheLoadTask", "type": "Task<Void, Never>?", "is_optional": true,  "is_static": false },
-  { "name": "id",            "type": "String",             "is_optional": false, "is_static": false }
+  { "name": "cacheLifespan", "type": "TimeInterval",       "is_optional": false, "is_static": true,  "is_computed": false },
+  { "name": "cacheLoadTask", "type": "Task<Void, Never>?", "is_optional": true,  "is_static": false, "is_computed": false },
+  { "name": "displayName",   "type": "String",             "is_optional": false, "is_static": false, "is_computed": true  },
+  { "name": "id",            "type": "String",             "is_optional": false, "is_static": false, "is_computed": false }
 ]
 ```
 
