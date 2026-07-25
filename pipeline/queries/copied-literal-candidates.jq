@@ -1,7 +1,9 @@
-# copied-literal-candidates.jq — numeric literals that look like copies of one
-# another: the same normalized value repeated across files under the same knob
-# name (clusters), and same-value private bindings whose names say they mean
-# the same thing (pairs).
+# copied-literal-candidates.jq — numeric and static-string literals that look
+# like copies of one another: the same normalized value repeated across files
+# under the same knob name (clusters), and same-value private bindings whose
+# names say they mean the same thing (pairs). Strings and numerics never unify
+# on value_norm — a kind-class bucket keeps the string "2" apart from the
+# number 2 (int and float remain a single class, preserving 6.0 == 6).
 #
 # Run:  jq -L pipeline/queries -r --argjson min_sites 3 --argjson min_files 2 \
 #         -f pipeline/queries/copied-literal-candidates.jq literal-catalog.json
@@ -14,7 +16,10 @@
 #                --argjson min_files 2 -f pipeline/queries/copied-literal-candidates.jq literal-catalog.json
 #
 # Two-section output:
-#   [copied-literal clusters]   same (value_norm, label) at ≥ min_sites sites
+#   [copied-literal clusters]   same (value_norm, label, kind_class) at
+#                               ≥ min_sites sites — so a string never clusters
+#                               with a numeric of equal text; string cluster_ids
+#                               carry a "#str" suffix to stay unique.
 #                               spanning ≥ min_files files. Files are counted
 #                               package-qualified (package:file) — two package
 #                               roots can carry the same relative path, per
@@ -26,7 +31,8 @@
 #                               co-cluster — a named constant plus raw call
 #                               sites of the same label+value is a partially-
 #                               extracted constant.
-#   [copied-binding pairs]      bindings only: equal value_norm, different
+#   [copied-binding pairs]      bindings only: equal value_norm AND equal
+#                               kind_class, different
 #                               package-qualified file OR different
 #                               enclosing_type, and names
 #                               that contain one another case-insensitively
@@ -47,8 +53,9 @@
 # Restraint: this is NOT a magic-number linter — SwiftLint's `no_magic_numbers`
 # already flags per-site literals, statefully and with in-editor context. The
 # in-lane signal here is *cross-file repetition of the same value under the
-# same name*, which needs the whole catalog as input. Hence the deny-list
-# (-1/0/1/2 are structure, not shared knobs) and the min_files floor.
+# same name*, which needs the whole catalog as input. Hence the deny-lists
+# (numeric -1/0/1/2, and empty / single-char / boolean-word strings, are
+# structure, not shared knobs) and the min_files floor.
 #
 # Direction: pair left/right follows catalog order (envelope-free, like
 # near-duplicates); cluster_id sorts the two location keys.
@@ -63,7 +70,7 @@
 #! arg: min_sites number 3
 #! arg: min_files number 2
 #! formats: text, jsonl
-#! desc: Repeated numeric literals — cross-file value clusters and copied-binding pairs.
+#! desc: Repeated numeric and string literals — cross-file value clusters and copied-binding pairs.
 
 include "_canonical";
 
@@ -73,6 +80,13 @@ def lit_label:
   if .form == "binding" then .binding_name
   else (.arg_label // .callee)
   end;
+
+# Kind class for clustering: strings must never unify with numerics on
+# value_norm alone (the string "2" is not the number 2). int and float stay a
+# single "num" class so the documented cross-spelling unification (6.0 == 6 ==
+# 0x6) is preserved; string is its own "str" class.
+def kind_class:
+  if .value_kind == "string" then "str" else "num" end;
 
 # Per-occurrence location key. Literal rows carry no `name` field (occurrence
 # catalog, per the contract's exemption), so loc_key from _canonical — which
@@ -105,18 +119,28 @@ entries as $all
      | select((.generated // false) != true)
      # -1/0/1/2 are structural (indices, toggles, halves), not shared knobs.
      | select(.value_norm | IN("-1", "0", "1", "2") | not)
+     # String analogue of the numeric deny-list: empty and single-character
+     # strings and the boolean words are structure/sentinels, not shared knobs.
+     # Gated on kind so numerics are untouched (a length-1 numeric like "5" is a
+     # real value).
+     | select(
+         if .value_kind == "string"
+         then ((.value_norm | length) >= 2)
+              and (.value_norm | ascii_downcase | IN("true", "false") | not)
+         else true
+         end)
    ]) as $lits
 
 # --- Section 1: cross-file (value_norm, label) clusters ---
 | ( $lits
-    | group_by([.value_norm, lit_label])
+    | group_by([.value_norm, lit_label, kind_class])
     | map(select(
         length >= $min_sites
         and pkg_file_count >= $min_files))
   ) as $fired
 | ( $fired
     | map(. as $grp
-      | { cluster_id: "copied-literal-cluster:\($grp[0] | lit_label)=\($grp[0].value_norm)",
+      | { cluster_id: "copied-literal-cluster:\($grp[0] | lit_label)=\($grp[0].value_norm)\(if $grp[0].value_kind == "string" then "#str" else "" end)",
           query: "copied-literal-cluster",
           shape: "cluster",
           value_norm: $grp[0].value_norm,
@@ -138,7 +162,8 @@ entries as $all
       | range(0; $bindings | length) as $i
       | range($i + 1; $bindings | length) as $j
       | $bindings[$i] as $a | $bindings[$j] as $b
-      | select($a.value_norm == $b.value_norm)
+      | select($a.value_norm == $b.value_norm
+               and ($a | kind_class) == ($b | kind_class))
       # Same file AND same type = locally visible siblings; not a copy smell.
       # File identity is package-qualified: two package roots can carry the
       # same relative path, and those files are NOT mutually visible.
