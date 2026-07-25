@@ -675,7 +675,7 @@ Used by `pipeline/queries/mark-section-density.jq`, which surfaces long files wi
 
 ## Literal catalog (`literal-catalog.json`)
 
-The literal catalog records where numeric literals appear, to surface "a copy that must track another value" drift — two declarations independently spelling the same constant (the motivating audit case: a view's private `placeholderCornerRadius = 6.0` silently mirroring another type's private `cornerRadius: CGFloat = 6.0`; when one changes, the other doesn't). Currently emitted by the Swift extractor (`swift-catalog literal`).
+The literal catalog records where numeric and static-string literals appear, to surface "a copy that must track another value" drift — two declarations independently spelling the same constant (the motivating audit cases: a view's private `placeholderCornerRadius = 6.0` silently mirroring another type's private `cornerRadius: CGFloat = 6.0`, and a `static let stationCapFlagKey = "on_tour_for_you_station_cap"` hand-copied into a second type; when one changes, the other doesn't). Currently emitted by the Swift extractor (`swift-catalog literal`).
 
 Like `file-hashes.json`, this is an **occurrence catalog**, not a declaration catalog: a single JSON array whose rows deliberately omit `name` / `kind` / `is_test` / `language`. A literal occurrence has no declaration identity — the discriminator is `form`, and each form carries its own context fields.
 
@@ -689,9 +689,9 @@ Like `file-hashes.json`, this is an **occurrence catalog**, not a declaration ca
     "generated": false,
 
     // Value triple.
-    "value": "6.0",                      // verbatim as written; prefix minus folded in ("-4", not "4")
+    "value": "6.0",                      // verbatim as written; prefix minus folded in ("-4", not "4"); string values keep their quotes ("\"on_tour_for_you_station_cap\"")
     "value_norm": "6",                   // cross-spelling join key — see Normalization
-    "value_kind": "float",               // "int" | "float"
+    "value_kind": "float",               // "int" | "float" | "string"
 
     // Position discriminator.
     "form": "binding",                   // "binding" | "argument"
@@ -712,11 +712,13 @@ Like `file-hashes.json`, this is an **occurrence catalog**, not a declaration ca
 ]
 ```
 
-**v1 emission positions — exactly two.** (1) `let` / `var` binding initializers whose initializer expression is a bare numeric literal (optionally wrapped in one prefix `-`), and (2) numeric literals passed directly as function-call arguments. Positions deliberately **not** emitted: enum raw values (already carried by the type catalog's enum-case `fields`), `return` statements, tuple elements, attribute/macro arguments, string literals, and literals nested inside arithmetic expressions (`6.0 * 2` emits nothing). Widening the position set is a version-bump, not a silent change — cluster thresholds are calibrated against this scope.
+**Emission positions.** Numeric literals emit in two positions: (1) `let` / `var` binding initializers whose initializer expression is a bare numeric literal (optionally wrapped in one prefix `-`), and (2) numeric literals passed directly as function-call arguments. Static **string** literals emit in the **binding position only** (position 1): a plain, single-line, non-raw, non-interpolated string initializer. This is a deliberate asymmetry — string *arguments* are **not** emitted, because doing so would flood the catalog with localization keys, log messages, and URLs; arg-strings are a possible later widening gated on their own noise analysis. Positions deliberately **not** emitted: enum raw values (already carried by the type catalog's enum-case `fields`), `return` statements, tuple elements, attribute/macro arguments, string *arguments*, interpolated / multiline (`"""…"""`) / raw (`#"…"#`) string literals, and literals nested inside arithmetic expressions (`6.0 * 2` emits nothing). Widening the position set is a version-bump *signal*, not a silent change — cluster thresholds are calibrated against this scope. The literal catalog is a bare JSON array with **no `schema_version` field**, so the bump is a prose signal only: there is no version field to increment and none should be added.
 
 **Callee resolution.** `callee` is the base name of the called expression: `Spacer(minLength: 8)` → `"Spacer"`; `.padding(.horizontal, 16)` / `view.padding(16)` → `"padding"`; `Cache<Int>(capacity: 8)` → `"Cache"`. Calls whose callee has no base name (closures, subscripts) are not cataloged — a row without a callee has no cluster label. Non-literal arguments in an otherwise-matching call emit nothing (`.padding(.horizontal, 16)` produces exactly one row, for `16`).
 
 **Normalization (`value_norm`).** The join key that makes `6`, `6.0`, and `0x6` cluster: underscore separators stripped (`1_000` → `1000`); hex / octal / binary integers re-based to decimal (`0xFF` → `255`); floats parsed and re-serialized — integral floats collapse to the integer spelling (`6.0` → `6`, `1e3` → `1000`), trailing zeros trimmed (`0.50` → `0.5`). `value_kind` still records the source-level type family, so queries can require like-for-like kinds when clustering. Unparseable input (e.g. an integer literal overflowing 64 bits) falls back to the stripped, lowercased text.
+
+**String values (`value_kind: "string"`).** For a string binding, `value` is the literal's source text *including* its surrounding quotes (`"on_tour_for_you_station_cap"`); `value_norm` is the concatenated content of the string's segments with the quotes removed — verbatim, with **no case-folding and no escape decoding**. Escapes stay literal: `"a\tb"` normalizes to the four characters `a\tb` (backslash-`t`), not a tab. Determinism is all the join key needs — two identically-written literals produce the same `value_norm` — and case is preserved so `"Foo"` and `"foo"` do not collide. Because the numeric normalizations above (radix, float collapse) are meaningless for strings, a string `value_norm` is never cross-spelling-folded; queries must not unify a string with a numeric of the same text (`"2"` ≠ `2`), which the copied-literal query enforces with a kind-class bucket.
 
 **Skip rules.** The Swift walker's standard skips (dotdirs, `node_modules` / `build` / `dist` / `coverage` / `DerivedData` / `Pods`, `Tests/` directories and `*Tests.swift` unless `--include-tests`). Note the polarity: tests are *excluded by default* here — this catalog predates per-row `is_test` tagging, matching file-hashes' documented pending alignment.
 
