@@ -34,6 +34,7 @@ PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE="$FIXTURES_DIR/persistence-store-field-d
 ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
+COPIED_LITERAL_STRINGS_FIXTURE="$FIXTURES_DIR/copied-literal-strings.input.json"
 
 PASS=0
 FAIL=0
@@ -643,6 +644,96 @@ assert_copied_literal_semantic() {
   printf "  ✓ copied-literal-candidates (semantic): 3 clusters + 3 pairs at defaults; all gates hold; min_sites=2 surfaces opacity\n"
 }
 assert_copied_literal_semantic
+
+# String support (kind-class guard + string deny-list). The query consumes
+# string rows once the Swift extractor emits them; this guard is schema-first
+# and lands before emission. The hand-tuned copied-literal-strings fixture
+# fires exactly THREE clusters + ONE pair:
+#
+#   FIRES  playEventName = "wxyc.event.play"  3 string sites / 3 files -> "#str"
+#   FIRES  version (int 100)                  3 sites -> numeric cluster
+#   FIRES  version (string "100")             3 sites -> DISTINCT "#str" cluster
+#          (cross-kind collision guard: identical label+value_norm, two ids)
+#   FIRES  stationCapFlagKey <-> onTourStationCapFlagKey  the mirrored constant
+#
+#   ---    blankKey ("")  sepChar (",")  boolFlag ("true")   string deny-list
+#   ---    answer (int 42) <-> answerText (string "42")  cross-kind pair guard
+#          (equal value_norm + containing names, but different kinds -> no pair)
+assert_copied_literal_strings() {
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    --argjson min_sites 3 --argjson min_files 2 \
+    -f "$QUERIES_DIR/copied-literal-candidates.jq" "$COPIED_LITERAL_STRINGS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): crashed: %s\n" "$jsonl"
+    return
+  }
+
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
+  if [[ "$count" != "4" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): expected 4 rows, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+
+  local cluster_ids
+  cluster_ids="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.shape == "cluster") | .cluster_id] | sort | join(",")')"
+  if [[ "$cluster_ids" != "copied-literal-cluster:playEventName=wxyc.event.play#str,copied-literal-cluster:version=100,copied-literal-cluster:version=100#str" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): unexpected cluster set: %s\n%s\n" "$cluster_ids" "$jsonl"
+    return
+  fi
+
+  # Cross-kind cluster_id collision guard: the string "100" and numeric 100
+  # clusters share label+value_norm but MUST stay two distinct ids (the string
+  # one suffixed "#str"), never merged into one.
+  local num_v str_v
+  num_v="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.cluster_id == "copied-literal-cluster:version=100")] | length')"
+  str_v="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.cluster_id == "copied-literal-cluster:version=100#str")] | length')"
+  if [[ "$num_v" != "1" || "$str_v" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): cross-kind collision not split into distinct ids (num=%s str=%s)\n%s\n" "$num_v" "$str_v" "$jsonl"
+    return
+  fi
+
+  # The mirrored string constant pairs; value keeps its quotes, value_norm is
+  # the decoded (quote-stripped, un-folded) content.
+  local pair_ok
+  pair_ok="$(printf '%s\n' "$jsonl" | jq -rs '
+    [.[] | select(.shape == "pair")
+         | select([.left.binding_name, .right.binding_name] | sort == ["onTourStationCapFlagKey", "stationCapFlagKey"])
+         | select(.value_norm == "on_tour_for_you_station_cap")
+         | select((.left.value | test("^\"")) and (.right.value | test("^\"")))]
+    | length')"
+  if [[ "$pair_ok" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): mirrored string pair missing/malformed\n%s\n" "$jsonl"
+    return
+  fi
+
+  # Deny-list: empty, single-char, and boolean-word strings never surface.
+  if printf '%s\n' "$jsonl" | grep -Eq 'blankKey|sepChar|boolFlag'; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): a denied string value surfaced\n%s\n" "$jsonl"
+    return
+  fi
+
+  # Kind-class pair guard: answer (int 42) and answerText (string "42") share
+  # value_norm and have containing names but MUST NOT pair across kinds, so the
+  # only pair present is the mirrored-constant one (exactly one pair total).
+  local pair_count
+  pair_count="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.shape == "pair")] | length')"
+  if [[ "$pair_count" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): expected exactly 1 pair (cross-kind pair guard), got %s\n%s\n" "$pair_count" "$jsonl"
+    return
+  fi
+
+  PASS=$((PASS + 1))
+  printf "  ✓ copied-literal-candidates (strings): string cluster + mirrored pair fire; kind-class splits cross-kind ids; deny-list and cross-kind pair guard hold\n"
+}
+assert_copied_literal_strings
 
 echo ""
 echo "=== persistence-store-field-density query (Detector A) ==="
