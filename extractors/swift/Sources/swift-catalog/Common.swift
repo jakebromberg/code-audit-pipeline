@@ -8,6 +8,7 @@
 
 import CryptoKit
 import Foundation
+import SwiftSyntax
 
 /// One structured field on a type-catalog record. V7 §6.1: parallel to the
 /// flat `fields: ["name:Type"]` form, so downstream queries can ask
@@ -179,17 +180,21 @@ struct FunctionRecord: Encodable {
 /// no `name`/`kind`/`is_test`/`language`; see the contract's literal-catalog
 /// section for the exemption rationale). `form` discriminates the two v1
 /// emission positions: `"binding"` (a `let`/`var` initializer that is a bare
-/// numeric literal) carries `bindingName`/`isStatic`/`access`; `"argument"`
-/// (a numeric literal passed directly to a function call) carries
-/// `callee`/`argLabel`. Fields of the other form stay nil and are omitted
-/// from the JSON.
+/// numeric literal, or a plain static string literal) carries
+/// `bindingName`/`isStatic`/`access`; `"argument"` (a numeric literal passed
+/// directly to a function call) carries `callee`/`argLabel`. Fields of the
+/// other form stay nil and are omitted from the JSON. String literals emit in
+/// the binding position only.
 ///
-/// `value` is the literal verbatim as written (prefix minus folded in:
-/// `-4` not `4`). `valueNorm` is the cross-spelling join key: underscores
-/// stripped, hex/octal/binary re-based to decimal, floats trimmed of a
-/// trailing `.0` and scientific notation expanded — so `6.0`, `0x6`, and
-/// `6` all normalize to `"6"`. `line` is the literal's line, not the
-/// enclosing declaration's.
+/// `value` is the literal verbatim as written (numeric prefix minus folded in:
+/// `-4` not `4`; string values keep their surrounding quotes). `valueNorm` is
+/// the join key: for numerics the cross-spelling normalization (underscores
+/// stripped, hex/octal/binary re-based to decimal, floats trimmed of a trailing
+/// `.0` and scientific notation expanded — so `6.0`, `0x6`, and `6` all
+/// normalize to `"6"`); for strings the decoded segment content with quotes
+/// removed and no case-folding or escape decoding. `valueKind` is `"int"`,
+/// `"float"`, or `"string"`. `line` is the literal's line, not the enclosing
+/// declaration's.
 struct LiteralRecord: Encodable {
     var value: String
     var valueNorm: String
@@ -249,6 +254,22 @@ func normalizeBody(_ text: String) -> (lines: [String], hash: String, length: In
 /// by '|' and lowercased.
 func shapeSig(of fields: [String]) -> String {
     fields.sorted().joined(separator: "|").lowercased()
+}
+
+/// Concatenated content of a string literal's segments, or nil if the literal
+/// contains any interpolation (`\(…)`) — SwiftSyntax exposes an interpolated
+/// segment as `ExpressionSegmentSyntax` rather than `StringSegmentSyntax`.
+/// Escapes are preserved verbatim (`content.text` is the raw source, so `\t`
+/// stays backslash-`t`). This does NOT distinguish single-line / multiline /
+/// raw strings; callers that need those excluded must guard on the literal's
+/// `openingQuote` / `openingPounds` before calling.
+func staticStringContent(_ lit: StringLiteralExprSyntax) -> String? {
+    var out = ""
+    for segment in lit.segments {
+        guard let seg = segment.as(StringSegmentSyntax.self) else { return nil }
+        out.append(seg.content.text)
+    }
+    return out
 }
 
 func writeJSON<T: Encodable>(_ value: T, to output: String?) throws {

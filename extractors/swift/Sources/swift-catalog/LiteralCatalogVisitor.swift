@@ -2,13 +2,14 @@
 //  LiteralCatalogVisitor.swift
 //  swift-catalog
 //
-//  Walks a SwiftSyntax tree and emits LiteralRecord entries for numeric
-//  literals in the two v1 positions: `let`/`var` binding initializers and
-//  function-call arguments. Everything else (enum raw values, return
-//  statements, tuple elements, attribute arguments, string literals) is
-//  deliberately out of scope — those positions are either already cataloged
-//  elsewhere (raw values ride on the type catalog) or aren't copy-not-link
-//  signal.
+//  Walks a SwiftSyntax tree and emits LiteralRecord entries for literals in the
+//  v1 positions: numeric literals in `let`/`var` binding initializers and in
+//  function-call arguments, plus plain static string literals in binding
+//  initializers only. Everything else (enum raw values, return statements,
+//  tuple elements, attribute arguments, string call-arguments, and interpolated
+//  / multiline / raw string literals) is deliberately out of scope — those
+//  positions are either already cataloged elsewhere (raw values ride on the
+//  type catalog) or aren't copy-not-link signal.
 //
 
 import Foundation
@@ -93,10 +94,10 @@ final class LiteralCatalogVisitor: SyntaxVisitor {
         for binding in node.bindings {
             guard let initializer = binding.initializer,
                   let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
-                  let lit = numericLiteral(initializer.value) else { continue }
+                  let lit = matchLiteral(initializer.value) else { continue }
             records.append(LiteralRecord(
-                value: lit.text,
-                valueNorm: normalizeValue(text: lit.text, kind: lit.kind),
+                value: lit.value,
+                valueNorm: lit.valueNorm,
                 valueKind: lit.kind,
                 form: "binding",
                 package: file.package,
@@ -189,6 +190,53 @@ final class LiteralCatalogVisitor: SyntaxVisitor {
             return ("-" + inner.text, inner.kind, prefixOp.positionAfterSkippingLeadingTrivia)
         }
         return nil
+    }
+
+    /// A matched literal ready for a `LiteralRecord`: `value` verbatim as
+    /// written, `valueNorm` the join key, `kind` the value-kind family.
+    private struct LiteralMatch {
+        let value: String
+        let valueNorm: String
+        let kind: String
+        let position: AbsolutePosition
+    }
+
+    /// Match a numeric literal or a plain static string literal. Numerics keep
+    /// their cross-spelling normalization; a string's `value` is its source text
+    /// (quotes included) and its `valueNorm` is the decoded segment content
+    /// (quotes stripped, no case-folding, no escape decoding). Used at the
+    /// binding position; the argument position stays numeric-only.
+    private func matchLiteral(_ expr: ExprSyntax) -> LiteralMatch? {
+        if let num = numericLiteral(expr) {
+            return LiteralMatch(
+                value: num.text,
+                valueNorm: normalizeValue(text: num.text, kind: num.kind),
+                kind: num.kind,
+                position: num.position)
+        }
+        if let str = stringLiteral(expr) {
+            return LiteralMatch(
+                value: str.raw,
+                valueNorm: str.content,
+                kind: "string",
+                position: str.position)
+        }
+        return nil
+    }
+
+    /// Match a plain, single-line, non-raw, non-interpolated string literal.
+    /// Interpolated (`"\(x)"`, excluded via `staticStringContent` returning
+    /// nil), multiline (`"""…"""`), and raw (`#"…"#`) strings are rejected —
+    /// they muddy the join key and aren't the mirrored-constant signal. `raw`
+    /// is the literal's source text (quotes included); `content` is the
+    /// concatenated segment content. Position is the literal's own.
+    private func stringLiteral(_ expr: ExprSyntax) -> (raw: String, content: String, position: AbsolutePosition)? {
+        guard let lit = expr.as(StringLiteralExprSyntax.self),
+              lit.openingPounds == nil,                    // reject raw strings (#"..."#)
+              lit.openingQuote.tokenKind == .stringQuote,  // reject multiline ("""...""")
+              let content = staticStringContent(lit)       // nil if interpolated
+        else { return nil }
+        return (lit.trimmedDescription, content, lit.positionAfterSkippingLeadingTrivia)
     }
 
     /// Cross-spelling normalization (the copied-literal query's join key):

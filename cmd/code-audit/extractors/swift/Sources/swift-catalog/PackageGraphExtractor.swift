@@ -455,26 +455,14 @@ private final class PackageManifestVisitor: SyntaxVisitor {
         for arg in args {
             if arg.label?.text == label {
                 if let strLit = arg.expression.as(StringLiteralExprSyntax.self) {
-                    return stringLiteralValue(strLit)
+                    // Non-interpolated segments only; interpolated literals
+                    // (`"\(foo)"`) are rare in Package.swift and treated as
+                    // unresolvable (nil). Shared with the literal catalog.
+                    return staticStringContent(strLit)
                 }
             }
         }
         return nil
-    }
-
-    private func stringLiteralValue(_ lit: StringLiteralExprSyntax) -> String? {
-        // Concatenate non-interpolated segments. Interpolated literals
-        // (`"\(foo)"`) are rare in Package.swift and we treat them as
-        // unresolvable; SwiftSyntax exposes them as StringSegmentSyntax /
-        // ExpressionSegmentSyntax variants on `segments`.
-        var out = ""
-        for segment in lit.segments {
-            guard let seg = segment.as(StringSegmentSyntax.self) else {
-                return nil
-            }
-            out.append(seg.content.text)
-        }
-        return out
     }
 }
 
