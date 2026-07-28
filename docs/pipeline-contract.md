@@ -601,6 +601,36 @@ The function catalog is a top-level **wrapper object** (schema v2.0) carrying sc
 
 Used by `pipeline/queries/function-duplicates.jq` (body clustering), `pipeline/queries/public-api-leaks.jq` (signature-level type leak detection — joins via `--slurpfile types type-catalog.json`), `pipeline/queries/generic-function-candidates.jq`, `pipeline/queries/default-impl-candidates.jq`.
 
+### Optional: `field_copy_map` (hand-written field-copy mappers)
+
+`field_copy_map` (object | absent) — emitted when a callable's body is essentially a run of *identity* field copies projecting one catalogued type onto another: the "field-copy mapper" smell where two structurally-similar types are kept in sync by a hand-maintained, field-by-field mapper that drifts silently when a field is added to one side and forgotten here. The field is the signal that a shape rhyme is being *actively hand-maintained* — the precision lift that separates a drift-risk 1:1 projection from an incidental shape overlap. Consumed by `pipeline/queries/field-copy-mapper-candidates.jq`, which joins the two named types against the type-catalog (`--slurpfile types type-catalog.json`) and recommends a field-agnostic `from_<source>` constructor plus a field-parity test.
+
+Modeled on `wraps_notification_name` (a verbatim body-reading, one-language-first, query-does-the-join field) and `is_computed` (additive, one extractor first, consumers default an absent key). Read it as `.field_copy_map // null`; catalogs predating the field and extractors that do not emit it stay valid.
+
+```jsonc
+"field_copy_map": {
+  "source_type_ref": "Identity",           // single-ident type of the copied-FROM operand
+  "dest_type_ref":   "IdentityResponse",   // single-ident type constructed / mutated
+  "copied_fields":   ["apple_music_artist_id", "bandcamp_id", "discogs_artist_id",
+                      "library_name", "musicbrainz_artist_id", "reconciliation_status",
+                      "spotify_artist_id", "wikidata_qid"],   // sorted; identity copies ONLY
+  "form": "constructor"                     // constructor | attr-assign | model_validate
+}
+```
+
+| Sub-field | Meaning |
+|---|---|
+| `source_type_ref` | Single-identifier type of the copied-*from* operand (the sole parameter's declared type, `self` / `cls`, or a locally-constructed operand). Resolved by the **same single-identifier rule** as `return_ref` and `params[].type_ref`, so a query joins it against the type-catalog name index uniformly. `null` when the operand's type is unknown. |
+| `dest_type_ref` | Single-identifier type constructed or mutated (the constructor callee, the attr-assign target's declared type, or — for the `model_validate` form on a classmethod — the enclosing class). `null` when unknown. |
+| `copied_fields` | Sorted list of the same-name attribute copies **only** (`dst.x = src.x` / `Dest(x=src.x)`). A keyword or assignment whose value is anything other than a bare `<operand>.<same_name>` — a rename, a call, a computed expression — is deliberately excluded, so the count is a precise measure of 1:1 mirroring, not of adapter work. `[]` for the `model_validate` form (field-agnostic; nothing is enumerated). |
+| `form` | One of `constructor` (a single `return Dest(kw=src.attr, …)`), `attr-assign` (a run of `dst.x = src.x` statements), or `model_validate` (the *already-fixed* Pydantic form `Dest.model_validate(src, from_attributes=True)` — tagged so the consuming query **demotes** it rather than re-recommending a fix that already landed). |
+
+**Computed pre-normalization (precision guarantee).** `field_copy_map` is computed from the constructor-call / assignment AST **before** body normalization, independent of the `body_hash` / `body_lines` gate. A single-`return` mapper renders as one logical line, below the default `--min-body-lines`, so its body-level duplication fields are `null` — but the field-copy signal survives, which is the common case (short projection functions).
+
+**Predominance.** The extractor emits `field_copy_map` only when the recognized body is *predominantly* identity copies from a single source operand (identity copies are the majority of the field-setting keywords / assignments). Bodies that are substantially rename / transform work are left without the field; the consuming query's coverage floor is the second, numeric gate.
+
+**Per-language, Python first.** The field is contract-level (documented once) but each extractor opts in; the Python extractor (`ast`) populates it today. Swift / TypeScript parity follows the schema stated here, tracked separately (the `is_computed` precedent).
+
 ## File-hash catalog (`file-hashes.json`)
 
 The file-hash catalog is a single JSON array. Each entry describes one source file:
