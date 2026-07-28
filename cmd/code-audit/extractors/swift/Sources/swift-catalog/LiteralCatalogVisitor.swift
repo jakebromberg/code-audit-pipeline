@@ -203,7 +203,7 @@ final class LiteralCatalogVisitor: SyntaxVisitor {
 
     /// Match a numeric literal or a plain static string literal. Numerics keep
     /// their cross-spelling normalization; a string's `value` is its source text
-    /// (quotes included) and its `valueNorm` is the decoded segment content
+    /// (quotes included) and its `valueNorm` is the raw segment content
     /// (quotes stripped, no case-folding, no escape decoding). Used at the
     /// binding position; the argument position stays numeric-only.
     private func matchLiteral(_ expr: ExprSyntax) -> LiteralMatch? {
