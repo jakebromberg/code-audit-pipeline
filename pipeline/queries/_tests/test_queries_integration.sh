@@ -648,12 +648,15 @@ assert_copied_literal_semantic
 # String support (kind-class guard + string deny-list). The query consumes
 # string rows once the Swift extractor emits them; this guard is schema-first
 # and lands before emission. The hand-tuned copied-literal-strings fixture
-# fires exactly THREE clusters + ONE pair:
+# fires exactly FOUR clusters + ONE pair:
 #
 #   FIRES  playEventName = "wxyc.event.play"  3 string sites / 3 files -> "#str"
 #   FIRES  version (int 100)                  3 sites -> numeric cluster
 #   FIRES  version (string "100")             3 sites -> DISTINCT "#str" cluster
 #          (cross-kind collision guard: identical label+value_norm, two ids)
+#   FIRES  sentinel = "-1"                    3 string sites -> "#str" cluster.
+#          The numeric deny-list -1/0/1/2 is numeric-only, so a string "-1"
+#          (a value, not a structural number) is NOT dropped.
 #   FIRES  stationCapFlagKey <-> onTourStationCapFlagKey  the mirrored constant
 #
 #   ---    blankKey ("")  sepChar (",")  boolFlag ("true")   string deny-list
@@ -671,17 +674,27 @@ assert_copied_literal_strings() {
 
   local count
   count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
-  if [[ "$count" != "4" ]]; then
+  if [[ "$count" != "5" ]]; then
     FAIL=$((FAIL + 1))
-    printf "  ✗ copied-literal-candidates (strings): expected 4 rows, got %d\n%s\n" "$count" "$jsonl"
+    printf "  ✗ copied-literal-candidates (strings): expected 5 rows, got %d\n%s\n" "$count" "$jsonl"
     return
   fi
 
   local cluster_ids
   cluster_ids="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.shape == "cluster") | .cluster_id] | sort | join(",")')"
-  if [[ "$cluster_ids" != "copied-literal-cluster:playEventName=wxyc.event.play#str,copied-literal-cluster:version=100,copied-literal-cluster:version=100#str" ]]; then
+  if [[ "$cluster_ids" != "copied-literal-cluster:playEventName=wxyc.event.play#str,copied-literal-cluster:sentinel=-1#str,copied-literal-cluster:version=100,copied-literal-cluster:version=100#str" ]]; then
     FAIL=$((FAIL + 1))
     printf "  ✗ copied-literal-candidates (strings): unexpected cluster set: %s\n%s\n" "$cluster_ids" "$jsonl"
+    return
+  fi
+
+  # The numeric deny-list (-1/0/1/2) is numeric-only: a string "-1" is a value,
+  # not a structural number, so it must survive and cluster.
+  local sentinel_present
+  sentinel_present="$(printf '%s\n' "$jsonl" | jq -rs '[.[] | select(.cluster_id == "copied-literal-cluster:sentinel=-1#str")] | length')"
+  if [[ "$sentinel_present" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ copied-literal-candidates (strings): string \"-1\" dropped by the numeric deny-list\n%s\n" "$jsonl"
     return
   fi
 

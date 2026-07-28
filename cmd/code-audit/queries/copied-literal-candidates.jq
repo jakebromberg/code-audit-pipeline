@@ -118,7 +118,9 @@ entries as $all
 | ([ $all[]
      | select((.generated // false) != true)
      # -1/0/1/2 are structural (indices, toggles, halves), not shared knobs.
-     | select(.value_norm | IN("-1", "0", "1", "2") | not)
+     # Numeric-only: a string "-1"/"0"/... is a value, not a structural number,
+     # so it is left to the string deny-list below (kept out of this select).
+     | select((.value_kind == "string") or (.value_norm | IN("-1", "0", "1", "2") | not))
      # String analogue of the numeric deny-list: empty and single-character
      # strings and the boolean words are structure/sentinels, not shared knobs.
      # Gated on kind so numerics are untouched (a length-1 numeric like "5" is a
