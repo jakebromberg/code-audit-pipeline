@@ -144,6 +144,7 @@ All operate on the JSON catalog and emit human-readable text mode or `OUTPUT_FOR
 | `test-prod-drift.jq` | Near-duplicate pairs where exactly one side is in a test path | type |
 | `dead-code.jq` | Exported, non-generated declarations with zero resolved incoming references | type + references |
 | `public-api-leaks.jq` | Exported functions whose param or return types reference a non-exported same-package type | function + type |
+| `module-symbol-density.jq` | Oversized / high-symbol-density modules — files declaring far more callables + types than the codebase's median file (god-module before-shape), flagged by an absolute floor AND a ratio-to-median | function + type |
 | `cross-package-backward-imports.jq` | `shared/*` files importing from `main/*` — layering violation | files |
 | `coverage.jq` | Cross-repo scope report — covered, missing, stale, errored repos against the substrate's `index.json` | substrate index |
 | `preflight-versions.jq` | Refuse cross-repo merge on extractor major-version skew or missing/malformed extractor metadata | substrate index |
