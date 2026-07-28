@@ -100,6 +100,216 @@ def _single_type_ref(ann: ast.AST | None) -> str | None:
     return None
 
 
+# --- field_copy_map — hand-written field-copy mapper detection -----------------
+# A callable whose body is essentially a run of *identity* field copies between
+# two catalogued types. Computed from the constructor-call / assignment AST
+# BEFORE body normalization, so short single-return mappers keep the signal even
+# when their body_hash is nulled by --min-body-lines. See the contract:
+# docs/pipeline-contract.md § "Optional: field_copy_map".
+
+
+def _callee_name(func: ast.AST) -> str | None:
+    """Rightmost identifier of a call target: Name -> id, Attribute -> attr."""
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return None
+
+
+def _bare_attr(node: ast.AST) -> tuple[str, str] | None:
+    """If `node` is `<Name>.<attr>`, return (name_id, attr); else None. This is
+    the shape of an identity copy's value / target — a bare attribute access off
+    a single operand, no call or computation wrapping it."""
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+        return node.value.id, node.attr
+    return None
+
+
+def _strip_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
+    if (body
+            and isinstance(body[0], ast.Expr)
+            and isinstance(body[0].value, ast.Constant)
+            and isinstance(body[0].value.value, str)):
+        return body[1:]
+    return body
+
+
+def _operand_type_map(
+    fn: ast.FunctionDef | ast.AsyncFunctionDef, class_name: str | None,
+) -> dict[str, str]:
+    """operand-name -> single-identifier declared type, for every parameter.
+
+    `self` / `cls` resolve to the enclosing class so the attr-assign and
+    model_validate forms can name a dest/source that is the method's own type."""
+    args = fn.args
+    all_args: list[ast.arg] = []
+    all_args.extend(args.posonlyargs)
+    all_args.extend(args.args)
+    if args.vararg:
+        all_args.append(args.vararg)
+    all_args.extend(args.kwonlyargs)
+    if args.kwarg:
+        all_args.append(args.kwarg)
+    out: dict[str, str] = {}
+    for a in all_args:
+        t = _single_type_ref(a.annotation)
+        if t is not None:
+            out[a.arg] = t
+    if class_name is not None:
+        out.setdefault("self", class_name)
+        out.setdefault("cls", class_name)
+    return out
+
+
+def _detect_model_validate(
+    body: list[ast.stmt], operand_type: dict[str, str], class_name: str | None,
+) -> dict | None:
+    """The already-fixed `Dest.model_validate(src, from_attributes=True)` form.
+
+    Recognized so the consuming query can DEMOTE it — a site that already adopted
+    the field-agnostic projection is the fix, not the smell."""
+    if len(body) != 1 or not isinstance(body[0], ast.Return):
+        return None
+    call = body[0].value
+    if not isinstance(call, ast.Call) or not isinstance(call.func, ast.Attribute):
+        return None
+    if call.func.attr != "model_validate":
+        return None
+    # `from_attributes=True` is the load-bearing marker of the field-agnostic form.
+    if not any(k.arg == "from_attributes"
+               and isinstance(k.value, ast.Constant) and k.value.value is True
+               for k in call.keywords):
+        return None
+    src = call.args[0] if call.args else None
+    source_ref = operand_type.get(src.id) if isinstance(src, ast.Name) else None
+    recv = call.func.value
+    if isinstance(recv, ast.Name):
+        dest_ref = class_name if recv.id in ("cls", "self") else recv.id
+    elif isinstance(recv, ast.Attribute):
+        dest_ref = recv.attr
+    else:
+        dest_ref = None
+    return {
+        "source_type_ref": source_ref,
+        "dest_type_ref": dest_ref,
+        "copied_fields": [],
+        "form": "model_validate",
+    }
+
+
+def _constructor_call(body: list[ast.stmt]) -> ast.Call | None:
+    """The single constructor Call in a projection body, or None. Recognizes
+    `return Dest(...)`, a lone `x = Dest(...)`, and `x = Dest(...); return x`."""
+    if len(body) == 1:
+        s = body[0]
+        if isinstance(s, ast.Return) and isinstance(s.value, ast.Call):
+            return s.value
+        if isinstance(s, (ast.Assign, ast.AnnAssign)) and isinstance(s.value, ast.Call):
+            return s.value
+    if len(body) == 2:
+        a, b = body
+        if (isinstance(a, ast.Assign) and isinstance(a.value, ast.Call)
+                and len(a.targets) == 1 and isinstance(a.targets[0], ast.Name)
+                and isinstance(b, ast.Return) and isinstance(b.value, ast.Name)
+                and b.value.id == a.targets[0].id):
+            return a.value
+    return None
+
+
+def _detect_constructor(body: list[ast.stmt], operand_type: dict[str, str]) -> dict | None:
+    """Constructor form — `return Dest(kw=src.attr, …)` where the keywords are
+    predominantly identity copies (`kw == attr`) off a single source operand."""
+    call = _constructor_call(body)
+    if call is None:
+        return None
+    dest_ref = _callee_name(call.func)
+    if dest_ref is None:
+        return None
+    # A `**spread` (arg is None) is the field-agnostic form, not a hand-enumerated
+    # mapper; positional args aren't name-keyed copies. Bail on either.
+    if any(k.arg is None for k in call.keywords) or call.args:
+        return None
+    named = [k for k in call.keywords if k.arg is not None]
+    if not named:
+        return None
+    copied: set[str] = set()
+    operands: set[str] = set()
+    for k in named:
+        pair = _bare_attr(k.value)
+        if pair is not None and pair[1] == k.arg:
+            copied.add(k.arg)
+            operands.add(pair[0])
+    # Predominantly identity copies from exactly ONE source operand.
+    if not copied or len(operands) != 1 or len(copied) * 2 < len(named):
+        return None
+    return {
+        "source_type_ref": operand_type.get(next(iter(operands))),
+        "dest_type_ref": dest_ref,
+        "copied_fields": sorted(copied),
+        "form": "constructor",
+    }
+
+
+def _detect_attr_assign(body: list[ast.stmt], operand_type: dict[str, str]) -> dict | None:
+    """Attr-assign form — a run of `dst.x = src.x` statements against a single
+    stable dst and src, predominantly identity copies. A leading `dst = Dest(...)`
+    construction resolves the dest type when dst is not a parameter."""
+    field_targets = 0
+    copied: set[str] = set()
+    dst_names: set[str] = set()
+    src_names: set[str] = set()
+    local_types: dict[str, str] = {}
+    for s in body:
+        # Local construction `name = Dest(...)` — track for dest/source resolution.
+        if (isinstance(s, ast.Assign) and len(s.targets) == 1
+                and isinstance(s.targets[0], ast.Name) and isinstance(s.value, ast.Call)):
+            callee = _callee_name(s.value.func)
+            if callee is not None:
+                local_types[s.targets[0].id] = callee
+            continue
+        if isinstance(s, ast.Assign) and len(s.targets) == 1:
+            tgt = _bare_attr(s.targets[0])
+            if tgt is None:
+                continue
+            field_targets += 1
+            dst_names.add(tgt[0])
+            val = _bare_attr(s.value)
+            if val is not None and val[1] == tgt[1]:
+                copied.add(tgt[1])
+                src_names.add(val[0])
+    if (not copied or field_targets == 0
+            or len(dst_names) != 1 or len(src_names) != 1
+            or len(copied) * 2 < field_targets):
+        return None
+    dst = next(iter(dst_names))
+    src = next(iter(src_names))
+    if dst == src:
+        return None
+    return {
+        "source_type_ref": operand_type.get(src) or local_types.get(src),
+        "dest_type_ref": operand_type.get(dst) or local_types.get(dst),
+        "copied_fields": sorted(copied),
+        "form": "attr-assign",
+    }
+
+
+def _field_copy_map(
+    fn: ast.FunctionDef | ast.AsyncFunctionDef, class_name: str | None,
+) -> dict | None:
+    """Detect a hand-written field-copy mapper. Returns the additive
+    `field_copy_map` object, or None when the body is not a 1:1 projection."""
+    body = _strip_docstring(fn.body)
+    if not body:
+        return None
+    operand_type = _operand_type_map(fn, class_name)
+    return (
+        _detect_model_validate(body, operand_type, class_name)
+        or _detect_constructor(body, operand_type)
+        or _detect_attr_assign(body, operand_type)
+    )
+
+
 def _has_implicit_self(fn: ast.FunctionDef | ast.AsyncFunctionDef, inside_class: bool) -> bool:
     """True if the function's first positional arg is implicit (`self` / `cls`)
     in Python's calling convention. False for `@staticmethod` and for any
@@ -151,22 +361,28 @@ def _extract_params(
 
 
 def _walk_functions(tree: ast.Module):
-    """Yield (qual_name, FunctionDef|AsyncFunctionDef, kind, inside_class) for
-    every function declaration in the module. Class methods are qualified as
-    Class.method. `inside_class` tells the caller whether the function's first
-    positional arg is implicit-self by Python's calling convention (modulo
-    `@staticmethod`)."""
-    def walk(node: ast.AST, qual_prefix: str = "", inside_class: bool = False):
+    """Yield (qual_name, FunctionDef|AsyncFunctionDef, kind, inside_class,
+    class_name) for every function declaration in the module. Class methods are
+    qualified as Class.method. `inside_class` tells the caller whether the
+    function's first positional arg is implicit-self by Python's calling
+    convention (modulo `@staticmethod`); `class_name` names the immediately
+    enclosing class (None for free / nested functions) so field-copy detection
+    can resolve `self` / `cls` operands to that type."""
+    def walk(node: ast.AST, qual_prefix: str = "", inside_class: bool = False,
+             class_name: str | None = None):
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef):
                 inner_prefix = qual_prefix + child.name + "."
-                yield from walk(child, qual_prefix=inner_prefix, inside_class=True)
+                yield from walk(child, qual_prefix=inner_prefix, inside_class=True,
+                                class_name=child.name)
             elif isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 qual = qual_prefix + child.name
                 kind = "method" if inside_class else "function"
-                yield qual, child, kind, inside_class
-                # Walk into nested defs for closures; the prefix follows the dotted form.
-                yield from walk(child, qual_prefix=qual + ".", inside_class=False)
+                yield qual, child, kind, inside_class, class_name
+                # Walk into nested defs for closures; the prefix follows the dotted
+                # form. A nested def is no longer directly inside a class body.
+                yield from walk(child, qual_prefix=qual + ".", inside_class=False,
+                                class_name=None)
     yield from walk(tree)
 
 
@@ -200,7 +416,7 @@ def extract_from_file(
     # Mirrors the TS function-catalog convention so (name, package, file)
     # dedupe + signature_index ordering both work uniformly.
     sig_index: dict[str, int] = {}
-    for qual, fn, kind, inside_class in _walk_functions(tree):
+    for qual, fn, kind, inside_class, class_name in _walk_functions(tree):
         params, param_names = _extract_params(fn, _has_implicit_self(fn, inside_class))
 
         body_lines = _normalize_body_lines(fn.body)
@@ -256,6 +472,11 @@ def extract_from_file(
             "references_count": len(references),
             "signature_index": idx,
         }
+        # Additive: only present when the body is a hand-written field-copy
+        # mapper. Computed from the raw AST above, independent of body gating.
+        field_copy_map = _field_copy_map(fn, class_name)
+        if field_copy_map is not None:
+            row["field_copy_map"] = field_copy_map
         out.append(row)
     return out
 

@@ -288,5 +288,103 @@ class FlagsPropagationTests(unittest.TestCase):
                 self.assertTrue(e["generated"], f"{e['file']}: should be generated")
 
 
+class FieldCopyMapTests(unittest.TestCase):
+    """The `field_copy_map` additive field — hand-written field-copy mappers.
+
+    Fixtures live in fixtures/13_field_copy_mappers.py. See
+    docs/pipeline-contract.md § "Optional: field_copy_map".
+    """
+
+    IDENTITY_FIELDS = [
+        "apple_music_artist_id", "bandcamp_id", "discogs_artist_id",
+        "library_name", "musicbrainz_artist_id", "reconciliation_status",
+        "spotify_artist_id", "wikidata_qid",
+    ]
+
+    def test_constructor_form(self):
+        # _identity_to_response(identity: Identity) -> IdentityResponse copies
+        # all eight shared fields by keyword. Computed BEFORE body normalization
+        # (a single return renders as one line, below --min-body-lines), so the
+        # body_hash is null but the signal survives.
+        e = find_entry(cached_catalog(), "_identity_to_response")
+        self.assertIsNotNone(e)
+        self.assertIsNone(e["body_hash"], "single-return body should be nulled")
+        fcm = e.get("field_copy_map")
+        self.assertIsNotNone(fcm, "constructor-form mapper must carry field_copy_map")
+        self.assertEqual(fcm["form"], "constructor")
+        self.assertEqual(fcm["source_type_ref"], "Identity")
+        self.assertEqual(fcm["dest_type_ref"], "IdentityResponse")
+        self.assertEqual(fcm["copied_fields"], self.IDENTITY_FIELDS)
+
+    def test_constructor_form_assign_then_return(self):
+        # `response = IdentityResponse(...); return response`
+        e = find_entry(cached_catalog(), "build_response")
+        self.assertIsNotNone(e)
+        fcm = e.get("field_copy_map")
+        self.assertIsNotNone(fcm)
+        self.assertEqual(fcm["form"], "constructor")
+        self.assertEqual(fcm["source_type_ref"], "Identity")
+        self.assertEqual(fcm["dest_type_ref"], "IdentityResponse")
+        self.assertEqual(
+            fcm["copied_fields"],
+            ["discogs_artist_id", "library_name", "wikidata_qid"],
+        )
+
+    def test_attr_assign_form(self):
+        # copy_record(src: SourceRecord, dst: DestRecord): dst.x = src.x ...
+        e = find_entry(cached_catalog(), "copy_record")
+        self.assertIsNotNone(e)
+        fcm = e.get("field_copy_map")
+        self.assertIsNotNone(fcm)
+        self.assertEqual(fcm["form"], "attr-assign")
+        self.assertEqual(fcm["source_type_ref"], "SourceRecord")
+        self.assertEqual(fcm["dest_type_ref"], "DestRecord")
+        self.assertEqual(fcm["copied_fields"], ["alpha", "beta", "delta", "gamma"])
+
+    def test_model_validate_form_is_tagged(self):
+        # IdentityResponse.from_identity(cls, identity) returns
+        # cls.model_validate(identity, from_attributes=True) — the already-fixed
+        # form. dest resolves through the enclosing class, copied_fields is empty.
+        e = find_entry(cached_catalog(), "IdentityResponse.from_identity")
+        self.assertIsNotNone(e)
+        fcm = e.get("field_copy_map")
+        self.assertIsNotNone(fcm)
+        self.assertEqual(fcm["form"], "model_validate")
+        self.assertEqual(fcm["source_type_ref"], "Identity")
+        self.assertEqual(fcm["dest_type_ref"], "IdentityResponse")
+        self.assertEqual(fcm["copied_fields"], [])
+
+    def test_partial_transform_excludes_transformed_field(self):
+        # Predominantly copies (alpha/beta/gamma) with one transform (delta):
+        # emitted, but copied_fields counts only the identity copies.
+        e = find_entry(cached_catalog(), "mostly_copy_one_transform")
+        self.assertIsNotNone(e)
+        fcm = e.get("field_copy_map")
+        self.assertIsNotNone(fcm)
+        self.assertEqual(fcm["form"], "constructor")
+        self.assertEqual(fcm["copied_fields"], ["alpha", "beta", "gamma"])
+        self.assertNotIn("delta", fcm["copied_fields"])
+
+    def test_real_adapter_not_emitted(self):
+        # Identity copies are the minority (only library_name); the extractor
+        # must NOT recognize this as a 1:1 mapper.
+        e = find_entry(cached_catalog(), "adapter_with_transforms")
+        self.assertIsNotNone(e)
+        self.assertNotIn("field_copy_map", e)
+
+    def test_plain_function_not_emitted(self):
+        e = find_entry(cached_catalog(), "not_a_mapper")
+        self.assertIsNotNone(e)
+        self.assertNotIn("field_copy_map", e)
+
+    def test_field_copy_map_absent_by_default(self):
+        # The field is additive — absent on every row that is not a mapper.
+        for e in cached_catalog()["entries"]:
+            if "field_copy_map" in e:
+                fcm = e["field_copy_map"]
+                self.assertIn(fcm["form"], {"constructor", "attr-assign", "model_validate"})
+                self.assertIsInstance(fcm["copied_fields"], list)
+
+
 if __name__ == "__main__":
     unittest.main()
