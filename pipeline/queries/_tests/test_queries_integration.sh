@@ -37,6 +37,8 @@ COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 COPIED_LITERAL_STRINGS_FIXTURE="$FIXTURES_DIR/copied-literal-strings.input.json"
 MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE="$FIXTURES_DIR/module-symbol-density-functions.input.json"
 MODULE_SYMBOL_DENSITY_TYPES_FIXTURE="$FIXTURES_DIR/module-symbol-density-types.input.json"
+FCM_FUNCTIONS_FIXTURE="$FIXTURES_DIR/field-copy-mapper-candidates-functions.input.json"
+FCM_TYPES_FIXTURE="$FIXTURES_DIR/field-copy-mapper-candidates-types.input.json"
 
 PASS=0
 FAIL=0
@@ -2438,6 +2440,70 @@ assert_public_api_leaks_e2e_extractor() {
   printf "  ✓ public-api-leaks (e2e): query flags leakyHandler against real extractor output\n"
 }
 assert_public_api_leaks_e2e_extractor
+
+echo ""
+echo "=== field-copy-mapper-candidates query (function-catalog + type-catalog join) ==="
+# Function-catalog primary (rows carrying field_copy_map), type-catalog slurped
+# via --slurpfile types. Plant + restraint fixture — exactly TWO rows fire and
+# every gate is exercised by a mapper that would otherwise qualify:
+#   FLAG     Identity → IdentityResponse  constructor, copied 8, cov 100% — the
+#            LML#610 before-shape; residue is the dropped DB key `id`
+#   DEMOTED  Profile  → ProfileResponse   model_validate (already-fixed
+#            from_attributes form) — surfaced demoted, not re-recommended
+#   ---      Order → OrderDto             only 2 identity copies < min_copied 3
+#   ---      Thing → BigModel             copied 3 but cov 3/10 = 30% < floor
+#   ---      Widget → TestOnlyModel       dest is_test → dropped
+#   ---      Ghost → OrderDto             source unresolved in type-catalog
+#   ---      plain_helper                 no field_copy_map → filtered
+assert_jsonl_has_prefix field-copy-mapper-candidates.jq "$FCM_FUNCTIONS_FIXTURE" \
+  "field-copy-mapper-candidates:" --slurpfile types "$FCM_TYPES_FIXTURE" \
+  --argjson min_copied 3 --argjson min_coverage 0.9
+
+assert_field_copy_mapper_semantic() {
+  local jsonl count first_ok second_ok
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$FCM_TYPES_FIXTURE" \
+    --argjson min_copied 3 --argjson min_coverage 0.9 \
+    -f "$QUERIES_DIR/field-copy-mapper-candidates.jq" "$FCM_FUNCTIONS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ field-copy-mapper-candidates (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  count="$(printf '%s\n' "$jsonl" | grep -c . || true)"
+  if [[ "$count" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ field-copy-mapper-candidates (semantic): expected 2 rows, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+  # Row 1: the un-demoted LML#610 plant. Coverage is a near-total mirror (100%),
+  # copied is the full eight-field run, and the residue recovers the dropped id.
+  first_ok="$(printf '%s\n' "$jsonl" | head -1 | jq -r \
+    '(.left.name == "Identity" and .right.name == "IdentityResponse"
+      and .demoted == false and .form == "constructor"
+      and (.copied_fields | length) == 8 and .dest_coverage == 1
+      and .residue == ["id"] and .mapper.name == "_identity_to_response") | tostring')"
+  if [[ "$first_ok" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ field-copy-mapper-candidates (semantic): row 1 is not the un-demoted Identity plant\n%s\n" "$jsonl"
+    return
+  fi
+  # Row 2: the already-fixed model_validate mapper, surfaced demoted.
+  second_ok="$(printf '%s\n' "$jsonl" | sed -n 2p | jq -r \
+    '(.left.name == "Profile" and .right.name == "ProfileResponse"
+      and .demoted == true and .form == "model_validate"
+      and (.copied_fields | length) == 0
+      and .mapper.name == "ProfileResponse.from_profile") | tostring')"
+  if [[ "$second_ok" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ field-copy-mapper-candidates (semantic): row 2 is not the demoted Profile mapper\n%s\n" "$jsonl"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ field-copy-mapper-candidates (semantic): flags the Identity plant, demotes the model_validate mapper, drops all four restraint cases\n"
+}
+assert_field_copy_mapper_semantic
+
+assert_text_has_cid field-copy-mapper-candidates.jq "$FCM_FUNCTIONS_FIXTURE" \
+  --slurpfile types "$FCM_TYPES_FIXTURE" --argjson min_copied 3 --argjson min_coverage 0.9
 
 echo ""
 echo "=== cross-package-backward-imports query (files.json layering check) ==="

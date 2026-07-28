@@ -59,6 +59,8 @@ COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE="$FIXTURES_DIR/persistence-store-field-density.input.json"
 MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE="$FIXTURES_DIR/module-symbol-density-functions.input.json"
 MODULE_SYMBOL_DENSITY_TYPES_FIXTURE="$FIXTURES_DIR/module-symbol-density-types.input.json"
+FCM_FUNCTIONS_FIXTURE="$FIXTURES_DIR/field-copy-mapper-candidates-functions.input.json"
+FCM_TYPES_FIXTURE="$FIXTURES_DIR/field-copy-mapper-candidates-types.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -230,6 +232,9 @@ both_modes public-api-leaks                          "$QUERIES_DIR/public-api-le
 echo ""
 echo "=== Multi-catalog: module-symbol-density (function-catalog + type-catalog) ==="
 both_modes module-symbol-density                     "$QUERIES_DIR/module-symbol-density.jq"                     "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" --slurpfile types "$MODULE_SYMBOL_DENSITY_TYPES_FIXTURE" --argjson min_decls 5 --argjson ratio 2
+
+echo "=== Multi-catalog: field-copy-mapper-candidates (function-catalog + type-catalog) ==="
+both_modes field-copy-mapper-candidates              "$QUERIES_DIR/field-copy-mapper-candidates.jq"              "$FCM_FUNCTIONS_FIXTURE" --slurpfile types "$FCM_TYPES_FIXTURE" --argjson min_copied 3 --argjson min_coverage 0.9
 
 echo ""
 echo "=== Files-catalog query ==="
