@@ -191,7 +191,7 @@ struct FunctionRecord: Encodable {
 /// the join key: for numerics the cross-spelling normalization (underscores
 /// stripped, hex/octal/binary re-based to decimal, floats trimmed of a trailing
 /// `.0` and scientific notation expanded — so `6.0`, `0x6`, and `6` all
-/// normalize to `"6"`); for strings the decoded segment content with quotes
+/// normalize to `"6"`); for strings the raw segment content with quotes
 /// removed and no case-folding or escape decoding. `valueKind` is `"int"`,
 /// `"float"`, or `"string"`. `line` is the literal's line, not the enclosing
 /// declaration's.
