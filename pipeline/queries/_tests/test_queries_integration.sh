@@ -35,6 +35,8 @@ ALREADY_ABSTRACTED_FIXTURE="$FIXTURES_DIR/already-abstracted.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 COPIED_LITERAL_STRINGS_FIXTURE="$FIXTURES_DIR/copied-literal-strings.input.json"
+MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE="$FIXTURES_DIR/module-symbol-density-functions.input.json"
+MODULE_SYMBOL_DENSITY_TYPES_FIXTURE="$FIXTURES_DIR/module-symbol-density-types.input.json"
 
 PASS=0
 FAIL=0
@@ -875,6 +877,160 @@ assert_persistence_store_field_density_argjson_required() {
   printf "  ✓ persistence-store-field-density (argjson-required): raw jq without --argjson threshold correctly fails at compile time\n"
 }
 assert_persistence_store_field_density_argjson_required
+
+echo ""
+echo "=== module-symbol-density query (god-module before-shape) ==="
+# Cross-KIND query: primary input is the function-catalog; the type-catalog is
+# mounted via `--slurpfile types` (the binary auto-wires it from the second
+# `#! catalog:` kind, mirroring public-api-leaks). The two fixtures encode a
+# merged decl-count-per-package-qualified-file distribution whose median is 3:
+#
+#   main   lookup/orchestrator.py   12  (9 func + 1 method + 2 types; touched)  god → FIRES
+#   shared lookup/orchestrator.py    8  (6 func + 2 types)   god in shared → FIRES; proves
+#                                       package-qualified grouping (NOT merged with main)
+#   main   lookup/mid.py             6  (4 func + 2 types)   ratio boundary (2×3) → FIRES at base,
+#                                       filtered by the FLOOR at min_decls 7
+#   main   common/util.py            3   shared common/util.py 3  (same rel path, two packages)
+#   main   lookup/a.py               2   main lookup/b.py 2   main lookup/c.py 3
+#   main   tests/test_orchestrator.py 10  is_test → excluded by default, opt-in via INCLUDE_TESTS
+#   main   generated/models_gen.py   15  generated → excluded outright AND kept out of the median
+#
+# At base args (min_decls=5, ratio=2): effective bar decl>=6; exactly 3 rows.
+MSD_ARGS=(--slurpfile types "$MODULE_SYMBOL_DENSITY_TYPES_FIXTURE" --argjson min_decls 5 --argjson ratio 2)
+assert_jsonl_has_prefix module-symbol-density.jq "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" \
+  "module-symbol-density:" "${MSD_ARGS[@]}"
+assert_envelope_shape    module-symbol-density.jq "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" "${MSD_ARGS[@]}"
+assert_text_has_cid      module-symbol-density.jq "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" "${MSD_ARGS[@]}"
+
+assert_module_symbol_density_semantic() {
+  local F="$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE"
+  local T="$MODULE_SYMBOL_DENSITY_TYPES_FIXTURE"
+  local jsonl
+  jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$T" \
+    --argjson min_decls 5 --argjson ratio 2 \
+    -f "$QUERIES_DIR/module-symbol-density.jq" "$F" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): crashed: %s\n" "$jsonl"
+    return
+  }
+  local count
+  count="$(printf '%s\n' "$jsonl" | grep -c .)"
+  if [[ "$count" != "3" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic, base): expected 3 flagged rows, got %d\n%s\n" "$count" "$jsonl"
+    return
+  fi
+  # Every row reports the codebase-wide median of 3.
+  if [[ "$(printf '%s\n' "$jsonl" | jq -s 'all(.median_decls == 3)')" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): median_decls should be 3 on every row\n%s\n" "$jsonl"
+    return
+  fi
+  # Densest-first: row 1 is the main god module — 12 decls, ratio 4×, touched,
+  # body_lines_total 185 (8 bodies@20 + 1 null-body@0 + 1 method@25), and the
+  # merge across BOTH catalogs is visible in kind_breakdown.
+  local first_ok
+  first_ok="$(printf '%s\n' "$jsonl" | head -1 | jq -r \
+    '(.cluster_id == "module-symbol-density:main__lookup/orchestrator.py"
+      and .decl_count == 12 and .ratio_to_median == 4 and .touched_in_window == true
+      and .body_lines_total == 185
+      and .kind_breakdown.function == 9 and .kind_breakdown.method == 1
+      and .kind_breakdown["type-alias-object"] == 2) | tostring')"
+  if [[ "$first_ok" != "true" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): row 1 is not the expected main god module\n%s\n" "$jsonl"
+    return
+  fi
+  # Package-qualified grouping: main and shared orchestrator.py are TWO clusters
+  # with distinct counts (12 vs 8), never merged into one 20-decl group.
+  local shared_decl
+  shared_decl="$(printf '%s\n' "$jsonl" | jq -rs \
+    '[.[] | select(.cluster_id == "module-symbol-density:shared__lookup/orchestrator.py")][0].decl_count')"
+  if [[ "$shared_decl" != "8" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): shared orchestrator not a distinct group of 8 (got %s)\n%s\n" "$shared_decl" "$jsonl"
+    return
+  fi
+  # mid.py fires exactly at the ratio boundary (6 == 2 × median 3).
+  local mid_ratio
+  mid_ratio="$(printf '%s\n' "$jsonl" | jq -rs \
+    '[.[] | select(.cluster_id == "module-symbol-density:main__lookup/mid.py")][0].ratio_to_median')"
+  if [[ "$mid_ratio" != "2" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): mid.py should fire at ratio 2 boundary, got %s\n%s\n" "$mid_ratio" "$jsonl"
+    return
+  fi
+  # None of the below-bar / excluded files may leak: the small files, either
+  # util.py, the test file (is_test), or the generated file.
+  if printf '%s\n' "$jsonl" | jq -e '.file | test("(^|/)(a|b|c)\\.py$|util\\.py$|test_orchestrator\\.py$|models_gen\\.py$")' >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic): a below-bar/excluded file leaked into output\n%s\n" "$jsonl"
+    return
+  fi
+  # FLOOR gate, exercised independently of the ratio gate: raise min_decls to 7
+  # with a lax ratio 1.5 (ratio bar 4.5). mid.py (6) clears the ratio bar but is
+  # now below the floor → drops. Only the two orchestrators survive.
+  local floor_jsonl floor_count floor_has_mid
+  floor_jsonl="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$T" \
+    --argjson min_decls 7 --argjson ratio 1.5 \
+    -f "$QUERIES_DIR/module-symbol-density.jq" "$F" 2>&1)"
+  floor_count="$(printf '%s\n' "$floor_jsonl" | grep -c .)"
+  floor_has_mid="$(printf '%s\n' "$floor_jsonl" | jq -rs '[.[] | select(.file == "lookup/mid.py")] | length')"
+  if [[ "$floor_count" != "2" || "$floor_has_mid" != "0" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic, floor gate): expected 2 rows with mid.py dropped, got %d rows (mid present=%s)\n%s\n" "$floor_count" "$floor_has_mid" "$floor_jsonl"
+    return
+  fi
+  # is_test opt-in: default excludes the test file; INCLUDE_TESTS=true surfaces
+  # it (median stays 3, so the base bar still yields 4 rows including it).
+  local incl_jsonl incl_count incl_has_test
+  incl_jsonl="$(OUTPUT_FORMAT=jsonl INCLUDE_TESTS=true jq -L "$QUERIES_DIR" -r --slurpfile types "$T" \
+    --argjson min_decls 5 --argjson ratio 2 \
+    -f "$QUERIES_DIR/module-symbol-density.jq" "$F" 2>&1)"
+  incl_count="$(printf '%s\n' "$incl_jsonl" | grep -c .)"
+  incl_has_test="$(printf '%s\n' "$incl_jsonl" | jq -rs '[.[] | select(.file == "tests/test_orchestrator.py")] | length')"
+  if [[ "$incl_count" != "4" || "$incl_has_test" != "1" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic, INCLUDE_TESTS): expected 4 rows incl. the test file, got %d (test present=%s)\n%s\n" "$incl_count" "$incl_has_test" "$incl_jsonl"
+    return
+  fi
+  # Loosening both thresholds (min_decls=3, ratio=1) surfaces every >=3-decl
+  # file: both orchestrators, mid, both util.py, and c.py = 6 rows.
+  local low_count
+  low_count="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --slurpfile types "$T" \
+    --argjson min_decls 3 --argjson ratio 1 \
+    -f "$QUERIES_DIR/module-symbol-density.jq" "$F" | grep -c .)"
+  if [[ "$low_count" != "6" ]]; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (semantic, low thresholds): expected 6 rows, got %s\n" "$low_count"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ module-symbol-density (semantic): base flags 3 (main god first, spc merge across catalogs, pkg-qualified split, mid at ratio boundary); floor gate drops mid; INCLUDE_TESTS surfaces the test file; low thresholds emit 6\n"
+}
+assert_module_symbol_density_semantic
+
+# Contract-lock: module-symbol-density parameterizes two numeric thresholds the
+# same way mark-section-density / persistence-store-field-density do, so raw jq
+# without --argjson must fail at compile time (jq rejects undefined variables
+# before execution). Guards against a future fragile in-jq fallback.
+assert_module_symbol_density_argjson_required() {
+  local err
+  if err="$(jq -L "$QUERIES_DIR" -r --slurpfile types "$MODULE_SYMBOL_DENSITY_TYPES_FIXTURE" \
+    -f "$QUERIES_DIR/module-symbol-density.jq" "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" 2>&1)"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (argjson-required): expected compile error, got success\n%s\n" "$err"
+    return
+  fi
+  if ! printf '%s' "$err" | grep -q "is not defined"; then
+    FAIL=$((FAIL + 1))
+    printf "  ✗ module-symbol-density (argjson-required): expected 'is not defined' error, got:\n%s\n" "$err"
+    return
+  fi
+  PASS=$((PASS + 1))
+  printf "  ✓ module-symbol-density (argjson-required): raw jq without --argjson min_decls/ratio correctly fails at compile time\n"
+}
+assert_module_symbol_density_argjson_required
 
 echo ""
 echo "=== Migration-progress queries ==="

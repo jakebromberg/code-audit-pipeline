@@ -57,6 +57,8 @@ NOTIFICATION_WRAPPERS_FIXTURE="$FIXTURES_DIR/notification-wrappers.input.json"
 SHARED_INTERFACE_FIXTURE="$FIXTURES_DIR/shared-interface-candidates.input.json"
 COPIED_LITERAL_FIXTURE="$FIXTURES_DIR/copied-literal-candidates.input.json"
 PERSISTENCE_STORE_FIELD_DENSITY_FIXTURE="$FIXTURES_DIR/persistence-store-field-density.input.json"
+MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE="$FIXTURES_DIR/module-symbol-density-functions.input.json"
+MODULE_SYMBOL_DENSITY_TYPES_FIXTURE="$FIXTURES_DIR/module-symbol-density-types.input.json"
 
 # Split TYPES_FIXTURE into two synthetic per-package catalogs for the
 # cross-catalog-name-collisions query (mirrors the integration test).
@@ -224,6 +226,10 @@ both_modes dead-code                                 "$QUERIES_DIR/dead-code.jq"
 echo ""
 echo "=== Multi-catalog: public-api-leaks (function-catalog + type-catalog) ==="
 both_modes public-api-leaks                          "$QUERIES_DIR/public-api-leaks.jq"                          "$LEAKS_FUNCTIONS_FIXTURE" --slurpfile types "$LEAKS_TYPES_FIXTURE"
+
+echo ""
+echo "=== Multi-catalog: module-symbol-density (function-catalog + type-catalog) ==="
+both_modes module-symbol-density                     "$QUERIES_DIR/module-symbol-density.jq"                     "$MODULE_SYMBOL_DENSITY_FUNCS_FIXTURE" --slurpfile types "$MODULE_SYMBOL_DENSITY_TYPES_FIXTURE" --argjson min_decls 5 --argjson ratio 2
 
 echo ""
 echo "=== Files-catalog query ==="
