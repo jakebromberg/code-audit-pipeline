@@ -73,7 +73,9 @@ func printUsage() {
       --root            Required. Root of the codebase to scan.
       --shared          Optional. Second package root, walked in addition to --root.
       --output          Optional. Write JSON to this path. Default: stdout.
-      --include-tests   type|func|literal only. Don't skip Tests/ directories or *Tests.swift files.
+      --include-tests   literal only. Don't skip test-path files (see docs/pipeline-contract.md).
+                        type and func always walk test files and tag every row with is_test;
+                        this flag is a documented no-op for them.
       --min-body-lines  func only. Skip functions with fewer normalized body lines. Default 3.
     """
     logErr(usage)
@@ -99,16 +101,21 @@ if args.subcommand == "package-graph" {
     exit(code)
 }
 
-let walkOpts = WalkOptions(extensions: ["swift"], includeTests: args.includeTests)
+// The walk always includes test files and tags each with `isTest` (contract
+// §"Test path patterns"). `type` and `func` emit every row unconditionally —
+// `--include-tests` is a documented no-op for them, matching the Rust
+// extractor's precedent. `literal` is the one subcommand that still filters:
+// it's an occurrence catalog that deliberately omits `is_test` and keeps the
+// exclude-by-default polarity (docs/pipeline-contract.md §"literal-catalog").
+let walkOpts = WalkOptions(extensions: ["swift"])
 var files = walkRoot(root: root, options: walkOpts)
 if let shared = args.shared {
     files.append(contentsOf: walkRoot(root: shared, options: walkOpts))
 }
 
-logErr("swift-catalog \(args.subcommand): scanning \(files.count) files")
-
 switch args.subcommand {
 case "type":
+    logErr("swift-catalog \(args.subcommand): scanning \(files.count) files")
     var allRecords: [TypeRecord] = []
     var parseErrors = 0
     var notificationWrappers = 0
@@ -134,6 +141,7 @@ case "type":
     }
 
 case "func":
+    logErr("swift-catalog \(args.subcommand): scanning \(files.count) files")
     var allRecords: [FunctionRecord] = []
     var parseErrors = 0
     for file in files {
@@ -157,9 +165,11 @@ case "func":
     }
 
 case "literal":
+    let literalFiles = args.includeTests ? files : files.filter { !$0.isTest }
+    logErr("swift-catalog \(args.subcommand): scanning \(literalFiles.count) files")
     var allRecords: [LiteralRecord] = []
     var parseErrors = 0
-    for file in files {
+    for file in literalFiles {
         do {
             let source = try String(contentsOfFile: file.absolutePath, encoding: .utf8)
             let tree = Parser.parse(source: source)

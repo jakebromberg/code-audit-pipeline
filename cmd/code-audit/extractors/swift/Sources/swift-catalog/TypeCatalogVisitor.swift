@@ -180,6 +180,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(node.modifiers),
             generated: file.generated,
+            isTest: file.isTest,
             fields: nil,
             shapeSig: nil
         )
@@ -300,6 +301,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(modifiers),
             generated: file.generated,
+            isTest: file.isTest,
             fields: extracted.flat.isEmpty ? nil : extracted.flat,
             fieldsStructured: extracted.structured.isEmpty ? nil : extracted.structured,
             shapeSig: extracted.flat.isEmpty ? nil : shapeSig(of: extracted.flat)
@@ -392,6 +394,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             line: line,
             exported: isExported(node.modifiers),
             generated: file.generated,
+            isTest: file.isTest,
             fields: cases.isEmpty ? nil : sortedFlat,
             fieldsStructured: cases.isEmpty ? nil : sortedStructured,
             shapeSig: cases.isEmpty ? nil : shapeSig(of: cases)

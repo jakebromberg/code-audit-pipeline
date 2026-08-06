@@ -12,11 +12,11 @@ struct WalkedFile {
     let relativePath: String
     let package: String
     let generated: Bool
+    let isTest: Bool
 }
 
 struct WalkOptions {
     let extensions: Set<String>
-    let includeTests: Bool
 }
 
 func walkRoot(root: String, options: WalkOptions) -> [WalkedFile] {
@@ -47,7 +47,7 @@ func walkRoot(root: String, options: WalkOptions) -> [WalkedFile] {
 
         if values?.isDirectory == true {
             let name = url.lastPathComponent
-            if shouldSkipDirectory(name: name, includeTests: options.includeTests) {
+            if shouldSkipDirectory(name: name) {
                 enumerator.skipDescendants()
             }
             continue
@@ -57,9 +57,6 @@ func walkRoot(root: String, options: WalkOptions) -> [WalkedFile] {
         let ext = url.pathExtension.lowercased()
         guard options.extensions.contains(ext) else { continue }
 
-        let fname = url.lastPathComponent
-        if !options.includeTests && isTestFileName(fname) { continue }
-
         let absolutePath = url.path
         guard absolutePath.hasPrefix(rootPath + "/") else { continue }
         let relativePath = String(absolutePath.dropFirst(rootPath.count + 1))
@@ -67,24 +64,54 @@ func walkRoot(root: String, options: WalkOptions) -> [WalkedFile] {
             absolutePath: absolutePath,
             relativePath: relativePath,
             package: resolvePackage(relativePath: relativePath),
-            generated: isGenerated(relativePath: relativePath)
+            generated: isGenerated(relativePath: relativePath),
+            isTest: isTestPath(relativePath: relativePath)
         ))
     }
 
     return results
 }
 
-private func shouldSkipDirectory(name: String, includeTests: Bool) -> Bool {
+private func shouldSkipDirectory(name: String) -> Bool {
     if name.hasPrefix(".") { return true }
     if ["node_modules", "build", "dist", "coverage", "DerivedData", "Pods", "scripts", "ci_scripts"].contains(name) { return true }
-    if name == "Tests" && !includeTests { return true }
     return false
 }
 
-private func isTestFileName(_ name: String) -> Bool {
-    if name.hasSuffix("Tests.swift") { return true }
-    if name.contains(".test.") || name.contains(".spec.") { return true }
-    return false
+/// Universal test-path directory segments (docs/pipeline-contract.md
+/// §"Test path patterns"), plus Swift's SwiftPM `Tests/` convention
+/// (capital T). Matched per-segment, exact and case-sensitive — a
+/// substring or case-insensitive match would swallow non-test directories
+/// like `CoreTesting`.
+private let testDirSegments: Set<String> = [
+    "tests", "test", "__tests__", "__test__",
+    "spec",
+    "__mocks__",
+    "__fixtures__", "fixtures",
+    "e2e",
+    "Tests",
+]
+
+/// Universal test-filename suffixes (docs/pipeline-contract.md
+/// §"Test path patterns"), plus Swift's `*Tests.swift` convention.
+private let testFileSuffixes: [String] = [
+    ".test.swift", ".spec.swift",
+    ".fixture.swift", ".fixtures.swift",
+    ".mock.swift", ".mocks.swift",
+    "Tests.swift",
+]
+
+/// True if `relativePath` matches the contract's normative test-path
+/// pattern set: any path segment (directory, not basename) exactly
+/// matches a known test-directory name, or the basename ends with a
+/// known test-file suffix.
+func isTestPath(relativePath: String) -> Bool {
+    let parts = relativePath.split(separator: "/").map(String.init)
+    guard let basename = parts.last else { return false }
+    for segment in parts.dropLast() {
+        if testDirSegments.contains(segment) { return true }
+    }
+    return testFileSuffixes.contains { basename.hasSuffix($0) }
 }
 
 /// Resolve which "package" a file belongs to from its path relative to root.

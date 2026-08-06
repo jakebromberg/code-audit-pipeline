@@ -81,6 +81,7 @@ struct TypeRecord: Encodable {
     var line: Int
     var exported: Bool
     var generated: Bool
+    var isTest: Bool
     var fields: [String]?
     var fieldsStructured: [FieldStructured]?
     var shapeSig: String?
@@ -167,6 +168,7 @@ struct FunctionRecord: Encodable {
     var line: Int
     var generated: Bool
     var exported: Bool
+    var isTest: Bool
     var async: Bool
     var paramCount: Int
     var paramNames: [String]
