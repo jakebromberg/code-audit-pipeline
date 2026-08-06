@@ -30,6 +30,7 @@ jobs:
             .github/actions/audit-core/scripts/detect-languages.sh \
             extractors/swift/tests/test_package_graph.sh \
             extractors/swift/tests/test_type_catalog_heritage.sh \
+            extractors/swift/tests/test_type_catalog_is_test.sh \
             extractors/swift/tests/test_literal_catalog.sh \
             extractors/typescript/tests/test_smoke.sh \
             install.sh \
@@ -302,6 +303,9 @@ jobs:
 
       - name: Integration tests (type-catalog heritage — extends, conforms_to, wraps_notification_name)
         run: tests/test_type_catalog_heritage.sh
+
+      - name: Integration tests (is_test tagging + unconditional test-file walk)
+        run: tests/test_type_catalog_is_test.sh
 
       - name: Integration tests (literal-catalog)
         run: tests/test_literal_catalog.sh
