@@ -6,7 +6,10 @@
 //  initializer/deinitializer/subscript/computed-property declarations. Every
 //  declaration gets a row; bodies shorter than --min-body-lines (default 3)
 //  emit with their body-level fields nulled rather than being dropped, so
-//  signature-level queries (e.g. public-api-leaks) still see one-liners.
+//  row-level and count-based consumers (e.g. module-symbol-density.jq) see
+//  one-liners that used to be dropped entirely. This does not add
+//  signature-level query recall (public-api-leaks.jq) — Swift's
+//  FunctionRecord emits no type_ref/return_ref fields at all (#328).
 //
 
 import Foundation
