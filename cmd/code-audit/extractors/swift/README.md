@@ -14,6 +14,8 @@ swift build
 
 `swift build` runs once; the binary lands at `.build/debug/swift-catalog` (or `.build/release/swift-catalog` after `swift build -c release`).
 
+`type` and `func` always walk test files and tag every row with `is_test` (per `docs/pipeline-contract.md`'s "Test path patterns"); `--include-tests` is a documented no-op for them. `literal` is the one subcommand `--include-tests` still affects — see its section below.
+
 ## Subcommands
 
 ### `type` — type-catalog
@@ -30,6 +32,8 @@ Emits one record per `struct`, `class`, `protocol`, `enum`, `extension`, `typeal
 
 Nested types are qualified with `.`: a `struct Inner` inside `struct Outer` emits `name:"Outer.Inner"`. Extensions push their extended-type name onto the qualification stack too, so types nested under extensions are qualified.
 
+Every row carries `is_test: bool`, derived from the file's path (see "Skip rules" below) — required on every row per `docs/pipeline-contract.md`.
+
 ### `func` — function-catalog
 
 Emits one record per function-like construct that has a body: top-level `func`, methods, initializers, deinitializers, subscripts, computed-property getters/setters. Skipped: protocol-requirement signatures (no body), functions whose normalized body has fewer than `--min-body-lines` (default 3) lines.
@@ -37,6 +41,8 @@ Emits one record per function-like construct that has a body: top-level `func`, 
 Method names are qualified by the nesting stack: a method `foo` on `class Bar` emits `name:"Bar.foo"`. Init names include parameter labels: `"Bar.init(name:age:)"`. Computed-property accessors emit as `"Bar.propName.get"` and `"Bar.propName.set"`.
 
 Body normalization strips `/* */` and `//` comments, collapses whitespace, drops blank lines. `body_hash` is sha256 of the sorted-unique lines joined with `\n`. `body_lines` is the same sorted-unique set, so it can serve directly as Jaccard input.
+
+Every row carries `is_test: bool`, same derivation and requirement as `type` above.
 
 ### `literal` — literal-catalog
 
@@ -66,18 +72,19 @@ Derived from the file's path relative to `--root` (or `--shared`):
 | `Shared/<X>/...` | `<X>` (e.g., `Shared/Core/...` → `Core`) |
 | `WXYC/<Target>/...` | `app:<Target>` (e.g., `app:iOS`, `app:WatchXYC`) |
 | `Sources/<X>/...` | `<X>` (matches SwiftPM layout when `--root` is inside a package) |
+| `Tests/<X>/...` | `<X>` (SwiftPM test-target convention, symmetric with `Sources/<X>/...` — `X` is the raw target directory name, e.g. `FooTests`, not normalized to the production package it doubles) |
 | anything else | first path segment |
 
 This intentionally encodes wxyc-ios-64's layout. For other projects, generalize via the path heuristics or accept the first-segment fallback.
 
 ## Skip rules
 
-The walker skips:
+The walker unconditionally skips (there is no test-path exception — `--include-tests` does not affect these):
 
 - Hidden directories (anything beginning with `.`) — covers `.build/`, `.swiftpm/`, `.git/`, IDE state.
 - `node_modules/`, `build/`, `dist/`, `coverage/`, `DerivedData/`, `Pods/`, `scripts/`, `ci_scripts/`.
-- `Tests/` directories (unless `--include-tests`).
-- Files matching `*Tests.swift` (Swift convention; unless `--include-tests`).
+
+Test-path files (`docs/pipeline-contract.md` § "Test path patterns" — directory segments like `Tests/`, basename suffixes like `*Tests.swift` / `*.mock.swift`) are walked like any other file and tagged `is_test: true`; they are **not** skipped by `type` or `func`. `--include-tests` is a documented no-op for those two subcommands. `literal` is the exception: it filters test-path files out post-walk unless `--include-tests` is passed, plus the legacy basename substrings `.test.` / `.spec.` (see the "literal-catalog" section of `docs/pipeline-contract.md` for why the legacy carve-out exists).
 
 ## Known limitations
 

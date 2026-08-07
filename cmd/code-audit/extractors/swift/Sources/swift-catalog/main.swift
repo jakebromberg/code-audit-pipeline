@@ -107,6 +107,10 @@ if args.subcommand == "package-graph" {
 // extractor's precedent. `literal` is the one subcommand that still filters:
 // it's an occurrence catalog that deliberately omits `is_test` and keeps the
 // exclude-by-default polarity (docs/pipeline-contract.md §"literal-catalog").
+// Its filter is `isLiteralExcludedPath`, a strict superset of `isTestPath`
+// (it additionally matches the legacy `.test.`/`.spec.` basename substrings
+// the pre-#317 implementation excluded), so literal's exclusion set never
+// narrows relative to what shipped before this PR.
 let walkOpts = WalkOptions(extensions: ["swift"])
 var files = walkRoot(root: root, options: walkOpts)
 if let shared = args.shared {
@@ -165,7 +169,7 @@ case "func":
     }
 
 case "literal":
-    let literalFiles = args.includeTests ? files : files.filter { !$0.isTest }
+    let literalFiles = args.includeTests ? files : files.filter { !isLiteralExcludedPath(relativePath: $0.relativePath) }
     logErr("swift-catalog \(args.subcommand): scanning \(literalFiles.count) files")
     var allRecords: [LiteralRecord] = []
     var parseErrors = 0
