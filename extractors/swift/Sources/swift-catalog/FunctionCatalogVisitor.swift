@@ -158,23 +158,27 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
 
     // MARK: - emit helpers
 
-    private func emit(
-        simpleName: String,
+    /// Builds the `FunctionRecord` shared by `emit` and the `.getter` branch
+    /// of `emitFromAccessorBlock`: resolves the enclosing-type join key from
+    /// `nameStack`, applies the `--min-body-lines` threshold gate to the four
+    /// body fields, and stamps the position/modifier-derived fields common to
+    /// every declaration kind this visitor emits. Keeping this in one place
+    /// means the `body_shape` field (deferred, E3b) — or any future field
+    /// gated the same way — only needs to change here, not at each call site.
+    private func makeRecord(
+        qualifiedName: String,
         kind: String,
         position: AbsolutePosition,
         modifiers: DeclModifierListSyntax,
         isAsync: Bool,
         paramNames: [String],
-        body: CodeBlockSyntax
-    ) {
-        let bodyText = body.statements.description
-        let normalized = normalizeBody(bodyText)
+        normalized: (lines: [String], hash: String, length: Int)
+    ) -> FunctionRecord {
         let line = converter.location(for: position).line
-        let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
         let enclosingType = nameStack.isEmpty ? nil : nameStack.joined(separator: ".")
         let meetsThreshold = normalized.lines.count >= minBodyLines
-        records.append(FunctionRecord(
-            name: qualified,
+        return FunctionRecord(
+            name: qualifiedName,
             kind: kind,
             package: file.package,
             file: file.relativePath,
@@ -190,6 +194,29 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             bodyLength: meetsThreshold ? normalized.length : nil,
             bodyHash: meetsThreshold ? normalized.hash : nil,
             bodyLines: meetsThreshold ? normalized.lines : nil
+        )
+    }
+
+    private func emit(
+        simpleName: String,
+        kind: String,
+        position: AbsolutePosition,
+        modifiers: DeclModifierListSyntax,
+        isAsync: Bool,
+        paramNames: [String],
+        body: CodeBlockSyntax
+    ) {
+        let bodyText = body.statements.description
+        let normalized = normalizeBody(bodyText)
+        let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
+        records.append(makeRecord(
+            qualifiedName: qualified,
+            kind: kind,
+            position: position,
+            modifiers: modifiers,
+            isAsync: isAsync,
+            paramNames: paramNames,
+            normalized: normalized
         ))
     }
 
@@ -218,29 +245,17 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
                 )
             }
         case .getter(let getterBody):
-            let line = converter.location(for: accessors.positionAfterSkippingLeadingTrivia).line
             let bodyText = getterBody.description
             let normalized = normalizeBody(bodyText)
             let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
-            let enclosingType = nameStack.isEmpty ? nil : nameStack.joined(separator: ".")
-            let meetsThreshold = normalized.lines.count >= minBodyLines
-            records.append(FunctionRecord(
-                name: qualified,
+            records.append(makeRecord(
+                qualifiedName: qualified,
                 kind: kind,
-                package: file.package,
-                file: file.relativePath,
-                line: line,
-                generated: file.generated,
-                exported: isExported(modifiers),
-                isTest: file.isTest,
-                async: false,
-                paramCount: paramNames.count,
+                position: accessors.positionAfterSkippingLeadingTrivia,
+                modifiers: modifiers,
+                isAsync: false,
                 paramNames: paramNames,
-                enclosingType: enclosingType,
-                bodyLineCount: meetsThreshold ? normalized.lines.count : nil,
-                bodyLength: meetsThreshold ? normalized.length : nil,
-                bodyHash: meetsThreshold ? normalized.hash : nil,
-                bodyLines: meetsThreshold ? normalized.lines : nil
+                normalized: normalized
             ))
         }
     }

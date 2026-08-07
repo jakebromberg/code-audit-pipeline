@@ -183,6 +183,45 @@ struct FunctionRecord: Encodable {
     var bodyLength: Int?
     var bodyHash: String?
     var bodyLines: [String]?
+
+    /// Hand-written `encode(to:)`: Swift's compiler-synthesized `Encodable`
+    /// emits `encodeIfPresent` for `Optional` properties, which OMITS the key
+    /// entirely for `nil` rather than encoding JSON `null`. That collides with
+    /// this catalog's key-omission convention for form-inapplicable fields
+    /// (e.g. `LiteralRecord`'s binding-vs-argument fields) — `enclosing_type`
+    /// and the four body-level fields are always *applicable* to every row,
+    /// just sometimes below threshold, so they must always be present as an
+    /// explicit `null` rather than absent. `has("body_hash")` must be `true`
+    /// on every emitted row; only its *value* varies. `container.encode`
+    /// (never `encodeIfPresent`) is what makes `Optional.none` serialize as
+    /// `null` instead of a dropped key. `CodingKeys` mirrors the property
+    /// names verbatim so `catalogJSONEncoder`'s `.convertToSnakeCase` key
+    /// strategy still applies.
+    enum CodingKeys: String, CodingKey {
+        case name, kind, package, file, line, generated, exported, isTest, async
+        case paramCount, paramNames, enclosingType
+        case bodyLineCount, bodyLength, bodyHash, bodyLines
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(package, forKey: .package)
+        try container.encode(file, forKey: .file)
+        try container.encode(line, forKey: .line)
+        try container.encode(generated, forKey: .generated)
+        try container.encode(exported, forKey: .exported)
+        try container.encode(isTest, forKey: .isTest)
+        try container.encode(async, forKey: .async)
+        try container.encode(paramCount, forKey: .paramCount)
+        try container.encode(paramNames, forKey: .paramNames)
+        try container.encode(enclosingType, forKey: .enclosingType)
+        try container.encode(bodyLineCount, forKey: .bodyLineCount)
+        try container.encode(bodyLength, forKey: .bodyLength)
+        try container.encode(bodyHash, forKey: .bodyHash)
+        try container.encode(bodyLines, forKey: .bodyLines)
+    }
 }
 
 /// One literal-catalog record (occurrence catalog, not a declaration catalog —

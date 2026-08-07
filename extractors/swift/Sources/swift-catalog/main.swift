@@ -76,7 +76,11 @@ func printUsage() {
       --include-tests   literal only. Don't skip test-path files (see docs/pipeline-contract.md).
                         type and func always walk test files and tag every row with is_test;
                         this flag is a documented no-op for them.
-      --min-body-lines  func only. Skip functions with fewer normalized body lines. Default 3.
+      --min-body-lines  func only. Threshold below which body fields (body_hash,
+                        body_lines, body_line_count, body_length) are emitted as
+                        null (default 3). The row itself is still emitted —
+                        signature-level queries need exported one-liner functions
+                        to be visible.
     """
     logErr(usage)
 }
