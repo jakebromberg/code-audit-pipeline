@@ -10,6 +10,31 @@ import CryptoKit
 import Foundation
 import SwiftSyntax
 
+/// One declared associated type on a protocol (issue #320, shape settled in
+/// #321's joint decision). `{name, constraints}` is the shape already
+/// ratified in docs/pipeline-contract-v2-fixtures.jsonl for
+/// `language_data.swift.associated_types`; `primary` is added as a superset
+/// field rather than a redefinition, so that fixture stays valid.
+///
+/// `constraints` comes from `AssociatedTypeDeclSyntax.inheritanceClause`
+/// only — sorted, deduped, `[]` when the clause is absent. A `where` clause
+/// requirement is a different kind of statement from a conformance bound and
+/// is deliberately NOT folded in here. `primary` is true when the name
+/// appears in `ProtocolDeclSyntax.primaryAssociatedTypeClause`; Swift
+/// requires every primary associated type to also be declared as an
+/// `associatedtype` member, so there is no separate entry to merge.
+///
+/// Deliberate recall gaps: default types (`associatedtype T = Int`) are not
+/// captured, and associated types inherited from a protocol's own
+/// conformances are not collected — the transitive closure is a query-side
+/// join over `conforms_to`. See docs/pipeline-contract.md `associated_types`
+/// for the full rationale.
+struct AssociatedType: Encodable {
+    var name: String
+    var constraints: [String]
+    var primary: Bool
+}
+
 /// One structured field on a type-catalog record. V7 §6.1: parallel to the
 /// flat `fields: ["name:Type"]` form, so downstream queries can ask
 /// "find type pairs whose name set is identical but type set differs at slot X"
@@ -112,6 +137,16 @@ struct TypeRecord: Encodable {
     var extends: [String]?
     var conformsTo: [String]?
     var wrapsNotificationName: String?
+    /// Declared associated types (issue #320). Protocol rows (`kind ==
+    /// "interface"`) ALWAYS carry this, `[]` when the protocol declares
+    /// none; every other kind leaves it `nil` so it's omitted from the
+    /// JSON. No hand-written `encode(to:)` is needed for this omission —
+    /// unlike `FunctionRecord`, `TypeRecord`'s optionals are
+    /// contract-sanctioned to omit on `nil`, and the compiler-synthesized
+    /// `Encodable` already does that. See docs/pipeline-contract.md
+    /// `associated_types` and the `access` (type vs literal) precedent this
+    /// mirrors.
+    var associatedTypes: [AssociatedType]?
 }
 
 /// Stdlib / SwiftUI / Apple-framework identifiers that, when appearing
