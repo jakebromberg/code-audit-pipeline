@@ -244,6 +244,8 @@ Both the type catalog and the literal catalog (below) carry a field named `acces
 
 Aligning binding-form literal rows to the type catalog's default-to-`"internal"` behavior is a defensible follow-up, but is out of scope here: it would change `literal-catalog.json` output, and the literal catalog carries a byte-stability regression check against that file.
 
+`access` is also listed for `swift` in the v2 `language_data.<lang>.*` field table. It ships top-level, as described here, and that table is a ratification record rather than a description of extractor output — see "Ratified here does not mean emitted" under [`language_data.<lang>.*` namespace](#language_datalang-namespace) for the general rule and for what happens to these fields if `language_data` emission is ever built.
+
 ### `infer_ref` shape
 
 For `type-alias-infer-model` records, `infer_ref` carries:
@@ -911,6 +913,12 @@ The `language_data` object is keyed by language name. Each value is the language
 Fields under `language_data.<lang>.*` are NOT part of the cross-language core projection. Queries that operate cross-language work against the core projection; queries that operate on language-specific structure pin to a language and read its sub-namespace.
 
 Every field name below traces to a specific illustrative record in [`docs/pipeline-contract-v2-fixtures.jsonl`](./pipeline-contract-v2-fixtures.jsonl). New fields require a corresponding illustrative record before they enter the table — the "speculation gate" enforces evidence-driven schema growth.
+
+**Ratified here does not mean emitted.** This table records fields that have passed the speculation gate. It is not a description of extractor output: **no extractor emits a `language_data` object today** — not Swift, TypeScript, Python, or Rust. The tier is ratified and unimplemented, and building it is a plumbing change across every extractor and every consuming query rather than a precondition for adding a field.
+
+Consequently, a field named in this table may also ship **top-level** on a catalog row, and some do. `access` is the worked case: it is listed for `swift` below, and it is also a top-level v1 field — on literal rows already, and on type rows as of the change that added this paragraph. That is not a contradiction to resolve by picking one. v2 is [structurally additive](#v2-deliberate-scope) and removes no v1 field, so the top-level field is the current emission surface and the `language_data` entry is a ratified future home. Queries read what is emitted.
+
+The rule for anyone adding a Swift-specific (or any language-specific) field: **ship it top-level, and record it here.** Do not block an additive field on implementing `language_data`, and do not give one concept two spellings by emitting it in both places. When `language_data` emission is built, the fields named in this table migrate or mirror under a migration note written at that time — that note is the right place to decide per-field whether the top-level spelling is retained for the core projection or retired.
 
 | Language | Field | Where seen (fixture record) |
 |---|---|---|
