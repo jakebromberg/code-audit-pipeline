@@ -66,4 +66,18 @@ public struct ExtensionTarget {}
 
 public extension ExtensionTarget {
     func extended() {}
+
+    // Pins the written-syntax caveat. Swift makes this type genuinely public
+    // across module boundaries — a declaration inside an extension defaults to
+    // the extension's access level, not to `internal`. No modifier is written
+    // here, so `access` reports "internal" while `exported` resolves true.
+    // That divergence is deliberate; see docs/pipeline-contract.md
+    // "access (type vs literal)". Asserted below so it cannot drift silently.
+    struct NestedInPublicExtension {}
 }
+
+// Modifier ordering: `access` must pick the access modifier, not the first
+// modifier in the list.
+public final class PublicFirstFinal {}
+
+final public class FinalFirstPublic {}

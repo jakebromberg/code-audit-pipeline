@@ -80,13 +80,20 @@ struct TypeRecord: Encodable {
     var file: String
     var line: Int
     var exported: Bool
-    /// Access modifier as written (`public`, `open`, `package`, `internal`,
-    /// `fileprivate`, `private`), defaulting to `"internal"` when the
-    /// declaration carries none — Swift's own unwritten default, not missing
-    /// data. Unlike `LiteralRecord.access` (which describes an enclosing
-    /// binding and is omitted where structurally inapplicable), every type
-    /// declaration has an effective visibility, so this field is always
-    /// present. See docs/pipeline-contract.md "access (type vs literal)".
+    /// Access modifier **as written** (`public`, `open`, `package`,
+    /// `internal`, `fileprivate`, `private`), defaulting to `"internal"` when
+    /// the declaration carries none. This is a syntactic reading, not
+    /// resolved effective visibility: a declaration nested in an
+    /// access-modified extension inherits that extension's level in Swift
+    /// (`public extension X { struct Y {} }` makes `Y` public), but carries
+    /// no modifier of its own and so is reported `"internal"` here. See
+    /// docs/pipeline-contract.md "access (type vs literal)" for the caveat
+    /// and its consequence for `.access == "public"` filters.
+    ///
+    /// Unlike `LiteralRecord.access` (which describes an enclosing binding
+    /// and is omitted where structurally inapplicable), every type
+    /// declaration has *some* written-or-default visibility, so this field is
+    /// always present.
     var access: String
     var generated: Bool
     var isTest: Bool
