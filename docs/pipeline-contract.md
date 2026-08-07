@@ -37,7 +37,6 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "language": "typescript",             // v2 core projection: language tag
       "symbol_id": "a3f5…",                // sha1 over (package, file, name, kind) joined by NUL bytes, hex lowercase; optional
       "exported": true,                     // true if exported from the file
-      "access": "internal",                 // Swift only; access modifier as written, defaulting to "internal" — see "access (type vs literal)"
       "generated": false,                   // true if .d.ts or under generated/
       "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
 
@@ -68,7 +67,8 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "type_sig": "pick<x, 'a' | 'b'>",    // normalized type_text for clustering
       "infer_ref": { "kind": "InferSelectModel", "table": "user" }, // ORM-derived types
       "db_table_name": "user_accounts",     // for ORM table declarations
-      "wraps_notification_name": "AVPlayer.rateDidChangeNotification" // Swift only; see Heritage split convention
+      "wraps_notification_name": "AVPlayer.rateDidChangeNotification", // Swift only; see Heritage split convention
+      "access": "internal"                  // Swift only, but present on EVERY row the Swift extractor emits; written modifier, default "internal" — see "access (type vs literal)"
     }
   ]
 }
@@ -233,14 +233,18 @@ The kinds that admit no inheritance clause syntactically (currently: `type-alias
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
 - `reference_count` (grep-style identifier-occurrence count, populated by a second pass — coarse "name appears anywhere in scanned source" signal; distinct from `references_count` which is the structural count of typed references inside this declaration's body)
 - `wraps_notification_name` (string | absent) — the verbatim body-expression text of a Swift type's `static var name: Notification.Name { … }` member, when the type also conforms to a `*NotificationMessage` protocol (or Foundation's iOS 26 `NotificationCenter.MainActorMessage` / `NotificationCenter.AsyncMessage`). Populated only by the Swift extractor. Consumed by `notification-wrapper-grouping.jq` to find cross-module notification cross-fire. The query joins by exact string equality — convention: both wrappers spell the name the same way (`AVPlayer.rateDidChangeNotification` verbatim at both sites, not one as `.rateDidChangeNotification`). Singular today; the schema can grow to an array additively if a multi-name case appears.
-- `access` (string) — the access modifier as written (`public`, `open`, `package`, `internal`, `fileprivate`, `private`), defaulting to `"internal"` when the declaration carries no modifier. Populated only by the Swift extractor, for every type-catalog kind (struct / class / actor / enum / protocol / extension / typealias). See "`access` (type vs literal)" below for how this differs from `LiteralRecord.access`.
+- `access` (string) — the access modifier as written (`public`, `open`, `package`, `internal`, `fileprivate`, `private`), defaulting to `"internal"` when the declaration carries no modifier. Populated only by the Swift extractor, on every row it emits — `type-alias-object`, `interface`, `type-alias-union`, `type-alias-other`, and `extension`. See "`access` (type vs literal)" below for how this differs from `LiteralRecord.access`, and for why it is written syntax rather than resolved effective visibility.
 
 ### `access` (type vs literal)
 
 Both the type catalog and the literal catalog (below) carry a field named `access`, with deliberately different omission behavior:
 
-- **Type rows always emit `access`**, defaulting to `"internal"` when no modifier is written. On a type row, `access` describes the declaration itself, and every declaration has an effective visibility — `internal` is Swift's unwritten default, not missing data. Emitting it lets a query write `.access == "public"` without also handling an absent key.
+- **Type rows always emit `access`**, defaulting to `"internal"` when no modifier is written. On a type row, `access` describes the declaration itself, and every declaration carries some written-or-default visibility, so there is always a value to report. Emitting it lets a query write `.access == "public"` without also handling an absent key.
 - **Literal rows omit `access` when absent** (see `LiteralRecord.access` under "Literal catalog" below). On a literal row, `access` describes the *enclosing binding*, and is set only in binding position — it's structurally absent on argument-form rows, where there's no declaration to carry a visibility at all. "Omitted" means something on a literal row that it would not mean on a type row.
+
+**`access` is written syntax, not resolved effective visibility — and the two diverge inside an access-modified extension.** Swift's default for a declaration nested in an extension is *the extension's* access level, not `internal`. So `public extension Host { struct Proxy {} }` declares a `Proxy` that is genuinely public across module boundaries, while the type row for `Proxy` reports `access: "internal"`, because that is what is written at the declaration. The extension's own row correctly reports `access: "public"`.
+
+This is a deliberate consequence of reading syntax rather than running a resolver, and it is pinned by a fixture assertion so it cannot drift silently. But it is a real recall gap for the use this field was added to serve: a detector written as `select(.access == "public")` to isolate a shipped canonical from test-local copies will **miss** any canonical declared inside a `public extension`. Two mitigations, in order of preference — join the row to its enclosing `extension` row on `(package, name)` and take the extension's `access` when the nested declaration carries no modifier of its own; or fall back to `exported`, which already resolves to `true` for these rows. Queries that cannot do the join should say so in their `desc` line rather than over-trusting `access`.
 
 Aligning binding-form literal rows to the type catalog's default-to-`"internal"` behavior is a defensible follow-up, but is out of scope here: it would change `literal-catalog.json` output, and the literal catalog carries a byte-stability regression check against that file.
 
@@ -914,7 +918,7 @@ Fields under `language_data.<lang>.*` are NOT part of the cross-language core pr
 
 Every field name below traces to a specific illustrative record in [`docs/pipeline-contract-v2-fixtures.jsonl`](./pipeline-contract-v2-fixtures.jsonl). New fields require a corresponding illustrative record before they enter the table — the "speculation gate" enforces evidence-driven schema growth.
 
-**Ratified here does not mean emitted.** This table records fields that have passed the speculation gate. It is not a description of extractor output: **no extractor emits a `language_data` object today** — not Swift, TypeScript, Python, or Rust. The tier is ratified and unimplemented, and building it is a plumbing change across every extractor and every consuming query rather than a precondition for adding a field.
+**Ratified here does not mean emitted.** This table records fields that have passed the speculation gate. It is not a description of extractor output: **no extractor emits a `language_data` object today** — not any of the five under `extractors/`. The tier is ratified and unimplemented, and building it is a plumbing change across every extractor and every consuming query rather than a precondition for adding a field.
 
 Consequently, a field named in this table may also ship **top-level** on a catalog row, and some do. `access` is the worked case: it is listed for `swift` below, and it is also a top-level v1 field — on literal rows already, and on type rows as of the change that added this paragraph. That is not a contradiction to resolve by picking one. v2 is [structurally additive](#v2-deliberate-scope) and removes no v1 field, so the top-level field is the current emission surface and the `language_data` entry is a ratified future home. Queries read what is emitted.
 
