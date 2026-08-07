@@ -36,11 +36,13 @@ Every row carries `is_test: bool`, derived from the file's path (see "Skip rules
 
 ### `func` — function-catalog
 
-Emits one record per function-like construct that has a body: top-level `func`, methods, initializers, deinitializers, subscripts, computed-property getters/setters. Skipped: protocol-requirement signatures (no body), functions whose normalized body has fewer than `--min-body-lines` (default 3) lines.
+Emits one record per function-like construct that has a body: top-level `func`, methods, initializers, deinitializers, subscripts, computed-property getters/setters. Skipped: protocol-requirement signatures (no body) — that's it. `--min-body-lines` (default 3) no longer skips rows; functions whose normalized body has fewer lines than the threshold still emit a row, with `body_hash` / `body_lines` / `body_line_count` / `body_length` all `null` instead of being dropped, so signature-level queries (e.g. `public-api-leaks.jq`) still see one-liners and trivial accessors.
 
 Method names are qualified by the nesting stack: a method `foo` on `class Bar` emits `name:"Bar.foo"`. Init names include parameter labels: `"Bar.init(name:age:)"`. Computed-property accessors emit as `"Bar.propName.get"` and `"Bar.propName.set"`.
 
 Body normalization strips `/* */` and `//` comments, collapses whitespace, drops blank lines. `body_hash` is sha256 of the sorted-unique lines joined with `\n`. `body_lines` is the same sorted-unique set, so it can serve directly as Jaccard input.
+
+`enclosing_type` is the dotted nesting-stack qualification of the row's enclosing declaration (`Outer.Inner`), the extended type's text for extension members (`Array<Concert>`), and `null` for free functions — the same join key `type`'s nested-type qualification produces, so function-catalog rows join onto type-catalog rows by `enclosing_type == name`.
 
 Every row carries `is_test: bool`, same derivation and requirement as `type` above.
 

@@ -7,12 +7,23 @@
 #
 #   - A row is emitted for a free-function one-liner and for a no-op method
 #     (`func noop() {}`) — before this change both were dropped entirely.
-#   - Rows below --min-body-lines carry no body_hash/body_line_count/
-#     body_length/body_lines (jq sees them as null via `.field // null`).
+#   - Rows below --min-body-lines carry body_hash/body_line_count/body_length/
+#     body_lines as an explicit JSON `null` (`has(...)` is `true`, not just
+#     `== null` — a missing key also reads as `null` under `.field`, so the
+#     `has` check is the one that actually distinguishes "present but null"
+#     from "absent," which is the contract this extractor must honor).
 #   - A row at/above the threshold still carries all four body fields.
+#   - Every row — regardless of body length or declaration kind — has an
+#     identical key set, pinned against the contract.
 #   - `enclosing_type` is the dotted nameStack join for methods, `Outer.Inner`
 #     for nested types, the extended type's text for extension members, and
-#     null for free functions.
+#     null (but present) for free functions.
+#   - Declaration kinds beyond top-level func/method are covered: initializer,
+#     deinitializer, subscript, class member, actor member, enum member, and
+#     a protocol default implementation (extension on a protocol).
+#   - Threshold boundary: bodies at exactly threshold-1 and threshold+1 lines
+#     (default --min-body-lines 3), plus a run with a non-default
+#     --min-body-lines value in both directions.
 #   - `function-duplicates.jq`, `generic-function-candidates.jq`, and
 #     `default-impl-candidates.jq` all run cleanly against a catalog containing
 #     the new null-body rows (regression: the line-count gate keeps them out
@@ -62,6 +73,12 @@ assert_jq() {
 
 FUNC_OUT="$("$BIN" func --root "$FIXTURES" 2>/dev/null)"
 
+# The full key set every function-catalog row must carry, per
+# docs/pipeline-contract.md. Pinned once here; every row is checked against it
+# below so a future field addition/removal that misses one construction path
+# (e.g. the makeRecord vs. an ad-hoc emit site) is caught immediately.
+EXPECTED_KEYS='["async","body_hash","body_length","body_line_count","body_lines","enclosing_type","exported","file","generated","is_test","kind","line","name","package","param_count","param_names"]'
+
 # Rows now exist for declarations that used to be dropped entirely.
 assert_jq "free-function one-liner emits a row" '1' \
     '[.[] | select(.name=="oneLiner")] | length' "$FUNC_OUT"
@@ -72,35 +89,105 @@ assert_jq "no-op method emits a row" '1' \
 assert_jq "one-line computed-property getter emits a row" '1' \
     '[.[] | select(.name=="Widget.value")] | length' "$FUNC_OUT"
 
-# Below --min-body-lines (default 3): body fields absent (jq reads a missing
-# key the same as null).
+# Below --min-body-lines (default 3): body fields are present but null. The
+# `has()` checks are the ones that actually discriminate "explicit null" from
+# "key omitted" (both read as `null` under `.field`, which is exactly the bug
+# a compiler-synthesized Encodable's encodeIfPresent produces).
 for name in oneLiner donate; do
-    assert_jq "$name: body_hash null" 'null' \
+    assert_jq "$name: has body_hash key" 'true' \
+        "[.[] | select(.name==\"$name\")][0] | has(\"body_hash\")" "$FUNC_OUT"
+    assert_jq "$name: has body_line_count key" 'true' \
+        "[.[] | select(.name==\"$name\")][0] | has(\"body_line_count\")" "$FUNC_OUT"
+    assert_jq "$name: has body_length key" 'true' \
+        "[.[] | select(.name==\"$name\")][0] | has(\"body_length\")" "$FUNC_OUT"
+    assert_jq "$name: has body_lines key" 'true' \
+        "[.[] | select(.name==\"$name\")][0] | has(\"body_lines\")" "$FUNC_OUT"
+    assert_jq "$name: has enclosing_type key" 'true' \
+        "[.[] | select(.name==\"$name\")][0] | has(\"enclosing_type\")" "$FUNC_OUT"
+    assert_jq "$name: body_hash value is null" 'null' \
         "[.[] | select(.name==\"$name\")][0].body_hash" "$FUNC_OUT"
-    assert_jq "$name: body_line_count null" 'null' \
+    assert_jq "$name: body_line_count value is null" 'null' \
         "[.[] | select(.name==\"$name\")][0].body_line_count" "$FUNC_OUT"
-    assert_jq "$name: body_length null" 'null' \
+    assert_jq "$name: body_length value is null" 'null' \
         "[.[] | select(.name==\"$name\")][0].body_length" "$FUNC_OUT"
-    assert_jq "$name: body_lines null" 'null' \
+    assert_jq "$name: body_lines value is null" 'null' \
         "[.[] | select(.name==\"$name\")][0].body_lines" "$FUNC_OUT"
+    assert_jq "$name: key set matches contract" "$EXPECTED_KEYS" \
+        "[.[] | select(.name==\"$name\")][0] | keys | sort" "$FUNC_OUT"
 done
 
-# At/above the threshold: body fields still populated.
+# At/above the threshold: body fields still populated, keys still present.
 assert_jq "Widget.longBody: body_line_count == 3" '3' \
     '[.[] | select(.name=="Widget.longBody")][0].body_line_count' "$FUNC_OUT"
 assert_jq "Widget.longBody: body_hash non-null" 'true' \
     '[.[] | select(.name=="Widget.longBody")][0].body_hash != null' "$FUNC_OUT"
+assert_jq "Widget.longBody: key set matches contract" "$EXPECTED_KEYS" \
+    '[.[] | select(.name=="Widget.longBody")][0] | keys | sort' "$FUNC_OUT"
 
-# enclosing_type: nil for free functions, dotted nameStack for methods,
-# nested-type join for Outer.Inner, extended-type text for extension members.
+# Threshold boundary at default --min-body-lines 3: exactly one line below
+# (twoLiner, 2 normalized lines) and exactly one line above (fourLiner, 4).
+assert_jq "twoLiner (threshold-1, 2 lines): body_line_count null" 'null' \
+    '[.[] | select(.name=="twoLiner")][0].body_line_count' "$FUNC_OUT"
+assert_jq "twoLiner (threshold-1): has body_hash key" 'true' \
+    '[.[] | select(.name=="twoLiner")][0] | has("body_hash")' "$FUNC_OUT"
+assert_jq "fourLiner (threshold+1, 4 lines): body_line_count == 4" '4' \
+    '[.[] | select(.name=="fourLiner")][0].body_line_count' "$FUNC_OUT"
+assert_jq "fourLiner (threshold+1): body_hash non-null" 'true' \
+    '[.[] | select(.name=="fourLiner")][0].body_hash != null' "$FUNC_OUT"
+
+# enclosing_type: nil (but present) for free functions, dotted nameStack for
+# methods, nested-type join for Outer.Inner, extended-type text for extension
+# members.
 assert_jq "oneLiner (free function): enclosing_type null" 'null' \
     '[.[] | select(.name=="oneLiner")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "oneLiner (free function): has enclosing_type key" 'true' \
+    '[.[] | select(.name=="oneLiner")][0] | has("enclosing_type")' "$FUNC_OUT"
 assert_jq "Widget.noop: enclosing_type Widget" '"Widget"' \
     '[.[] | select(.name=="Widget.noop")][0].enclosing_type' "$FUNC_OUT"
 assert_jq "Outer.Inner.method: enclosing_type Outer.Inner" '"Outer.Inner"' \
     '[.[] | select(.name=="Outer.Inner.method")][0].enclosing_type' "$FUNC_OUT"
 assert_jq "extension Array<Concert>.helper: enclosing_type Array<Concert>" '"Array<Concert>"' \
     '[.[] | select(.name=="Array<Concert>.helper")][0].enclosing_type' "$FUNC_OUT"
+
+# Declaration kinds previously uncovered by this suite: initializer,
+# deinitializer, subscript, class member, actor member, enum member, and a
+# protocol default implementation.
+assert_jq "Gadget.init(count:): kind initializer" '"initializer"' \
+    '[.[] | select(.name=="Gadget.init(count:)")][0].kind' "$FUNC_OUT"
+assert_jq "Gadget.init(count:): enclosing_type Gadget" '"Gadget"' \
+    '[.[] | select(.name=="Gadget.init(count:)")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Gadget.deinit: kind deinitializer" '"deinitializer"' \
+    '[.[] | select(.name=="Gadget.deinit")][0].kind' "$FUNC_OUT"
+assert_jq "Gadget.deinit: enclosing_type Gadget" '"Gadget"' \
+    '[.[] | select(.name=="Gadget.deinit")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Gadget.subscript: kind subscript" '"subscript"' \
+    '[.[] | select(.name=="Gadget.subscript")][0].kind' "$FUNC_OUT"
+assert_jq "Gadget.subscript: enclosing_type Gadget" '"Gadget"' \
+    '[.[] | select(.name=="Gadget.subscript")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Gadget.poke (class member): enclosing_type Gadget" '"Gadget"' \
+    '[.[] | select(.name=="Gadget.poke")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Counter.bump (actor member): enclosing_type Counter" '"Counter"' \
+    '[.[] | select(.name=="Counter.bump")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Direction.opposite (enum member): enclosing_type Direction" '"Direction"' \
+    '[.[] | select(.name=="Direction.opposite")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Greeter.greet (protocol default impl): enclosing_type Greeter" '"Greeter"' \
+    '[.[] | select(.name=="Greeter.greet")][0].enclosing_type' "$FUNC_OUT"
+assert_jq "Greeter.greet (protocol default impl): kind method" '"method"' \
+    '[.[] | select(.name=="Greeter.greet")][0].kind' "$FUNC_OUT"
+
+# Non-default --min-body-lines: the threshold is a run-time flag, not a
+# compile-time constant, so exercise it in both directions.
+LOWER_THRESHOLD_OUT="$("$BIN" func --root "$FIXTURES" --min-body-lines 2 2>/dev/null)"
+assert_jq "--min-body-lines 2: twoLiner (2 lines) now populated" '2' \
+    '[.[] | select(.name=="twoLiner")][0].body_line_count' "$LOWER_THRESHOLD_OUT"
+assert_jq "--min-body-lines 2: oneLiner (1 line) still null" 'null' \
+    '[.[] | select(.name=="oneLiner")][0].body_line_count' "$LOWER_THRESHOLD_OUT"
+
+HIGHER_THRESHOLD_OUT="$("$BIN" func --root "$FIXTURES" --min-body-lines 4 2>/dev/null)"
+assert_jq "--min-body-lines 4: Widget.longBody (3 lines) now null" 'null' \
+    '[.[] | select(.name=="Widget.longBody")][0].body_line_count' "$HIGHER_THRESHOLD_OUT"
+assert_jq "--min-body-lines 4: fourLiner (4 lines) still populated" '4' \
+    '[.[] | select(.name=="fourLiner")][0].body_line_count' "$HIGHER_THRESHOLD_OUT"
 
 # Regression: the three body-clustering queries must run cleanly on a catalog
 # that now contains null-body rows — the (.body_line_count // 0) >= 3 gate
