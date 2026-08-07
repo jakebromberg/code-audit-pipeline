@@ -19,15 +19,20 @@ import SwiftSyntax
 /// `constraints` comes from `AssociatedTypeDeclSyntax.inheritanceClause`
 /// only — sorted, deduped, `[]` when the clause is absent. A `where` clause
 /// requirement is a different kind of statement from a conformance bound and
-/// is deliberately NOT folded in here. `primary` is true when the name
-/// appears in `ProtocolDeclSyntax.primaryAssociatedTypeClause`; Swift
-/// requires every primary associated type to also be declared as an
-/// `associatedtype` member, so there is no separate entry to merge.
+/// is deliberately NOT folded in here. A composition bound is split into its
+/// elements, so `Codable & Sendable` and `Codable, Sendable` agree. `primary`
+/// is true when the name appears in
+/// `ProtocolDeclSyntax.primaryAssociatedTypeClause` — including when it is
+/// inherited rather than declared as a member here, which Swift permits
+/// (`protocol Child<Element>: Parent {}`); such a name is emitted with empty
+/// `constraints`, since its bound lives on the parent. One entry per distinct
+/// name either way.
 ///
 /// Deliberate recall gaps: default types (`associatedtype T = Int`) are not
 /// captured, and associated types inherited from a protocol's own
-/// conformances are not collected — the transitive closure is a query-side
-/// join over `conforms_to`. See docs/pipeline-contract.md `associated_types`
+/// conformances are not collected unless this protocol names them in its own
+/// primary clause — the transitive closure is a query-side join over
+/// `conforms_to`. See docs/pipeline-contract.md `associated_types`
 /// for the full rationale.
 struct AssociatedType: Encodable {
     var name: String

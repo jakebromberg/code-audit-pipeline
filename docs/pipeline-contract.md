@@ -259,8 +259,12 @@ Aligning binding-form literal rows to the type catalog's default-to-`"internal"`
 Populated only by the Swift extractor. Each entry is `{ "name": string, "constraints": [string], "primary": bool }`:
 
 - `name` — the associated type's identifier.
-- `constraints` — inherited-type names from the `associatedtype`'s own inheritance clause (`associatedtype Item: Hashable, Codable`), sorted alphabetically, deduped, `[]` when the clause is absent. Does **not** include `where`-clause requirements (`.genericWhereClause`) — a same-type or nested-type requirement is not an inheritance bound, and folding both into one array would make `constraints` mean two different things.
-- `primary` — `true` when the name appears in the protocol's primary-associated-type clause (`protocol Container<Element>`). Swift requires every primary associated type to also be declared as an `associatedtype` member, so a name in both positions produces exactly one entry with `primary: true`, never two.
+- `constraints` — inherited-type names from the `associatedtype`'s own inheritance clause (`associatedtype Item: Hashable, Codable`), sorted alphabetically, deduped, `[]` when the clause is absent. A protocol-composition bound is split into its elements, so `associatedtype E: Codable & Sendable` and `associatedtype E: Codable, Sendable` both yield `["Codable", "Sendable"]` — two spellings of one constraint set must not produce different arrays. Does **not** include `where`-clause requirements (`.genericWhereClause`) — a same-type or nested-type requirement is not an inheritance bound, and folding both into one array would make `constraints` mean two different things.
+- `primary` — `true` when the name appears in the protocol's primary-associated-type clause (`protocol Container<Element>`).
+
+  A primary associated type **need not be declared as a member of the protocol that names it**: it may be inherited from a protocol this one refines. `protocol Parent { associatedtype Element }` together with `protocol Child<Element>: Parent {}` is valid Swift, and `any Child<Int>` works. Those inherited names are still emitted, with `primary: true` and `constraints: []` — the name is written on this row's own syntax even though its bound is not. Dropping them would report `associated_types: []` for a declaration written `<Element>`, which defeats the "does this protocol declare an associated type?" predicate the field exists to answer.
+
+  So one entry per distinct name: a name in both the primary clause and the member block yields a single entry with `primary: true` (its constraints coming from the member declaration), and a primary-only name yields a single entry with empty constraints.
 
 `{name, constraints}` is the shape already ratified in the v2 `language_data.<lang>.*` field table for `swift` (traced to the `MainActorNotificationMessage` fixture in `docs/pipeline-contract-v2-fixtures.jsonl`); `primary` is added as a superset field rather than a redefinition, so that fixture stays valid. As with `access`, this field ships top-level today rather than under `language_data.swift.*` — see "Ratified here does not mean emitted" above.
 
@@ -270,8 +274,9 @@ Populated only by the Swift extractor. Each entry is `{ "name": string, "constra
 
 - **Default types** (`associatedtype T = Int`, the `.initializer` node) are not captured. A default doesn't change the associated type's identity or its constraints.
 - **`where`-clause requirements** are not folded into `constraints` (see above).
-- **Inherited associated types** — a protocol inheriting another does not redeclare its associated types, and this extractor does not walk the transitive closure. That closure is a query-side join over `conforms_to`.
-- **`generics` is untouched on protocol rows.** `generic-arity-drift.jq`, `generic-convention-bound.jq`, and `generic-struct-candidates.jq` consume `generics`; protocol rows carry no `generics` value today, and `associated_types` does not change that.
+- **Inherited associated types** — a protocol inheriting another does not redeclare its associated types, and this extractor does not walk the transitive closure, so they do not appear on the refining protocol's row. That closure is a query-side join over `conforms_to`. The one exception is an inherited name that the refining protocol lists in its **own** primary-associated-type clause: that name is written on this row and is emitted, with empty `constraints` because the bound is not.
+
+**Not a recall gap, but guaranteed:** `generics` is untouched on protocol rows. `generic-arity-drift.jq`, `generic-convention-bound.jq`, and `generic-struct-candidates.jq` consume `generics`; protocol rows carry no `generics` value today, and `associated_types` does not change that. Routing associated-type names into `generics` would silently alter all three queries' inputs, so the Swift extractor's test suite asserts that no protocol row carries the key.
 
 ### `infer_ref` shape
 

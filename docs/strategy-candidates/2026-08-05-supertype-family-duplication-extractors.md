@@ -4,7 +4,11 @@ Companion to [`2026-08-05-supertype-family-duplication.md`](2026-08-05-supertype
 
 - **Captured:** 2026-08-05 (PT)
 - **Verified against:** `code-audit-pipeline @ 1bff74f8`, `extractors/swift/Sources/swift-catalog/*`, `docs/pipeline-contract.md`
-- **Status:** proposed (none implemented)
+- **Status:** mostly shipped under tracker #321 — E1 as #317, E3a and E3c as #318, E4 as #319, E2 as #320. **E3b (`body_shape`) is deferred and unimplemented, tracked as #334**, so Pattern 3 of the companion document (`null-object-policy-drift.jq`) is still blocked. The consuming queries for Patterns 1 and 2 are unimplemented but no longer blocked.
+
+> **This is a captured proposal, not current documentation.** [`docs/pipeline-contract.md`](../pipeline-contract.md) is normative for every field described here; where the two disagree, the contract wins. Line numbers cited throughout were accurate at `1bff74f8` and have since drifted — locate symbols by name. The one place the proposal below and the shipped field genuinely disagree is E2's shape, called out inline there.
+>
+> Follow-ups opened while implementing these, all still open: #323 (Xcode `<Target>Tests/` layouts are not tagged `is_test`), #324 (`file-hashes` and the type/function catalogs disagree on which Swift files exist), #325 (`(package, file)` does not disambiguate `--root` from `--shared`), #327 (`willSet`/`didSet` observers labelled `computed-property`), #328 (no param/return type refs, so `public-api-leaks.jq` is a silent zero against Swift), #331 (`access` under-reports declarations inside an access-modified extension), #332 (the contract's version-bump table disagrees with practice).
 
 ---
 
@@ -96,6 +100,12 @@ Register the script in `.github/workflows/ci.yml` alongside the existing three (
 ---
 
 # E2 — `associated_types` on type records
+
+> **Shipped as #320, with the shape below superseded.** The field landed as `{ "name": string, "constraints": [string], "primary": bool }` — not `{name, primary}` as written below. `{name, constraints}` was already ratified for `language_data.swift.associated_types` in [`docs/pipeline-contract-v2-fixtures.jsonl`](../pipeline-contract-v2-fixtures.jsonl), so the implemented shape takes it as a superset rather than introducing a second, incompatible spelling of one field name.
+>
+> Two further corrections to what follows. Protocol rows with **no** associated types emit `[]` rather than omitting the field; omission is reserved for non-protocol rows, so `has("associated_types")` cleanly means "this row is a protocol." And the "collapses to one entry with `primary: true`" dedupe described below cannot arise: Swift requires every primary associated type to *also* be declared as an `associatedtype` member, so implementations enumerate the member block and set `primary` as a flag, with no union to merge.
+>
+> [`docs/pipeline-contract.md`](../pipeline-contract.md) is normative. Read this section as the original captured proposal.
 
 **Sharpens:** Pattern 2. **Optional but cheap.**
 

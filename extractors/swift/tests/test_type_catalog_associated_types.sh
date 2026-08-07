@@ -11,9 +11,13 @@
 #   - `constraints` comes from `AssociatedTypeDeclSyntax.inheritanceClause`
 #     only, sorted; `[]` when the clause is absent.
 #   - `primary` is true when the name appears in
-#     `ProtocolDeclSyntax.primaryAssociatedTypeClause`. Swift requires every
-#     primary associated type to also be declared as an `associatedtype`
-#     member, so a name in both positions collapses to ONE entry, not two.
+#     `ProtocolDeclSyntax.primaryAssociatedTypeClause`, INCLUDING when that
+#     name is inherited rather than declared as a member here — Swift permits
+#     `protocol Child<Element>: Parent {}`, and dropping Element would report
+#     an empty array for a protocol written `<Element>`. One entry per
+#     distinct name; a primary-only name carries empty constraints.
+#   - `constraints` splits a composition bound (`Codable & Sendable`) into its
+#     elements so it agrees with the comma form.
 #   - Protocol rows (`kind == "interface"`) ALWAYS emit the array, `[]` when
 #     the protocol declares none.
 #   - Non-protocol rows OMIT the field entirely — asserted with
@@ -97,6 +101,52 @@ assert_jq "Empty has(\"associated_types\")" 'true' \
 # contract violation.
 assert_jq "NotAProtocol has(\"associated_types\") is false" 'false' \
     '[.[] | select(.name=="NotAProtocol")][0] | has("associated_types")' "$OUT"
+
+# --- inherited primary associated type (must NOT be discarded) ---
+#
+# `protocol Child<Element>: Parent {}` names Element in its primary clause and
+# declares no member for it — Element is inherited. Swift permits this and
+# `any Child<Int>` works, so reporting [] would tell the per-kind-test-doubles
+# detector that a protocol written `<Element>` declares no associated type.
+
+assert_jq "Child: inherited primary emitted, not discarded" \
+    '[{"constraints":[],"name":"Element","primary":true}]' \
+    '[.[] | select(.name=="Child")][0].associated_types' "$OUT"
+assert_jq "Parent: the declaring side keeps its constraints" \
+    '[{"constraints":["Equatable"],"name":"Element","primary":false}]' \
+    '[.[] | select(.name=="Parent")][0].associated_types' "$OUT"
+
+# --- sort-by-name is exercised (needs >1 entry, declared out of order) ---
+#
+# SortOrder declares Zed then Alpha. Without this, every fixture protocol has a
+# single associated type, the sort is unreachable, and `result.sorted { ... }`
+# could be deleted with the suite still green.
+
+assert_jq "SortOrder: entries sorted by name, not declaration order" '["Alpha","Zed"]' \
+    '[.[] | select(.name=="SortOrder")][0].associated_types | map(.name)' "$OUT"
+assert_jq "SortOrder: more than one entry (sort is reachable)" 'true' \
+    '([.[] | select(.name=="SortOrder")][0].associated_types | length) > 1' "$OUT"
+
+# --- composition and comma bounds normalize identically ---
+
+assert_jq "CompositionBound: A & B splits into names" '["Codable","Sendable"]' \
+    '[.[] | select(.name=="CompositionBound")][0].associated_types[0].constraints' "$OUT"
+assert_jq "composition and comma forms agree" 'true' \
+    '([.[] | select(.name=="CompositionBound")][0].associated_types[0].constraints)
+     == ([.[] | select(.name=="CommaBound")][0].associated_types[0].constraints)' "$OUT"
+
+# --- generics is untouched on protocol rows ---
+#
+# #320 calls this the single most load-bearing constraint: generic-arity-drift.jq,
+# generic-convention-bound.jq and generic-struct-candidates.jq all consume
+# `generics`, protocol rows carry none today, and populating it would silently
+# change all three queries' inputs. Asserted so that leaking associated-type
+# names into `generics` fails here rather than downstream.
+
+assert_jq "no protocol row carries generics" '0' \
+    '[.[] | select(.kind=="interface" and has("generics"))] | length' "$OUT"
+assert_jq "protocol rows exist (the generics guard is reachable)" 'true' \
+    '([.[] | select(.kind=="interface")] | length) > 0' "$OUT"
 
 # --- pre-existing fields unchanged on protocol rows ---
 

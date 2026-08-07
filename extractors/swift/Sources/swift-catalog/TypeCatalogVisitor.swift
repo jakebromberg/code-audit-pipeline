@@ -537,10 +537,10 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     /// decision). Two SwiftSyntax sources: `AssociatedTypeDeclSyntax`
     /// members of the member block (name + `inheritanceClause`-derived
     /// `constraints`), and `primaryClause.primaryAssociatedTypes` (which
-    /// names get `primary: true`). Swift requires every primary associated
-    /// type to also be declared as an `associatedtype` member, so `primary`
-    /// is purely a per-member lookup against the primary-clause name set —
-    /// there is no separate union/merge step.
+    /// names get `primary: true`). A primary associated type may be inherited
+    /// rather than declared here, so the two sources are unioned on name:
+    /// members supply constraints, and any primary name with no member of its
+    /// own is appended with empty constraints. One entry per distinct name.
     ///
     /// Sorted by name. Returns `[]`, not absent, when the protocol declares
     /// none — the caller assigns the result unconditionally on the
@@ -552,19 +552,55 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         let primaryNames = Set(
             primaryClause?.primaryAssociatedTypes.map { $0.name.text } ?? [])
         var result: [AssociatedType] = []
+        var seen = Set<String>()
         for member in members.members {
             guard let assocDecl = member.decl.as(AssociatedTypeDeclSyntax.self) else { continue }
             let name = assocDecl.name.text
+            guard seen.insert(name).inserted else { continue }
             let constraints: [String]
             if let clause = assocDecl.inheritanceClause {
-                constraints = Array(Set(clause.inheritedTypes.map { $0.type.trimmedDescription })).sorted()
+                constraints = normalizeConstraints(clause.inheritedTypes.map { $0.type })
             } else {
                 constraints = []
             }
             result.append(AssociatedType(
                 name: name, constraints: constraints, primary: primaryNames.contains(name)))
         }
+        // A primary associated type need NOT be declared as a member of this
+        // protocol: it may be inherited from a protocol this one refines.
+        // `protocol Parent { associatedtype Element }` + `protocol Child<Element>: Parent {}`
+        // is valid Swift, and `Child` is then usable as `any Child<Int>`. Dropping
+        // those names would report `associated_types: []` for a declaration written
+        // `<Element>` — defeating the "does this protocol declare an associated
+        // type?" predicate this field exists to answer. Emit them with the name and
+        // `primary: true`; `constraints` stays empty because the bound lives on the
+        // parent's declaration, which this row does not walk (see the inherited
+        // associated types recall gap in docs/pipeline-contract.md).
+        for name in primaryNames.subtracting(seen).sorted() {
+            result.append(AssociatedType(name: name, constraints: [], primary: true))
+        }
         return result.sorted { $0.name < $1.name }
+    }
+
+    /// Inherited-type names from an `associatedtype` inheritance clause, sorted
+    /// and deduped. A protocol *composition* bound (`associatedtype E: Codable & Sendable`)
+    /// is split into its elements, so it yields the same array as the comma form
+    /// (`associatedtype E: Codable, Sendable`). Without the split the two spellings
+    /// of one constraint set produce different arrays and `constraints | index("Sendable")`
+    /// silently misses the composition form — and the contract documents this field
+    /// as carrying inherited-type *names*, which `"Codable & Sendable"` is not.
+    private func normalizeConstraints(_ types: [TypeSyntax]) -> [String] {
+        var out = Set<String>()
+        for type in types {
+            if let composition = type.as(CompositionTypeSyntax.self) {
+                for element in composition.elements {
+                    out.insert(element.type.trimmedDescription)
+                }
+            } else {
+                out.insert(type.trimmedDescription)
+            }
+        }
+        return out.sorted()
     }
 
     /// Both forms of the field set, returned together so emitShapeBearing can
