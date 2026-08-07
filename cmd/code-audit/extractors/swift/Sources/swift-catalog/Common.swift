@@ -172,10 +172,17 @@ struct FunctionRecord: Encodable {
     var async: Bool
     var paramCount: Int
     var paramNames: [String]
-    var bodyLineCount: Int
-    var bodyLength: Int
-    var bodyHash: String
-    var bodyLines: [String]
+    /// Dotted nesting-stack qualification of the enclosing declaration,
+    /// mirroring `LiteralRecord.enclosingType`; extensions push the extended
+    /// type's text. `nil` for free functions.
+    var enclosingType: String?
+    /// Body-level fields. `nil` below `--min-body-lines` — the row is still
+    /// emitted so signature-level data is available for one-liner functions.
+    /// See docs/pipeline-contract.md "Body-fields gating".
+    var bodyLineCount: Int?
+    var bodyLength: Int?
+    var bodyHash: String?
+    var bodyLines: [String]?
 }
 
 /// One literal-catalog record (occurrence catalog, not a declaration catalog —

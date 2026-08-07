@@ -3,9 +3,10 @@
 //  swift-catalog
 //
 //  Walks a SwiftSyntax tree and emits FunctionRecord entries for func/method/
-//  initializer/deinitializer/subscript/computed-property declarations. Bodies
-//  shorter than --min-body-lines (default 3) are skipped — one-liners aren't
-//  useful duplication signal.
+//  initializer/deinitializer/subscript/computed-property declarations. Every
+//  declaration gets a row; bodies shorter than --min-body-lines (default 3)
+//  emit with their body-level fields nulled rather than being dropped, so
+//  signature-level queries (e.g. public-api-leaks) still see one-liners.
 //
 
 import Foundation
@@ -168,9 +169,10 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
     ) {
         let bodyText = body.statements.description
         let normalized = normalizeBody(bodyText)
-        guard normalized.lines.count >= minBodyLines else { return }
         let line = converter.location(for: position).line
         let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
+        let enclosingType = nameStack.isEmpty ? nil : nameStack.joined(separator: ".")
+        let meetsThreshold = normalized.lines.count >= minBodyLines
         records.append(FunctionRecord(
             name: qualified,
             kind: kind,
@@ -183,10 +185,11 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             async: isAsync,
             paramCount: paramNames.count,
             paramNames: paramNames,
-            bodyLineCount: normalized.lines.count,
-            bodyLength: normalized.length,
-            bodyHash: normalized.hash,
-            bodyLines: normalized.lines
+            enclosingType: enclosingType,
+            bodyLineCount: meetsThreshold ? normalized.lines.count : nil,
+            bodyLength: meetsThreshold ? normalized.length : nil,
+            bodyHash: meetsThreshold ? normalized.hash : nil,
+            bodyLines: meetsThreshold ? normalized.lines : nil
         ))
     }
 
@@ -218,8 +221,9 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
             let line = converter.location(for: accessors.positionAfterSkippingLeadingTrivia).line
             let bodyText = getterBody.description
             let normalized = normalizeBody(bodyText)
-            guard normalized.lines.count >= minBodyLines else { return }
             let qualified = nameStack.isEmpty ? simpleName : "\(nameStack.joined(separator: ".")).\(simpleName)"
+            let enclosingType = nameStack.isEmpty ? nil : nameStack.joined(separator: ".")
+            let meetsThreshold = normalized.lines.count >= minBodyLines
             records.append(FunctionRecord(
                 name: qualified,
                 kind: kind,
@@ -232,10 +236,11 @@ final class FunctionCatalogVisitor: SyntaxVisitor {
                 async: false,
                 paramCount: paramNames.count,
                 paramNames: paramNames,
-                bodyLineCount: normalized.lines.count,
-                bodyLength: normalized.length,
-                bodyHash: normalized.hash,
-                bodyLines: normalized.lines
+                enclosingType: enclosingType,
+                bodyLineCount: meetsThreshold ? normalized.lines.count : nil,
+                bodyLength: meetsThreshold ? normalized.length : nil,
+                bodyHash: meetsThreshold ? normalized.hash : nil,
+                bodyLines: meetsThreshold ? normalized.lines : nil
             ))
         }
     }
