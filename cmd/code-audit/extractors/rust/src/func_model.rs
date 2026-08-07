@@ -5,8 +5,8 @@
 //! Struct field declaration order is the JSON key order, matched to the
 //! contract's example entry. The `body_*` fields are `Option` with **no**
 //! `skip_serializing_if`, so a short body emits explicit `null` (not an omitted
-//! key) — body-level cluster queries early-filter with `select(.body_hash !=
-//! null)`, so the key must be present.
+//! key) — body-level cluster queries early-filter with
+//! `select((.body_line_count // 0) >= 3)`, so the key must be present.
 
 use serde::Serialize;
 

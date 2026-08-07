@@ -78,9 +78,12 @@ func printUsage() {
                         this flag is a documented no-op for them.
       --min-body-lines  func only. Threshold below which body fields (body_hash,
                         body_lines, body_line_count, body_length) are emitted as
-                        null (default 3). The row itself is still emitted —
-                        signature-level queries need exported one-liner functions
-                        to be visible.
+                        null (default 3). The row itself is still emitted, so
+                        row-level and count-based consumers (e.g.
+                        module-symbol-density.jq) see one-liners that used to be
+                        dropped entirely. This does not add signature-level query
+                        recall — public-api-leaks.jq still returns zero rows
+                        against Swift either way (see #328).
     """
     logErr(usage)
 }

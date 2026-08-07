@@ -37,8 +37,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTRACTOR_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-QUERIES_DIR="$(cd "$EXTRACTOR_ROOT/../../pipeline/queries" && pwd)"
 FIXTURES="$SCRIPT_DIR/fixtures/short-bodies-and-enclosing-type"
+
+# pipeline/queries lives two levels above the canonical extractors/swift tree.
+# This script is also mirrored byte-for-byte into cmd/code-audit/extractors/swift/
+# (the go generate embed copy) and into any code-audit-init-materialized tree,
+# where ../../pipeline/queries does not exist. Resolve it only if reachable;
+# the query-regression block below is skipped (not aborted) when it isn't, per
+# set -euo pipefail.
+QUERIES_DIR=""
+if [[ -d "$EXTRACTOR_ROOT/../../pipeline/queries" ]]; then
+    QUERIES_DIR="$(cd "$EXTRACTOR_ROOT/../../pipeline/queries" && pwd)"
+fi
 
 cd "$EXTRACTOR_ROOT"
 swift build >/dev/null 2>&1 || swift build
@@ -78,6 +88,16 @@ FUNC_OUT="$("$BIN" func --root "$FIXTURES" 2>/dev/null)"
 # below so a future field addition/removal that misses one construction path
 # (e.g. the makeRecord vs. an ad-hoc emit site) is caught immediately.
 EXPECTED_KEYS='["async","body_hash","body_length","body_line_count","body_lines","enclosing_type","exported","file","generated","is_test","kind","line","name","package","param_count","param_names"]'
+
+# The per-name checks below only pin EXPECTED_KEYS against a handful of rows
+# (oneLiner, donate, Widget.longBody). That leaves the rest of the fixture —
+# including Widget.value, the .getter construction path in
+# emitFromAccessorBlock and the second construction site that motivated
+# extracting makeRecord — unchecked. Assert the key-set guarantee across every
+# row the fixture emits so a future construction path that skips makeRecord
+# (or otherwise drifts from the contract) is caught immediately.
+assert_jq "every row carries the contract key set" 'true' \
+    "all(.[]; (keys | sort) == $EXPECTED_KEYS)" "$FUNC_OUT"
 
 # Rows now exist for declarations that used to be dropped entirely.
 assert_jq "free-function one-liner emits a row" '1' \
@@ -191,27 +211,34 @@ assert_jq "--min-body-lines 4: fourLiner (4 lines) still populated" '4' \
 
 # Regression: the three body-clustering queries must run cleanly on a catalog
 # that now contains null-body rows — the (.body_line_count // 0) >= 3 gate
-# should filter them out before any group_by(.body_hash).
-if jq -L "$QUERIES_DIR" -r --argjson threshold 0.7 -f "$QUERIES_DIR/function-duplicates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
-    echo "  PASS: function-duplicates.jq runs cleanly on null-body rows"
-    PASS=$((PASS+1))
+# should filter them out before any group_by(.body_hash). Only runnable when
+# pipeline/queries is reachable from this copy of the script (see QUERIES_DIR
+# resolution above); skip cleanly rather than aborting from a mirrored or
+# materialized tree.
+if [[ -n "$QUERIES_DIR" ]]; then
+    if jq -L "$QUERIES_DIR" -r --argjson threshold 0.7 -f "$QUERIES_DIR/function-duplicates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
+        echo "  PASS: function-duplicates.jq runs cleanly on null-body rows"
+        PASS=$((PASS+1))
+    else
+        echo "  FAIL: function-duplicates.jq crashed on null-body rows" >&2
+        FAIL=$((FAIL+1))
+    fi
+    if jq -L "$QUERIES_DIR" -r --argjson threshold 0.7 --argjson max_subs 2 -f "$QUERIES_DIR/generic-function-candidates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
+        echo "  PASS: generic-function-candidates.jq runs cleanly on null-body rows"
+        PASS=$((PASS+1))
+    else
+        echo "  FAIL: generic-function-candidates.jq crashed on null-body rows" >&2
+        FAIL=$((FAIL+1))
+    fi
+    if jq -L "$QUERIES_DIR" -r --argjson min_conformers 3 -f "$QUERIES_DIR/default-impl-candidates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
+        echo "  PASS: default-impl-candidates.jq runs cleanly on null-body rows"
+        PASS=$((PASS+1))
+    else
+        echo "  FAIL: default-impl-candidates.jq crashed on null-body rows" >&2
+        FAIL=$((FAIL+1))
+    fi
 else
-    echo "  FAIL: function-duplicates.jq crashed on null-body rows" >&2
-    FAIL=$((FAIL+1))
-fi
-if jq -L "$QUERIES_DIR" -r --argjson threshold 0.7 --argjson max_subs 2 -f "$QUERIES_DIR/generic-function-candidates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
-    echo "  PASS: generic-function-candidates.jq runs cleanly on null-body rows"
-    PASS=$((PASS+1))
-else
-    echo "  FAIL: generic-function-candidates.jq crashed on null-body rows" >&2
-    FAIL=$((FAIL+1))
-fi
-if jq -L "$QUERIES_DIR" -r --argjson min_conformers 3 -f "$QUERIES_DIR/default-impl-candidates.jq" <<<"$FUNC_OUT" >/dev/null 2>&1; then
-    echo "  PASS: default-impl-candidates.jq runs cleanly on null-body rows"
-    PASS=$((PASS+1))
-else
-    echo "  FAIL: default-impl-candidates.jq crashed on null-body rows" >&2
-    FAIL=$((FAIL+1))
+    echo "  SKIP: query-regression block (pipeline/queries not reachable from $EXTRACTOR_ROOT — mirrored or materialized tree)" >&2
 fi
 
 echo ""
