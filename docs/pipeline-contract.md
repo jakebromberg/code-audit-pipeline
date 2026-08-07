@@ -68,7 +68,10 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "infer_ref": { "kind": "InferSelectModel", "table": "user" }, // ORM-derived types
       "db_table_name": "user_accounts",     // for ORM table declarations
       "wraps_notification_name": "AVPlayer.rateDidChangeNotification", // Swift only; see Heritage split convention
-      "access": "internal"                  // Swift only, but present on EVERY row the Swift extractor emits; written modifier, default "internal" — see "access (type vs literal)"
+      "access": "internal",                 // Swift only, but present on EVERY row the Swift extractor emits; written modifier, default "internal" — see "access (type vs literal)"
+      "associated_types": [                 // Swift only; present (possibly []) on every `interface` row, omitted elsewhere — see "associated_types (protocol only)"
+        { "name": "Source", "constraints": [], "primary": true }
+      ]
     }
   ]
 }
@@ -234,6 +237,7 @@ The kinds that admit no inheritance clause syntactically (currently: `type-alias
 - `reference_count` (grep-style identifier-occurrence count, populated by a second pass — coarse "name appears anywhere in scanned source" signal; distinct from `references_count` which is the structural count of typed references inside this declaration's body)
 - `wraps_notification_name` (string | absent) — the verbatim body-expression text of a Swift type's `static var name: Notification.Name { … }` member, when the type also conforms to a `*NotificationMessage` protocol (or Foundation's iOS 26 `NotificationCenter.MainActorMessage` / `NotificationCenter.AsyncMessage`). Populated only by the Swift extractor. Consumed by `notification-wrapper-grouping.jq` to find cross-module notification cross-fire. The query joins by exact string equality — convention: both wrappers spell the name the same way (`AVPlayer.rateDidChangeNotification` verbatim at both sites, not one as `.rateDidChangeNotification`). Singular today; the schema can grow to an array additively if a multi-name case appears.
 - `access` (string) — the access modifier as written (`public`, `open`, `package`, `internal`, `fileprivate`, `private`), defaulting to `"internal"` when the declaration carries no modifier. Populated only by the Swift extractor, on every row it emits — `type-alias-object`, `interface`, `type-alias-union`, `type-alias-other`, and `extension`. See "`access` (type vs literal)" below for how this differs from `LiteralRecord.access`, and for why it is written syntax rather than resolved effective visibility.
+- `associated_types` (array of `{ name, constraints, primary }`) — a protocol's declared associated types. Populated only by the Swift extractor, on `interface` rows only. See "`associated_types` (protocol only)" below.
 
 ### `access` (type vs literal)
 
@@ -249,6 +253,25 @@ This is a deliberate consequence of reading syntax rather than running a resolve
 Aligning binding-form literal rows to the type catalog's default-to-`"internal"` behavior is a defensible follow-up, but is out of scope here: it would change `literal-catalog.json` output, and the literal catalog carries a byte-stability regression check against that file.
 
 `access` is also listed for `swift` in the v2 `language_data.<lang>.*` field table. It ships top-level, as described here, and that table is a ratification record rather than a description of extractor output — see "Ratified here does not mean emitted" under [`language_data.<lang>.*` namespace](#language_datalang-namespace) for the general rule and for what happens to these fields if `language_data` emission is ever built.
+
+### `associated_types` (protocol only)
+
+Populated only by the Swift extractor. Each entry is `{ "name": string, "constraints": [string], "primary": bool }`:
+
+- `name` — the associated type's identifier.
+- `constraints` — inherited-type names from the `associatedtype`'s own inheritance clause (`associatedtype Item: Hashable, Codable`), sorted alphabetically, deduped, `[]` when the clause is absent. Does **not** include `where`-clause requirements (`.genericWhereClause`) — a same-type or nested-type requirement is not an inheritance bound, and folding both into one array would make `constraints` mean two different things.
+- `primary` — `true` when the name appears in the protocol's primary-associated-type clause (`protocol Container<Element>`). Swift requires every primary associated type to also be declared as an `associatedtype` member, so a name in both positions produces exactly one entry with `primary: true`, never two.
+
+`{name, constraints}` is the shape already ratified in the v2 `language_data.<lang>.*` field table for `swift` (traced to the `MainActorNotificationMessage` fixture in `docs/pipeline-contract-v2-fixtures.jsonl`); `primary` is added as a superset field rather than a redefinition, so that fixture stays valid. As with `access`, this field ships top-level today rather than under `language_data.swift.*` — see "Ratified here does not mean emitted" above.
+
+**Emission rule, mirroring `access`.** Protocol rows (`kind == "interface"`) ALWAYS emit the array, `[]` when the protocol declares no associated types. Every other kind OMITS the field entirely — it is structurally inapplicable, not merely absent-valued. A query can write `.associated_types | length > 0` on a protocol row without also handling absent, and `has("associated_types")` cleanly means "this row is a protocol."
+
+**Deliberate recall gaps**, each a documented tradeoff rather than a silent omission:
+
+- **Default types** (`associatedtype T = Int`, the `.initializer` node) are not captured. A default doesn't change the associated type's identity or its constraints.
+- **`where`-clause requirements** are not folded into `constraints` (see above).
+- **Inherited associated types** — a protocol inheriting another does not redeclare its associated types, and this extractor does not walk the transitive closure. That closure is a query-side join over `conforms_to`.
+- **`generics` is untouched on protocol rows.** `generic-arity-drift.jq`, `generic-convention-bound.jq`, and `generic-struct-candidates.jq` consume `generics`; protocol rows carry no `generics` value today, and `associated_types` does not change that.
 
 ### `infer_ref` shape
 

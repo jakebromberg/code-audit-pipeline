@@ -116,6 +116,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             members: node.memberBlock,
             inheritanceClause: node.inheritanceClause,
             declaringKind: .protocolDecl,
+            primaryAssociatedTypeClause: node.primaryAssociatedTypeClause,
             includeMethodSignatures: true
         )
         nameStack.append(node.name.text)
@@ -305,6 +306,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
         inheritanceClause: InheritanceClauseSyntax?,
         declaringKind: DeclaringKind,
         extendedTypeForExtension: String? = nil,
+        primaryAssociatedTypeClause: PrimaryAssociatedTypeClauseSyntax? = nil,
         includeMethodSignatures: Bool = false
     ) {
         let line = converter.location(for: position).line
@@ -337,6 +339,14 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             record.extends = extendsFromClause
         }
         record.conformsTo = conformsFromClause
+
+        // Associated types (issue #320). Protocol rows always carry the
+        // array, `[]` when the protocol declares none; every other kind
+        // leaves `associatedTypes` at its default `nil` so it's omitted.
+        if declaringKind == .protocolDecl {
+            record.associatedTypes = extractAssociatedTypes(
+                members: members, primaryClause: primaryAssociatedTypeClause)
+        }
 
         // Notification-wrapper detection (issue #222). Scan the member block
         // for a `static var name: Notification.Name { ... }` and record the
@@ -521,6 +531,40 @@ final class TypeCatalogVisitor: SyntaxVisitor {
     /// `extractSingleExpression` for why this matters.
     private func canonicalText(_ node: some SyntaxProtocol) -> String {
         return node.tokens(viewMode: .sourceAccurate).map { $0.text }.joined()
+    }
+
+    /// Declared associated types on a protocol (issue #320, per #321's joint
+    /// decision). Two SwiftSyntax sources: `AssociatedTypeDeclSyntax`
+    /// members of the member block (name + `inheritanceClause`-derived
+    /// `constraints`), and `primaryClause.primaryAssociatedTypes` (which
+    /// names get `primary: true`). Swift requires every primary associated
+    /// type to also be declared as an `associatedtype` member, so `primary`
+    /// is purely a per-member lookup against the primary-clause name set —
+    /// there is no separate union/merge step.
+    ///
+    /// Sorted by name. Returns `[]`, not absent, when the protocol declares
+    /// none — the caller assigns the result unconditionally on the
+    /// `.protocolDecl` path.
+    private func extractAssociatedTypes(
+        members: MemberBlockSyntax,
+        primaryClause: PrimaryAssociatedTypeClauseSyntax?
+    ) -> [AssociatedType] {
+        let primaryNames = Set(
+            primaryClause?.primaryAssociatedTypes.map { $0.name.text } ?? [])
+        var result: [AssociatedType] = []
+        for member in members.members {
+            guard let assocDecl = member.decl.as(AssociatedTypeDeclSyntax.self) else { continue }
+            let name = assocDecl.name.text
+            let constraints: [String]
+            if let clause = assocDecl.inheritanceClause {
+                constraints = Array(Set(clause.inheritedTypes.map { $0.type.trimmedDescription })).sorted()
+            } else {
+                constraints = []
+            }
+            result.append(AssociatedType(
+                name: name, constraints: constraints, primary: primaryNames.contains(name)))
+        }
+        return result.sorted { $0.name < $1.name }
     }
 
     /// Both forms of the field set, returned together so emitShapeBearing can
