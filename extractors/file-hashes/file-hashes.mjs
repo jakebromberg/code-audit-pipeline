@@ -106,11 +106,20 @@ if (SWIFT_MODE) {
   if (!INCLUDE_TESTS) SKIP_DIRS.add('Tests');
 }
 
+// Mirrors extractors/swift/Sources/swift-catalog/Walker.swift's
+// resolvePackage (215cefdf promised the two stay identical). The Tests/<X>
+// arm is symmetric with the Sources arm — X is the raw target directory
+// name, not normalized to the production package it doubles. It's currently
+// unreachable in practice because SKIP_DIRS still prunes `Tests` by default
+// (see the `file-hashes` / type-catalog divergence tracked separately as
+// out of scope for jakebromberg/code-audit-pipeline#317), but the function
+// itself must not silently diverge from the Swift extractor's.
 function resolveSwiftPackage(relPath) {
   const parts = relPath.split('/');
   if (parts.length >= 2 && parts[0] === 'Shared') return parts[1];
   if (parts.length >= 2 && parts[0] === 'WXYC') return `app:${parts[1]}`;
   if (parts.length >= 2 && parts[0] === 'Sources') return parts[1];
+  if (parts.length >= 2 && parts[0] === 'Tests') return parts[1];
   return parts[0] || 'root';
 }
 

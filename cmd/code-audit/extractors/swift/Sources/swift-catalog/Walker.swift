@@ -80,9 +80,12 @@ private func shouldSkipDirectory(name: String) -> Bool {
 
 /// Universal test-path directory segments (docs/pipeline-contract.md
 /// §"Test path patterns"), plus Swift's SwiftPM `Tests/` convention
-/// (capital T). Matched per-segment, exact and case-sensitive — a
-/// substring or case-insensitive match would swallow non-test directories
-/// like `CoreTesting`.
+/// (capital T). Matched per-segment, exact match only — exactness is what
+/// keeps a testing-*support* directory like `CoreTesting` from matching
+/// (it is not equal to any listed segment). A substring match would be
+/// unsafe here (it would treat `CoreTesting` as containing `Test`); case
+/// sensitivity is kept for predictability, not because it provides the
+/// guard — a case-insensitive exact compare would be equally safe.
 private let testDirSegments: Set<String> = [
     "tests", "test", "__tests__", "__test__",
     "spec",
@@ -114,11 +117,40 @@ func isTestPath(relativePath: String) -> Bool {
     return testFileSuffixes.contains { basename.hasSuffix($0) }
 }
 
+/// Legacy substring markers for the `literal` subcommand's exclusion filter
+/// only. Pre-#317, `isTestFileName` matched `.test.` / `.spec.` as a
+/// basename *substring* (anywhere, not just as a suffix) — a file like
+/// `Legacy.test.helpers.swift` was excluded under that rule. `isTestPath`'s
+/// basename check is suffix-only (`.test.swift`), per the contract's
+/// normative pattern set, so relying on it alone would newly *include*
+/// that file in `literal-catalog.json` — a regression, since `literal`'s
+/// acceptance bar is that its exclusion set stays a strict superset of the
+/// pre-#317 set. `type` and `func` deliberately do NOT widen with this:
+/// their `is_test` tag must match the contract verbatim, not the legacy
+/// literal-only carve-out.
+private let legacyLiteralExclusionSubstrings = [".test.", ".spec."]
+
+/// True if `relativePath` should be excluded from the `literal` catalog:
+/// either it matches the contract's normative test-path set (`isTestPath`),
+/// or its basename contains one of the legacy substring markers the
+/// pre-#317 filter also excluded. Used only by the `literal` subcommand —
+/// `type` and `func` use `isTestPath` alone for their `is_test` tag.
+func isLiteralExcludedPath(relativePath: String) -> Bool {
+    if isTestPath(relativePath: relativePath) { return true }
+    let basename = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+    return legacyLiteralExclusionSubstrings.contains { basename.contains($0) }
+}
+
 /// Resolve which "package" a file belongs to from its path relative to root.
 /// Convention for wxyc-ios-64-style layouts:
 ///   Shared/<Pkg>/...        → "<Pkg>"
 ///   WXYC/<Target>/...       → "app:<Target>"
 ///   Sources/<X>/...         → "<X>"   (when rooted inside a SwiftPM package)
+///   Tests/<X>/...           → "<X>"   (SwiftPM test-target convention,
+///                                      symmetric with the Sources arm — X
+///                                      is the raw target directory name,
+///                                      e.g. "FooTests", not normalized to
+///                                      the production package it doubles)
 ///   <other top-level dir>/  → "<top-level dir>"
 func resolvePackage(relativePath: String) -> String {
     let parts = relativePath.split(separator: "/").map(String.init)
@@ -129,6 +161,9 @@ func resolvePackage(relativePath: String) -> String {
         return "app:\(parts[1])"
     }
     if parts.count >= 2 && parts[0] == "Sources" {
+        return parts[1]
+    }
+    if parts.count >= 2 && parts[0] == "Tests" {
         return parts[1]
     }
     return parts.first ?? "root"
