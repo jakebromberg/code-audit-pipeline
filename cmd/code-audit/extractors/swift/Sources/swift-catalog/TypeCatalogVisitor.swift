@@ -179,6 +179,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             file: file.relativePath,
             line: line,
             exported: isExported(node.modifiers),
+            access: accessLevel(node.modifiers),
             generated: file.generated,
             isTest: file.isTest,
             fields: nil,
@@ -217,6 +218,21 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             }
         }
         return true
+    }
+
+    /// The access modifier as written (`public`, `open`, `package`,
+    /// `internal`, `fileprivate`, `private`), defaulting to `"internal"` —
+    /// Swift's own unwritten default — when no modifier is present.
+    private func accessLevel(_ modifiers: DeclModifierListSyntax) -> String {
+        for m in modifiers {
+            switch m.name.text {
+            case "public", "open", "package", "internal", "fileprivate", "private":
+                return m.name.text
+            default:
+                continue
+            }
+        }
+        return "internal"
     }
 
     /// Walk an inheritance clause and partition the inherited identifiers
@@ -300,6 +316,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             file: file.relativePath,
             line: line,
             exported: isExported(modifiers),
+            access: accessLevel(modifiers),
             generated: file.generated,
             isTest: file.isTest,
             fields: extracted.flat.isEmpty ? nil : extracted.flat,
@@ -393,6 +410,7 @@ final class TypeCatalogVisitor: SyntaxVisitor {
             file: file.relativePath,
             line: line,
             exported: isExported(node.modifiers),
+            access: accessLevel(node.modifiers),
             generated: file.generated,
             isTest: file.isTest,
             fields: cases.isEmpty ? nil : sortedFlat,

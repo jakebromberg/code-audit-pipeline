@@ -80,6 +80,14 @@ struct TypeRecord: Encodable {
     var file: String
     var line: Int
     var exported: Bool
+    /// Access modifier as written (`public`, `open`, `package`, `internal`,
+    /// `fileprivate`, `private`), defaulting to `"internal"` when the
+    /// declaration carries none — Swift's own unwritten default, not missing
+    /// data. Unlike `LiteralRecord.access` (which describes an enclosing
+    /// binding and is omitted where structurally inapplicable), every type
+    /// declaration has an effective visibility, so this field is always
+    /// present. See docs/pipeline-contract.md "access (type vs literal)".
+    var access: String
     var generated: Bool
     var isTest: Bool
     var fields: [String]?

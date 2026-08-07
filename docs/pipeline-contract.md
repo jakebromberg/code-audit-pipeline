@@ -37,6 +37,7 @@ The type catalog is a top-level **wrapper object** carrying the schema version, 
       "language": "typescript",             // v2 core projection: language tag
       "symbol_id": "a3f5…",                // sha1 over (package, file, name, kind) joined by NUL bytes, hex lowercase; optional
       "exported": true,                     // true if exported from the file
+      "access": "internal",                 // Swift only; access modifier as written, defaulting to "internal" — see "access (type vs literal)"
       "generated": false,                   // true if .d.ts or under generated/
       "is_test": false,                     // true if file path matches test/fixture patterns; see Conventions
 
@@ -232,6 +233,16 @@ The kinds that admit no inheritance clause syntactically (currently: `type-alias
 - `exported`, `generated`, `touched_in_window`, `generics`, `infer_ref`, `db_table_name`, `fields_structured` (V7 §6.1)
 - `reference_count` (grep-style identifier-occurrence count, populated by a second pass — coarse "name appears anywhere in scanned source" signal; distinct from `references_count` which is the structural count of typed references inside this declaration's body)
 - `wraps_notification_name` (string | absent) — the verbatim body-expression text of a Swift type's `static var name: Notification.Name { … }` member, when the type also conforms to a `*NotificationMessage` protocol (or Foundation's iOS 26 `NotificationCenter.MainActorMessage` / `NotificationCenter.AsyncMessage`). Populated only by the Swift extractor. Consumed by `notification-wrapper-grouping.jq` to find cross-module notification cross-fire. The query joins by exact string equality — convention: both wrappers spell the name the same way (`AVPlayer.rateDidChangeNotification` verbatim at both sites, not one as `.rateDidChangeNotification`). Singular today; the schema can grow to an array additively if a multi-name case appears.
+- `access` (string) — the access modifier as written (`public`, `open`, `package`, `internal`, `fileprivate`, `private`), defaulting to `"internal"` when the declaration carries no modifier. Populated only by the Swift extractor, for every type-catalog kind (struct / class / actor / enum / protocol / extension / typealias). See "`access` (type vs literal)" below for how this differs from `LiteralRecord.access`.
+
+### `access` (type vs literal)
+
+Both the type catalog and the literal catalog (below) carry a field named `access`, with deliberately different omission behavior:
+
+- **Type rows always emit `access`**, defaulting to `"internal"` when no modifier is written. On a type row, `access` describes the declaration itself, and every declaration has an effective visibility — `internal` is Swift's unwritten default, not missing data. Emitting it lets a query write `.access == "public"` without also handling an absent key.
+- **Literal rows omit `access` when absent** (see `LiteralRecord.access` under "Literal catalog" below). On a literal row, `access` describes the *enclosing binding*, and is set only in binding position — it's structurally absent on argument-form rows, where there's no declaration to carry a visibility at all. "Omitted" means something on a literal row that it would not mean on a type row.
+
+Aligning binding-form literal rows to the type catalog's default-to-`"internal"` behavior is a defensible follow-up, but is out of scope here: it would change `literal-catalog.json` output, and the literal catalog carries a byte-stability regression check against that file.
 
 ### `infer_ref` shape
 
@@ -739,7 +750,7 @@ Like `file-hashes.json`, this is an **occurrence catalog**, not a declaration ca
     // binding-form fields (omitted on argument rows).
     "binding_name": "cornerRadius",
     "is_static": true,
-    // "access": "private",              // access modifier as written; omitted when none
+    // "access": "private",              // access modifier as written; omitted when none — contrast with the type catalog's `access`, see "access (type vs literal)"
 
     // argument-form fields (omitted on binding rows).
     // "callee": "RoundedRectangle",     // base name of the called expression

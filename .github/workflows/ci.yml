@@ -31,6 +31,7 @@ jobs:
             extractors/swift/tests/test_package_graph.sh \
             extractors/swift/tests/test_type_catalog_heritage.sh \
             extractors/swift/tests/test_type_catalog_is_test.sh \
+            extractors/swift/tests/test_type_catalog_access.sh \
             extractors/swift/tests/test_literal_catalog.sh \
             extractors/swift/tests/test_function_catalog_short_bodies.sh \
             extractors/typescript/tests/test_smoke.sh \
@@ -307,6 +308,9 @@ jobs:
 
       - name: Integration tests (is_test tagging + unconditional test-file walk)
         run: tests/test_type_catalog_is_test.sh
+
+      - name: Integration tests (type-catalog access — TypeRecord.access as-written)
+        run: tests/test_type_catalog_access.sh
 
       - name: Integration tests (literal-catalog)
         run: tests/test_literal_catalog.sh
