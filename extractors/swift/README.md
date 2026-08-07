@@ -42,7 +42,7 @@ Method names are qualified by the nesting stack: a method `foo` on `class Bar` e
 
 Body normalization strips `/* */` and `//` comments, collapses whitespace, drops blank lines. `body_hash` is sha256 of the sorted-unique lines joined with `\n`. `body_lines` is the same sorted-unique set, so it can serve directly as Jaccard input.
 
-`enclosing_type` is the dotted nesting-stack qualification of the row's enclosing declaration (`Outer.Inner`), the extended type's text for extension members (`Array<Concert>`), and `null` for free functions — the same join key `type`'s nested-type qualification produces, so function-catalog rows join onto type-catalog rows by `enclosing_type == name`.
+`enclosing_type` is the dotted nesting-stack qualification of the row's enclosing declaration (`Outer.Inner`), the extended type's text for extension members (`Array<Concert>`), and `null` for free functions — the same qualification `type`'s nested-type naming produces. It is not by itself a safe join key: two package roots can carry a same-named (or same-nested-name) type, so joining function-catalog rows onto type-catalog rows requires `(package, enclosing_type) == (package, name)`, not a bare `enclosing_type == name` (see `docs/pipeline-contract.md`'s function-catalog section for the full rationale).
 
 Every row carries `is_test: bool`, same derivation and requirement as `type` above.
 
