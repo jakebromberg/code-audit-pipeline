@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+// testNow is the fixed reference clock every Assemble test passes as `now`.
+//
+// Assemble derives the PR window as now-WindowDays and MergedPRs drops any
+// PR merged before it, so a test that feeds PRs with hardcoded mergedAt
+// dates must pin `now` as well. Passing time.Now() instead makes such a
+// test a time bomb: it passes until wall-clock drifts past the window, then
+// fails on every branch at once with no diff to blame. That is exactly what
+// happened on 2026-08-08, when 2026-05-10 fell out of the trailing 90 days
+// (#341). Keep this constant comfortably newer than the newest mergedAt in
+// the file's fixtures, and within WindowDays of the oldest.
+var testNow = time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)
+
 // TestAssembleOfflineMode runs the bundler with --no-prs and --no-issues
 // so no gh calls happen. Verifies the file-system sources populate, the
 // gh sources are marked skipped, and overall shape is right.
@@ -22,7 +34,7 @@ func TestAssembleOfflineMode(t *testing.T) {
 	writeFile(t, filepath.Join(root, "foo.go"), "// TODO bake bread\n")
 	writeFile(t, filepath.Join(root, "Bar.swift"), "@available(*, deprecated)\nfunc bar() {}\n")
 
-	now := time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)
+	now := testNow
 	opts := Options{
 		Root:       root,
 		WindowDays: 90,
@@ -66,7 +78,7 @@ func TestAssembleOfflineMode(t *testing.T) {
 func TestAssembleEmitsEmptyArraysNotNull(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{Root: root, WindowDays: 90, NoIssues: true, NoPRs: true}
-	bundle := Assemble(context.Background(), opts, GHFunctions{}, nil, time.Now(), io.Discard)
+	bundle := Assemble(context.Background(), opts, GHFunctions{}, nil, testNow, io.Discard)
 
 	data, err := json.Marshal(bundle)
 	if err != nil {
@@ -99,7 +111,7 @@ func TestAssemblePRDiffFetcherNilCheck(t *testing.T) {
 		// PRDiffFetcher intentionally nil.
 	}
 	opts := Options{Root: root, Repo: "owner/repo", WindowDays: 90, NoTODOs: true, NoDeprecations: true, NoADRs: true, NoRuleText: true}
-	bundle := Assemble(context.Background(), opts, gh, nil, time.Now(), io.Discard)
+	bundle := Assemble(context.Background(), opts, gh, nil, testNow, io.Discard)
 	p := bundle.Sources["recent_prs"]
 	if p.OK {
 		t.Errorf("want ok=false for nil PRDiffFetcher, got %+v", p)
@@ -136,7 +148,7 @@ func TestAssemblePropagatesPRPartialFailures(t *testing.T) {
 	}
 	opts := Options{Root: root, Repo: "owner/repo", WindowDays: 90, DiffDir: diffDir, DiffPathPrefix: "archaeology/prs",
 		NoTODOs: true, NoDeprecations: true, NoADRs: true, NoRuleText: true}
-	bundle := Assemble(context.Background(), opts, gh, nil, time.Now(), io.Discard)
+	bundle := Assemble(context.Background(), opts, gh, nil, testNow, io.Discard)
 	p := bundle.Sources["recent_prs"]
 	if !p.OK {
 		t.Errorf("partial failure should keep ok=true, got %+v", p)
@@ -165,7 +177,7 @@ func TestAssembleSurfacesIssueListerError(t *testing.T) {
 		PRDiffFetcher: func(ctx context.Context, dir, repo string, pr int) (string, error) { return "", nil },
 	}
 	opts := Options{Root: root, Repo: "owner/repo", WindowDays: 90, NoTODOs: true, NoDeprecations: true, NoADRs: true, NoRuleText: true}
-	bundle := Assemble(context.Background(), opts, gh, nil, time.Now(), io.Discard)
+	bundle := Assemble(context.Background(), opts, gh, nil, testNow, io.Discard)
 	if bundle.Sources["open_issues"].OK {
 		t.Error("want open_issues.ok=false")
 	}
@@ -182,7 +194,7 @@ func TestAssembleADRMissingDirCountsAsZero(t *testing.T) {
 	root := t.TempDir()
 	// No docs/adr — ReadADRs returns ErrADRDirMissing.
 	opts := Options{Root: root, WindowDays: 90, NoIssues: true, NoPRs: true, NoTODOs: true, NoDeprecations: true, NoRuleText: true}
-	bundle := Assemble(context.Background(), opts, GHFunctions{}, nil, time.Now(), io.Discard)
+	bundle := Assemble(context.Background(), opts, GHFunctions{}, nil, testNow, io.Discard)
 	p := bundle.Sources["adrs"]
 	if !p.OK {
 		t.Errorf("ok=%v want true (missing dir = no rows, not failure)", p.OK)
