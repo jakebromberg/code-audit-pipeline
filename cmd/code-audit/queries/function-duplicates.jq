@@ -50,20 +50,56 @@ entries as $all
   ) as $exact
 
 # Names already covered by an exact cluster — exclude from near-dup section.
-| ( [ $exact[].members[] | fn_location_key(.) ] | unique) as $exact_ids
+# Hoisted to a row-level filter (issue #337 fix 2) rather than a per-pair
+# `index` scan repeated twice per pair: a from_entries set + `has` turns an
+# O(pairs * |exact_ids|) linear scan into an O(1) lookup, AND shrinks the
+# candidate list itself before the pair loop even starts (removing rows beats
+# making the per-row test cheaper, since pair count is quadratic in n).
+#
+# jq gotcha (see CLAUDE.md jq-gotchas): `$set | has(fn_location_key(.))`
+# evaluates its argument against `$set`, not the outer record — `.` inside
+# the `has(...)` argument is scoped to whatever `$set | ...` piped in, not
+# to the decl being tested. It doesn't error; it silently passes every row.
+# Binding the record to `$r` before entering the `$exact_set | has(...)` pipe
+# avoids the trap.
+| ( [ $exact[].members[] | fn_location_key(.) ] | map({key: ., value: true}) | from_entries ) as $exact_set
+| ( [ $fns[]
+      | . as $r
+      | select($exact_set | has(fn_location_key($r)) | not)
+      | { f: $r, u: (($r.body_lines // []) | unique) }
+      | . + { n: (.u | length) }
+    ]
+  ) as $cand
 
 # --- Section 2: near-duplicate pairs (Jaccard ≥ threshold on body_lines, < 1.0) ---
-| ( [ range(0; $fns | length) as $i
-      | range($i + 1; $fns | length) as $j
-      | $fns[$i] as $a | $fns[$j] as $b
-      | select($a.body_hash != $b.body_hash)
-      | select($exact_ids | index(fn_location_key($a)) == null)
-      | select($exact_ids | index(fn_location_key($b)) == null)
-      | ($a.body_lines) as $al
-      | ($b.body_lines) as $bl
-      | ($al + $bl | unique | length) as $u
+#
+# Set-identity intersection (issue #337 fix 1): for deduplicated sets,
+# |A ∩ B| = |A| + |B| − |A ∪ B|. Each function's deduplicated body-line set
+# (`.u`/`.n` above) is computed once, outside the pair loop, rather than
+# recomputing `unique` on both bodies for every pair. The union — one sort —
+# replaces the O(L²) nested `index` scan the old intersection computation
+# used. `unique` is applied here even though every extractor's contract
+# already promises deduplicated `body_lines` (TS `[...new Set(normLines)]`,
+# Python `sorted(set(rendered))`, Rust `sort` + `dedup`, Swift
+# `Array(Set(...)).sorted()`) — trusting-but-verifying costs nothing at this
+# scale and keeps the set-identity mathematically exact even if an extractor
+# drifts from the contract.
+#
+# `select($a.body_hash != $b.body_hash)` from the original query is deleted
+# as dead code: every survivor of the `$exact_set` filter above is, by
+# construction, NOT a member of any body_hash group with length > 1 (if it
+# were, group_by(.body_hash) would have put it in $exact along with every
+# other member of that hash group). So no two rows in $cand can share a
+# body_hash — the inequality can never be false here.
+| ( [ range(0; $cand | length) as $i
+      | range($i + 1; $cand | length) as $j
+      | $cand[$i] as $A | $cand[$j] as $B
+      | $A.f as $a | $B.f as $b
+      | ($A.u) as $au | ($B.u) as $bu
+      | ($A.n) as $na | ($B.n) as $nb
+      | (($au + $bu) | unique | length) as $u
       | select($u > 0)
-      | ([$al[] | select(. as $x | $bl | index($x) != null)] | length) as $ic
+      | ($na + $nb - $u) as $ic
       | ($ic / $u) as $jacc
       | select($jacc >= $thr and $jacc < 1.0)
       | { cluster_id: cluster_id_sorted_pair("function-duplicates-near"; fn_location_key($a); fn_location_key($b)),
