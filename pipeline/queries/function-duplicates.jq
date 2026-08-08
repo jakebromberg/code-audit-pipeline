@@ -14,8 +14,34 @@
 # accidental retypes) and near-misses (forked-then-edited helpers, sync/async siblings,
 # "Lite" variants stripped of one branch).
 #
-# `--argjson threshold 0.7` is REQUIRED — jq errors at compile time on an undefined variable.
+# `threshold` defaults to 0.7 (issue #337) — omit `--argjson threshold` to use it.
 # Lower the threshold for broader recall, higher to focus only on near-exact.
+#
+# Test/generated filtering (issue #337 fix 4): test functions are EXCLUDED
+# by default. Set `INCLUDE_TESTS=true` to include them and see test-vs-test
+# duplication too — a real signal, but a different one from production
+# copy-paste, so it stays opt-in rather than silently inflating both
+# sections. The filter is applied once, at `$fns`, so it is impossible for
+# a function to be invisible to the near-duplicate section but still show up
+# in an exact cluster (or vice versa) depending on the flag. `generated`
+# rows stay unconditionally excluded, as before this issue — the substrate's
+# generated-detection is path-only and under-recalls (issue #338); relaxing
+# that filter is that issue's concern, not this one's.
+#
+# Threshold-default decision (issue #337 "Constraints"): `near-duplicates`,
+# `near-duplicates-any`, `cross-package-shape-near-duplicates`,
+# `cross-package-shape-near-duplicates-any`, `generic-function-candidates`,
+# and `test-prod-drift` all keep `threshold` REQUIRED — this query alone
+# gets a default. Deliberate, not an oversight: this is the one query issue
+# #337 is making `code-audit report` run by default (the "Desired end
+# state"), and `report` skips any query whose required arg isn't supplied
+# (`--skip-missing-args`, on by default). The sibling queries are invoked
+# explicitly via `code-audit query <name> --arg threshold=...`, not folded
+# into the default report set, so leaving them required doesn't strand them
+# — it just means a forgotten `--arg` on an explicit invocation is still a
+# hard failure rather than a silent default, which is the right default for
+# a deliberately-invoked query. 0.7 matches the value used throughout this
+# repo's own docs and examples for every other Jaccard-threshold query.
 #
 # Performance (issue #337): the near-duplicate pair loop used to be a full
 # O(n^2) scan with an O(L^2) per-pair intersection and two O(|exact_ids|)
@@ -50,14 +76,20 @@
 #! query: function-duplicates
 #! shape: cluster, pair
 #! catalog: function-catalog
-#! arg: threshold number required
+#! arg: threshold number 0.7
+#! env: INCLUDE_TESTS string ""
 #! formats: text, jsonl
 #! desc: Function-body duplicates — exact (cluster) and near (pair) sections.
 
 include "_canonical";
 
-entries as $all
-| ([ $all[] | select((.generated // false) != true and (.body_line_count // 0) >= 3) ]) as $fns
+(($ENV.INCLUDE_TESTS // "") == "true") as $include_tests
+| entries as $all
+| ([ $all[]
+     | select((.generated // false) != true
+              and (.body_line_count // 0) >= 3
+              and ($include_tests or ((.is_test // false) != true)))
+   ]) as $fns
 | $threshold as $thr
 
 # --- Section 1: exact body-hash clusters ---
