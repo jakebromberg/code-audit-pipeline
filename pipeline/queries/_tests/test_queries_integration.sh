@@ -474,6 +474,43 @@ assert_function_duplicates_band_and_determinism() {
 }
 assert_function_duplicates_band_and_determinism
 
+# Semantic check for the test/generated filtering flag (issue #337, fix 4).
+# Fixture rows sharedTestHelperA/sharedTestHelperB are is_test:true AND
+# share a body_hash, so they only ever form an EXACT cluster (not a near
+# pair) -- exercising this section is what proves the filter is applied at
+# $fns, upstream of both sections, rather than bolted onto the near-dup
+# section alone.
+assert_function_duplicates_include_tests_flag() {
+  local default_result included_result
+  default_result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
+    -f "$QUERIES_DIR/function-duplicates.jq" "$FUNCS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (INCLUDE_TESTS default): query crashed: %s\n" "$default_result"
+    return
+  }
+  included_result="$(OUTPUT_FORMAT=jsonl INCLUDE_TESTS=true jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
+    -f "$QUERIES_DIR/function-duplicates.jq" "$FUNCS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (INCLUDE_TESTS=true): query crashed: %s\n" "$included_result"
+    return
+  }
+
+  local test_cid="function-duplicates-exact:main:HelperTests.swift:100:sharedTestHelperA+shared:HelperTestsCopy.swift:102:sharedTestHelperB"
+  local default_has_test included_has_test
+  default_has_test="$(printf '%s\n' "$default_result" | jq -rs --arg cid "$test_cid" '[.[] | select(.cluster_id == $cid)] | length')"
+  included_has_test="$(printf '%s\n' "$included_result" | jq -rs --arg cid "$test_cid" '[.[] | select(.cluster_id == $cid)] | length')"
+
+  if [[ "$default_has_test" == "0" && "$included_has_test" == "1" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ function-duplicates (INCLUDE_TESTS): test-only exact cluster hidden by default, surfaced with INCLUDE_TESTS=true\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (INCLUDE_TESTS) regression: default_has_test=%s (want 0) included_has_test=%s (want 1)\n" \
+      "$default_has_test" "$included_has_test"
+  fi
+}
+assert_function_duplicates_include_tests_flag
+
 echo ""
 echo "=== File-hash query ==="
 assert_jsonl_has_prefix file-duplicates.jq "$FILES_FIXTURE" "file-duplicates-"
