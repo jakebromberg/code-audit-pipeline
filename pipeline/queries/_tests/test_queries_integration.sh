@@ -400,6 +400,80 @@ assert_jsonl_has_prefix function-duplicates.jq "$FUNCS_FIXTURE" "function-duplic
 assert_jsonl_has_prefix default-impl-candidates.jq "$FUNCS_FIXTURE" "default-impl-candidates:" --argjson min_conformers 2
 assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic-function-candidates:" --argjson threshold 0.5 --argjson max_subs 2
 
+# Semantic checks for the length-band blocking + determinism fixes (issue
+# #337, fix 3). Fixture rows (functions.input.json) beyond the original
+# hashSlug/hashSlugLite trio:
+#   - noisyDupSource/noisyDupPeer     defensive per-function dedup: source's
+#                                      raw body_lines carries a repeated
+#                                      normalized line, so its true unique
+#                                      count is 2, not the raw 3.
+#   - tsDivergenceAlpha/Beta          TS-style rows where body_line_count is
+#                                      the RAW pre-dedup count, diverging
+#                                      from |body_lines|. Only detectable at
+#                                      threshold 0.8, where a body_line_count
+#                                      band (6/9=0.667) would wrongly drop
+#                                      the pair but the correct band
+#                                      (|body_lines|: 5/6=0.833) keeps it.
+#   - boundaryShort/boundaryLong      ratio == threshold exactly (3/6=0.5)
+#                                      -- pins the early-break's inclusive >=.
+#   - tieMEarlier/tieMLater,
+#     tieZEarlier/tieZLater           two independent pairs at the same
+#                                      jaccard (0.6) so the cluster_id
+#                                      secondary sort key is observable, and
+#                                      each pair's smaller-bodied member sorts
+#                                      alphabetically AFTER its partner, so a
+#                                      naive left=smaller-n/right=larger-n
+#                                      assignment would disagree with the
+#                                      required canonical (loc_key-sorted)
+#                                      left/right.
+assert_function_duplicates_band_and_determinism() {
+  local result
+  result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
+    -f "$QUERIES_DIR/function-duplicates.jq" "$FUNCS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (band/determinism): query crashed: %s\n" "$result"
+    return
+  }
+
+  local boundary_jacc noisy_jacc tie_pairs tiez_left tiez_right
+  boundary_jacc="$(printf '%s\n' "$result" | jq -rs \
+    '[.[] | select(.cluster_id == "function-duplicates-near:main:BoundaryLong.swift:72:boundaryLong+main:BoundaryShort.swift:70:boundaryShort")] | .[0].jacc // "MISSING"')"
+  noisy_jacc="$(printf '%s\n' "$result" | jq -rs \
+    '[.[] | select(.cluster_id == "function-duplicates-near:main:Noisy.swift:40:noisyDupSource+main:NoisyPeer.swift:42:noisyDupPeer")] | .[0].jacc // "MISSING"')"
+  tie_pairs="$(printf '%s\n' "$result" | jq -rs \
+    '[.[] | select(.shape == "pair" and .jacc == 0.6)] | map(.cluster_id) | join(",")')"
+  tiez_left="$(printf '%s\n' "$result" | jq -rs \
+    '[.[] | select(.cluster_id == "function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater")] | .[0].left.name // "MISSING"')"
+  tiez_right="$(printf '%s\n' "$result" | jq -rs \
+    '[.[] | select(.cluster_id == "function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater")] | .[0].right.name // "MISSING"')"
+
+  local high_thr_result high_thr_count high_thr_cid
+  high_thr_result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.8 \
+    -f "$QUERIES_DIR/function-duplicates.jq" "$FUNCS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (band/determinism, threshold 0.8): query crashed: %s\n" "$high_thr_result"
+    return
+  }
+  high_thr_count="$(printf '%s\n' "$high_thr_result" | jq -rs '[.[] | select(.shape == "pair")] | length')"
+  high_thr_cid="$(printf '%s\n' "$high_thr_result" | jq -rs \
+    '[.[] | select(.shape == "pair")] | .[0].cluster_id // "MISSING"')"
+
+  if [[ "$boundary_jacc" == "0.5" \
+     && "$noisy_jacc" == "0.6666666666666666" \
+     && "$tie_pairs" == "function-duplicates-near:main:TieMEarlier.swift:82:tieMEarlier+main:TieMLater.swift:80:tieMLater,function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater" \
+     && "$tiez_left" == "tieZEarlier" && "$tiez_right" == "tieZLater" \
+     && "$high_thr_count" == "1" \
+     && "$high_thr_cid" == "function-duplicates-near:main:TSDivergenceAlpha.swift:60:tsDivergenceAlpha+main:TSDivergenceBeta.swift:62:tsDivergenceBeta" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ function-duplicates (band/determinism): boundary pair reported at ratio==threshold, dedup-defensive jaccard correct, tie-break by cluster_id, canonical left/right by loc_key, TS-divergence pair survives at threshold 0.8\n"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (band/determinism) regression: boundary_jacc=%s noisy_jacc=%s tie_pairs=%s tiez_left=%s tiez_right=%s high_thr_count=%s high_thr_cid=%s\n" \
+      "$boundary_jacc" "$noisy_jacc" "$tie_pairs" "$tiez_left" "$tiez_right" "$high_thr_count" "$high_thr_cid"
+  fi
+}
+assert_function_duplicates_band_and_determinism
+
 echo ""
 echo "=== File-hash query ==="
 assert_jsonl_has_prefix file-duplicates.jq "$FILES_FIXTURE" "file-duplicates-"
