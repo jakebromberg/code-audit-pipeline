@@ -1,7 +1,13 @@
 # function-duplicates.jq — find duplicate / near-duplicate function bodies.
 #
 # Run:  jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/function-duplicates.jq function-catalog.json
-#        (-r for raw text output)
+#        (-r for raw text output. `--argjson threshold` is REQUIRED for raw jq:
+#         jq compiles the whole program before running it and rejects the
+#         undefined variable $threshold at parse time, so an in-jq default
+#         fallback cannot exist. `code-audit query` / `code-audit report`
+#         inject the front-matter default (0.7, see `#! arg:` below)
+#         automatically when `--arg threshold=...` is omitted — that's the
+#         only invocation path where omitting it works.)
 #
 # JSONL mode:  OUTPUT_FORMAT=jsonl jq -L pipeline/queries -r --argjson threshold 0.7 -f pipeline/queries/function-duplicates.jq function-catalog.json
 #
@@ -14,17 +20,23 @@
 # accidental retypes) and near-misses (forked-then-edited helpers, sync/async siblings,
 # "Lite" variants stripped of one branch).
 #
-# `threshold` defaults to 0.7 (issue #337) — omit `--argjson threshold` to use it.
 # Lower the threshold for broader recall, higher to focus only on near-exact.
 #
 # Test/generated filtering (issue #337 fix 4): test functions are EXCLUDED
-# by default. Set `INCLUDE_TESTS=true` to include them and see test-vs-test
-# duplication too — a real signal, but a different one from production
-# copy-paste, so it stays opt-in rather than silently inflating both
-# sections. The filter is applied once, at `$fns`, so it is impossible for
-# a function to be invisible to the near-duplicate section but still show up
-# in an exact cluster (or vice versa) depending on the flag. `generated`
-# rows stay unconditionally excluded, as before this issue — the substrate's
+# by default. To include them and see test-vs-test duplication too — a real
+# signal, but a different one from production copy-paste, so it stays
+# opt-in — set `INCLUDE_TESTS=true`:
+#   raw jq:                INCLUDE_TESTS=true jq -L pipeline/queries -r ...
+#   code-audit query/report:  --env INCLUDE_TESTS=true (NOT a bare shell env
+#     var: the binary always seeds an env map from the front-matter default
+#     and appends it after the process environment, so an un-flagged shell
+#     `INCLUDE_TESTS=true` is silently overridden back to the default; see
+#     internal/cli/query.go's `env` construction and
+#     internal/engine.mergedEnviron).
+# The filter is applied once, at `$fns`, so it is impossible for a function
+# to be invisible to the near-duplicate section but still show up in an
+# exact cluster (or vice versa) depending on the flag. `generated` rows stay
+# unconditionally excluded, as before this issue — the substrate's
 # generated-detection is path-only and under-recalls (issue #338); relaxing
 # that filter is that issue's concern, not this one's.
 #
@@ -61,13 +73,24 @@
 #      size-ratio bound (Jaccard <= min(|A|,|B|)/max(|A|,|B|)) falls below
 #      $threshold — see the comment ahead of the pair loop for why the band
 #      is on |unique(body_lines)|, not body_line_count.
-# Measured on a synthetic catalog (wxyc-like body-length distribution:
-# median 7 lines, tail to ~900, ~18% planted exact/near duplicates) under
-# gojq 0.12.19, the query's embedded engine (ADR-0005):
-#   n=5,000, threshold 0.7: 9.4s   (was 1,107s / 18m27s per the issue)
-#   n=5,000, threshold 0.9: 3.2s
-#   n=7,200, threshold 0.9: 6.4s   (matches the issue's wxyc-ios-64 scenario,
+# Measured on a synthetic catalog (~98% of rows sized max(3, round(gauss(8,6)))
+# lines, ~2% sized uniform in [300,900] to simulate a pathological tail, ~18%
+# of rows planted as exact/near duplicates — actual realized median 8 lines,
+# max ~900 lines), under gojq 0.12.19, the query's embedded engine (ADR-0005):
+#   n=5,000, threshold 0.7: 5.4s   (was 1,107s / 18m27s per the issue)
+#   n=5,000, threshold 0.9: 2.2s
+#   n=7,200, threshold 0.7: 12.3s
+#   n=7,200, threshold 0.9: 4.7s   (matches the issue's wxyc-ios-64 scenario,
 #                                   which never completed before this fix)
+# The band's payoff is distribution-dependent, not a universal constant: it
+# prunes by how far apart candidate sizes are, so a wide, sparse tail (like
+# this synthetic set's) prunes fast, while a tail compressed into a narrower
+# range leaves more same-size candidates inside the band on every scan and
+# is correspondingly slower. An independent measurement on a distribution
+# with median 7 / max 357 (a tighter tail than the one above) found 38s at
+# n=7,200/threshold 0.7 and 21s at threshold 0.9 — still a large win over the
+# un-banded baseline, but noticeably slower than this catalog's numbers.
+# Don't treat either figure as a promise for an arbitrary catalog's shape.
 #
 # cluster_id formats:
 #   function-duplicates-exact:Loc+Loc+...   (sorted by package:file:line:name)
@@ -161,11 +184,24 @@ include "_canonical";
 # monotonically non-increasing as $j grows for a fixed $i (both $A and every
 # candidate at index >= i+1 have $B.n >= $A.n), so once the ratio drops below
 # $thr it stays below for every larger $j — one `label`/`break` gives an
-# exact early exit with no bucketing scaffold. This is also what protects
-# the pathological tail (max body_line_count 822 vs a median of 7 on the
+# early exit with no bucketing scaffold. This is also what protects the
+# pathological tail (max body_line_count 822 vs a median of 7 on the
 # wxyc-ios-64 reference catalog): a small function's scan breaks out within
 # a handful of same-sized candidates instead of walking all the way to a
 # huge outlier.
+#
+# The bound is computed as `($A.n / $B.n) >= $thr` — division, not a
+# cross-multiplied `$A.n >= $thr * $B.n`. The two are algebraically
+# equivalent but not float-identical: multiplying $thr by $B.n can round the
+# product a hair above the true value, so an integer $A.n sitting exactly on
+# the boundary compares false against the rounded-up product even though the
+# true ratio equals $thr. Concrete case: threshold 0.28, $A.n=7, $B.n=25 —
+# 0.28 * 25 rounds to 7.000000000000001 in IEEE754 double, so `7 >=
+# 7.000000000000001` is false and the pair is wrongly pruned, even though
+# 7/25 is exactly 0.28 and `origin/main` (no band) reports it. The division
+# form matches the shape of the `$jacc >= $thr` comparison used below, so
+# both the early-exit boundary and the final selection boundary round the
+# same way.
 #
 # Banding on `.n` (`|unique(body_lines)|`), NOT `.f.body_line_count`, is
 # load-bearing. The bound above only holds for *set* cardinalities, and
@@ -185,7 +221,7 @@ include "_canonical";
       | label $band
       | ( range($i + 1; $m) as $j
           | $cand[$j] as $B
-          | (if ($A.n >= $thr * $B.n) then . else break $band end)
+          | (if (($A.n / $B.n) >= $thr) then . else break $band end)
           | $A.f as $a | $B.f as $b
           | ($A.u) as $au | ($B.u) as $bu
           | ($A.n) as $na | ($B.n) as $nb
