@@ -407,7 +407,7 @@ assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic
 #                                      raw body_lines carries a repeated
 #                                      normalized line, so its true unique
 #                                      count is 2, not the raw 3.
-#   - tsDivergenceAlpha/Beta          TS-style rows where body_line_count is
+#   - tsDivergenceAlpha/Beta (.ts)    TS-style rows where body_line_count is
 #                                      the RAW pre-dedup count, diverging
 #                                      from |body_lines|. Only detectable at
 #                                      threshold 0.8, where a body_line_count
@@ -415,7 +415,18 @@ assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic
 #                                      the pair but the correct band
 #                                      (|body_lines|: 5/6=0.833) keeps it.
 #   - boundaryShort/boundaryLong      ratio == threshold exactly (3/6=0.5)
-#                                      -- pins the early-break's inclusive >=.
+#                                      -- pins the early-break's inclusive >=,
+#                                      but at a ratio that is float-exact
+#                                      (0.5) so it can't catch a rounding bug
+#                                      in the band comparison itself.
+#   - roundingShort/roundingLong      ratio == threshold at 7/25 == 0.28,
+#                                      chosen because it is NOT float-exact:
+#                                      0.28 * 25 rounds to 7.000000000000001
+#                                      in IEEE754 double, so a band comparison
+#                                      written as `$A.n >= $thr * $B.n` wrongly
+#                                      prunes this pair while the equivalent
+#                                      `$A.n / $B.n >= $thr` does not. Pins
+#                                      the division-form fix.
 #   - tieMEarlier/tieMLater,
 #     tieZEarlier/tieZLater           two independent pairs at the same
 #                                      jaccard (0.6) so the cluster_id
@@ -425,7 +436,18 @@ assert_jsonl_has_prefix generic-function-candidates.jq "$FUNCS_FIXTURE" "generic
 #                                      naive left=smaller-n/right=larger-n
 #                                      assignment would disagree with the
 #                                      required canonical (loc_key-sorted)
-#                                      left/right.
+#                                      left/right. The tieZ* rows are placed
+#                                      BEFORE tieM* in the fixture array
+#                                      specifically so natural pair-enumeration
+#                                      order (which follows the size-sorted
+#                                      candidate list, stable-tied by original
+#                                      array position) would emit the Z pair
+#                                      before the M pair if the `.cluster_id`
+#                                      secondary sort key were ever dropped —
+#                                      without that reversal, enumeration
+#                                      order already happens to agree with the
+#                                      required cluster_id order and the
+#                                      assertion below would pass either way.
 assert_function_duplicates_band_and_determinism() {
   local result
   result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.5 \
@@ -435,7 +457,7 @@ assert_function_duplicates_band_and_determinism() {
     return
   }
 
-  local boundary_jacc noisy_jacc tie_pairs tiez_left tiez_right
+  local boundary_jacc noisy_jacc tie_pairs tiez_left tiez_right near_pair_count
   boundary_jacc="$(printf '%s\n' "$result" | jq -rs \
     '[.[] | select(.cluster_id == "function-duplicates-near:main:BoundaryLong.swift:72:boundaryLong+main:BoundaryShort.swift:70:boundaryShort")] | .[0].jacc // "MISSING"')"
   noisy_jacc="$(printf '%s\n' "$result" | jq -rs \
@@ -446,6 +468,25 @@ assert_function_duplicates_band_and_determinism() {
     '[.[] | select(.cluster_id == "function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater")] | .[0].left.name // "MISSING"')"
   tiez_right="$(printf '%s\n' "$result" | jq -rs \
     '[.[] | select(.cluster_id == "function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater")] | .[0].right.name // "MISSING"')"
+  # Regression guard (issue #337 review finding 3) for the $exact_ids hoist:
+  # if the `$exact_set | has(fn_location_key($r))` lookup regresses to the
+  # mis-scoped `has(fn_location_key(.))` form (CLAUDE.md jq-gotchas), the
+  # filter silently passes every row instead of excluding exact-cluster
+  # members, so hashSlug@main and hashSlug@shared both leak into the
+  # near-dup candidate pool and each separately pairs with hashSlugLite at
+  # jaccard 0.5 -- inflating this fixture's near-pair count at threshold 0.5
+  # from 5 to 7. Pin the count so that regression can't pass silently.
+  near_pair_count="$(printf '%s\n' "$result" | jq -rs '[.[] | select(.shape == "pair")] | length')"
+
+  local rounding_result rounding_jacc
+  rounding_result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.28 \
+    -f "$QUERIES_DIR/function-duplicates.jq" "$FUNCS_FIXTURE" 2>&1)" || {
+    FAIL=$((FAIL + 1))
+    printf "  ✗ function-duplicates (band/determinism, threshold 0.28): query crashed: %s\n" "$rounding_result"
+    return
+  }
+  rounding_jacc="$(printf '%s\n' "$rounding_result" | jq -rs \
+    '[.[] | select(.cluster_id == "function-duplicates-near:main:RoundingLong.swift:77:roundingLong+main:RoundingShort.swift:75:roundingShort")] | .[0].jacc // "MISSING"')"
 
   local high_thr_result high_thr_count high_thr_cid
   high_thr_result="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r --argjson threshold 0.8 \
@@ -460,16 +501,18 @@ assert_function_duplicates_band_and_determinism() {
 
   if [[ "$boundary_jacc" == "0.5" \
      && "$noisy_jacc" == "0.6666666666666666" \
+     && "$rounding_jacc" == "0.28" \
+     && "$near_pair_count" == "5" \
      && "$tie_pairs" == "function-duplicates-near:main:TieMEarlier.swift:82:tieMEarlier+main:TieMLater.swift:80:tieMLater,function-duplicates-near:main:TieZEarlier.swift:92:tieZEarlier+main:TieZLater.swift:90:tieZLater" \
      && "$tiez_left" == "tieZEarlier" && "$tiez_right" == "tieZLater" \
      && "$high_thr_count" == "1" \
-     && "$high_thr_cid" == "function-duplicates-near:main:TSDivergenceAlpha.swift:60:tsDivergenceAlpha+main:TSDivergenceBeta.swift:62:tsDivergenceBeta" ]]; then
+     && "$high_thr_cid" == "function-duplicates-near:main:TSDivergenceAlpha.ts:60:tsDivergenceAlpha+main:TSDivergenceBeta.ts:62:tsDivergenceBeta" ]]; then
     PASS=$((PASS + 1))
-    printf "  ✓ function-duplicates (band/determinism): boundary pair reported at ratio==threshold, dedup-defensive jaccard correct, tie-break by cluster_id, canonical left/right by loc_key, TS-divergence pair survives at threshold 0.8\n"
+    printf "  ✓ function-duplicates (band/determinism): boundary + rounding-boundary pairs reported at ratio==threshold, dedup-defensive jaccard correct, exact-pair count pinned, tie-break by cluster_id, canonical left/right by loc_key, TS-divergence pair survives at threshold 0.8\n"
   else
     FAIL=$((FAIL + 1))
-    printf "  ✗ function-duplicates (band/determinism) regression: boundary_jacc=%s noisy_jacc=%s tie_pairs=%s tiez_left=%s tiez_right=%s high_thr_count=%s high_thr_cid=%s\n" \
-      "$boundary_jacc" "$noisy_jacc" "$tie_pairs" "$tiez_left" "$tiez_right" "$high_thr_count" "$high_thr_cid"
+    printf "  ✗ function-duplicates (band/determinism) regression: boundary_jacc=%s noisy_jacc=%s rounding_jacc=%s near_pair_count=%s tie_pairs=%s tiez_left=%s tiez_right=%s high_thr_count=%s high_thr_cid=%s\n" \
+      "$boundary_jacc" "$noisy_jacc" "$rounding_jacc" "$near_pair_count" "$tie_pairs" "$tiez_left" "$tiez_right" "$high_thr_count" "$high_thr_cid"
   fi
 }
 assert_function_duplicates_band_and_determinism
