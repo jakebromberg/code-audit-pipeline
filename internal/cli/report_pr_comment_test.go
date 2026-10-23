@@ -201,11 +201,28 @@ func TestFilterRowsByTouched_PerRowShape(t *testing.T) {
 		}
 	})
 
-	t.Run("metric rows always kept (self-filtering payload)", func(t *testing.T) {
-		rows := []render.Row{{"cluster_id": "m1", "shape": "metric"}}
-		got := filterRowsByTouched(rows, header, touched)
-		if len(got) != 1 {
-			t.Errorf("metric row should be kept (query self-filters); got %d", len(got))
+	t.Run("metric rows gated on nested touched_clusters members", func(t *testing.T) {
+		tc := func(file string) []any {
+			return []any{map[string]any{"members": []any{map[string]any{"file": file}}}}
+		}
+		cases := []struct {
+			name string
+			row  render.Row
+			want bool
+		}{
+			{"no file payload dropped", render.Row{"cluster_id": "m1", "shape": "metric"}, false},
+			{"touched_clusters member in set kept", render.Row{"cluster_id": "m2", "shape": "metric", "touched_clusters": tc("src/foo.ts")}, true},
+			{"touched_clusters member outside set dropped", render.Row{"cluster_id": "m3", "shape": "metric", "touched_clusters": tc("elsewhere.ts")}, false},
+			{"empty touched_clusters dropped", render.Row{"cluster_id": "m4", "shape": "metric", "touched_clusters": []any{}}, false},
+			{"touched count alone does not pass", render.Row{"cluster_id": "m5", "shape": "metric", "touched": float64(3)}, false},
+		}
+		for _, c := range cases {
+			t.Run(c.name, func(t *testing.T) {
+				got := filterRowsByTouched([]render.Row{c.row}, header, touched)
+				if (len(got) == 1) != c.want {
+					t.Errorf("kept=%v, want %v", len(got) == 1, c.want)
+				}
+			})
 		}
 	})
 
@@ -741,5 +758,24 @@ func TestTouchedSet_RoundTrip(t *testing.T) {
 	}
 	if len(got) != len(set) {
 		t.Errorf("round-trip lost entries: have %d want %d", len(got), len(set))
+	}
+}
+
+func TestFilterRowsByTouched_YAMLOnlyChangeSetHasNoMetricRows(t *testing.T) {
+	// Regression for the Backend-Service#1423 shape: a YAML-only PR must not
+	// surface global histogram rows (shape-sig-frequency carries no file payload).
+	touched := touchedSet{"config/app.yaml": {}}
+	header := &frontmatter.Header{Shape: []string{"metric"}}
+	rows := []render.Row{
+		{"cluster_id": "SqlLike", "shape": "metric", "count": float64(16)},
+		{"cluster_id": "BaseTags", "shape": "metric", "count": float64(4)},
+	}
+	got := filterRowsByTouched(rows, header, touched)
+	if len(got) != 0 {
+		t.Fatalf("YAML-only change set should keep no metric rows; got %d", len(got))
+	}
+	body := composePRComment(nil, prCommentOpts{marker: "m", sizeCapBytes: 1000})
+	if !strings.Contains(body, "No structural impact") {
+		t.Errorf("empty result should post the no-impact body; got: %s", body)
 	}
 }
