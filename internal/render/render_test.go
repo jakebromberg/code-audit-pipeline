@@ -124,3 +124,37 @@ func TestPairRequiresEndpoints(t *testing.T) {
 		t.Errorf("expected right-missing error, got %v", err)
 	}
 }
+
+// TestMetricSkipsMatchOnlyClusters — clusters[] is match-only payload for the
+// PR-comment touched filter and must never be rendered, while touched_clusters[]
+// still renders as nested blocks.
+func TestMetricSkipsMatchOnlyClusters(t *testing.T) {
+	cluster := []any{map[string]any{
+		"cluster_id": "exact-duplicates:A+B",
+		"members":    []any{map[string]any{"name": "A", "file": "a.ts", "line": float64(1)}},
+	}}
+	got, err := Metric(Row{
+		"cluster_id":       "touched-window-debt-summary:exact-duplicates",
+		"shape":            "metric",
+		"touched":          float64(0),
+		"touched_clusters": []any{},
+		"clusters":         cluster,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(got, "exact-duplicates:A+B") || strings.Contains(got, "- clusters:") {
+		t.Errorf("match-only clusters[] was rendered:\n%s", got)
+	}
+	got, err = Metric(Row{
+		"cluster_id":       "touched-window-debt-summary:exact-duplicates",
+		"shape":            "metric",
+		"touched_clusters": cluster,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got, "exact-duplicates:A+B") {
+		t.Errorf("touched_clusters[] should still render:\n%s", got)
+	}
+}

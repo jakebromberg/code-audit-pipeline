@@ -35,6 +35,11 @@ func Metric(r Row) (string, error) {
 		if envelopeKeys[k] || strings.HasPrefix(k, "left_") || strings.HasPrefix(k, "right_") {
 			continue
 		}
+		// clusters[] is match-only payload for the PR-comment touched filter
+		// (touched-window-debt-summary); rendering it would list every cluster.
+		if k == "clusters" {
+			continue
+		}
 		v := r[k]
 		if clusters, ok := asNestedClusters(v); ok {
 			nested = append(nested, nestedClusters{label: k, rows: clusters})

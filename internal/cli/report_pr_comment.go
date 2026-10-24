@@ -170,15 +170,18 @@ func rowIsTouched(row render.Row, shape string, touched touchedSet) bool {
 		return pairRowIsTouched(row, touched)
 	case "metric":
 		// Metric rows are query-level summaries. In a PR-comment run the
-		// catalog is built without --touched, so touched_in_window and the
-		// touched count are always false/0; participation is decided from
-		// the nested touched_clusters[].members[] payload instead. A row
-		// with no such payload (e.g. shape-sig-frequency) can't be decided
-		// and is dropped.
-		clusters, _ := row["touched_clusters"].([]any)
-		for _, c := range clusters {
-			if cm, ok := c.(map[string]any); ok && clusterRowIsTouched(cm, touched) {
-				return true
+		// catalog is built without --touched, so touched_in_window is always
+		// false and touched_clusters[] is empty. In that case
+		// touched-window-debt-summary also emits every cluster in the
+		// match-only clusters[]; a row is kept iff a member of
+		// touched_clusters[] or clusters[] matches the touched set. A row
+		// with neither payload (e.g. shape-sig-frequency) is dropped.
+		for _, key := range []string{"touched_clusters", "clusters"} {
+			clusters, _ := row[key].([]any)
+			for _, c := range clusters {
+				if cm, ok := c.(map[string]any); ok && clusterRowIsTouched(cm, touched) {
+					return true
+				}
 			}
 		}
 		return false

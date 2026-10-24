@@ -1954,6 +1954,27 @@ assert_debt_summary_no_context_jsonl_zeros() {
 }
 assert_debt_summary_no_context_jsonl_zeros
 
+# clusters[] is the match-only member payload the PR-comment touched filter
+# reads: present with members only when no catalog row carries a touched flag,
+# absent otherwise (touched_clusters[] keeps its "has a touched member" meaning).
+assert_debt_summary_clusters_payload() {
+  local no_ctx with_ctx n_members n_present
+  no_ctx="$(OUTPUT_FORMAT=jsonl jq -L "$QUERIES_DIR" -r \
+    -f "$QUERIES_DIR/touched-window-debt-summary.jq" "$DEBT_SUMMARY_NO_CONTEXT_FIXTURE" 2>&1)"
+  with_ctx="$(_debt_summary_run)"
+  n_members="$(echo "$no_ctx" | jq -rs '[.[] | select(.cluster_type == "exact-duplicates") | .clusters[]?.members[]?] | length')"
+  n_present="$(echo "$with_ctx" | jq -rs '[.[] | select(has("clusters"))] | length')"
+  if [[ "$n_members" -gt 0 && "$n_present" == "0" ]]; then
+    PASS=$((PASS + 1))
+    printf "  ✓ debt-summary (clusters payload): %s exact-duplicates members without touched flags, field absent with them\n" "$n_members"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ✗ debt-summary (clusters payload): expected members>0 without flags (got %s) and no clusters field with flags (got %s rows)\n" \
+      "$n_members" "$n_present"
+  fi
+}
+assert_debt_summary_clusters_payload
+
 # Two invocations are needed: this assertion is presence-vs-absence on the
 # detail block, which can only be observed by diffing baseline against the
 # ONLY_TOUCHED=true run.

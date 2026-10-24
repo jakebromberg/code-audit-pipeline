@@ -1021,6 +1021,55 @@ func TestE2EReportPRComment_NoTouchedFileMatch(t *testing.T) {
 	}
 }
 
+// TestE2EReportPRComment_MetricRowFileMatch — a PR-comment run never sets
+// touched_in_window, so the metric row's participation comes from file-
+// matching the cluster members the debt-summary query emits in clusters[].
+// a.ts is a member of the fixture's A/B duplicate cluster; config/app.yaml
+// is in no cluster.
+func TestE2EReportPRComment_MetricRowFileMatch(t *testing.T) {
+	cases := []struct {
+		name    string
+		touched string
+		want    string
+		notWant string
+	}{
+		{"cluster member file keeps the row", `["a.ts"]`, "touched-window-debt-summary:exact-duplicates", "No structural impact"},
+		{"yaml-only change set has no impact", `["config/app.yaml"]`, "No structural impact", "touched-window-debt-summary"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tmp := seedPRCommentFixture(t)
+			touchedPath := filepath.Join(tmp, "touched.json")
+			if err := os.WriteFile(touchedPath, []byte(tc.touched), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			out := filepath.Join(tmp, "comment.md")
+			var stdout bytes.Buffer
+			exit := cli.Report(context.Background(), []string{
+				"--root", tmp,
+				"--query", "touched-window-debt-summary",
+				"--touched", touchedPath,
+				"--mode", "pr-comment",
+				"--output", out,
+			}, &stdout, embeddedQueries())
+			if exit != 0 {
+				t.Fatalf("Report exit=%d, stdout=%s", exit, stdout.String())
+			}
+			data, err := os.ReadFile(out)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body := string(data)
+			if !strings.Contains(body, tc.want) {
+				t.Errorf("body missing %q:\n%s", tc.want, body)
+			}
+			if strings.Contains(body, tc.notWant) {
+				t.Errorf("body should not contain %q:\n%s", tc.notWant, body)
+			}
+		})
+	}
+}
+
 // TestE2EReportPRComment_BadTouchedPath — caller-input error (--touched
 // points at a missing file) exits 2 loud, NOT fail-quiet. The workflow
 // author must fix the input, so we don't silently degrade the comment.
