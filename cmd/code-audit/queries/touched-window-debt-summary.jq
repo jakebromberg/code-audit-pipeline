@@ -165,7 +165,10 @@ def render_cluster:
         total:   $n_total,
         percent_touched: (if $n_total == 0 then 0 else ($n_touched * 100 / $n_total | floor) end),
         touched_clusters: $touched_list
-      })
+      }
+      # Match-only: with no touched flags touched_clusters is always empty,
+      # so a PR-comment run file-matches these members instead (never rendered).
+      + (if $no_touched_context then {clusters: .clusters} else {} end))
 | if output_format == "jsonl" then
     .[] | @json
   else

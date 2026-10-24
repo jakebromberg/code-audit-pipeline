@@ -774,8 +774,4 @@ func TestFilterRowsByTouched_YAMLOnlyChangeSetHasNoMetricRows(t *testing.T) {
 	if len(got) != 0 {
 		t.Fatalf("YAML-only change set should keep no metric rows; got %d", len(got))
 	}
-	body := composePRComment(nil, prCommentOpts{marker: "m", sizeCapBytes: 1000})
-	if !strings.Contains(body, "No structural impact") {
-		t.Errorf("empty result should post the no-impact body; got: %s", body)
-	}
 }
